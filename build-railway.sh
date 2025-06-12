@@ -28,40 +28,58 @@ fi
 
 # Step 1.5: Generate iconify icons CSS
 echo "🎨 Generating iconify icons CSS..."
+
+# Create basic CSS fallback function
+create_basic_icons_css() {
+    mkdir -p src/assets/iconify-icons
+    cat > src/assets/iconify-icons/generated-icons.css << 'EOF'
+/* Basic iconify icons CSS - fallback for build */
+.iconify {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  background-color: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+
+/* Basic fallback icons */
+.ri-shopping-basket-line::before { content: "🛒"; }
+.bi-airplane-engines::before { content: "✈️"; }
+.tabler-anchor::before { content: "⚓"; }
+.twemoji-auto-rickshaw::before { content: "🛺"; }
+EOF
+    echo "✅ Created basic icons CSS fallback"
+}
+
 if [ -f "src/assets/iconify-icons/bundle-icons-css.ts" ]; then
+    # Try tsx first
     if [ -f "./node_modules/.bin/tsx" ]; then
-        ./node_modules/.bin/tsx src/assets/iconify-icons/bundle-icons-css.ts || {
+        ./node_modules/.bin/tsx src/assets/iconify-icons/bundle-icons-css.ts && echo "✅ Icons generated with tsx" || {
             echo "⚠️  tsx failed, trying with npx..."
-            npx tsx src/assets/iconify-icons/bundle-icons-css.ts || {
-                echo "⚠️  npx tsx failed, trying alternative approach..."
-                # Try with ts-node
-                npx ts-node --esm src/assets/iconify-icons/bundle-icons-css.ts || {
-                    echo "⚠️  All icon generation methods failed, creating empty file..."
-                    mkdir -p src/assets/iconify-icons
-                    echo "/* Empty icons file generated during build */" > src/assets/iconify-icons/generated-icons.css
-                }
+            npx tsx src/assets/iconify-icons/bundle-icons-css.ts && echo "✅ Icons generated with npx tsx" || {
+                echo "⚠️  All tsx methods failed, creating basic CSS..."
+                create_basic_icons_css
             }
         }
     else
         echo "⚠️  tsx not found, trying with npx..."
-        npx tsx src/assets/iconify-icons/bundle-icons-css.ts || {
-            echo "⚠️  npx tsx failed, trying with ts-node..."
-            npx ts-node --esm src/assets/iconify-icons/bundle-icons-css.ts || {
-                echo "⚠️  All icon generation methods failed, creating empty file..."
-                mkdir -p src/assets/iconify-icons
-                echo "/* Empty icons file generated during build */" > src/assets/iconify-icons/generated-icons.css
-            }
+        npx tsx src/assets/iconify-icons/bundle-icons-css.ts && echo "✅ Icons generated with npx tsx" || {
+            echo "⚠️  npx tsx failed, creating basic CSS..."
+            create_basic_icons_css
         }
     fi
 else
-    echo "⚠️  Icons bundle script not found, skipping..."
+    echo "⚠️  Icons bundle script not found, creating basic CSS..."
+    create_basic_icons_css
 fi
 
-# Check if icons were generated
+# Ensure icons file exists
 if [ ! -f "src/assets/iconify-icons/generated-icons.css" ]; then
-    echo "⚠️  generated-icons.css not found, creating empty file..."
-    mkdir -p src/assets/iconify-icons
-    echo "/* Empty icons file generated during build */" > src/assets/iconify-icons/generated-icons.css
+    echo "⚠️  generated-icons.css not found, creating basic CSS..."
+    create_basic_icons_css
 fi
 
 echo "✅ Icons file ready: $(ls -la src/assets/iconify-icons/generated-icons.css)"
