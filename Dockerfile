@@ -17,6 +17,9 @@ RUN cd backend && npm ci --legacy-peer-deps
 # Copy source code
 COPY . .
 
+# Generate icons after source code is available
+RUN npm run build:icons
+
 # Generate Prisma clients with correct binary targets
 RUN cd backend && ./node_modules/.bin/prisma generate
 

@@ -7,7 +7,7 @@
     "start": "PORT=3011 node dist/server.js",
     "dev": "PORT=3011 ./node_modules/.bin/ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
-    "postinstall": "./node_modules/.bin/prisma generate",
+
     "build:start": "npm run build && npm start",
     "test": "jest",
     "test:watch": "jest --watch",
