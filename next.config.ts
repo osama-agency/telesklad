@@ -61,20 +61,20 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/',
-        destination: '/ru/dashboard',
-        permanent: true,
+        destination: '/ru/products',
+        permanent: false,
         locale: false
       },
       {
         source: '/:lang(ru|tr)',
-        destination: '/:lang/dashboard',
-        permanent: true,
+        destination: '/:lang/products',
+        permanent: false,
         locale: false
       },
       {
         source: '/((?!(?:ru|tr|front-pages|favicon.ico)\\b)):path',
         destination: '/ru/:path',
-        permanent: true,
+        permanent: false,
         locale: false
       }
     ]

@@ -6,12 +6,12 @@ import { useEffect } from 'react'
 // Next Imports
 import { useRouter } from 'next/navigation'
 
-const HomePage = () => {
+export default function HomePage() {
   const router = useRouter()
 
   useEffect(() => {
-    // Автоматический редирект на /ru/dashboard
-    router.replace('/ru/dashboard')
+    // Redirect to Russian version
+    router.push('/ru/products')
   }, [router])
 
   return (
@@ -20,11 +20,11 @@ const HomePage = () => {
       justifyContent: 'center',
       alignItems: 'center',
       height: '100vh',
-      fontFamily: 'Inter, sans-serif'
+      flexDirection: 'column',
+      fontFamily: 'Arial, sans-serif'
     }}>
-      Перенаправление на дашборд...
+      <h1>Telesklad</h1>
+      <p>Перенаправление...</p>
     </div>
   )
 }
-
-export default HomePage
