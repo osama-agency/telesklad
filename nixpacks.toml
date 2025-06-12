@@ -1,11 +1,18 @@
 [phases.setup]
 nixPkgs = ["nodejs-18_x", "npm-9_x"]
 
+[phases.install]
+cmds = [
+    "npm ci --legacy-peer-deps --ignore-scripts",
+    "cd backend && npm ci --legacy-peer-deps --ignore-scripts"
+]
+
 [phases.build]
-cmds = ["npm ci --legacy-peer-deps --ignore-scripts && cd backend && npm ci --legacy-peer-deps --ignore-scripts && cd .. && ./build-railway.sh"]
+cmds = ["bash build-railway.sh"]
 
 [start]
 cmd = "npm run start:production"
 
 [variables]
 NODE_OPTIONS = "--max-old-space-size=2048"
+NIXPACKS_NO_CACHE = "1"

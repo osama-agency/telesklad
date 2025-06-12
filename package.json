@@ -7,7 +7,7 @@
     "dev": "./node_modules/.bin/next dev --turbopack",
     "build": "./node_modules/.bin/next build",
     "start": "./node_modules/.bin/next start",
-    "start:production": "concurrently \"PORT=3000 ./node_modules/.bin/next start\" \"cd backend && PORT=3011 node dist/server.js\"",
+    "start:production": "node start-production.js",
     "lint": "./node_modules/.bin/next lint",
     "lint:fix": "next lint --fix",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\"",
