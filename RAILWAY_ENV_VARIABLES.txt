@@ -1,0 +1,39 @@
+# 🔧 Переменные окружения для Railway
+# Скопируйте эти переменные в Railway Variables
+
+NODE_ENV=production
+PORT=3011
+
+# База данных - ЗАМЕНИТЕ на ваш DATABASE_URL из PostgreSQL сервиса
+DATABASE_URL=postgresql://postgres:password@hostname:port/database
+
+# Внешние API
+STRATTERA_API_URL=https://strattera.tgapp.online/api/v1/orders
+STRATTERA_API_TOKEN=8cM9wVBrY3p56k4L1VBpIBwOsw
+
+# JWT Security
+JWT_SECRET=telesklad_super_secure_jwt_production_key_2025
+JWT_EXPIRE=24h
+
+# Администратор системы
+ADMIN_EMAIL=go@osama.agency
+ADMIN_PASSWORD=sfera13
+
+# Telegram Bot
+TELEGRAM_BOT_TOKEN=8159006212:AAEjYn-bU-Nh89crlue9GUJKuv6pV4Z986M
+TELEGRAM_CHAT_ID=-4729817036
+
+# CORS и безопасность
+CORS_ORIGIN=*
+API_PREFIX=/api
+
+# Логирование
+LOG_LEVEL=info
+HEALTH_CHECK_ENABLED=true
+
+# Prisma
+PRISMA_ENGINES_CHECKSUM_IGNORE=true
+
+# Rate Limiting
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
