@@ -61,13 +61,13 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/',
-        destination: '/ru/dashboards/crm',
+        destination: '/ru/dashboard',
         permanent: true,
         locale: false
       },
       {
         source: '/:lang(ru|tr)',
-        destination: '/:lang/dashboards/crm',
+        destination: '/:lang/dashboard',
         permanent: true,
         locale: false
       },
