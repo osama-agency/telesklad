@@ -10,8 +10,8 @@ export default function HomePage() {
   const router = useRouter()
 
   useEffect(() => {
-    // Redirect to simple test page first
-    router.push('/simple')
+    // Redirect to dashboard with default language
+    router.push('/ru/dashboard')
   }, [router])
 
   return (
