@@ -10,8 +10,8 @@ export default function HomePage() {
   const router = useRouter()
 
   useEffect(() => {
-    // Redirect to Russian version
-    router.push('/ru/products')
+    // Redirect to simple test page first
+    router.push('/simple')
   }, [router])
 
   return (
