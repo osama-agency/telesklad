@@ -3,6 +3,10 @@ import type { NextConfig } from 'next'
 const nextConfig: NextConfig = {
   basePath: process.env.BASEPATH,
   async rewrites() {
+    const backendUrl = process.env.NODE_ENV === 'production'
+      ? 'http://localhost:3011'
+      : 'http://localhost:3011'
+
     return [
       {
         source: '/api/login',
@@ -14,18 +18,32 @@ const nextConfig: NextConfig = {
       },
       {
         source: '/api/purchases/:path*',
-        destination: 'http://localhost:3011/api/purchases/:path*' // Purchases API на порту 3011
+        destination: `${backendUrl}/api/purchases/:path*`
       },
       {
         source: '/api/purchases',
-        destination: 'http://localhost:3011/api/purchases' // Purchases API на порту 3011
+        destination: `${backendUrl}/api/purchases`
+      },
+      {
+        source: '/api/products/:path*',
+        destination: `${backendUrl}/api/products/:path*`
+      },
+      {
+        source: '/api/orders/:path*',
+        destination: `${backendUrl}/api/orders/:path*`
+      },
+      {
+        source: '/api/expenses/:path*',
+        destination: `${backendUrl}/api/expenses/:path*`
+      },
+      {
+        source: '/api/currency/:path*',
+        destination: `${backendUrl}/api/currency/:path*`
+      },
+      {
+        source: '/api/health',
+        destination: `${backendUrl}/api/health`
       }
-
-      // Убираем catch-all проксирование, чтобы локальные API routes работали
-      // {
-      //   source: '/api/:path*',
-      //   destination: 'http://localhost:3011/api/:path*'
-      // }
     ]
   },
   redirects: async () => {

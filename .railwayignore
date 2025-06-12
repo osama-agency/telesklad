@@ -1,15 +1,7 @@
-# Frontend files (не нужны для backend деплоя)
-node_modules/
+# Development files (не нужны для production)
 .next/
-src/
-public/
-*.md
-pnpm-lock.yaml
-.git/
-.cursor/
+node_modules/
 logs/
-
-# Development files
 *.log
 .DS_Store
 .env.local
@@ -20,7 +12,22 @@ logs/
 # IDE files
 .vscode/
 .idea/
+.cursor/
+
+# Git files
+.git/
+
+# Documentation (не нужно в production)
+*.md
+README.md
+CHANGELOG.md
 
 # Temporary files
 temp-*.js
 *.tmp
+
+# Test files
+*.test.js
+*.test.ts
+__tests__/
+coverage/
