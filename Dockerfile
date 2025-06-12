@@ -34,8 +34,15 @@ FROM node:18-alpine
 
 WORKDIR /app
 
+# Install openssl for Prisma
+RUN apk add --no-cache openssl
+
 # Copy everything from builder
 COPY --from=builder /app .
+
+# Set production environment
+ENV NODE_ENV=production
+ENV BACKEND_URL=http://localhost:3011
 
 # Expose port
 EXPOSE 3000

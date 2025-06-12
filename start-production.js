@@ -67,20 +67,31 @@ async function startServers() {
   const port = process.env.PORT || '3000';
   console.log(`🌐 Starting Next.js server on port ${port}`);
 
-  // Start Next.js frontend on Railway's assigned port
-  const frontend = spawn('./node_modules/.bin/next', ['start'], {
-    env: { ...process.env, PORT: port },
-    stdio: 'inherit',
-    shell: true
-  });
-
-  // Start backend on port 3011 (internal)
+  // Start backend on port 3011 (internal) first
+  console.log('🔧 Starting backend server on port 3011...');
   const backend = spawn('node', ['dist/server.js'], {
     cwd: path.join(__dirname, 'backend'),
     env: { ...process.env, PORT: '3011' },
     stdio: 'inherit',
     shell: true
   });
+
+  // Wait a bit for backend to start
+  await new Promise(resolve => setTimeout(resolve, 3000));
+
+  // Start Next.js frontend on Railway's assigned port
+  console.log(`🚀 Starting Next.js frontend on port ${port}...`);
+  const frontend = spawn('./node_modules/.bin/next', ['start'], {
+    env: { ...process.env, PORT: port },
+    stdio: 'inherit',
+    shell: true
+  });
+
+  // Log when servers are ready
+  console.log('✅ Both servers started. Waiting for them to be ready...');
+  console.log(`📍 Frontend: http://localhost:${port}`);
+  console.log('📍 Backend: http://localhost:3011');
+  console.log(`📍 Health check: http://localhost:${port}/api/health`);
 
   // Handle process termination
   process.on('SIGTERM', () => {
