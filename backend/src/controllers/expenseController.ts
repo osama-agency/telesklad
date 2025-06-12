@@ -333,3 +333,21 @@ export class ExpenseController {
     }
   }
 }
+
+// CommonJS exports для совместимости с routes
+module.exports = {
+  getAllExpenses: ExpenseController.getExpenses,
+  getExpenseStatistics: ExpenseController.getExpenseStats,
+  getMonthlyTotals: ExpenseController.getExpenseStats, // Используем тот же метод
+  getTaxDeductibleExpenses: ExpenseController.getExpenses, // Используем базовый метод с фильтрацией
+  searchExpenses: ExpenseController.getExpenses, // Используем базовый метод с поиском
+  getTopVendors: ExpenseController.getExpenseStats, // Используем статистику
+  getCategoriesWithTotals: ExpenseController.getExpenseStats,
+  getExpenseReport: ExpenseController.getExpenseStats,
+  getExpensesByCategory: ExpenseController.getExpenses,
+  getExpenseById: ExpenseController.getExpenseById,
+  createExpense: ExpenseController.createExpense,
+  bulkCreateExpenses: ExpenseController.createExpense, // Используем тот же метод
+  updateExpense: ExpenseController.updateExpense,
+  deleteExpense: ExpenseController.deleteExpense
+}
