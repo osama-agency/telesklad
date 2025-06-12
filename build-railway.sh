@@ -93,20 +93,8 @@ if [ -d "backend" ]; then
         npx prisma generate || echo "⚠️  Backend Prisma generate failed"
     fi
 
-    # Apply database migrations (only if DATABASE_URL is set)
-    if [ ! -z "$DATABASE_URL" ]; then
-        echo "🗄️ Applying database migrations..."
-        if [ -f "./node_modules/.bin/prisma" ]; then
-            ./node_modules/.bin/prisma migrate deploy || {
-                echo "⚠️  Migration with local prisma failed, trying with npx..."
-                npx prisma migrate deploy
-            }
-        else
-            npx prisma migrate deploy || echo "⚠️  Database migration failed"
-        fi
-    else
-        echo "⚠️  DATABASE_URL not set, skipping migrations..."
-    fi
+    # Note: Database migrations will be applied at startup, not during build
+    echo "📝 Note: Database migrations will be applied when the application starts"
 
     # Build TypeScript
     if [ -f "./node_modules/.bin/tsc" ]; then
