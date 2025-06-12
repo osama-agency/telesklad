@@ -3,14 +3,21 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy all files
-COPY . .
+# Install necessary packages for Prisma
+RUN apk add --no-cache openssl
+
+# Copy package files first
+COPY package*.json ./
+COPY backend/package*.json ./backend/
 
 # Install dependencies
 RUN npm ci --legacy-peer-deps
 RUN cd backend && npm ci --legacy-peer-deps
 
-# Generate Prisma clients
+# Copy source code
+COPY . .
+
+# Generate Prisma clients with correct binary targets
 RUN npx prisma generate
 RUN cd backend && npx prisma generate
 
@@ -32,4 +39,4 @@ COPY --from=builder /app .
 EXPOSE 3000
 
 # Start the application
-CMD ["sh", "-c", "cd backend && npx prisma migrate deploy || true && cd /app && node start-production.js"]
+CMD ["node", "start-production.js"]

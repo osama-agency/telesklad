@@ -8,26 +8,48 @@ async function runMigrations() {
   return new Promise((resolve) => {
     console.log('🗄️ Applying database migrations...');
 
-    const migrationProcess = spawn('npx', ['prisma', 'migrate', 'deploy'], {
+    // Try to regenerate Prisma client first
+    const generateProcess = spawn('npx', ['prisma', 'generate'], {
       cwd: path.join(__dirname, 'backend'),
       env: process.env,
       stdio: 'inherit',
       shell: true
     });
 
-    migrationProcess.on('close', (code) => {
-      if (code === 0) {
-        console.log('✅ Database migrations applied successfully');
-        resolve();
+    generateProcess.on('close', (generateCode) => {
+      if (generateCode === 0) {
+        console.log('✅ Prisma client generated successfully');
       } else {
-        console.log('⚠️  Migration failed, continuing anyway...');
-        resolve(); // Continue even if migrations fail
+        console.log('⚠️  Prisma generate failed, trying migrations anyway...');
       }
+
+      // Run migrations
+      const migrationProcess = spawn('npx', ['prisma', 'migrate', 'deploy'], {
+        cwd: path.join(__dirname, 'backend'),
+        env: process.env,
+        stdio: 'inherit',
+        shell: true
+      });
+
+      migrationProcess.on('close', (code) => {
+        if (code === 0) {
+          console.log('✅ Database migrations applied successfully');
+          resolve();
+        } else {
+          console.log('⚠️  Migration failed, continuing anyway...');
+          resolve(); // Continue even if migrations fail
+        }
+      });
+
+      migrationProcess.on('error', (error) => {
+        console.log('⚠️  Migration error:', error.message);
+        resolve(); // Continue even if migrations fail
+      });
     });
 
-    migrationProcess.on('error', (error) => {
-      console.log('⚠️  Migration error:', error.message);
-      resolve(); // Continue even if migrations fail
+    generateProcess.on('error', (error) => {
+      console.log('⚠️  Prisma generate error:', error.message);
+      resolve(); // Continue even if generate fails
     });
   });
 }

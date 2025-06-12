@@ -1,19 +1,43 @@
 import express from 'express';
 import {
+  getAllOrders,
+  getOrderStatistics,
+  searchOrdersByCustomer,
+  getOrdersByStatus,
+  getOrderById,
+  createOrder,
+  addOrderItem,
   updateOrderStatus,
-  updateOrder,
-  addOrderComment
+  deleteOrder
 } from '../controllers/orderController';
 
 const router = express.Router();
 
-// PUT /api/orders/:id/status - обновить статус заказа
-router.put('/orders/:id/status', updateOrderStatus);
+// GET /api/orders - получить все заказы
+router.get('/', getAllOrders);
 
-// PUT /api/orders/:id - обновить данные заказа
-router.put('/orders/:id', updateOrder);
+// GET /api/orders/statistics - получить статистику заказов
+router.get('/statistics', getOrderStatistics);
 
-// POST /api/orders/:id/comment - добавить комментарий к заказу
-router.post('/orders/:id/comment', addOrderComment);
+// GET /api/orders/search - поиск заказов по клиенту
+router.get('/search', searchOrdersByCustomer);
+
+// GET /api/orders/status/:status - получить заказы по статусу
+router.get('/status/:status', getOrdersByStatus);
+
+// GET /api/orders/:id - получить заказ по ID
+router.get('/:id', getOrderById);
+
+// POST /api/orders - создать новый заказ
+router.post('/', createOrder);
+
+// POST /api/orders/:id/items - добавить товар к заказу
+router.post('/:id/items', addOrderItem);
+
+// PATCH /api/orders/:id/status - обновить статус заказа
+router.patch('/:id/status', updateOrderStatus);
+
+// DELETE /api/orders/:id - удалить заказ
+router.delete('/:id', deleteOrder);
 
 export default router;

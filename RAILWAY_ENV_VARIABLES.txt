@@ -37,3 +37,19 @@ PRISMA_ENGINES_CHECKSUM_IGNORE=true
 # Rate Limiting
 RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX_REQUESTS=100
+
+# Railway Environment Variables
+# Copy these to Railway dashboard -> Variables
+
+# Force Prisma to use correct binary target
+PRISMA_QUERY_ENGINE_LIBRARY=/app/backend/node_modules/.prisma/client/libquery_engine-debian-openssl-3.0.x.so.node
+
+# Force specific binary target for Railway
+PRISMA_CLI_BINARY_TARGETS=debian-openssl-3.0.x
+
+# Ensure OpenSSL compatibility
+OPENSSL_CONF=/etc/ssl/
+
+# NextAuth configuration
+NEXTAUTH_SECRET=your-secret-key-here
+NEXTAUTH_URL=https://your-railway-app.up.railway.app
