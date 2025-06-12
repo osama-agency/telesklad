@@ -163,3 +163,5 @@ backend/.env
 
 # Documentation files that might contain sensitive info
 *.md.backup
+next-build.tar.gz
+deploy.tar.gz

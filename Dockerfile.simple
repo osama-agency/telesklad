@@ -1,0 +1,55 @@
+FROM node:18-alpine AS deps
+# Устанавливаем необходимые пакеты
+RUN apk add --no-cache openssl postgresql-client
+
+WORKDIR /app
+
+# Копируем только файлы зависимостей
+COPY package*.json ./
+COPY backend/package*.json ./backend/
+
+# Устанавливаем зависимости
+RUN npm ci --legacy-peer-deps --ignore-scripts
+RUN cd backend && npm ci --legacy-peer-deps --ignore-scripts
+
+# Этап генерации Prisma
+FROM node:18-alpine AS prisma
+RUN apk add --no-cache openssl
+
+WORKDIR /app
+
+# Копируем зависимости из предыдущего этапа
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/backend/node_modules ./backend/node_modules
+
+# Копируем схему Prisma
+COPY backend/prisma ./backend/prisma
+
+# Генерируем Prisma client
+RUN cd backend && npx prisma generate
+
+# Финальный этап
+FROM node:18-alpine
+RUN apk add --no-cache openssl postgresql-client curl bash
+
+WORKDIR /app
+
+# Копируем все файлы приложения
+COPY . .
+
+# Копируем зависимости и сгенерированный Prisma client
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/backend/node_modules ./backend/node_modules
+COPY --from=prisma /app/backend/node_modules/@prisma ./backend/node_modules/@prisma
+COPY --from=prisma /app/backend/node_modules/.prisma ./backend/node_modules/.prisma
+
+# Устанавливаем переменные окружения
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# НЕ собираем приложение в Docker - будем собирать при старте
+# Это позволит избежать проблем с памятью
+
+# Команда запуска
+CMD ["node", "start-simple.js"]

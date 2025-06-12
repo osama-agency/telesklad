@@ -37,17 +37,34 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// API Routes
-app.use('/api', syncRoutes);
-app.use('/api/user', userRoutes);
-app.use('/api', productRoutes);
-app.use('/api/currency', currencyRoutes);
-app.use('/api', orderRoutes);
-app.use('/api/prices', priceRoutes);
-app.use('/api', expenseRoutes);
-app.use('/api', analyticsRoutes);
+// Debug middleware - логируем все запросы
+app.use((req, res, next) => {
+  console.log(`📍 ${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
+});
+
+// Тестовый маршрут для проверки
+app.get('/api/test-products', (req, res) => {
+  res.json({ message: 'Test products endpoint works!' });
+});
+
+// Логирование для отладки
+console.log('🔍 productRoutes type:', typeof productRoutes);
+console.log('🔍 productRoutes:', productRoutes);
+
+// API Routes - регистрируем более специфичные маршруты первыми
+app.use('/api/products', productRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/expenses', expenseRoutes);
 app.use('/api/purchases', purchaseRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/currency', currencyRoutes);
+app.use('/api/prices', priceRoutes);
+app.use('/api', analyticsRoutes);
 app.use('/api/telegram', telegramRoutes);
+
+// Sync routes регистрируем последними, так как они содержат параметры
+app.use('/api', syncRoutes);
 
 // Статические файлы для загруженных изображений
 app.use('/uploads', express.static('uploads'));

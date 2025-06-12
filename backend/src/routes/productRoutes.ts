@@ -1,4 +1,5 @@
 import express from 'express';
+
 import {
   getProducts,
   getProductById,
@@ -14,33 +15,33 @@ import {
 const router = express.Router();
 
 // GET /api/products - получить все товары
-router.get('/products', getProducts);
+router.get('/', getProducts);
 
 // GET /api/products/hidden - получить список скрытых товаров
-router.get('/products/hidden', getHiddenProducts);
+router.get('/hidden', getHiddenProducts);
 
 // GET /api/products/:id - получить товар по ID
-router.get('/products/:id', getProductById);
+router.get('/:id', getProductById);
 
 // PUT /api/products/:id/cost - обновить себестоимость товара
-router.put('/products/:id/cost', updateProductCost);
+router.put('/:id/cost', updateProductCost);
 
 // PUT /api/products/:id/stock - обновить остаток товара
-router.put('/products/:id/stock', updateProductStock);
+router.put('/:id/stock', updateProductStock);
 
 // PATCH /api/products/:id/stock - операции с остатком (add/subtract)
-router.patch('/products/:id/stock', updateProductStock);
+router.patch('/:id/stock', updateProductStock);
 
 // PUT /api/products/:id/price - обновить цену товара
-router.put('/products/:id/price', updateProductPrice);
+router.put('/:id/price', updateProductPrice);
 
 // PUT /api/products/:id/analytics - обновить аналитические данные товара
-router.put('/products/:id/analytics', updateProductAnalytics);
+router.put('/:id/analytics', updateProductAnalytics);
 
 // PATCH /api/products/:id/hide - скрыть/показать товар по ID
-router.patch('/products/:id/hide', hideProduct);
+router.patch('/:id/hide', hideProduct);
 
 // POST /api/products/hide - скрыть/показать товар по имени
-router.post('/products/hide', hideProductByName);
+router.post('/hide', hideProductByName);
 
 export default router;

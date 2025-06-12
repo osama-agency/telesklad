@@ -11,7 +11,8 @@ router.post('/sync-orders', syncOrders);
 router.post('/sync-products', syncProducts);
 router.get('/orders', getOrders);
 router.get('/orders/stats', getOrdersStats);
-router.get('/orders/:id', getOrderById);
+// Изменяем маршрут, чтобы он принимал только числовые ID
+router.get('/orders/:id(\\d+)', getOrderById);
 
 // Endpoint для ручного запуска автоматической синхронизации с фильтрацией по 10 дням
 router.post('/sync-auto', async (req, res) => {

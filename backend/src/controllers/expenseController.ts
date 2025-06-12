@@ -334,20 +334,21 @@ export class ExpenseController {
   }
 }
 
-// CommonJS exports для совместимости с routes
-module.exports = {
-  getAllExpenses: ExpenseController.getExpenses,
-  getExpenseStatistics: ExpenseController.getExpenseStats,
-  getMonthlyTotals: ExpenseController.getExpenseStats, // Используем тот же метод
-  getTaxDeductibleExpenses: ExpenseController.getExpenses, // Используем базовый метод с фильтрацией
-  searchExpenses: ExpenseController.getExpenses, // Используем базовый метод с поиском
-  getTopVendors: ExpenseController.getExpenseStats, // Используем статистику
-  getCategoriesWithTotals: ExpenseController.getExpenseStats,
-  getExpenseReport: ExpenseController.getExpenseStats,
-  getExpensesByCategory: ExpenseController.getExpenses,
-  getExpenseById: ExpenseController.getExpenseById,
-  createExpense: ExpenseController.createExpense,
-  bulkCreateExpenses: ExpenseController.createExpense, // Используем тот же метод
-  updateExpense: ExpenseController.updateExpense,
-  deleteExpense: ExpenseController.deleteExpense
-}
+// Экспорт класса по умолчанию
+export default ExpenseController;
+
+// Дополнительные named exports для совместимости
+export const getAllExpenses = ExpenseController.getExpenses;
+export const getExpenseStatistics = ExpenseController.getExpenseStats;
+export const getMonthlyTotals = ExpenseController.getExpenseStats;
+export const getTaxDeductibleExpenses = ExpenseController.getExpenses;
+export const searchExpenses = ExpenseController.getExpenses;
+export const getTopVendors = ExpenseController.getExpenseStats;
+export const getCategoriesWithTotals = ExpenseController.getExpenseStats;
+export const getExpenseReport = ExpenseController.getExpenseStats;
+export const getExpensesByCategory = ExpenseController.getExpenses;
+export const getExpenseById = ExpenseController.getExpenseById;
+export const createExpense = ExpenseController.createExpense;
+export const bulkCreateExpenses = ExpenseController.createExpense;
+export const updateExpense = ExpenseController.updateExpense;
+export const deleteExpense = ExpenseController.deleteExpense;

@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: telesite
+      POSTGRES_USER: telesite_user
+      POSTGRES_PASSWORD: your_secure_password_here
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U telesite_user"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.simple
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://telesite_user:your_secure_password_here@postgres:5432/telesite?schema=public
+      - NEXTAUTH_SECRET=9u7lZjpjZUmX4CZARxgEgns04CYpdq7NEA8UZDQUGHg=
+      - NEXTAUTH_URL=https://dsgrating.ru
+      - BACKEND_URL=http://localhost:3011
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["node", "start-production-simple.js"]
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx-ssl.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+    depends_on:
+      - app
+
+volumes:
+  postgres_data:

@@ -1100,27 +1100,27 @@ const PremiumReceiveModal = ({
   )
 }
 
-// Функция для нормализации названий товаров
-const normalizeProductName = (name: string): string => {
-  return name.toLowerCase()
-    .trim()
-    .replace(/\s+/g, ' ')
-    .replace(/мг/g, 'mg')
-    .replace(/мкг/g, 'мсг')
-    .replace(/мл/g, 'ml')
-}
-
-// Мапа для связывания вариантов названий товаров
-const productNameMapping: Record<string, string> = {
-  'risperdal 1 mg/ml сироп': 'Risperdal 1 Mg/ml сироп',
-  'risperdal 1 мг/мл сироп': 'Risperdal 1 Mg/ml сироп',
-  'salazopyrin 500 mg': 'Salazopyrin 500 mg',
-  'сирорсил': 'Siroksil',
-  'siroksil': 'Siroksil'
-}
-
 const PremiumPurchaseAnalytics = () => {
   const theme = useTheme()
+
+  // Функция для нормализации названий товаров
+  const normalizeProductName = useCallback((name: string): string => {
+    return name.toLowerCase()
+      .trim()
+      .replace(/\s+/g, ' ')
+      .replace(/мг/g, 'mg')
+      .replace(/мкг/g, 'мсг')
+      .replace(/мл/g, 'ml')
+  }, [])
+
+  // Мапа для связывания вариантов названий товаров
+  const productNameMapping = useMemo<Record<string, string>>(() => ({
+    'risperdal 1 mg/ml сироп': 'Risperdal 1 Mg/ml сироп',
+    'risperdal 1 мг/мл сироп': 'Risperdal 1 Mg/ml сироп',
+    'salazopyrin 500 mg': 'Salazopyrin 500 mg',
+    'сирорсил': 'Siroksil',
+    'siroksil': 'Siroksil'
+  }), [])
 
   // API для получения курсов валют - с fallback защитой
   const currencyApiResult = useCurrencyApi()

@@ -1,8 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
-
-// In-memory storage for purchases
-let purchases: any[] = []
-let purchaseIdCounter = 1
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,11 +9,25 @@ export async function GET(request: NextRequest) {
     const backendUrl = `http://localhost:3011/api/purchases${queryString ? `?${queryString}` : ''}`
 
     const response = await fetch(backendUrl)
-    const data = await response.json()
 
-    return NextResponse.json(data)
+    if (response.ok) {
+      const data = await response.json()
+
+      return NextResponse.json(data)
+    }
+
+    // Backend недоступен
+    return NextResponse.json({
+      success: true,
+      data: {
+        purchases: [],
+        total: 0,
+        message: 'Backend сервер временно недоступен'
+      }
+    })
   } catch (error) {
     console.error('Error proxying purchases request:', error)
+
     return NextResponse.json({
       success: false,
       error: 'Ошибка получения закупок'

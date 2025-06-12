@@ -1,10 +1,106 @@
 const { spawn } = require('child_process');
 const path = require('path');
+const fs = require('fs');
 
 console.log('🚀 Starting production servers...');
 console.log('📍 Environment:', process.env.NODE_ENV);
 console.log('📍 Port:', process.env.PORT);
 console.log('📍 Database URL:', process.env.DATABASE_URL ? 'Set ✅' : 'Not set ❌');
+
+// Function to build Next.js app
+async function buildNextApp() {
+  return new Promise((resolve) => {
+    // Check if .next directory exists
+    const nextBuildPath = path.join(__dirname, '.next');
+    if (fs.existsSync(nextBuildPath)) {
+      console.log('✅ Next.js build already exists, skipping build...');
+      resolve(true);
+      return;
+    }
+
+    console.log('🔨 Building Next.js application...');
+    console.log('⚠️  This may take a while on low-memory systems...');
+
+    const buildProcess = spawn('npm', ['run', 'build:next'], {
+      env: {
+        ...process.env,
+        NEXT_TELEMETRY_DISABLED: '1',
+        NODE_OPTIONS: '--max-old-space-size=512' // Limit memory usage
+      },
+      stdio: 'inherit',
+      shell: true
+    });
+
+    buildProcess.on('close', (code) => {
+      if (code === 0) {
+        console.log('✅ Next.js built successfully');
+        resolve(true);
+      } else {
+        console.log('❌ Next.js build failed, trying alternative build...');
+
+        // Try alternative build without icons
+        const altBuildProcess = spawn('npm', ['run', 'build'], {
+          env: {
+            ...process.env,
+            NEXT_TELEMETRY_DISABLED: '1',
+            NODE_OPTIONS: '--max-old-space-size=512'
+          },
+          stdio: 'inherit',
+          shell: true
+        });
+
+        altBuildProcess.on('close', (altCode) => {
+          if (altCode === 0) {
+            console.log('✅ Next.js built successfully (alternative method)');
+            resolve(true);
+          } else {
+            console.log('❌ Next.js build failed completely');
+            resolve(false);
+          }
+        });
+
+        altBuildProcess.on('error', (error) => {
+          console.log('❌ Alternative build error:', error.message);
+          resolve(false);
+        });
+      }
+    });
+
+    buildProcess.on('error', (error) => {
+      console.log('❌ Build error:', error.message);
+      resolve(false);
+    });
+  });
+}
+
+// Function to compile backend
+async function compileBackend() {
+  return new Promise((resolve) => {
+    console.log('🔨 Compiling backend TypeScript...');
+
+    const buildProcess = spawn('npm', ['run', 'build'], {
+      cwd: path.join(__dirname, 'backend'),
+      env: process.env,
+      stdio: 'inherit',
+      shell: true
+    });
+
+    buildProcess.on('close', (code) => {
+      if (code === 0) {
+        console.log('✅ Backend compiled successfully');
+        resolve(true);
+      } else {
+        console.log('❌ Backend compilation failed');
+        resolve(false);
+      }
+    });
+
+    buildProcess.on('error', (error) => {
+      console.log('❌ Backend compilation error:', error.message);
+      resolve(false);
+    });
+  });
+}
 
 // Function to run migrations
 async function runMigrations() {
@@ -59,11 +155,24 @@ async function runMigrations() {
 
 // Start the application
 async function startServers() {
+  // Build Next.js app first
+  const nextBuilt = await buildNextApp();
+  if (!nextBuilt) {
+    console.log('❌ Failed to build Next.js app, cannot continue');
+    process.exit(1);
+  }
+
   // Apply migrations first (only if DATABASE_URL is set)
   if (process.env.DATABASE_URL) {
     await runMigrations();
   } else {
     console.log('⚠️  DATABASE_URL not set, skipping migrations...');
+  }
+
+  // Compile backend before starting
+  const backendCompiled = await compileBackend();
+  if (!backendCompiled) {
+    console.log('⚠️  Backend compilation failed, trying to continue anyway...');
   }
 
   // Get the port from Railway or default to 3000
