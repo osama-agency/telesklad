@@ -18,8 +18,7 @@ RUN cd backend && npm ci --legacy-peer-deps
 COPY . .
 
 # Generate Prisma clients with correct binary targets
-RUN npx prisma generate
-RUN cd backend && npx prisma generate
+RUN cd backend && ./node_modules/.bin/prisma generate
 
 # Build frontend
 RUN npm run build
