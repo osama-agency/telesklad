@@ -3,32 +3,77 @@ const path = require('path');
 
 console.log('🚀 Starting production servers...');
 
-// Start Next.js frontend
-const frontend = spawn('./node_modules/.bin/next', ['start'], {
-  env: { ...process.env, PORT: '3000' },
-  stdio: 'inherit',
-  shell: true
-});
+// Function to run migrations
+async function runMigrations() {
+  return new Promise((resolve) => {
+    console.log('🗄️ Applying database migrations...');
 
-// Start backend
-const backend = spawn('node', ['dist/server.js'], {
-  cwd: path.join(__dirname, 'backend'),
-  env: { ...process.env, PORT: '3011' },
-  stdio: 'inherit',
-  shell: true
-});
+    const migrationProcess = spawn('npx', ['prisma', 'migrate', 'deploy'], {
+      cwd: path.join(__dirname, 'backend'),
+      env: process.env,
+      stdio: 'inherit',
+      shell: true
+    });
 
-// Handle process termination
-process.on('SIGTERM', () => {
-  console.log('Shutting down servers...');
-  frontend.kill();
-  backend.kill();
-  process.exit(0);
-});
+    migrationProcess.on('close', (code) => {
+      if (code === 0) {
+        console.log('✅ Database migrations applied successfully');
+        resolve();
+      } else {
+        console.log('⚠️  Migration failed, continuing anyway...');
+        resolve(); // Continue even if migrations fail
+      }
+    });
 
-process.on('SIGINT', () => {
-  console.log('Shutting down servers...');
-  frontend.kill();
-  backend.kill();
-  process.exit(0);
+    migrationProcess.on('error', (error) => {
+      console.log('⚠️  Migration error:', error.message);
+      resolve(); // Continue even if migrations fail
+    });
+  });
+}
+
+// Start the application
+async function startServers() {
+  // Apply migrations first (only if DATABASE_URL is set)
+  if (process.env.DATABASE_URL) {
+    await runMigrations();
+  } else {
+    console.log('⚠️  DATABASE_URL not set, skipping migrations...');
+  }
+
+  // Start Next.js frontend
+  const frontend = spawn('./node_modules/.bin/next', ['start'], {
+    env: { ...process.env, PORT: '3000' },
+    stdio: 'inherit',
+    shell: true
+  });
+
+  // Start backend
+  const backend = spawn('node', ['dist/server.js'], {
+    cwd: path.join(__dirname, 'backend'),
+    env: { ...process.env, PORT: '3011' },
+    stdio: 'inherit',
+    shell: true
+  });
+
+  // Handle process termination
+  process.on('SIGTERM', () => {
+    console.log('Shutting down servers...');
+    frontend.kill();
+    backend.kill();
+    process.exit(0);
+  });
+
+  process.on('SIGINT', () => {
+    console.log('Shutting down servers...');
+    frontend.kill();
+    backend.kill();
+    process.exit(0);
+  });
+}
+
+// Start everything
+startServers().catch(error => {
+  console.error('Failed to start servers:', error);
+  process.exit(1);
 });
