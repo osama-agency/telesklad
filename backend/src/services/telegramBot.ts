@@ -108,29 +108,16 @@ ${itemsList}
 ⏰ *Создано:* ${timestamp}`
 }
 
-// Создание кнопки WebApp для редактирования заказа
+// Создание кнопок для редактирования заказа (без WebApp)
 function createEditOrderButtons(orderId: string, currentStatus: OrderStatus, sequenceId: number, messageId?: number, chatId?: string): any {
-  const statusInfo = ORDER_STATUSES[currentStatus]
-
-  // Всегда показываем кнопку редактирования, кроме отмененных заказов
+  // Всегда показываем кнопки, кроме отмененных заказов
   if (currentStatus === 'cancelled') {
     return null
   }
 
-  // Используем WebApp или fallback на callback
+  // WebApp URL для ручного перехода
   const webAppUrl = process.env.WEBAPP_URL || 'https://dsgrating.ru/telegram-webapp'
-
-  // WebApp URL для редактирования заказа
   const editUrl = `${webAppUrl}/edit-order.html?orderId=${orderId}&currentStatus=${currentStatus}&sequenceId=${sequenceId}&messageId=${messageId || ''}&chatId=${chatId || ''}&backendUrl=${process.env.BACKEND_URL || 'https://dsgrating.ru'}`
-
-  const keyboard = [[
-    {
-      text: "✏️ Редактировать заказ",
-      web_app: {
-        url: editUrl
-      }
-    }
-  ]]
 
   // Добавляем кнопки быстрого изменения статуса для критических переходов
   const quickActions = []
@@ -150,7 +137,12 @@ function createEditOrderButtons(orderId: string, currentStatus: OrderStatus, seq
     ])
   }
 
-  return { inline_keyboard: [...keyboard, ...quickActions] }
+  // Добавляем кнопку с ссылкой на WebApp
+  quickActions.push([
+    { text: "✏️ Редактировать заказ", url: editUrl }
+  ])
+
+  return { inline_keyboard: quickActions }
 }
 
 // Отправка нового сообщения о заказе
