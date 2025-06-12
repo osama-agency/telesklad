@@ -41,14 +41,18 @@ async function startServers() {
     console.log('⚠️  DATABASE_URL not set, skipping migrations...');
   }
 
-  // Start Next.js frontend
+  // Get the port from Railway or default to 3000
+  const port = process.env.PORT || '3000';
+  console.log(`🌐 Starting Next.js server on port ${port}`);
+
+  // Start Next.js frontend on Railway's assigned port
   const frontend = spawn('./node_modules/.bin/next', ['start'], {
-    env: { ...process.env, PORT: '3000' },
+    env: { ...process.env, PORT: port },
     stdio: 'inherit',
     shell: true
   });
 
-  // Start backend
+  // Start backend on port 3011 (internal)
   const backend = spawn('node', ['dist/server.js'], {
     cwd: path.join(__dirname, 'backend'),
     env: { ...process.env, PORT: '3011' },
