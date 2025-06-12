@@ -1,4 +1,123 @@
-# 🚀 Деплой Telesklad на Railway
+# 🚀 Railway Deployment Guide - Telesklad
+
+## ✅ ИСПРАВЛЕНИЯ ВЫПОЛНЕНЫ
+
+### Проблема с pnpm решена:
+- ❌ Удален `pnpm-lock.yaml` (устаревший)
+- ✅ Создан `package-lock.json` с npm
+- ✅ Обновлен `railway.json` для npm
+- ✅ Добавлен `.npmrc` с правильными настройками
+- ✅ Исправлены версии Prisma в backend
+
+## 🔧 Railway Configuration
+
+### railway.json
+```json
+{
+  "buildCommand": "npm install --legacy-peer-deps --ignore-scripts && npm run build && cd backend && npm install --legacy-peer-deps && npm run build",
+  "startCommand": "npm run start:production"
+}
+```
+
+### .npmrc
+```
+legacy-peer-deps=true
+ignore-scripts=false
+fund=false
+audit=false
+```
+
+## 📦 Package Management
+
+### Root package.json scripts:
+```json
+{
+  "start:production": "concurrently \"PORT=3000 npm run start\" \"cd backend && PORT=3011 npm start\"",
+  "build": "next build",
+  "start": "next start"
+}
+```
+
+### Backend package.json:
+- ✅ Prisma версии синхронизированы: `@prisma/client@5.22.0` + `prisma@5.22.0`
+- ✅ TypeScript компиляция работает
+- ✅ Сервер запускается на порту 3011
+
+## 🌐 Environment Variables (Railway)
+
+Обязательные переменные в Railway:
+```
+NODE_ENV=production
+PORT=3011
+PRISMA_ENGINES_CHECKSUM_IGNORE=true
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+```
+
+Опциональные (для Telegram):
+```
+TELEGRAM_BOT_TOKEN=8159006212:AAEjYn-bU-Nh89crlue9GUJKuv6pV4Z986M
+TELEGRAM_CHAT_ID=-4729817036
+```
+
+## 🏗️ Build Process
+
+1. **Frontend Build**: `npm install --legacy-peer-deps --ignore-scripts && npm run build`
+2. **Backend Build**: `cd backend && npm install --legacy-peer-deps && npm run build`
+3. **Prisma Generate**: Автоматически в backend build
+4. **TypeScript Compile**: `tsc` в backend
+
+## 🚀 Deployment Steps
+
+1. ✅ **GitHub Push**: Изменения отправлены
+2. 🔄 **Railway Auto-Deploy**: Должен начаться автоматически
+3. 📊 **Monitor Logs**: Проверить логи сборки в Railway
+4. 🌐 **Test Endpoints**: После деплоя проверить работу
+
+## 🔍 Troubleshooting
+
+### Если сборка падает:
+1. Проверить логи Railway
+2. Убедиться что PostgreSQL подключен
+3. Проверить environment variables
+4. Перезапустить деплой
+
+### Локальная проверка:
+```bash
+# Frontend
+npm install --legacy-peer-deps --ignore-scripts
+npm run build
+npm run start
+
+# Backend
+cd backend
+npm install --legacy-peer-deps
+./node_modules/.bin/prisma generate
+npx tsc
+PORT=3011 node dist/server.js
+```
+
+## 📋 Architecture
+
+```
+Railway Service
+├── Frontend (Next.js) - Port 3000
+├── Backend (Express/TypeScript) - Port 3011
+├── PostgreSQL Database
+└── Environment Variables
+```
+
+## 🎯 Next Steps
+
+1. Дождаться завершения деплоя в Railway
+2. Проверить работу приложения
+3. Настроить домен (опционально)
+4. Мониторинг и логи
+
+---
+
+**Status**: ✅ Ready for deployment
+**Last Updated**: 12.06.2025
+**Commit**: f78f346 - npm compatibility fixes
 
 ## 📋 Предварительные требования
 
