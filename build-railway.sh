@@ -11,6 +11,15 @@ else
     echo "⚠️  Prisma not found in frontend, skipping..."
 fi
 
+# Step 1.5: Generate iconify icons CSS
+echo "🎨 Generating iconify icons CSS..."
+if [ -f "./node_modules/.bin/tsx" ]; then
+    ./node_modules/.bin/tsx src/assets/iconify-icons/bundle-icons-css.ts
+else
+    echo "⚠️  tsx not found, trying with npx..."
+    npx tsx src/assets/iconify-icons/bundle-icons-css.ts
+fi
+
 # Step 2: Build Next.js with reduced memory usage and skip linting
 echo "🏗️ Building Next.js application..."
 NEXT_TELEMETRY_DISABLED=1 ESLINT_NO_DEV_WARNINGS=true NODE_OPTIONS="--max-old-space-size=1536" ./node_modules/.bin/next build --no-lint || {
