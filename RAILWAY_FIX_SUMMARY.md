@@ -17,7 +17,7 @@ because pnpm-lock.yaml is not up to date with package.json
 ### 2. Обновлен railway.json
 ```json
 {
-  "buildCommand": "npm install --legacy-peer-deps --ignore-scripts && npm run build && cd backend && npm install --legacy-peer-deps && npm run build",
+  "buildCommand": "npm ci --legacy-peer-deps --ignore-scripts && ./node_modules/.bin/prisma generate && npm run build && cd backend && npm install --legacy-peer-deps --ignore-scripts && ./node_modules/.bin/prisma generate && npm run build",
   "startCommand": "npm run start:production"
 }
 ```
@@ -32,6 +32,11 @@ because pnpm-lock.yaml is not up to date with package.json
 - ✅ Исправлена команда `start:production` для Railway
 - ✅ Убраны зависимости от глобальных команд
 
+### 5. Исправлен путь к build-icons
+- ❌ Был неправильный путь: `src/@iconify/build-icons.ts`
+- ✅ Исправлен на: `src/assets/iconify-icons/bundle-icons-css.ts`
+- ✅ Railway build команда обновлена для явного вызова prisma generate
+
 ## 🚀 Результат
 
 ### Локальная проверка:
@@ -44,6 +49,7 @@ because pnpm-lock.yaml is not up to date with package.json
 - ✅ Все изменения зафиксированы в коммитах:
   - `f78f346` - npm compatibility fixes
   - `27e8584` - direct paths for Railway compatibility
+  - `1e57117` - fix build-icons path
 
 ### Railway:
 - 🔄 Автоматический деплой должен начаться после push
@@ -60,5 +66,5 @@ because pnpm-lock.yaml is not up to date with package.json
 ---
 
 **Статус**: ✅ Готово к деплою
-**Последний коммит**: 27e8584
-**Дата**: 12.06.2025 03:50 
+**Последний коммит**: 1e57117
+**Дата**: 12.06.2025 03:55 
