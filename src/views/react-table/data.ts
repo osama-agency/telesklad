@@ -68,3 +68,9 @@ export const columns = [
     size: 100
   }
 ]
+
+// Export data as default for compatibility with existing imports
+export default data
+
+// Type definition for data
+export type DataType = typeof data[0]
