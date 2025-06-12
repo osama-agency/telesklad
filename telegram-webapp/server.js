@@ -3,7 +3,7 @@ const cors = require('cors');
 const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
@@ -12,9 +12,22 @@ app.use(express.json());
 // Статические файлы
 app.use(express.static(__dirname));
 
-// Основной маршрут для WebApp
+// Маршруты для WebApp
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/edit-order.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'edit-order.html'));
+});
+
+// Для тестирования - простой API endpoint
+app.get('/test', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Telegram WebApp server is running',
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Health check
@@ -28,6 +41,7 @@ app.get('/health', (req, res) => {
 
 // Запуск сервера
 app.listen(PORT, () => {
-  console.log(`🚀 Telegram WebApp сервер запущен на порту ${PORT}`);
-  console.log(`📱 Доступен по адресу: http://localhost:${PORT}`);
+  console.log(`🚀 Telegram WebApp server running on http://localhost:${PORT}`);
+  console.log(`📱 Status WebApp: http://localhost:${PORT}/`);
+  console.log(`✏️ Edit WebApp: http://localhost:${PORT}/edit-order.html`);
 });

@@ -108,50 +108,56 @@ ${itemsList}
 ⏰ *Создано:* ${timestamp}`
 }
 
-// Создание кнопки WebApp для изменения статуса
-function createStatusButtons(orderId: string, currentStatus: OrderStatus, sequenceId: number): any {
+// Создание кнопки WebApp для редактирования заказа
+function createEditOrderButtons(orderId: string, currentStatus: OrderStatus, sequenceId: number, messageId?: number, chatId?: string): any {
   const statusInfo = ORDER_STATUSES[currentStatus]
-  const nextStatuses = statusInfo.nextStatuses
 
-  if (nextStatuses.length === 0) {
-    return null // Финальный статус - кнопок нет
+  // Всегда показываем кнопку редактирования, кроме отмененных заказов
+  if (currentStatus === 'cancelled') {
+    return null
   }
 
   // Используем WebApp или fallback на callback
-  const webAppUrl = process.env.WEBAPP_URL
+  const webAppUrl = process.env.WEBAPP_URL || 'https://dsgrating.ru/telegram-webapp'
 
-  if (webAppUrl) {
-    // WebApp URL для деплоя
-    const fullUrl = `${webAppUrl}?orderId=${orderId}&currentStatus=${currentStatus}&sequenceId=${sequenceId}&backendUrl=${process.env.BACKEND_URL || 'http://localhost:3011'}`
+  // WebApp URL для редактирования заказа
+  const editUrl = `${webAppUrl}/edit-order.html?orderId=${orderId}&currentStatus=${currentStatus}&sequenceId=${sequenceId}&messageId=${messageId || ''}&chatId=${chatId || ''}&backendUrl=${process.env.BACKEND_URL || 'https://dsgrating.ru'}`
 
-    const keyboard = [[
-      {
-        text: "🔄 Изменить статус",
-        web_app: {
-          url: fullUrl
-        }
+  const keyboard = [[
+    {
+      text: "✏️ Редактировать заказ",
+      web_app: {
+        url: editUrl
       }
-    ]]
+    }
+  ]]
 
-    return { inline_keyboard: keyboard }
-  } else {
-    // Fallback на обычное меню (для локальной разработки)
-    const keyboard = [[
-      {
-        text: "🔄 Изменить статус",
-        callback_data: `change_status_${orderId}`
-      }
-    ]]
+  // Добавляем кнопки быстрого изменения статуса для критических переходов
+  const quickActions = []
 
-    return { inline_keyboard: keyboard }
+  if (currentStatus === 'pending') {
+    quickActions.push([
+      { text: "✅ Подтвердить", callback_data: `status_${orderId}_confirmed` },
+      { text: "❌ Отменить", callback_data: `status_${orderId}_cancelled` }
+    ])
+  } else if (currentStatus === 'ready_for_payment') {
+    quickActions.push([
+      { text: "💳 Оплачено", callback_data: `status_${orderId}_paid` }
+    ])
+  } else if (currentStatus === 'delivering') {
+    quickActions.push([
+      { text: "📦 Получено", callback_data: `status_${orderId}_received` }
+    ])
   }
+
+  return { inline_keyboard: [...keyboard, ...quickActions] }
 }
 
 // Отправка нового сообщения о заказе
 export async function sendOrderNotification(order: OrderData): Promise<{ success: boolean; messageId?: number; error?: string }> {
   try {
     const message = formatOrderMessage(order)
-    const keyboard = createStatusButtons(order.id, order.status, order.sequenceId)
+    const keyboard = createEditOrderButtons(order.id, order.status, order.sequenceId)
 
     const requestBody: any = {
       chat_id: TELEGRAM_CHAT_ID,
@@ -201,7 +207,7 @@ export async function updateOrderMessage(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const message = formatOrderMessage(order)
-    const keyboard = createStatusButtons(order.id, order.status, order.sequenceId)
+    const keyboard = createEditOrderButtons(order.id, order.status, order.sequenceId, messageId, String(chatId))
 
     const requestBody: any = {
       chat_id: chatId,

@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Редактировать заказ</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            padding: 16px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 420px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: var(--tg-theme-secondary-bg-color, #f8f9fa);
+            border-radius: 12px;
+        }
+
+        .header h1 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            font-size: 14px;
+            color: var(--tg-theme-hint-color, #6c757d);
+        }
+
+        .status-section {
+            margin-bottom: 20px;
+            padding: 16px;
+            background: var(--tg-theme-secondary-bg-color, #f8f9fa);
+            border-radius: 12px;
+        }
+
+        .status-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--tg-theme-section-separator-color, #e9ecef);
+            border-radius: 8px;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            font-size: 14px;
+        }
+
+        .items-section {
+            margin-bottom: 20px;
+        }
+
+        .items-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .item-card {
+            background: var(--tg-theme-secondary-bg-color, #f8f9fa);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid var(--tg-theme-section-separator-color, #e9ecef);
+        }
+
+        .item-name {
+            font-size: 15px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--tg-theme-text-color, #000000);
+        }
+
+        .item-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            align-items: end;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-label {
+            font-size: 12px;
+            color: var(--tg-theme-hint-color, #6c757d);
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+
+        .input-field {
+            padding: 8px 12px;
+            border: 1px solid var(--tg-theme-section-separator-color, #e9ecef);
+            border-radius: 6px;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--tg-theme-button-color, #007aff);
+        }
+
+        .total-display {
+            padding: 8px 12px;
+            background: var(--tg-theme-button-color, #007aff);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .summary {
+            background: var(--tg-theme-secondary-bg-color, #f8f9fa);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border: 2px solid var(--tg-theme-button-color, #007aff);
+        }
+
+        .summary-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--tg-theme-button-color, #007aff);
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .summary-total {
+            display: flex;
+            justify-content: space-between;
+            font-size: 16px;
+            font-weight: 600;
+            padding-top: 8px;
+            border-top: 1px solid var(--tg-theme-section-separator-color, #e9ecef);
+            color: var(--tg-theme-button-color, #007aff);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--tg-theme-hint-color, #6c757d);
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--tg-theme-hint-color, #e9ecef);
+            border-top: 3px solid var(--tg-theme-button-color, #007aff);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .success-container {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .success-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .success-title {
+            color: var(--tg-theme-text-color, #000);
+            margin-bottom: 8px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .success-message {
+            color: var(--tg-theme-hint-color, #6c757d);
+            font-size: 14px;
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .quantity-btn {
+            width: 32px;
+            height: 32px;
+            border: 1px solid var(--tg-theme-section-separator-color, #e9ecef);
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .quantity-btn:hover {
+            background: var(--tg-theme-button-color, #007aff);
+            color: var(--tg-theme-button-text-color, #ffffff);
+        }
+
+        .quantity-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .quantity-input {
+            width: 60px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✏️ Редактировать заказ</h1>
+            <p id="order-info">Заказ #<span id="sequence-id">...</span></p>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            Загрузка заказа...
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div id="content" style="display: none;">
+            <!-- Секция статуса -->
+            <div class="status-section">
+                <div class="status-title">
+                    🔄 Статус заказа
+                </div>
+                <select id="status-select" class="status-select">
+                    <option value="pending">🔄 Ожидает подтверждения</option>
+                    <option value="confirmed">✅ Подтверждено</option>
+                    <option value="ready_for_payment">💰 Готов к оплате</option>
+                    <option value="paid">💳 Оплачено</option>
+                    <option value="in_transit">🚚 В пути</option>
+                    <option value="delivering">🚛 Доставляется</option>
+                    <option value="received">📦 Получено</option>
+                    <option value="cancelled">❌ Отменено</option>
+                </select>
+            </div>
+
+            <!-- Секция товаров -->
+            <div class="items-section">
+                <div class="items-title">
+                    📦 Товары в заказе
+                </div>
+                <div id="items-list"></div>
+            </div>
+
+            <!-- Итоговая сумма -->
+            <div class="summary">
+                <div class="summary-title">💰 Итого</div>
+                <div class="summary-row">
+                    <span>Товары:</span>
+                    <span id="items-total">0.00 ₺</span>
+                </div>
+                <div class="summary-row">
+                    <span>Логистика:</span>
+                    <span id="logistics-cost">0.00 ₺</span>
+                </div>
+                <div class="summary-total">
+                    <span>Общая сумма:</span>
+                    <span id="total-cost">0.00 ₺</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Инициализация Telegram WebApp
+        const tg = window.Telegram?.WebApp;
+        if (tg) {
+            tg.ready();
+            tg.expand();
+
+            // Настраиваем главную кнопку
+            tg.MainButton.text = "💾 Сохранить изменения";
+            tg.MainButton.onClick(saveOrder);
+        }
+
+        let orderData = null;
+        let originalItems = [];
+
+        // Получение параметров из URL
+        function getUrlParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return {
+                orderId: urlParams.get('orderId'),
+                messageId: urlParams.get('messageId'),
+                chatId: urlParams.get('chatId'),
+                backendUrl: urlParams.get('backendUrl') || 'http://localhost:3011'
+            };
+        }
+
+        // Показать ошибку
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            document.getElementById('loading').style.display = 'none';
+            if (tg) tg.MainButton.hide();
+        }
+
+        // Показать успех
+        function showSuccess(message) {
+            const container = document.querySelector('.container');
+            container.innerHTML = `
+                <div class="success-container">
+                    <div class="success-icon">✅</div>
+                    <h2 class="success-title">Готово!</h2>
+                    <p class="success-message">${message}</p>
+                </div>
+            `;
+
+            if (tg) {
+                setTimeout(() => tg.close(), 1500);
+            }
+        }
+
+        // Создать элемент товара
+        function createItemElement(item, index) {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'item-card';
+            itemDiv.innerHTML = `
+                <div class="item-name">${item.name}</div>
+                <div class="item-details">
+                    <div class="input-group">
+                        <label class="input-label">Количество</label>
+                        <div class="quantity-controls">
+                            <button class="quantity-btn" onclick="changeQuantity(${index}, -1)">−</button>
+                            <input type="number"
+                                   class="input-field quantity-input"
+                                   value="${item.quantity}"
+                                   min="0"
+                                   onchange="updateQuantity(${index}, this.value)"
+                                   id="quantity-${index}">
+                            <button class="quantity-btn" onclick="changeQuantity(${index}, 1)">+</button>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Цена за шт.</label>
+                        <input type="number"
+                               class="input-field"
+                               value="${item.price}"
+                               step="0.01"
+                               onchange="updatePrice(${index}, this.value)"
+                               id="price-${index}">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Сумма</label>
+                        <div class="total-display" id="total-${index}">${(item.quantity * item.price).toFixed(2)} ₺</div>
+                    </div>
+                </div>
+            `;
+            return itemDiv;
+        }
+
+        // Изменить количество кнопками
+        function changeQuantity(index, delta) {
+            const input = document.getElementById(`quantity-${index}`);
+            const newValue = Math.max(0, parseInt(input.value) + delta);
+            input.value = newValue;
+            updateQuantity(index, newValue);
+        }
+
+        // Обновить количество товара
+        function updateQuantity(index, quantity) {
+            const qty = Math.max(0, parseInt(quantity) || 0);
+            orderData.items[index].quantity = qty;
+            updateItemTotal(index);
+            updateSummary();
+        }
+
+        // Обновить цену товара
+        function updatePrice(index, price) {
+            const prc = Math.max(0, parseFloat(price) || 0);
+            orderData.items[index].price = prc;
+            updateItemTotal(index);
+            updateSummary();
+        }
+
+        // Обновить сумму товара
+        function updateItemTotal(index) {
+            const item = orderData.items[index];
+            const total = item.quantity * item.price;
+            item.total = total;
+            document.getElementById(`total-${index}`).textContent = `${total.toFixed(2)} ₺`;
+        }
+
+        // Обновить общую сумму
+        function updateSummary() {
+            const itemsTotal = orderData.items.reduce((sum, item) => sum + item.total, 0);
+            const logisticsCost = orderData.logisticsCost || 0;
+            const totalCost = itemsTotal + logisticsCost;
+
+            document.getElementById('items-total').textContent = `${itemsTotal.toFixed(2)} ₺`;
+            document.getElementById('logistics-cost').textContent = `${logisticsCost.toFixed(2)} ₺`;
+            document.getElementById('total-cost').textContent = `${totalCost.toFixed(2)} ₺`;
+
+            orderData.totalCost = totalCost;
+
+            // Показываем кнопку сохранения если есть изменения
+            if (hasChanges()) {
+                if (tg) tg.MainButton.show();
+            } else {
+                if (tg) tg.MainButton.hide();
+            }
+        }
+
+        // Проверить наличие изменений
+        function hasChanges() {
+            const currentStatus = document.getElementById('status-select').value;
+            if (currentStatus !== orderData.originalStatus) return true;
+
+            for (let i = 0; i < orderData.items.length; i++) {
+                const current = orderData.items[i];
+                const original = originalItems[i];
+                if (current.quantity !== original.quantity || current.price !== original.price) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Сохранить заказ
+        async function saveOrder() {
+            const params = getUrlParams();
+            const newStatus = document.getElementById('status-select').value;
+
+            if (tg) {
+                tg.MainButton.showProgress();
+                tg.MainButton.text = "Сохранение...";
+            }
+
+            try {
+                // Обновляем товары
+                const updateItemsResponse = await fetch(`${params.backendUrl}/api/purchases/${params.orderId}/items`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        items: orderData.items.map(item => ({
+                            id: item.id,
+                            quantity: item.quantity,
+                            price: item.price,
+                            total: item.total
+                        })),
+                        totalCost: orderData.totalCost
+                    })
+                });
+
+                if (!updateItemsResponse.ok) {
+                    throw new Error('Ошибка обновления товаров');
+                }
+
+                // Обновляем статус если изменился
+                if (newStatus !== orderData.originalStatus) {
+                    const updateStatusResponse = await fetch(`${params.backendUrl}/api/purchases/${params.orderId}/status`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            status: newStatus,
+                            source: 'telegram_webapp',
+                            messageId: params.messageId,
+                            chatId: params.chatId
+                        })
+                    });
+
+                    if (!updateStatusResponse.ok) {
+                        throw new Error('Ошибка обновления статуса');
+                    }
+                }
+
+                showSuccess('Заказ успешно обновлен!');
+
+            } catch (error) {
+                console.error('Ошибка сохранения:', error);
+                showError(`Ошибка: ${error.message}`);
+
+                if (tg) {
+                    tg.MainButton.hideProgress();
+                    tg.MainButton.text = "💾 Сохранить изменения";
+                }
+            }
+        }
+
+        // Загрузить данные заказа
+        async function loadOrder() {
+            const params = getUrlParams();
+
+            if (!params.orderId) {
+                showError('Не указан ID заказа');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${params.backendUrl}/api/purchases/${params.orderId}`);
+
+                if (!response.ok) {
+                    throw new Error('Заказ не найден');
+                }
+
+                const result = await response.json();
+                orderData = result.data;
+                orderData.originalStatus = orderData.status;
+                originalItems = JSON.parse(JSON.stringify(orderData.items));
+
+                // Обновляем интерфейс
+                document.getElementById('sequence-id').textContent = orderData.sequenceId || orderData.id;
+                document.getElementById('status-select').value = orderData.status;
+
+                // Создаем список товаров
+                const itemsList = document.getElementById('items-list');
+                itemsList.innerHTML = '';
+                orderData.items.forEach((item, index) => {
+                    itemsList.appendChild(createItemElement(item, index));
+                });
+
+                // Обновляем сумму
+                updateSummary();
+
+                // Добавляем обработчик изменения статуса
+                document.getElementById('status-select').addEventListener('change', () => {
+                    if (hasChanges()) {
+                        if (tg) tg.MainButton.show();
+                    } else {
+                        if (tg) tg.MainButton.hide();
+                    }
+                });
+
+                // Показываем контент
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+
+            } catch (error) {
+                console.error('Ошибка загрузки заказа:', error);
+                showError(`Ошибка загрузки: ${error.message}`);
+            }
+        }
+
+        // Запуск при загрузке страницы
+        document.addEventListener('DOMContentLoaded', loadOrder);
+    </script>
+</body>
+</html>

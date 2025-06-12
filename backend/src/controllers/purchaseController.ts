@@ -288,6 +288,99 @@ export const updatePurchase = async (req: Request, res: Response) => {
   }
 }
 
+// PUT /api/purchases/:id/items - обновить товары в заказе
+export const updatePurchaseItems = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+    const { items, totalCost } = req.body
+
+    if (!items || !Array.isArray(items)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Items array is required'
+      })
+    }
+
+    // Обновляем товары в транзакции
+    const result = await prisma.$transaction(async (tx) => {
+      // Обновляем каждый товар
+      for (const item of items) {
+        await tx.purchaseItem.update({
+          where: { id: item.id },
+          data: {
+            quantity: item.quantity,
+            price: item.price,
+            total: item.total
+          }
+        })
+      }
+
+      // Обновляем общую сумму заказа
+      const purchase = await tx.purchase.update({
+        where: { id },
+        data: { totalCost },
+        include: { items: true }
+      })
+
+      return purchase
+    })
+
+    console.log(`✅ Товары в заказе ${id} обновлены`)
+
+    // Если есть telegramMessageId, обновляем сообщение в Telegram
+    if ((result as any).telegramMessageId) {
+      const { updateOrderMessage } = await import('../services/telegramBot')
+
+      const orderData = {
+        id: result.id,
+        sequenceId: (result as any).sequenceId,
+        status: result.status as any,
+        totalCost: Number(result.totalCost),
+        isUrgent: result.isUrgent,
+        supplier: result.supplier || undefined,
+        items: result.items.map((item: any) => ({
+          name: item.name,
+          quantity: item.quantity,
+          price: Number(item.price),
+          total: Number(item.total)
+        })),
+        createdAt: result.createdAt
+      }
+
+      const telegramResult = await updateOrderMessage(
+        process.env.TELEGRAM_CHAT_ID || '-4729817036',
+        (result as any).telegramMessageId,
+        orderData
+      )
+
+      if (telegramResult.success) {
+        console.log('✅ Сообщение в Telegram обновлено')
+      } else {
+        console.error('❌ Ошибка обновления сообщения в Telegram:', telegramResult.error)
+      }
+    }
+
+    res.json({
+      success: true,
+      data: result
+    })
+  } catch (error) {
+    console.error('❌ Ошибка обновления товаров:', error)
+
+    if ((error as any).code === 'P2025') {
+      return res.status(404).json({
+        success: false,
+        error: 'Purchase or item not found'
+      })
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update purchase items'
+    })
+  }
+}
+
 // DELETE /api/purchases/:id - удалить заказ
 export const deletePurchase = async (req: Request, res: Response) => {
   try {

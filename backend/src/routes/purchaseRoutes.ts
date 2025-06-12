@@ -5,6 +5,7 @@ import {
   createPurchase,
   updatePurchaseStatus,
   updatePurchase,
+  updatePurchaseItems,
   deletePurchase
 } from '../controllers/purchaseController'
 
@@ -24,6 +25,9 @@ router.patch('/:id/status', updatePurchaseStatus)
 
 // PUT /api/purchases/:id - обновить заказ
 router.put('/:id', updatePurchase)
+
+// PUT /api/purchases/:id/items - обновить товары в заказе
+router.put('/:id/items', updatePurchaseItems)
 
 // DELETE /api/purchases/:id - удалить заказ
 router.delete('/:id', deletePurchase)
