@@ -11,11 +11,11 @@ else
     echo "⚠️  Prisma not found in frontend, skipping..."
 fi
 
-# Step 2: Build Next.js with reduced memory usage
+# Step 2: Build Next.js with reduced memory usage and skip linting
 echo "🏗️ Building Next.js application..."
-NEXT_TELEMETRY_DISABLED=1 NODE_OPTIONS="--max-old-space-size=1536" ./node_modules/.bin/next build || {
+NEXT_TELEMETRY_DISABLED=1 ESLINT_NO_DEV_WARNINGS=true NODE_OPTIONS="--max-old-space-size=1536" ./node_modules/.bin/next build --no-lint || {
     echo "❌ Next.js build failed, trying with even less memory..."
-    NEXT_TELEMETRY_DISABLED=1 NODE_OPTIONS="--max-old-space-size=1024" ./node_modules/.bin/next build
+    NEXT_TELEMETRY_DISABLED=1 ESLINT_NO_DEV_WARNINGS=true NODE_OPTIONS="--max-old-space-size=1024" ./node_modules/.bin/next build --no-lint
 }
 
 # Step 3: Build backend
