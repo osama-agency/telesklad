@@ -16,6 +16,8 @@
 # production
 /build
 /dist
+# Keep backend dist for Railway deployment
+!backend/dist/
 
 # misc
 .DS_Store
@@ -108,7 +110,7 @@ out
 
 # Nuxt.js build / generate output
 .nuxt
-dist
+# dist (but keep backend/dist for Railway)
 
 # Gatsby files
 .cache/
