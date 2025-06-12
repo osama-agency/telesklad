@@ -25,6 +25,8 @@ services:
       - NEXTAUTH_SECRET=9u7lZjpjZUmX4CZARxgEgns04CYpdq7NEA8UZDQUGHg=
       - NEXTAUTH_URL=https://dsgrating.ru
       - BACKEND_URL=http://localhost:3011
+    volumes:
+      - webapp_files:/app/telegram-webapp
     depends_on:
       postgres:
         condition: service_healthy
@@ -39,8 +41,10 @@ services:
     volumes:
       - ./nginx-ssl.conf:/etc/nginx/nginx.conf
       - ./ssl:/etc/nginx/ssl
+      - webapp_files:/app/telegram-webapp
     depends_on:
       - app
 
 volumes:
   postgres_data:
+  webapp_files:
