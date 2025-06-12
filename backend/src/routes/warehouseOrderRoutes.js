@@ -1,5 +1,5 @@
 const express = require('express');
-const WarehouseOrderController = require('../controllers/WarehouseOrderController');
+const WarehouseOrderController = require('../controllers/warehouseOrderController');
 const { validateWarehouseOrder } = require('../middleware/validation');
 
 const router = express.Router();

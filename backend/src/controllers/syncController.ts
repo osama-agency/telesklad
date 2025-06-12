@@ -662,3 +662,10 @@ export const autoSyncAll = async (): Promise<any> => {
     throw error;
   }
 };
+
+// CommonJS экспорты для совместимости с routes
+module.exports = {
+  syncOrdersForUser: syncOrders,
+  getSyncedOrders: getOrders,
+  triggerAutoSync: syncOrders // используем тот же метод
+};

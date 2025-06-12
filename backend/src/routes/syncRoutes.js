@@ -1,5 +1,5 @@
 const express = require('express');
-const SyncController = require('../controllers/SyncController');
+const SyncController = require('../controllers/syncController');
 
 const router = express.Router();
 

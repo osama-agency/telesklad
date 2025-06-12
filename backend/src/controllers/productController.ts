@@ -406,3 +406,16 @@ export const updateProductAnalytics = async (req: Request, res: Response) => {
     });
   }
 };
+
+// CommonJS экспорты для совместимости с routes
+module.exports = {
+  getProducts,
+  getProductById,
+  updateProductCost,
+  hideProduct,
+  hideProductByName,
+  getHiddenProducts,
+  updateProductStock,
+  updateProductPrice,
+  updateProductAnalytics
+};
