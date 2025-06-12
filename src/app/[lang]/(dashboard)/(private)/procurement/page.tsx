@@ -35,6 +35,14 @@ import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
 import DialogActions from '@mui/material/DialogActions'
 import Divider from '@mui/material/Divider'
+import Stack from '@mui/material/Stack'
+import CardHeader from '@mui/material/CardHeader'
+import Accordion from '@mui/material/Accordion'
+import AccordionSummary from '@mui/material/AccordionSummary'
+import AccordionDetails from '@mui/material/AccordionDetails'
+import FormControl from '@mui/material/FormControl'
+import Select from '@mui/material/Select'
+import MenuItem from '@mui/material/MenuItem'
 import { alpha, useTheme } from '@mui/material/styles'
 
 // Icons
@@ -130,6 +138,7 @@ const ProcurementPage = () => {
 
   // Загрузка списка товаров
   useEffect(() => {
+    console.log('🚀 useEffect запущен - загружаем данные')
     fetchProducts()
     fetchPurchaseHistory()
   }, [])
@@ -159,63 +168,49 @@ const ProcurementPage = () => {
 
   const fetchPurchaseHistory = async () => {
     try {
+      console.log('🔄 Загружаю историю закупок...')
       const response = await fetch('/api/purchases')
       const data = await response.json()
+      console.log('📥 Получены данные:', data)
 
       if (data.success && Array.isArray(data.data)) {
-        setPurchaseHistory(data.data)
+        // Преобразуем данные из API в нужный формат
+        const currentExchangeRate = 2.13 // Используем фиксированный курс
+        const transformedPurchases = data.data.map((purchase: any) => ({
+          id: purchase.id,
+          sequenceId: purchase.sequenceId,
+          date: purchase.createdAt,
+          statusUpdatedAt: purchase.statusUpdatedAt,
+          supplier: purchase.supplier || (purchase.isUrgent ? '🔥 Срочная закупка' : 'Основной поставщик'),
+          items: purchase.items.map((item: any) => ({
+            id: item.id,
+            product: {
+              id: item.productId || 0,
+              name: item.name,
+              sku: `SKU-${item.productId || 0}`,
+              currentStock: 0
+            },
+            quantity: item.quantity,
+            costTry: parseFloat(item.price),
+            costRub: parseFloat(item.price) * currentExchangeRate,
+            totalRub: parseFloat(item.total)
+          })),
+          totalAmount: parseFloat(purchase.totalCost),
+          logisticsCost: parseFloat(purchase.logisticsCost || '0'),
+          status: purchase.status,
+          isUrgent: purchase.isUrgent
+        }))
+        console.log('✅ Преобразованные данные:', transformedPurchases)
+        console.log('📊 Количество закупок:', transformedPurchases.length)
+        setPurchaseHistory(transformedPurchases)
+        console.log('💾 Состояние обновлено')
       } else {
-        // Fallback с тестовыми данными
-        const mockPurchases: Purchase[] = [
-        {
-            id: 'purchase_1001',
-            date: '2024-12-10T10:00:00.000Z',
-          supplier: 'Основной поставщик',
-            items: [
-              {
-                id: 'item-1',
-                product: { id: 1, name: 'Attex 40mg', sku: 'SKU-1', currentStock: 5 },
-                quantity: 10,
-                costTry: 85.50,
-                costRub: 182.12,
-                totalRub: 1821.15
-              },
-              {
-                id: 'item-2',
-                product: { id: 2, name: 'Atominex 25mg', sku: 'SKU-2', currentStock: 3 },
-                quantity: 20,
-                costTry: 120.00,
-                costRub: 255.60,
-                totalRub: 5112.00
-              }
-            ],
-            totalAmount: 6933.15,
-            status: 'in_transit',
-            isUrgent: false
-        },
-        {
-            id: 'purchase_1002',
-            date: '2024-12-08T14:30:00.000Z',
-          supplier: '🔥 Срочная закупка',
-            items: [
-              {
-                id: 'item-3',
-                product: { id: 3, name: 'Strattera 10mg', sku: 'SKU-3', currentStock: 0 },
-                quantity: 15,
-                costTry: 95.00,
-                costRub: 202.35,
-                totalRub: 3035.25
-              }
-            ],
-            totalAmount: 3035.25,
-            status: 'received',
-            isUrgent: true
-        }
-      ]
-      setPurchaseHistory(mockPurchases)
+        console.log('❌ Данные не получены или неправильный формат')
+        setPurchaseHistory([])
       }
     } catch (error) {
       console.error('❌ Error fetching purchase history:', error)
+      console.error('❌ Детали ошибки:', error instanceof Error ? error.message : 'Unknown error')
       setPurchaseHistory([])
       showSnackbar('Не удалось загрузить историю закупок', 'error')
     }
@@ -337,45 +332,7 @@ const ProcurementPage = () => {
         console.warn('Не удалось добавить расход:', error)
       }
 
-      // Отправить уведомление в Telegram
-      try {
-        const telegramMessage = `📦 *ЗАКУПКА #${purchaseData.data?.sequenceId || 'unknown'}*\n\n` +
-          `🔥 ${isUrgentPurchase ? 'СРОЧНАЯ ЗАКУПКА' : 'Обычная закупка'}\n` +
-          `📊 Позиций: ${totals.totalPositions}\n` +
-          `💰 Сумма: ${totals.totalAmount.toLocaleString('ru-RU')} ₽\n\n` +
-          `📋 *Состав закупки:*\n` +
-          purchaseItems.map(item =>
-            `• ${item.product.name} - ${item.quantity} шт × ${item.costTry.toFixed(2)} ₺`
-          ).join('\n')
-
-        console.log('📤 Отправляю уведомление в Telegram:', {
-          message: telegramMessage,
-          type: 'purchase',
-          purchaseId: purchaseData.data?.id,
-          currentStatus: 'pending'
-        })
-
-        const telegramResponse = await fetch('/api/telegram', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message: telegramMessage,
-            type: 'purchase',
-            purchaseId: purchaseData.data?.id,
-            currentStatus: 'pending'
-          })
-        })
-
-        const telegramResult = await telegramResponse.json()
-        console.log('📥 Ответ от Telegram API:', telegramResult)
-
-        if (!telegramResponse.ok) {
-          throw new Error(`Telegram API error: ${JSON.stringify(telegramResult)}`)
-        }
-      } catch (telegramError) {
-        console.error('❌ Ошибка отправки в Telegram:', telegramError)
-        showSnackbar('Не удалось отправить уведомление в Telegram', 'error')
-      }
+      // Уведомление в Telegram отправляется автоматически из backend
 
       showSnackbar(`Закупка #${purchaseData.data?.sequenceId || 'unknown'} создана успешно! 📦`, 'success')
       setPurchaseItems([])
@@ -411,49 +368,7 @@ const ProcurementPage = () => {
           : purchase
       ))
 
-      // Отправляем обновление в Telegram
-      try {
-        const purchase = safePurchaseHistory.find(p => p.id === purchaseId)
-        if (purchase) {
-          const statusEmoji = {
-            pending: '⏳',
-            paid: '💰',
-            in_transit: '🚚',
-            delivering: '🚛',
-            received: '✅',
-            cancelled: '❌'
-          }
-
-          const statusText = {
-            pending: 'Ожидает',
-            paid: 'Оплачено',
-            in_transit: 'В пути',
-            delivering: 'Доставляется',
-            received: 'Получено',
-            cancelled: 'Отменено'
-          }
-
-          const telegramMessage = `🔄 *ОБНОВЛЕНИЕ СТАТУСА ЗАКУПКИ #${purchase.sequenceId}*\n\n` +
-            `${statusEmoji[newStatus]} *Новый статус:* ${statusText[newStatus]}\n\n` +
-            `📊 Позиций: ${purchase.items.length}\n` +
-            `💰 Сумма: ${purchase.totalAmount.toLocaleString('ru-RU')} ₽\n\n` +
-            `📋 *Состав закупки:*\n` +
-            purchase.items.map(item =>
-              `• ${item.product.name} - ${item.quantity} шт`
-            ).join('\n')
-
-          await fetch('/api/telegram', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              message: telegramMessage,
-              type: 'info'
-            })
-          })
-        }
-      } catch (telegramError) {
-        console.warn('Не удалось отправить обновление в Telegram:', telegramError)
-      }
+      // Уведомление в Telegram обновляется автоматически из backend
 
       const updatedPurchase = safePurchaseHistory.find(p => p.id === purchaseId)
       showSnackbar(`Статус закупки #${updatedPurchase?.sequenceId || purchaseId} обновлен`, 'success')
@@ -558,6 +473,12 @@ const ProcurementPage = () => {
   }, [purchaseItems, receiveModalOpen])
 
   const safePurchaseHistory = Array.isArray(purchaseHistory) ? purchaseHistory : []
+
+  // Логирование для отладки
+  console.log('🔍 Текущее состояние purchaseHistory:', purchaseHistory)
+  console.log('🔍 safePurchaseHistory длина:', safePurchaseHistory.length)
+
+
 
   return (
     <>
@@ -853,10 +774,503 @@ const ProcurementPage = () => {
               </Box>
 
               <TabPanel value={tabValue} index={0}>
+                {/* МОБИЛЬНАЯ ВЕРСИЯ - КАРТОЧКИ */}
+                <Box sx={{ display: { xs: 'block', lg: 'none' }, mb: 2 }}>
+                  {safePurchaseHistory.length === 0 ? (
+                    <Card
+                      elevation={0}
+                      sx={{
+                        p: 6,
+                        textAlign: 'center',
+                        border: `1px dashed ${theme.palette.divider}`,
+                        borderRadius: 3
+                      }}
+                    >
+                      <Box sx={{ fontSize: '4rem', opacity: 0.3, mb: 2 }}>📋</Box>
+                      <Typography variant="h6" color="text.secondary" fontWeight={500}>
+                        История закупок пуста
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Создайте первую закупку, чтобы увидеть её здесь
+                      </Typography>
+                    </Card>
+                  ) : (
+                    <Stack spacing={2}>
+                      {safePurchaseHistory.map((purchase) => (
+                        <Card
+                          key={purchase.id}
+                          elevation={0}
+                          sx={{
+                            position: 'relative',
+                            border: `1px solid ${alpha(theme.palette.divider, 0.06)}`,
+                            borderRadius: 4,
+                            overflow: 'hidden',
+                            backdropFilter: 'blur(20px)',
+                            bgcolor: theme.palette.mode === 'dark'
+                              ? alpha(theme.palette.background.paper, 0.8)
+                              : alpha(theme.palette.background.paper, 0.9),
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            ...(purchase.status === 'cancelled' && {
+                              opacity: 0.5,
+                              filter: 'grayscale(0.3)'
+                            }),
+                            '&:hover': {
+                              transform: 'translateY(-4px) scale(1.01)',
+                              boxShadow: theme.palette.mode === 'dark'
+                                ? '0 20px 60px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.3)'
+                                : '0 20px 60px rgba(0, 0, 0, 0.15), 0 8px 24px rgba(0, 0, 0, 0.08)',
+                              borderColor: alpha(theme.palette.primary.main, 0.3),
+                              '&::before': {
+                                opacity: 1
+                              }
+                            },
+                            '&::before': {
+                              content: '""',
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.02)} 0%, ${alpha(theme.palette.secondary.main, 0.02)} 100%)`,
+                              opacity: 0,
+                              transition: 'opacity 0.3s ease',
+                              pointerEvents: 'none',
+                              zIndex: 0
+                            },
+                            '& > *': {
+                              position: 'relative',
+                              zIndex: 1
+                            }
+                          }}
+                        >
+                          {/* Заголовок карточки */}
+                          <CardHeader
+                            sx={{
+                              pb: 1.5,
+                              pt: 2.5,
+                              px: 3,
+                              background: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.4)} 0%, ${alpha(theme.palette.background.default, 0.2)} 100%)`,
+                              backdropFilter: 'blur(12px)',
+                              borderBottom: `1px solid ${alpha(theme.palette.divider, 0.03)}`
+                            }}
+                            title={
+                              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                  {purchase.isUrgent && (
+                                    <Box
+                                      sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        width: 24,
+                                        height: 24,
+                                        borderRadius: '50%',
+                                        bgcolor: alpha('#ef4444', 0.15),
+                                        animation: 'pulse 2s infinite'
+                                      }}
+                                    >
+                                      <span style={{ fontSize: '0.75rem' }}>🔥</span>
+                                    </Box>
+                                  )}
+                                  <Typography
+                                    variant="h6"
+                                    sx={{
+                                      fontSize: '1.125rem',
+                                      fontWeight: 700,
+                                      fontFamily: '-apple-system, "SF Pro Display", "Inter", system-ui, sans-serif',
+                                      color: 'text.primary',
+                                      letterSpacing: '-0.02em'
+                                    }}
+                                  >
+                                    #{purchase.sequenceId || purchase.id.split('_')[1] || purchase.id.slice(-4)}
+                                  </Typography>
+                                  <Chip
+                                    size="small"
+                                    label={purchase.isUrgent ? 'Срочно' : 'Обычная'}
+                                    sx={{
+                                      height: 20,
+                                      fontSize: '0.6875rem',
+                                      fontWeight: 600,
+                                      bgcolor: purchase.isUrgent
+                                        ? alpha('#ef4444', 0.12)
+                                        : alpha(theme.palette.primary.main, 0.08),
+                                      color: purchase.isUrgent
+                                        ? '#ef4444'
+                                        : theme.palette.primary.main,
+                                      border: 'none',
+                                      '& .MuiChip-label': {
+                                        px: 1
+                                      }
+                                    }}
+                                  />
+                                </Box>
+
+                                {/* Интерактивный статус */}
+                                <FormControl size="small" sx={{ minWidth: 120 }}>
+                                  <Select
+                                    value={purchase.status}
+                                    onChange={(e) => handleStatusChange(purchase.id, e.target.value as any)}
+                                    variant="outlined"
+                                    sx={{
+                                      fontSize: '0.75rem',
+                                      fontWeight: 600,
+                                      height: 32,
+                                      borderRadius: 3,
+                                      '& .MuiOutlinedInput-notchedOutline': {
+                                        border: 'none'
+                                      },
+                                      '& .MuiSelect-select': {
+                                        py: 0.5,
+                                        px: 1.5,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 0.5,
+                                        borderRadius: 3
+                                      },
+                                      ...(purchase.status === 'pending' && {
+                                        bgcolor: alpha('#f59e0b', 0.12),
+                                        color: '#f59e0b',
+                                        '& .MuiSelect-select': {
+                                          bgcolor: alpha('#f59e0b', 0.12),
+                                        },
+                                        '&:hover': {
+                                          bgcolor: alpha('#f59e0b', 0.18),
+                                        }
+                                      }),
+                                      ...(purchase.status === 'paid' && {
+                                        bgcolor: alpha('#10b981', 0.12),
+                                        color: '#10b981',
+                                        '& .MuiSelect-select': {
+                                          bgcolor: alpha('#10b981', 0.12),
+                                        },
+                                        '&:hover': {
+                                          bgcolor: alpha('#10b981', 0.18),
+                                        }
+                                      }),
+                                      ...(purchase.status === 'in_transit' && {
+                                        bgcolor: alpha('#3b82f6', 0.12),
+                                        color: '#3b82f6',
+                                        '& .MuiSelect-select': {
+                                          bgcolor: alpha('#3b82f6', 0.12),
+                                        },
+                                        '&:hover': {
+                                          bgcolor: alpha('#3b82f6', 0.18),
+                                        }
+                                      }),
+                                      ...(purchase.status === 'delivering' && {
+                                        bgcolor: alpha('#8b5cf6', 0.12),
+                                        color: '#8b5cf6',
+                                        '& .MuiSelect-select': {
+                                          bgcolor: alpha('#8b5cf6', 0.12),
+                                        },
+                                        '&:hover': {
+                                          bgcolor: alpha('#8b5cf6', 0.18),
+                                        }
+                                      }),
+                                      ...(purchase.status === 'received' && {
+                                        bgcolor: alpha('#6366f1', 0.12),
+                                        color: '#6366f1',
+                                        '& .MuiSelect-select': {
+                                          bgcolor: alpha('#6366f1', 0.12),
+                                        },
+                                        '&:hover': {
+                                          bgcolor: alpha('#6366f1', 0.18),
+                                        }
+                                      }),
+                                      ...(purchase.status === 'cancelled' && {
+                                        bgcolor: alpha('#ef4444', 0.12),
+                                        color: '#ef4444',
+                                        '& .MuiSelect-select': {
+                                          bgcolor: alpha('#ef4444', 0.12),
+                                        },
+                                        '&:hover': {
+                                          bgcolor: alpha('#ef4444', 0.18),
+                                        }
+                                      })
+                                    }}
+                                    renderValue={(value) => (
+                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        <span style={{ fontSize: '0.875rem' }}>
+                                          {value === 'pending' && '📦'}
+                                          {value === 'paid' && '✅'}
+                                          {value === 'in_transit' && '🚚'}
+                                          {value === 'delivering' && '📍'}
+                                          {value === 'received' && '✅'}
+                                          {value === 'cancelled' && '❌'}
+                                        </span>
+                                        <Typography variant="caption" sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
+                                          {value === 'pending' ? 'Ожидает' :
+                                           value === 'paid' ? 'Оплачено' :
+                                           value === 'in_transit' ? 'В пути' :
+                                           value === 'delivering' ? 'Доставляется' :
+                                           value === 'received' ? 'Получено' :
+                                           value === 'cancelled' ? 'Отменено' : 'Неизвестно'}
+                                        </Typography>
+                                      </Box>
+                                    )}
+                                  >
+                                    <MenuItem value="pending">
+                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <span>📦</span>
+                                        <Typography variant="body2">Ожидает</Typography>
+                                      </Box>
+                                    </MenuItem>
+                                    <MenuItem value="paid">
+                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <span>✅</span>
+                                        <Typography variant="body2">Оплачено</Typography>
+                                      </Box>
+                                    </MenuItem>
+                                    <MenuItem value="in_transit">
+                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <span>🚚</span>
+                                        <Typography variant="body2">В пути</Typography>
+                                      </Box>
+                                    </MenuItem>
+                                    <MenuItem value="delivering">
+                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <span>📍</span>
+                                        <Typography variant="body2">Доставляется</Typography>
+                                      </Box>
+                                    </MenuItem>
+                                    <MenuItem value="received">
+                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <span>✅</span>
+                                        <Typography variant="body2">Получено</Typography>
+                                      </Box>
+                                    </MenuItem>
+                                    <MenuItem value="cancelled">
+                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <span>❌</span>
+                                        <Typography variant="body2">Отменено</Typography>
+                                      </Box>
+                                    </MenuItem>
+                                  </Select>
+                                </FormControl>
+                              </Box>
+                            }
+                          />
+
+                          <CardContent sx={{ pt: 2 }}>
+                            {/* Основная информация */}
+                            <Box sx={{ mb: 3, px: 3 }}>
+                              <Grid container spacing={3}>
+                                <Grid size={4}>
+                                  <Box
+                                    sx={{
+                                      textAlign: 'center',
+                                      p: 2,
+                                      borderRadius: 3,
+                                      bgcolor: alpha(theme.palette.info.main, 0.04),
+                                      border: `1px solid ${alpha(theme.palette.info.main, 0.08)}`,
+                                      transition: 'all 0.2s ease'
+                                    }}
+                                  >
+                                    <Box sx={{ fontSize: '1.25rem', mb: 0.5 }}>📅</Box>
+                                    <Typography variant="caption" color="info.main" sx={{
+                                      textTransform: 'uppercase',
+                                      fontSize: '0.625rem',
+                                      fontWeight: 700,
+                                      letterSpacing: '0.5px'
+                                    }}>
+                                      Создано
+                                    </Typography>
+                                    <Typography variant="body2" sx={{
+                                      fontWeight: 600,
+                                      mt: 0.5,
+                                      fontSize: '0.875rem',
+                                      color: 'text.primary'
+                                    }}>
+                                      {new Date(purchase.date).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6875rem' }}>
+                                      {new Date(purchase.date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                                    </Typography>
+                                  </Box>
+                                </Grid>
+
+                                <Grid size={4}>
+                                  <Box
+                                    sx={{
+                                      textAlign: 'center',
+                                      p: 2,
+                                      borderRadius: 3,
+                                      bgcolor: alpha(theme.palette.success.main, 0.04),
+                                      border: `1px solid ${alpha(theme.palette.success.main, 0.08)}`,
+                                      transition: 'all 0.2s ease'
+                                    }}
+                                  >
+                                    <Box sx={{ fontSize: '1.25rem', mb: 0.5 }}>📦</Box>
+                                    <Typography variant="caption" color="success.main" sx={{
+                                      textTransform: 'uppercase',
+                                      fontSize: '0.625rem',
+                                      fontWeight: 700,
+                                      letterSpacing: '0.5px'
+                                    }}>
+                                      Позиций
+                                    </Typography>
+                                    <Typography variant="body2" sx={{
+                                      fontWeight: 600,
+                                      mt: 0.5,
+                                      fontSize: '0.875rem',
+                                      color: 'text.primary'
+                                    }}>
+                                      {purchase.items.length}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6875rem' }}>
+                                      {purchase.items.reduce((sum, item) => sum + item.quantity, 0)} шт
+                                    </Typography>
+                                  </Box>
+                                </Grid>
+
+                                <Grid size={4}>
+                                  <Box
+                                    sx={{
+                                      textAlign: 'center',
+                                      p: 2,
+                                      borderRadius: 3,
+                                      bgcolor: alpha(theme.palette.warning.main, 0.04),
+                                      border: `1px solid ${alpha(theme.palette.warning.main, 0.08)}`,
+                                      transition: 'all 0.2s ease'
+                                    }}
+                                  >
+                                    <Box sx={{ fontSize: '1.25rem', mb: 0.5 }}>💰</Box>
+                                    <Typography variant="caption" color="warning.main" sx={{
+                                      textTransform: 'uppercase',
+                                      fontSize: '0.625rem',
+                                      fontWeight: 700,
+                                      letterSpacing: '0.5px'
+                                    }}>
+                                      Сумма
+                                    </Typography>
+                                    <Typography variant="body2" sx={{
+                                      fontWeight: 700,
+                                      mt: 0.5,
+                                      fontSize: '0.875rem',
+                                      color: 'text.primary'
+                                    }}>
+                                      {(purchase.totalAmount / 1000).toFixed(0)}k ₽
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6875rem' }}>
+                                      ~{(purchase.totalAmount / 2.13 / 1000).toFixed(1)}k ₺
+                                    </Typography>
+                                  </Box>
+                                </Grid>
+                              </Grid>
+                            </Box>
+
+                            {/* Сумма закупки */}
+                            <Box
+                              sx={{
+                                p: 2,
+                                borderRadius: 2,
+                                bgcolor: alpha(theme.palette.primary.main, 0.04),
+                                border: `1px solid ${alpha(theme.palette.primary.main, 0.08)}`,
+                                mb: 2
+                              }}
+                            >
+                              <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontSize: '0.6875rem', fontWeight: 600 }}>
+                                Сумма закупки
+                              </Typography>
+                              <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', mt: 0.25 }}>
+                                {purchase.totalAmount.toLocaleString('ru-RU')} ₽
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                ~{(purchase.totalAmount / 2.13).toFixed(0)} ₺
+                              </Typography>
+                            </Box>
+
+                            {/* Список товаров */}
+                            <Accordion
+                              elevation={0}
+                              sx={{
+                                mb: 2,
+                                '&:before': { display: 'none' },
+                                border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                                borderRadius: 2,
+                                '&:not(:last-child)': { mb: 0 }
+                              }}
+                            >
+                              <AccordionSummary
+                                expandIcon={<i className="bx-chevron-down" style={{ fontSize: '1.25rem' }} />}
+                                sx={{
+                                  minHeight: 48,
+                                  '& .MuiAccordionSummary-content': { margin: '8px 0' }
+                                }}
+                              >
+                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                  📦 Состав закупки ({purchase.items.length})
+                                </Typography>
+                              </AccordionSummary>
+                              <AccordionDetails sx={{ pt: 0 }}>
+                                <Stack spacing={1}>
+                                  {purchase.items.map((item, index) => (
+                                    <Box
+                                      key={index}
+                                      sx={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        py: 1,
+                                        px: 1.5,
+                                        borderRadius: 1,
+                                        bgcolor: alpha(theme.palette.action.hover, 0.3)
+                                      }}
+                                    >
+                                      <Typography variant="body2">
+                                        {item.product.name}
+                                      </Typography>
+                                      <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+                                        {item.quantity} шт
+                                      </Typography>
+                                    </Box>
+                                  ))}
+                                </Stack>
+                              </AccordionDetails>
+                            </Accordion>
+
+                            {/* Кнопки действий */}
+                            <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                              {(purchase.status === 'in_transit' || purchase.status === 'delivering' || purchase.status === 'paid') && (
+                                <Button
+                                  variant="contained"
+                                  size="large"
+                                  fullWidth
+                                  onClick={() => handleOpenReceiveModal(purchase)}
+                                  sx={{
+                                    bgcolor: 'success.main',
+                                    color: 'white',
+                                    fontWeight: 600,
+                                    py: 1.5,
+                                    borderRadius: 2,
+                                    textTransform: 'none',
+                                    fontSize: '0.875rem',
+                                    boxShadow: `0 4px 12px ${alpha(theme.palette.success.main, 0.3)}`,
+                                    '&:hover': {
+                                      bgcolor: 'success.dark',
+                                      transform: 'translateY(-1px)',
+                                      boxShadow: `0 6px 16px ${alpha(theme.palette.success.main, 0.4)}`
+                                    }
+                                  }}
+                                  startIcon={<span style={{ fontSize: '1.1rem' }}>📦</span>}
+                                >
+                                  Оприходовать товары
+                                </Button>
+                              )}
+                            </Box>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </Stack>
+                  )}
+                </Box>
+
+                {/* ДЕСКТОПНАЯ ВЕРСИЯ - ТАБЛИЦА */}
                 <TableContainer
                   component={Paper}
                   variant="outlined"
                   sx={{
+                    display: { xs: 'none', lg: 'block' },
                     borderRadius: 3,
                     overflow: 'hidden',
                     boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
@@ -981,30 +1395,12 @@ const ProcurementPage = () => {
                         >
                           РАСХОДЫ
                         </TableCell>
-                        <TableCell
-                          align="center"
-                          sx={{
-                            bgcolor: theme.palette.mode === 'dark' ? '#1F1F28' : '#F8F9FA',
-                            borderBottom: theme.palette.mode === 'dark'
-                              ? '1px solid rgba(255, 255, 255, 0.1)'
-                              : '1px solid rgba(0, 0, 0, 0.08)',
-                            color: theme.palette.mode === 'dark' ? 'text.secondary' : '#6B7280',
-                            fontWeight: 600,
-                            fontSize: '0.6875rem',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.05em',
-                            py: 2.5,
-                            width: '80px'
-                          }}
-                        >
-                          <i className="bx-dots-horizontal-rounded" style={{ fontSize: '1rem', opacity: 0.4 }} />
-                        </TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {safePurchaseHistory.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
+                          <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
                             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                               <Box
                                 sx={{
@@ -1318,47 +1714,6 @@ const ProcurementPage = () => {
                                     Логистика
                                   </Typography>
                                 )}
-                              </Box>
-                            </TableCell>
-
-                            {/* Действия */}
-                            <TableCell align="center" sx={{ py: 3 }}>
-                              <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', alignItems: 'center' }}>
-                                {(purchase.status === 'in_transit' || purchase.status === 'delivering' || purchase.status === 'paid') && (
-                                  <Button
-                                    size="small"
-                                    variant="outlined"
-                                    onClick={() => handleOpenReceiveModal(purchase)}
-                                    sx={{
-                                      fontSize: '0.75rem',
-                                      fontWeight: 500,
-                                      textTransform: 'none',
-                                      color: 'success.main',
-                                      borderColor: 'success.main',
-                                      bgcolor: 'transparent',
-                                      px: 1.5,
-                                      py: 0.5,
-                                      minWidth: 'auto',
-                                      '&:hover': {
-                                        bgcolor: alpha(theme.palette.success.main, 0.08),
-                                        borderColor: 'success.main'
-                                      }
-                                    }}
-                                  >
-                                    Оприходовать
-                                  </Button>
-                                )}
-                                <IconButton
-                                  size="small"
-                                  sx={{
-                                    color: 'text.secondary',
-                                    '&:hover': {
-                                      bgcolor: alpha(theme.palette.action.hover, 0.08)
-                                    }
-                                  }}
-                                >
-                                  <i className="bx-dots-horizontal-rounded" style={{ fontSize: '1rem' }} />
-                                </IconButton>
                               </Box>
                             </TableCell>
                           </TableRow>

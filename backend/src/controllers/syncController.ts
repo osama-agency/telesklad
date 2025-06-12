@@ -419,7 +419,7 @@ export const syncProducts = async (req: Request, res: Response): Promise<void> =
         });
 
         if (existingProduct) {
-          // Обновляем существующий товар
+          // Обновляем существующий товар (БЕЗ ИЗМЕНЕНИЯ costPriceTRY)
           await prisma.product.update({
             where: {
               externalId: externalProduct.id
@@ -440,7 +440,7 @@ export const syncProducts = async (req: Request, res: Response): Promise<void> =
           });
           updatedCount++;
         } else {
-          // Создаем новый товар
+          // Создаем новый товар (БЕЗ costPriceTRY - будет обновлено отдельно)
           await prisma.product.create({
             data: {
               externalId: externalProduct.id,

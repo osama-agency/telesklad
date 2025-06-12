@@ -1,153 +1,35 @@
-import type { Request, Response } from 'express'
+import { Request, Response } from 'express'
 import { PrismaClient } from '@prisma/client'
-import { z } from 'zod'
+import { sendOrderNotification } from '../services/telegramBot'
 
 const prisma = new PrismaClient()
 
-// Схема валидации для создания закупки
-const createPurchaseSchema = z.object({
-  isUrgent: z.boolean().optional(),
-  items: z.array(z.object({
-    productId: z.number().nullable().optional(),
-    name: z.string(),
-    quantity: z.number().positive(),
-    price: z.number().positive(),
-    total: z.number().positive()
-  })).min(1)
-})
-
-// Создание новой закупки
-export const createPurchase = async (req: Request, res: Response) => {
+// GET /api/purchases - получить все заказы
+export const getAllPurchases = async (req: Request, res: Response) => {
   try {
-    // Валидация входных данных
-    const validatedData = createPurchaseSchema.parse(req.body)
-
-    // Расчет общей суммы
-    const totalCost = validatedData.items.reduce((sum, item) => sum + item.total, 0)
-
-    // Создание закупки с позициями в транзакции
-    const purchase = await prisma.purchase.create({
-      data: {
-        totalCost,
-        isUrgent: validatedData.isUrgent || false,
-        items: {
-          create: validatedData.items.map(item => ({
-            productId: item.productId || null,
-            name: item.name,
-            quantity: item.quantity,
-            price: item.price,
-            total: item.total
-          }))
-        }
-      },
+    const purchases = await prisma.purchase.findMany({
       include: {
         items: true
+      },
+      orderBy: {
+        createdAt: 'desc'
       }
     })
-
-    console.log(`Создана новая закупка #${purchase.id} на сумму ${totalCost} ₽`)
-
-    res.status(201).json({
-      success: true,
-      data: purchase
-    })
-  } catch (error) {
-    console.error('Ошибка создания закупки:', error)
-
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({
-        success: false,
-        error: 'Неверные данные',
-        details: error.errors
-      })
-    }
-
-    res.status(500).json({
-      success: false,
-      error: 'Ошибка создания закупки'
-    })
-  }
-}
-
-// Получение списка закупок
-export const getPurchases = async (req: Request, res: Response) => {
-  try {
-    const page = parseInt(req.query.page as string) || 1
-    const limit = parseInt(req.query.limit as string) || 10
-    const offset = (page - 1) * limit
-
-    // Фильтры
-    const isUrgent = req.query.isUrgent === 'true' ? true :
-                     req.query.isUrgent === 'false' ? false : undefined
-
-    const where: any = {}
-    if (isUrgent !== undefined) {
-      where.isUrgent = isUrgent
-    }
-
-    // Получаем закупки с пагинацией
-
-    const [purchases, total] = await Promise.all([
-      prisma.purchase.findMany({
-        where,
-        include: {
-          items: true
-        },
-        orderBy: {
-          createdAt: 'desc'
-        },
-        skip: offset,
-        take: limit
-      }),
-      prisma.purchase.count({ where })
-    ])
-
-    // Преобразуем данные для фронтенда
-    const transformedPurchases = purchases.map(purchase => ({
-      id: purchase.id,
-      sequenceId: purchase.sequenceId,
-      date: purchase.createdAt.toISOString(),
-      statusUpdatedAt: purchase.statusUpdatedAt.toISOString(),
-      supplier: purchase.supplier || (purchase.isUrgent ? '🔥 Срочная закупка' : 'Основной поставщик'),
-      items: purchase.items.map(item => ({
-        id: item.id,
-        product: {
-          id: item.productId || 0,
-          name: item.name,
-          sku: `SKU-${item.productId || 0}`,
-          currentStock: 0 // Можно дополнить запросом к товарам
-        },
-        quantity: item.quantity,
-        costTry: parseFloat(item.price.toString()),
-        costRub: parseFloat(item.price.toString()) * 2.13, // Используем текущий курс
-        totalRub: parseFloat(item.total.toString())
-      })),
-      totalAmount: parseFloat(purchase.totalCost.toString()),
-      logisticsCost: parseFloat(purchase.logisticsCost.toString()),
-      status: purchase.status as 'pending' | 'paid' | 'in_transit' | 'delivering' | 'received' | 'cancelled',
-      isUrgent: purchase.isUrgent
-    }))
 
     res.json({
       success: true,
-      data: transformedPurchases,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit)
-      }
+      data: purchases
     })
   } catch (error) {
-    console.error('Ошибка получения закупок:', error)
+    console.error('❌ Ошибка получения заказов:', error)
     res.status(500).json({
       success: false,
-      error: 'Ошибка получения списка закупок'
+      error: 'Failed to fetch purchases'
     })
   }
 }
 
-// Получение деталей закупки
+// GET /api/purchases/:id - получить заказ по ID
 export const getPurchaseById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params
@@ -162,7 +44,7 @@ export const getPurchaseById = async (req: Request, res: Response) => {
     if (!purchase) {
       return res.status(404).json({
         success: false,
-        error: 'Закупка не найдена'
+        error: 'Purchase not found'
       })
     }
 
@@ -171,59 +53,269 @@ export const getPurchaseById = async (req: Request, res: Response) => {
       data: purchase
     })
   } catch (error) {
-    console.error('Ошибка получения закупки:', error)
+    console.error('❌ Ошибка получения заказа:', error)
     res.status(500).json({
       success: false,
-      error: 'Ошибка получения деталей закупки'
+      error: 'Failed to fetch purchase'
     })
   }
 }
 
-// Обновление статуса закупки
+// POST /api/purchases - создать новый заказ
+export const createPurchase = async (req: Request, res: Response) => {
+  try {
+    const {
+      totalCost,
+      logisticsCost = 0,
+      isUrgent = false,
+      supplier,
+      items
+    } = req.body
+
+    // Валидация
+    if (!totalCost || !items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: totalCost, items'
+      })
+    }
+
+    // Создаем заказ с товарами
+    const purchase = await prisma.purchase.create({
+      data: {
+        totalCost,
+        logisticsCost,
+        isUrgent,
+        supplier,
+        status: 'pending',
+        items: {
+          create: items.map((item: any) => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            total: item.total,
+            productId: item.productId || null
+          }))
+        }
+      },
+      include: {
+        items: true
+      }
+    })
+
+    console.log('✅ Заказ создан:', purchase.id)
+
+    // Отправляем уведомление в Telegram
+    const orderData = {
+      id: purchase.id,
+      sequenceId: (purchase as any).sequenceId,
+      status: purchase.status as any,
+      totalCost: Number(purchase.totalCost),
+      isUrgent: purchase.isUrgent,
+      supplier: purchase.supplier || undefined,
+      items: purchase.items.map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        price: Number(item.price),
+        total: Number(item.total)
+      })),
+      createdAt: purchase.createdAt
+    }
+
+        const telegramResult = await sendOrderNotification(orderData)
+
+    if (telegramResult.success && telegramResult.messageId) {
+      // Сохраняем message_id в базе данных
+      await prisma.purchase.update({
+        where: { id: purchase.id },
+        data: { telegramMessageId: telegramResult.messageId }
+      })
+      console.log('✅ Уведомление отправлено в Telegram, message_id сохранен')
+    } else {
+      console.error('❌ Ошибка отправки в Telegram:', telegramResult.error)
+    }
+
+    res.status(201).json({
+      success: true,
+      data: purchase,
+      telegram: telegramResult
+    })
+  } catch (error) {
+    console.error('❌ Ошибка создания заказа:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create purchase'
+    })
+  }
+}
+
+// PATCH /api/purchases/:id/status - обновить статус заказа
 export const updatePurchaseStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params
     const { status } = req.body
 
     // Валидация статуса
+    const validStatuses = [
+      'pending', 'confirmed', 'ready_for_payment', 'paid',
+      'in_transit', 'delivering', 'received', 'cancelled'
+    ]
 
-    const validStatuses = ['pending', 'paid', 'in_transit', 'delivering', 'received', 'cancelled']
-    if (!validStatuses.includes(status)) {
+    if (!status || !validStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
-        error: `Некорректный статус. Доступные: ${validStatuses.join(', ')}`
+        error: `Invalid status. Must be one of: ${validStatuses.join(', ')}`
       })
     }
 
-        const purchase = await prisma.purchase.update({
+    // Обновляем статус
+    const purchase = await prisma.purchase.update({
       where: { id },
       data: {
         status,
         statusUpdatedAt: new Date()
       },
-      include: { items: true }
-    })
+      include: {
+        items: true
+      }
+    }) as any
 
-    console.log(`📋 Статус закупки #${purchase.sequenceId} обновлен на "${status}"`)
+    console.log(`✅ Статус заказа ${id} обновлен на ${status}`)
+
+    // Если есть telegramMessageId, обновляем сообщение в Telegram
+    if (purchase.telegramMessageId) {
+      const { updateOrderMessage } = await import('../services/telegramBot')
+
+      const orderData = {
+        id: purchase.id,
+        sequenceId: purchase.sequenceId,
+        status: status as any,
+        totalCost: Number(purchase.totalCost),
+        isUrgent: purchase.isUrgent,
+        supplier: purchase.supplier || undefined,
+        items: purchase.items.map((item: any) => ({
+          name: item.name,
+          quantity: item.quantity,
+          price: Number(item.price),
+          total: Number(item.total)
+        })),
+        createdAt: purchase.createdAt
+      }
+
+      const telegramResult = await updateOrderMessage(
+        process.env.TELEGRAM_CHAT_ID || '-4729817036',
+        purchase.telegramMessageId,
+        orderData
+      )
+
+      if (telegramResult.success) {
+        console.log('✅ Сообщение в Telegram обновлено')
+      } else {
+        console.error('❌ Ошибка обновления сообщения в Telegram:', telegramResult.error)
+      }
+    }
 
     res.json({
       success: true,
-      data: purchase,
-      message: `Статус закупки обновлен на "${status}"`
+      data: purchase
     })
-  } catch (error: any) {
-    console.error('Ошибка обновления статуса:', error)
+  } catch (error) {
+    console.error('❌ Ошибка обновления статуса:', error)
 
-    if (error.code === 'P2025') {
+    if ((error as any).code === 'P2025') {
       return res.status(404).json({
         success: false,
-        error: 'Закупка не найдена'
+        error: 'Purchase not found'
       })
     }
 
     res.status(500).json({
       success: false,
-      error: 'Ошибка обновления статуса'
+      error: 'Failed to update purchase status'
+    })
+  }
+}
+
+// PUT /api/purchases/:id - обновить заказ
+export const updatePurchase = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+    const {
+      totalCost,
+      logisticsCost,
+      isUrgent,
+      supplier,
+      status
+    } = req.body
+
+    const updateData: any = {}
+
+    if (totalCost !== undefined) updateData.totalCost = totalCost
+    if (logisticsCost !== undefined) updateData.logisticsCost = logisticsCost
+    if (isUrgent !== undefined) updateData.isUrgent = isUrgent
+    if (supplier !== undefined) updateData.supplier = supplier
+    if (status !== undefined) {
+      updateData.status = status
+      updateData.statusUpdatedAt = new Date()
+    }
+
+    const purchase = await prisma.purchase.update({
+      where: { id },
+      data: updateData,
+      include: {
+        items: true
+      }
+    })
+
+    res.json({
+      success: true,
+      data: purchase
+    })
+  } catch (error) {
+    console.error('❌ Ошибка обновления заказа:', error)
+
+    if ((error as any).code === 'P2025') {
+      return res.status(404).json({
+        success: false,
+        error: 'Purchase not found'
+      })
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update purchase'
+    })
+  }
+}
+
+// DELETE /api/purchases/:id - удалить заказ
+export const deletePurchase = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+
+    await prisma.purchase.delete({
+      where: { id }
+    })
+
+    console.log(`✅ Заказ ${id} удален`)
+
+    res.json({
+      success: true,
+      message: 'Purchase deleted successfully'
+    })
+  } catch (error) {
+    console.error('❌ Ошибка удаления заказа:', error)
+
+    if ((error as any).code === 'P2025') {
+      return res.status(404).json({
+        success: false,
+        error: 'Purchase not found'
+      })
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to delete purchase'
     })
   }
 }

@@ -152,12 +152,14 @@ model Purchase {
   id              String        @id @default(cuid())
   sequenceId      Int           @unique @default(autoincrement()) @map("sequence_id")
   createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
   statusUpdatedAt DateTime      @default(now()) @map("status_updated_at")
   totalCost       Decimal       @db.Decimal(12,2) @map("total_cost")
   logisticsCost   Decimal       @default(0) @db.Decimal(10,2) @map("logistics_cost")
   isUrgent        Boolean       @default(false) @map("is_urgent")
-  status          String        @default("pending") // pending, paid, in_transit, delivering, received, cancelled
+  status          String        @default("pending") // pending, confirmed, ready_for_payment, paid, in_transit, delivering, received, cancelled
   supplier        String?       // поставщик
+  telegramMessageId Int?        @map("telegram_message_id") // ID сообщения в Telegram
   items           PurchaseItem[]
 
   @@map("purchases")

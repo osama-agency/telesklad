@@ -419,7 +419,7 @@ export const syncProducts = async (req: Request, res: Response): Promise<void> =
         });
 
         if (existingProduct) {
-          // Обновляем существующий товар
+          // Обновляем существующий товар (БЕЗ ИЗМЕНЕНИЯ costPriceTRY)
           await prisma.product.update({
             where: {
               externalId: externalProduct.id
@@ -440,7 +440,7 @@ export const syncProducts = async (req: Request, res: Response): Promise<void> =
           });
           updatedCount++;
         } else {
-          // Создаем новый товар
+          // Создаем новый товар (БЕЗ costPriceTRY - будет обновлено отдельно)
           await prisma.product.create({
             data: {
               externalId: externalProduct.id,
@@ -594,38 +594,54 @@ export const autoSyncAll = async (): Promise<any> => {
           const price = parseFloat(externalProduct.price);
           if (isNaN(price)) continue;
 
-          await prisma.product.upsert({
+          // Проверяем существует ли товар
+          const existingProduct = await prisma.product.findUnique({
             where: {
               externalId: externalProduct.id
-            },
-            update: {
-              name: externalProduct.name,
-              description: externalProduct.description,
-              price: price,
-              stockQuantity: externalProduct.stock_quantity || 0,
-              brand: externalProduct.brand,
-              category: externalProduct.brand,
-              mainIngredient: externalProduct.main_ingredient,
-              dosageForm: externalProduct.dosage_form,
-              packageQuantity: externalProduct.package_quantity,
-              weight: externalProduct.weight,
-              updatedAt: new Date()
-            },
-            create: {
-              externalId: externalProduct.id,
-              name: externalProduct.name,
-              description: externalProduct.description,
-              price: price,
-              stockQuantity: externalProduct.stock_quantity || 0,
-              brand: externalProduct.brand,
-              category: externalProduct.brand,
-              mainIngredient: externalProduct.main_ingredient,
-              dosageForm: externalProduct.dosage_form,
-              packageQuantity: externalProduct.package_quantity,
-              weight: externalProduct.weight
             }
           });
-          productCount++;
+
+          if (existingProduct) {
+            // Обновляем существующий товар (БЕЗ ИЗМЕНЕНИЯ costPriceTRY)
+            await prisma.product.update({
+              where: {
+                externalId: externalProduct.id
+              },
+              data: {
+                name: externalProduct.name,
+                description: externalProduct.description,
+                price: price,
+                stockQuantity: externalProduct.stock_quantity || 0,
+                brand: externalProduct.brand,
+                category: externalProduct.brand, // используем brand как категорию
+                mainIngredient: externalProduct.main_ingredient,
+                dosageForm: externalProduct.dosage_form,
+                packageQuantity: externalProduct.package_quantity,
+                weight: externalProduct.weight,
+                updatedAt: new Date()
+              }
+            });
+            productCount++;
+          } else {
+            // Создаем новый товар (БЕЗ costPriceTRY - будет обновлено отдельно)
+            await prisma.product.create({
+              data: {
+                externalId: externalProduct.id,
+                name: externalProduct.name,
+                description: externalProduct.description,
+                price: price,
+                stockQuantity: externalProduct.stock_quantity || 0,
+                brand: externalProduct.brand,
+                category: externalProduct.brand,
+                mainIngredient: externalProduct.main_ingredient,
+                dosageForm: externalProduct.dosage_form,
+                packageQuantity: externalProduct.package_quantity,
+                weight: externalProduct.weight
+              }
+            });
+            productCount++;
+          }
+
         } catch (e) {
           // Продолжаем с другими товарами
         }

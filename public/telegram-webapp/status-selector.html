@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Изменить статус закупки</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 14px;
+            color: var(--tg-theme-hint-color, #999999);
+        }
+
+        .status-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .status-item {
+            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            border: 1px solid var(--tg-theme-section-separator-color, #e0e0e0);
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .status-item:hover {
+            background: var(--tg-theme-button-color, #007aff);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-item.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .status-item.disabled:hover {
+            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            color: var(--tg-theme-text-color, #000000);
+            transform: none;
+            box-shadow: none;
+        }
+
+        .status-emoji {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .status-content {
+            flex: 1;
+        }
+
+        .status-name {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .status-description {
+            font-size: 13px;
+            opacity: 0.7;
+        }
+
+        .current-status {
+            background: var(--tg-theme-button-color, #007aff);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: 2px solid var(--tg-theme-button-color, #007aff);
+        }
+
+        .current-status .status-description {
+            opacity: 0.8;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--tg-theme-hint-color, #999999);
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--tg-theme-hint-color, #e0e0e0);
+            border-top: 3px solid var(--tg-theme-button-color, #007aff);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔄 Изменить статус</h1>
+            <p id="purchase-info">Закупка #<span id="sequence-id">...</span></p>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            Загрузка...
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div id="status-list" class="status-list" style="display: none;"></div>
+    </div>
+
+    <script>
+        // Инициализация Telegram WebApp
+        const tg = window.Telegram?.WebApp;
+        if (tg) {
+            tg.ready();
+            tg.MainButton.hide();
+            tg.expand();
+        }
+
+        // Конфигурация статусов (синхронизирована с backend)
+        const ORDER_STATUSES = {
+            pending: {
+                name: 'Ожидает подтверждения',
+                emoji: '🔄',
+                description: 'Заказ создан, ожидает обработки',
+                nextStatuses: ['confirmed', 'cancelled']
+            },
+            confirmed: {
+                name: 'Подтверждено',
+                emoji: '✅',
+                description: 'Заказ подтвержден, товар собирается',
+                nextStatuses: ['ready_for_payment', 'cancelled']
+            },
+            ready_for_payment: {
+                name: 'Готов к оплате',
+                emoji: '💰',
+                description: 'Товар готов, ожидает оплаты',
+                nextStatuses: ['paid', 'cancelled']
+            },
+            paid: {
+                name: 'Оплачено',
+                emoji: '💳',
+                description: 'Заказ оплачен, готовится к отправке',
+                nextStatuses: ['in_transit', 'cancelled']
+            },
+            in_transit: {
+                name: 'В пути',
+                emoji: '🚚',
+                description: 'Заказ передан в логистику',
+                nextStatuses: ['delivering']
+            },
+            delivering: {
+                name: 'Доставляется',
+                emoji: '🚛',
+                description: 'Заказ доставляется получателю',
+                nextStatuses: ['received']
+            },
+            received: {
+                name: 'Получено',
+                emoji: '📦',
+                description: 'Заказ успешно доставлен',
+                nextStatuses: []
+            },
+            cancelled: {
+                name: 'Отменено',
+                emoji: '❌',
+                description: 'Заказ отменен',
+                nextStatuses: []
+            }
+        };
+
+        // Получение параметров из URL
+        function getUrlParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return {
+                orderId: urlParams.get('orderId'),
+                currentStatus: urlParams.get('currentStatus'),
+                sequenceId: urlParams.get('sequenceId')
+            };
+        }
+
+        // Показать ошибку
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        // Создать элемент статуса
+        function createStatusItem(statusKey, statusInfo, isAvailable, isCurrent) {
+            const item = document.createElement('div');
+            item.className = `status-item ${!isAvailable ? 'disabled' : ''} ${isCurrent ? 'current-status' : ''}`;
+
+            item.innerHTML = `
+                <div class="status-emoji">${statusInfo.emoji}</div>
+                <div class="status-content">
+                    <div class="status-name">${statusInfo.name}${isCurrent ? ' (текущий)' : ''}</div>
+                    <div class="status-description">${statusInfo.description}</div>
+                </div>
+            `;
+
+            if (isAvailable && !isCurrent) {
+                item.addEventListener('click', () => selectStatus(statusKey));
+            }
+
+            return item;
+        }
+
+                // Выбор статуса
+        async function selectStatus(newStatus) {
+            const params = getUrlParams();
+
+            // Показываем индикатор загрузки
+            showLoading(`Изменяю статус на "${ORDER_STATUSES[newStatus].name}"...`);
+
+            try {
+                // Отправляем данные на наш API endpoint
+                const response = await fetch('/api/telegram/webapp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'changeStatus',
+                        orderId: params.orderId,
+                        newStatus: newStatus,
+                        timestamp: Date.now()
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Показываем успех
+                    showSuccess(`✅ ${result.message}`);
+
+                    // Закрываем WebApp через 1.5 секунды
+                    setTimeout(() => {
+                        if (tg) {
+                            tg.close();
+                        }
+                    }, 1500);
+                } else {
+                    throw new Error(result.error || 'Неизвестная ошибка');
+                }
+
+            } catch (error) {
+                console.error('Ошибка изменения статуса:', error);
+                showError(`Ошибка: ${error.message}`);
+
+                // Показываем кнопку "Повторить"
+                setTimeout(() => {
+                    initPage();
+                }, 2000);
+            }
+        }
+
+        // Показать успех
+        function showSuccess(message) {
+            const container = document.querySelector('.container');
+            container.innerHTML = `
+                <div style="text-align: center; padding: 60px 20px;">
+                    <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
+                    <h2 style="color: var(--tg-theme-text-color, #000); margin-bottom: 8px; font-size: 18px;">Готово!</h2>
+                    <p style="color: var(--tg-theme-hint-color, #999); font-size: 14px;">${message}</p>
+                </div>
+            `;
+        }
+
+        // Показать загрузку с сообщением
+        function showLoading(message) {
+            document.getElementById('loading').innerHTML = `
+                <div class="spinner"></div>
+                ${message}
+            `;
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('status-list').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+        }
+
+        // Инициализация страницы
+        function initPage() {
+            const params = getUrlParams();
+
+            if (!params.orderId || !params.currentStatus) {
+                showError('Некорректные параметры. Попробуйте еще раз.');
+                return;
+            }
+
+            // Обновляем информацию о закупке
+            if (params.sequenceId) {
+                document.getElementById('sequence-id').textContent = params.sequenceId;
+            }
+
+            const currentStatusInfo = ORDER_STATUSES[params.currentStatus];
+            if (!currentStatusInfo) {
+                showError('Неизвестный статус заказа.');
+                return;
+            }
+
+            // Создаем список статусов
+            const statusList = document.getElementById('status-list');
+            const availableStatuses = currentStatusInfo.nextStatuses || [];
+
+            // Показываем текущий статус
+            const currentItem = createStatusItem(params.currentStatus, currentStatusInfo, false, true);
+            statusList.appendChild(currentItem);
+
+            // Показываем доступные статусы
+            availableStatuses.forEach(statusKey => {
+                const statusInfo = ORDER_STATUSES[statusKey];
+                if (statusInfo) {
+                    const item = createStatusItem(statusKey, statusInfo, true, false);
+                    statusList.appendChild(item);
+                }
+            });
+
+            // Если нет доступных статусов для изменения
+            if (availableStatuses.length === 0) {
+                const noOptionsDiv = document.createElement('div');
+                noOptionsDiv.className = 'status-item disabled';
+                noOptionsDiv.innerHTML = `
+                    <div class="status-emoji">ℹ️</div>
+                    <div class="status-content">
+                        <div class="status-name">Нет доступных действий</div>
+                        <div class="status-description">Этот заказ находится в финальном состоянии</div>
+                    </div>
+                `;
+                statusList.appendChild(noOptionsDiv);
+            }
+
+            // Показываем список и скрываем загрузку
+            document.getElementById('loading').style.display = 'none';
+            statusList.style.display = 'block';
+        }
+
+        // Запуск при загрузке страницы
+        document.addEventListener('DOMContentLoaded', initPage);
+    </script>
+</body>
+</html>

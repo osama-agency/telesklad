@@ -14,6 +14,7 @@ import priceRoutes from './routes/prices';
 import expenseRoutes from './routes/expenseRoutes';
 import analyticsRoutes from './routes/analyticsRoutes';
 import purchaseRoutes from './routes/purchaseRoutes';
+import telegramRoutes from './routes/telegramRoutes';
 
 // Загружаем переменные окружения
 dotenv.config();
@@ -46,6 +47,7 @@ app.use('/api/prices', priceRoutes);
 app.use('/api', expenseRoutes);
 app.use('/api', analyticsRoutes);
 app.use('/api/purchases', purchaseRoutes);
+app.use('/api/telegram', telegramRoutes);
 
 // Статические файлы для загруженных изображений
 app.use('/uploads', express.static('uploads'));
