@@ -54,7 +54,7 @@ export type Config = {
 }
 
 const themeConfig: Config = {
-  templateName: 'телесайт',
+  templateName: 'telesklad',
   homePageUrl: '/dashboard',
   settingsCookieName: 'sneat-vertical-menu-v2',
   mode: 'light', // 'system', 'light', 'dark'

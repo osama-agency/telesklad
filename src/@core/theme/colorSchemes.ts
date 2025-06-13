@@ -9,14 +9,15 @@ const colorSchemes = (skin: Skin): Theme['colorSchemes'] => {
     light: {
       palette: {
         primary: {
-          main: '#696CFF',
-          light: '#8789FF',
-          dark: '#5E61E6',
-          lighterOpacity: 'rgb(var(--mui-palette-primary-mainChannel) / 0.08)',
-          lightOpacity: 'rgb(var(--mui-palette-primary-mainChannel) / 0.16)',
-          mainOpacity: 'rgb(var(--mui-palette-primary-mainChannel) / 0.24)',
-          darkOpacity: 'rgb(var(--mui-palette-primary-mainChannel) / 0.32)',
-          darkerOpacity: 'rgb(var(--mui-palette-primary-mainChannel) / 0.38)'
+          main: '#1B6EF3',
+          light: '#3EB5EA',
+          dark: '#134EC0',
+          contrastText: '#FFFFFF',
+          lighterOpacity: 'rgb(27 110 243 / 0.08)',
+          lightOpacity: 'rgb(27 110 243 / 0.16)',
+          mainOpacity: 'rgb(27 110 243 / 0.24)',
+          darkOpacity: 'rgb(27 110 243 / 0.32)',
+          darkerOpacity: 'rgb(27 110 243 / 0.38)'
         },
         secondary: {
           main: '#8592A3',
@@ -161,14 +162,15 @@ const colorSchemes = (skin: Skin): Theme['colorSchemes'] => {
     dark: {
       palette: {
         primary: {
-          main: '#696CFF',
-          light: '#8789FF',
-          dark: '#5E61E6',
-          lighterOpacity: 'rgb(var(--mui-palette-primary-mainChannel) / 0.08)',
-          lightOpacity: 'rgb(var(--mui-palette-primary-mainChannel) / 0.16)',
-          mainOpacity: 'rgb(var(--mui-palette-primary-mainChannel) / 0.24)',
-          darkOpacity: 'rgb(var(--mui-palette-primary-mainChannel) / 0.32)',
-          darkerOpacity: 'rgb(var(--mui-palette-primary-mainChannel) / 0.38)'
+          main: '#1B6EF3',
+          light: '#3EB5EA',
+          dark: '#134EC0',
+          contrastText: '#FFFFFF',
+          lighterOpacity: 'rgb(27 110 243 / 0.08)',
+          lightOpacity: 'rgb(27 110 243 / 0.16)',
+          mainOpacity: 'rgb(27 110 243 / 0.24)',
+          darkOpacity: 'rgb(27 110 243 / 0.32)',
+          darkerOpacity: 'rgb(27 110 243 / 0.38)'
         },
         secondary: {
           main: '#8592A3',

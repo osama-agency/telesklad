@@ -110,12 +110,12 @@
 
 .premium-preset-button:hover {
   background: linear-gradient(135deg,
-    rgba(59, 130, 246, 0.04) 0%,
-    rgba(99, 102, 241, 0.02) 100%);
-  border-color: rgba(59, 130, 246, 0.12);
+    rgba(27, 110, 243, 0.04) 0%,
+    rgba(27, 110, 243, 0.02) 100%);
+  border-color: rgba(27, 110, 243, 0.12);
   transform: translateY(-1px) scale(1.02);
   box-shadow:
-    0 8px 24px rgba(59, 130, 246, 0.08),
+    0 8px 24px rgba(27, 110, 243, 0.08),
     0 2px 8px rgba(15, 23, 42, 0.04);
 }
 
@@ -142,16 +142,16 @@
 
 [data-mui-color-scheme="dark"] .premium-preset-button:hover {
   background: linear-gradient(135deg,
-    rgba(99, 102, 241, 0.08) 0%,
-    rgba(139, 92, 246, 0.04) 100%);
-  border-color: rgba(99, 102, 241, 0.15);
+    rgba(27, 110, 243, 0.08) 0%,
+    rgba(27, 110, 243, 0.04) 100%);
+  border-color: rgba(27, 110, 243, 0.15);
 }
 
 [data-mui-color-scheme="dark"] .premium-preset-button.active {
   background: linear-gradient(135deg,
-    rgba(99, 102, 241, 0.15) 0%,
-    rgba(139, 92, 246, 0.12) 100%);
-  border-color: rgba(99, 102, 241, 0.3);
+    rgba(27, 110, 243, 0.15) 0%,
+    rgba(27, 110, 243, 0.12) 100%);
+  border-color: rgba(27, 110, 243, 0.3);
   color: #a5b4fc;
 }
 
@@ -253,11 +253,11 @@
 
 .react-datepicker__day:hover {
   background: linear-gradient(135deg,
-    rgba(59, 130, 246, 0.08) 0%,
-    rgba(99, 102, 241, 0.04) 100%);
+    rgba(27, 110, 243, 0.08) 0%,
+    rgba(27, 110, 243, 0.04) 100%);
   color: #1e40af;
   transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 4px 12px rgba(27, 110, 243, 0.15);
 }
 
 .react-datepicker__day:hover::before {
@@ -268,8 +268,8 @@
 .react-datepicker__day--selected,
 .react-datepicker__day--keyboard-selected {
   background: linear-gradient(135deg,
-    #3b82f6 0%,
-    #6366f1 100%) !important;
+    #1B6EF3 0%,
+    #3EB5EA 100%) !important;
   color: white !important;
   font-weight: 600;
   transform: scale(1.05);
@@ -291,8 +291,8 @@
 .react-datepicker__day--range-start,
 .react-datepicker__day--range-end {
   background: linear-gradient(135deg,
-    #3b82f6 0%,
-    #6366f1 100%) !important;
+    #1B6EF3 0%,
+    #3EB5EA 100%) !important;
   color: white !important;
   font-weight: 600;
   transform: scale(1.05);
@@ -336,8 +336,8 @@
 
 [data-mui-color-scheme="dark"] .react-datepicker__day:hover {
   background: linear-gradient(135deg,
-    rgba(99, 102, 241, 0.12) 0%,
-    rgba(139, 92, 246, 0.08) 100%);
+    rgba(27, 110, 243, 0.12) 0%,
+    rgba(27, 110, 243, 0.08) 100%);
   color: #a5b4fc;
 }
 
@@ -379,7 +379,7 @@
    TYPOGRAPHY ENHANCEMENTS
    ========================= */
 .premium-text-gradient {
-  background: linear-gradient(135deg, #1e40af 0%, #6366f1 100%);
+  background: linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

@@ -170,7 +170,7 @@
 
 /* Improved button gradients */
 .gradient-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%);
   transition: all 0.2s ease;
 }
 

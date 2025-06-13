@@ -17,7 +17,6 @@ import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
 import TablePagination from '@mui/material/TablePagination'
 import Box from '@mui/material/Box'
-import Paper from '@mui/material/Paper'
 import Chip from '@mui/material/Chip'
 import Skeleton from '@mui/material/Skeleton'
 import Snackbar from '@mui/material/Snackbar'
@@ -44,8 +43,7 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   AttachMoney as MoneyIcon,
-  Receipt as ReceiptIcon,
-  List as ListIcon
+  Receipt as ReceiptIcon
 } from '@mui/icons-material'
 
 // Third-party Imports
@@ -331,15 +329,65 @@ const ExpensesPage = () => {
 
   return (
     <>
-      {/* Заголовок */}
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: '-0.02em' }}>
-          Расходы
-        </Typography>
+      {/* Современный заголовок с action */}
+      <Box sx={{
+        mb: 4,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: { xs: 'wrap', sm: 'nowrap' },
+        gap: 2
+      }}>
+        <Box>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 700,
+              letterSpacing: '-0.02em',
+              mb: 0.5,
+              background: 'linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              display: 'inline-block'
+            }}
+          >
+            Расходы
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+            Управление финансовыми расходами и затратами
+          </Typography>
+        </Box>
+
+        {/* Кнопка добавления в заголовке */}
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => setModalOpen(true)}
+          sx={{
+            borderRadius: 3,
+            px: 3,
+            py: 1.5,
+            fontSize: '0.875rem',
+            fontWeight: 600,
+            textTransform: 'none',
+            minWidth: 160,
+            background: 'linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%)',
+            boxShadow: '0 4px 12px rgba(27, 110, 243, 0.3)',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #134EC0 0%, #1B6EF3 100%)',
+              boxShadow: '0 6px 16px rgba(27, 110, 243, 0.4)',
+              transform: 'translateY(-1px)'
+            },
+            transition: 'all 0.2s ease'
+          }}
+        >
+          Новый расход
+        </Button>
       </Box>
 
       <Grid container spacing={4}>
-        {/* Блок итогов */}
+        {/* Улучшенные карточки статистики */}
         <Grid size={12}>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -351,36 +399,57 @@ const ExpensesPage = () => {
                 <Card sx={{
                   border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
                   boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                  borderRadius: 3,
+                  overflow: 'hidden',
+                  position: 'relative',
                   transition: 'all 0.2s ease',
                   '&:hover': {
-                    boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
-                    transform: 'translateY(-1px)'
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                    transform: 'translateY(-2px)'
+                  },
+                  '&:before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 4,
+                    background: 'linear-gradient(135deg, #dc2626 0%, #ef4444 100%)'
                   }
                 }}>
                   <CardHeader
                     avatar={
                       <Box sx={{
-                        p: 1.5,
-                        borderRadius: 2,
-                        bgcolor: alpha(theme.palette.error.main, 0.1),
+                        p: 2,
+                        borderRadius: 3,
+                        background: 'linear-gradient(135deg, rgba(220, 38, 38, 0.1) 0%, rgba(239, 68, 68, 0.1) 100%)',
+                        border: '1px solid rgba(220, 38, 38, 0.1)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center'
                       }}>
-                        <MoneyIcon sx={{ color: 'error.main', fontSize: 24 }} />
+                        <MoneyIcon sx={{ color: '#dc2626', fontSize: 28 }} />
                       </Box>
                     }
                     title={
-                      <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
+                      <Typography variant="h3" sx={{
+                        fontWeight: 700,
+                        mb: 0.5,
+                        color: '#dc2626',
+                        fontSize: '2rem'
+                      }}>
                         {totals.totalAmount.toLocaleString('ru-RU')} ₽
                       </Typography>
                     }
                     subheader={
-                      <Typography variant="body2" color="text.secondary">
-                        Общая сумма
+                      <Typography variant="body2" color="text.secondary" sx={{
+                        fontSize: '0.875rem',
+                        fontWeight: 500
+                      }}>
+                        Общая сумма расходов
                       </Typography>
                     }
-                    sx={{ pb: 2 }}
+                    sx={{ pb: 3, pt: 3 }}
                   />
                 </Card>
               </Grid>
@@ -389,36 +458,57 @@ const ExpensesPage = () => {
                 <Card sx={{
                   border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
                   boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                  borderRadius: 3,
+                  overflow: 'hidden',
+                  position: 'relative',
                   transition: 'all 0.2s ease',
                   '&:hover': {
-                    boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
-                    transform: 'translateY(-1px)'
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                    transform: 'translateY(-2px)'
+                  },
+                  '&:before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 4,
+                    background: 'linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%)'
                   }
                 }}>
                   <CardHeader
                     avatar={
                       <Box sx={{
-                        p: 1.5,
-                        borderRadius: 2,
-                        bgcolor: alpha(theme.palette.info.main, 0.1),
+                        p: 2,
+                        borderRadius: 3,
+                        background: 'linear-gradient(135deg, rgba(27, 110, 243, 0.1) 0%, rgba(62, 181, 234, 0.1) 100%)',
+                        border: '1px solid rgba(27, 110, 243, 0.1)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center'
                       }}>
-                        <ListIcon sx={{ color: 'info.main', fontSize: 24 }} />
+                        <ReceiptIcon sx={{ color: '#1B6EF3', fontSize: 28 }} />
                       </Box>
                     }
                     title={
-                      <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
+                      <Typography variant="h3" sx={{
+                        fontWeight: 700,
+                        mb: 0.5,
+                        color: '#1B6EF3',
+                        fontSize: '2rem'
+                      }}>
                         {totals.totalCount}
                       </Typography>
                     }
                     subheader={
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="body2" color="text.secondary" sx={{
+                        fontSize: '0.875rem',
+                        fontWeight: 500
+                      }}>
                         Количество записей
                       </Typography>
                     }
-                    sx={{ pb: 2 }}
+                    sx={{ pb: 3, pt: 3 }}
                   />
                 </Card>
               </Grid>
@@ -435,7 +525,8 @@ const ExpensesPage = () => {
           >
             <Card sx={{
               border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+              boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+              borderRadius: 3
             }}>
               <CardContent sx={{ p: 0 }}>
                 <TableContainer>
@@ -457,6 +548,11 @@ const ExpensesPage = () => {
                             indeterminate={selectedRows.length > 0 && selectedRows.length < expenses.length}
                             onChange={handleSelectAll}
                             size="small"
+                            sx={{
+                              color: alpha('#1B6EF3', 0.6),
+                              '&.Mui-checked': { color: '#1B6EF3' },
+                              '&.MuiCheckbox-indeterminate': { color: '#1B6EF3' }
+                            }}
                           />
                         </TableCell>
                         <TableCell>Дата</TableCell>
@@ -482,9 +578,15 @@ const ExpensesPage = () => {
                         ) : expenses.length === 0 ? (
                           <TableRow>
                             <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
-                              <Typography variant="body2" color="text.secondary">
-                                Нет данных о расходах за выбранный период
-                              </Typography>
+                              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                                <ReceiptIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
+                                <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 500 }}>
+                                  Нет данных о расходах
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  За выбранный период расходы не найдены
+                                </Typography>
+                              </Box>
                             </TableCell>
                           </TableRow>
                         ) : (
@@ -515,6 +617,10 @@ const ExpensesPage = () => {
                                     checked={isSelected}
                                     onChange={() => handleSelectRow(expense.id)}
                                     size="small"
+                                    sx={{
+                                      color: alpha('#1B6EF3', 0.6),
+                                      '&.Mui-checked': { color: '#1B6EF3' }
+                                    }}
                                   />
                                 </TableCell>
 
@@ -580,34 +686,45 @@ const ExpensesPage = () => {
                                   <Box sx={{
                                     display: 'flex',
                                     gap: 0.5,
-                                    opacity: isHovered ? 1 : 0,
+                                    justifyContent: 'center',
+                                    opacity: isHovered ? 1 : 0.6,
                                     transition: 'opacity 0.2s ease'
                                   }}>
-                                    <Tooltip title="Редактировать">
+                                    <Tooltip title="Редактировать" placement="top">
                                       <IconButton
                                         size="small"
                                         onClick={() => handleEditExpense(expense)}
                                         sx={{
-                                          color: 'text.secondary',
+                                          color: '#1B6EF3',
+                                          bgcolor: alpha('#1B6EF3', 0.1),
+                                          border: `1px solid ${alpha('#1B6EF3', 0.2)}`,
+                                          borderRadius: 2,
                                           '&:hover': {
-                                            color: 'primary.main',
-                                            bgcolor: alpha(theme.palette.primary.main, 0.1)
-                                          }
+                                            bgcolor: alpha('#1B6EF3', 0.15),
+                                            border: `1px solid ${alpha('#1B6EF3', 0.3)}`,
+                                            transform: 'scale(1.05)'
+                                          },
+                                          transition: 'all 0.2s ease'
                                         }}
                                       >
                                         <EditIcon fontSize="small" />
                                       </IconButton>
                                     </Tooltip>
-                                    <Tooltip title="Удалить">
+                                    <Tooltip title="Удалить" placement="top">
                                       <IconButton
                                         size="small"
                                         onClick={() => handleDeleteConfirm(expense)}
                                         sx={{
-                                          color: 'text.secondary',
+                                          color: '#dc2626',
+                                          bgcolor: alpha('#dc2626', 0.1),
+                                          border: `1px solid ${alpha('#dc2626', 0.2)}`,
+                                          borderRadius: 2,
                                           '&:hover': {
-                                            color: 'error.main',
-                                            bgcolor: alpha(theme.palette.error.main, 0.1)
-                                          }
+                                            bgcolor: alpha('#dc2626', 0.15),
+                                            border: `1px solid ${alpha('#dc2626', 0.3)}`,
+                                            transform: 'scale(1.05)'
+                                          },
+                                          transition: 'all 0.2s ease'
                                         }}
                                       >
                                         <DeleteIcon fontSize="small" />
@@ -638,44 +755,29 @@ const ExpensesPage = () => {
                     borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
                     '& .MuiTablePagination-toolbar': {
                       px: 3,
-                      py: 1.5
+                      py: 2
+                    },
+                    '& .MuiTablePagination-actions': {
+                      '& .MuiIconButton-root': {
+                        color: '#1B6EF3',
+                        borderRadius: 2,
+                        '&:hover': {
+                          bgcolor: alpha('#1B6EF3', 0.1)
+                        },
+                        '&.Mui-disabled': {
+                          color: alpha('#1B6EF3', 0.3)
+                        }
+                      }
+                    },
+                    '& .MuiTablePagination-select': {
+                      color: '#1B6EF3',
+                      fontWeight: 500
                     }
                   }}
                 />
               </CardContent>
             </Card>
           </motion.div>
-        </Grid>
-
-        {/* Кнопка добавления внизу */}
-        <Grid size={12}>
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-            <Tooltip title="Добавить новый расход" placement="top">
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => setModalOpen(true)}
-                sx={{
-                  borderRadius: 3,
-                  px: 4,
-                  py: 1.5,
-                  fontSize: '0.875rem',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  background: 'linear-gradient(135deg, #DF4C9D 0%, #E91E63 100%)',
-                  boxShadow: '0 4px 12px rgba(223, 76, 157, 0.3)',
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #C83688 0%, #D81B60 100%)',
-                    boxShadow: '0 6px 16px rgba(223, 76, 157, 0.4)',
-                    transform: 'translateY(-1px)'
-                  },
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                Новый расход
-              </Button>
-            </Tooltip>
-          </Box>
         </Grid>
       </Grid>
 
@@ -768,9 +870,9 @@ const ExpensesPage = () => {
             sx={{
               borderRadius: 2,
               px: 3,
-              background: 'linear-gradient(135deg, #DF4C9D 0%, #E91E63 100%)',
+              background: 'linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%)',
               '&:hover': {
-                background: 'linear-gradient(135deg, #C83688 0%, #D81B60 100%)'
+                background: 'linear-gradient(135deg, #134EC0 0%, #1B6EF3 100%)'
               }
             }}
           >

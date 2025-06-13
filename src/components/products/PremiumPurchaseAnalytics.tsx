@@ -270,7 +270,7 @@ const PremiumPurchaseModal = ({
           p: 4,
           background: urgentProducts.length > 0
             ? 'linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%)'
-            : 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)',
+            : 'linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%)',
           color: 'white',
           position: 'relative',
           overflow: 'hidden'
@@ -835,10 +835,10 @@ const PremiumReceiveModal = ({
                 <Box sx={{
                   p: 2.5,
                   borderRadius: 3,
-                  backgroundColor: alpha('#8B5CF6', 0.1),
-                  border: `1px solid ${alpha('#8B5CF6', 0.2)}`
-                }}>
-                  <Typography variant="h4" sx={{ fontWeight: 700, color: '#8B5CF6', mb: 0.5 }}>
+                                              backgroundColor: alpha('#1B6EF3', 0.1),
+                            border: `1px solid ${alpha('#1B6EF3', 0.2)}`
+                          }}>
+                          <Typography variant="h4" sx={{ fontWeight: 700, color: '#1B6EF3', mb: 0.5 }}>
                     {formatCurrency(totalValue)}
                   </Typography>
                   <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
@@ -957,10 +957,10 @@ const PremiumReceiveModal = ({
                             px: 1.5,
                             py: 0.5,
                             borderRadius: 1,
-                            backgroundColor: alpha('#10B981', 0.1),
-                            border: `1px solid ${alpha('#10B981', 0.2)}`
+                            backgroundColor: alpha('#1B6EF3', 0.1),
+                            border: `1px solid ${alpha('#1B6EF3', 0.2)}`
                           }}>
-                            <Typography variant="caption" sx={{ color: '#10B981', fontWeight: 600 }}>
+                            <Typography variant="caption" sx={{ color: '#1B6EF3', fontWeight: 600 }}>
                               В ПУТИ: {product.inTransit} шт
                             </Typography>
                           </Box>

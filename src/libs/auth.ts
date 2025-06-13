@@ -94,7 +94,7 @@ export const authOptions: NextAuthOptions = {
 
   // ** Please refer to https://next-auth.js.org/configuration/options#pages for more `pages` options
   pages: {
-    signIn: '/login'
+    signIn: '/ru/login'
   },
 
   // ** Please refer to https://next-auth.js.org/configuration/options#callbacks for more `callbacks` options
@@ -111,6 +111,10 @@ export const authOptions: NextAuthOptions = {
          * in token which then will be available in the `session()` callback
          */
         token.name = user.name
+        token.email = user.email
+
+        // @ts-ignore
+        token.role = user.role
       }
 
       return token
@@ -118,22 +122,43 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         // ** Add custom params to user in session which are added in `jwt()` callback via `token` parameter
-        session.user.name = token.name
+        session.user.name = token.name as string
+        session.user.email = token.email as string
+
+        // @ts-ignore
+        session.user.role = token.role as string
       }
 
       return session
     },
     async redirect({ url, baseUrl }) {
-      // Если это редирект после входа, направляем на главную страницу дашборда
-      if (url.startsWith('/')) {
-        return `${baseUrl}/ru/dashboard`
+      // Проверяем если это callbackUrl с redirectTo параметром
+      const callbackUrl = new URL(url.startsWith('/') ? `${baseUrl}${url}` : url)
+      const redirectTo = callbackUrl.searchParams.get('callbackUrl') || callbackUrl.searchParams.get('redirectTo')
+
+      if (redirectTo) {
+        // Убеждаемся что redirect внутри нашего домена
+        const redirectUrl = new URL(redirectTo.startsWith('/') ? `${baseUrl}${redirectTo}` : redirectTo)
+
+        if (redirectUrl.origin === new URL(baseUrl).origin) {
+          return redirectUrl.href
+        }
       }
 
-      // Если внешний URL, используем baseUrl с дашбордом
-      if (new URL(url).origin === baseUrl) {
+      // Если это редирект после входа на локальный URL
+      if (url.startsWith('/')) {
+        // Если URL не содержит locale, добавляем /ru
+        const hasLocale = /^\/(ru|en|tr)/.test(url)
+
+        return hasLocale ? `${baseUrl}${url}` : `${baseUrl}/ru${url}`
+      }
+
+      // Если внешний URL но с тем же origin, разрешаем
+      if (new URL(url).origin === new URL(baseUrl).origin) {
         return url
       }
 
+      // По умолчанию направляем в дашборд
       return `${baseUrl}/ru/dashboard`
     }
   }

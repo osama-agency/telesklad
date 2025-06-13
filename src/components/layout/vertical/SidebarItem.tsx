@@ -29,16 +29,22 @@ const StyledMenuItem = styled(motion.div)(({ theme }) => ({
   marginInline: theme.spacing(1.5),
   marginBlock: theme.spacing(0.25),
 
-  // Фон активного пункта
+  // Фон активного пункта - фирменные цвета Telesklad
   '& .active-background': {
     position: 'absolute',
     inset: 0,
     borderRadius: theme.spacing(1.5),
-    backgroundColor: alpha(theme.palette.primary.main, 0.13),
+    backgroundColor: theme.palette.mode === 'light'
+      ? 'rgba(27, 110, 243, 0.1)' // #E6F0FF
+      : alpha(theme.palette.primary.main, 0.13),
     opacity: 0,
     transition: 'all 0.32s cubic-bezier(0.4, 0, 0.2, 1)',
-    border: `1.5px solid ${alpha(theme.palette.primary.main, 0.18)}`,
-    boxShadow: '0 4px 24px rgba(80, 80, 180, 0.10)',
+    border: theme.palette.mode === 'light'
+      ? '1.5px solid rgba(27, 110, 243, 0.15)'
+      : `1.5px solid ${alpha(theme.palette.primary.main, 0.18)}`,
+    boxShadow: theme.palette.mode === 'light'
+      ? '0 2px 12px rgba(27, 110, 243, 0.08)'
+      : '0 4px 24px rgba(80, 80, 180, 0.10)',
     pointerEvents: 'none',
   },
 
@@ -60,20 +66,26 @@ const StyledMenuItem = styled(motion.div)(({ theme }) => ({
     boxSizing: 'border-box',
     willChange: 'transform, box-shadow',
 
-    // Hover эффекты для неактивного состояния
+    // Hover эффекты для неактивного состояния - фирменные цвета
     '&:hover:not(.active)': {
-      backgroundColor: alpha(theme.palette.action.hover, 0.09),
+      backgroundColor: theme.palette.mode === 'light'
+        ? '#F3F8FF' // Hover фон для светлой темы
+        : alpha(theme.palette.action.hover, 0.09),
       transform: 'translateY(-1.5px) scale(1.012)',
-      boxShadow: '0 2px 8px rgba(80,80,180,0.06)',
+      boxShadow: theme.palette.mode === 'light'
+        ? '0 2px 8px rgba(27, 110, 243, 0.06)'
+        : '0 2px 8px rgba(80,80,180,0.06)',
 
       '& .menu-icon': {
         transform: 'scale(1.10) rotate(-3deg)',
-        color: theme.palette.primary.main,
-        filter: 'drop-shadow(0 2px 8px rgba(80,80,180,0.10))',
+        color: '#1B6EF3', // Фирменный цвет Telesklad
+        filter: theme.palette.mode === 'light'
+          ? 'drop-shadow(0 2px 8px rgba(27, 110, 243, 0.10))'
+          : 'drop-shadow(0 2px 8px rgba(80,80,180,0.10))',
       },
 
       '& .menu-text': {
-        color: theme.palette.primary.main,
+        color: '#1B6EF3', // Фирменный цвет Telesklad
         letterSpacing: '0.02em',
       }
     },
@@ -81,14 +93,18 @@ const StyledMenuItem = styled(motion.div)(({ theme }) => ({
     // Press эффект
     '&:active': {
       transform: 'scale(0.97)',
-      boxShadow: '0 1px 4px rgba(80,80,180,0.08)',
+      boxShadow: theme.palette.mode === 'light'
+        ? '0 1px 4px rgba(27, 110, 243, 0.08)'
+        : '0 1px 4px rgba(80,80,180,0.08)',
     },
 
     // Стили для иконки
     '& .menu-icon': {
       fontSize: '20px',
       transition: 'all 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
-      color: alpha(theme.palette.text.primary, 0.7),
+      color: theme.palette.mode === 'light'
+        ? '#4B5563' // text-gray-600 для светлой темы
+        : alpha(theme.palette.text.primary, 0.7),
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -102,40 +118,51 @@ const StyledMenuItem = styled(motion.div)(({ theme }) => ({
       fontSize: '0.93rem', // 15px
       fontWeight: 500,
       letterSpacing: '0.01em',
-      color: alpha(theme.palette.text.primary, 0.87),
+      color: theme.palette.mode === 'light'
+        ? '#4B5563' // text-gray-600 для светлой темы
+        : alpha(theme.palette.text.primary, 0.87),
       transition: 'all 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
       whiteSpace: 'nowrap',
-      fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+      fontFamily: 'var(--font-golos-text), Inter, -apple-system, BlinkMacSystemFont, sans-serif',
       lineHeight: 1.22,
       willChange: 'opacity, color, letter-spacing',
     }
   },
 
-  // Активное состояние
+  // Активное состояние - фирменные цвета Telesklad
   '&.active': {
     '& .active-background': {
       opacity: 1,
-      boxShadow: '0 8px 32px rgba(80,80,180,0.13)',
+      boxShadow: theme.palette.mode === 'light'
+        ? '0 4px 20px rgba(27, 110, 243, 0.12)'
+        : '0 8px 32px rgba(80,80,180,0.13)',
     },
 
     '& .menu-item-wrapper': {
-      boxShadow: '0 4px 16px rgba(80,80,180,0.10)',
+      boxShadow: theme.palette.mode === 'light'
+        ? '0 2px 12px rgba(27, 110, 243, 0.08)'
+        : '0 4px 16px rgba(80,80,180,0.10)',
+
       '& .menu-icon': {
-        color: theme.palette.primary.main,
+        color: '#1B6EF3', // Фирменный цвет Telesklad
         transform: 'scale(1.08)',
-        filter: 'drop-shadow(0 2px 8px rgba(80,80,180,0.13))',
+        filter: theme.palette.mode === 'light'
+          ? 'drop-shadow(0 2px 8px rgba(27, 110, 243, 0.13))'
+          : 'drop-shadow(0 2px 8px rgba(80,80,180,0.13))',
       },
 
       '& .menu-text': {
-        color: theme.palette.primary.main,
-        fontWeight: 600,
+        color: '#1B6EF3', // Фирменный цвет Telesklad
+        fontWeight: 700, // Bold для активного состояния
         letterSpacing: '0.025em',
       },
 
       '&:hover': {
         transform: 'none',
         backgroundColor: 'transparent',
-        boxShadow: '0 8px 32px rgba(80,80,180,0.13)',
+        boxShadow: theme.palette.mode === 'light'
+          ? '0 4px 20px rgba(27, 110, 243, 0.12)'
+          : '0 8px 32px rgba(80,80,180,0.13)',
         '& .menu-icon': {
           transform: 'scale(1.12) rotate(-2deg)',
         }
@@ -178,19 +205,19 @@ const SidebarItem = ({ icon: Icon, label, href, exactMatch = true }: SidebarItem
   // Определяем состояние расширения
   const isExpanded = !isCollapsed || (isCollapsed && isHovered) || isBreakpointReached
 
-  // В свернутом состоянии показываем только иконку в обводке
+  // В свернутом состоянии показываем только иконку с фирменными цветами
   if (!isExpanded) {
     return (
       <div className="flex items-center justify-center my-1">
         <div
           className={
             isActive
-              ? 'w-11 h-11 flex items-center justify-center rounded-md border border-[#715bff]/50 bg-[#715bff]/5'
-              : 'w-11 h-11 flex items-center justify-center rounded-md'
+              ? 'w-11 h-11 flex items-center justify-center rounded-md border border-[#1B6EF3]/30 bg-[#1B6EF3]/10'
+              : 'w-11 h-11 flex items-center justify-center rounded-md hover:bg-[#F3F8FF] transition-colors'
           }
         >
           <Icon
-            className={isActive ? 'w-5 h-5 text-[#715bff]' : 'w-5 h-5 text-[#B0B0C3]'}
+            className={isActive ? 'w-5 h-5 text-[#1B6EF3]' : 'w-5 h-5 text-[#4B5563] hover:text-[#1B6EF3] transition-colors'}
             strokeWidth={isActive ? 2.1 : 1.7}
             style={{ display: 'block', margin: 0, padding: 0, lineHeight: 1 }}
           />

@@ -1,5 +1,7 @@
 // Next Imports
 import { headers } from 'next/headers'
+import { Inter } from 'next/font/google'
+import { Golos_Text } from 'next/font/google'
 
 // MUI Imports
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript'
@@ -30,10 +32,16 @@ import '@/app/globals.css'
 // Generated Icon CSS Imports
 // import '@assets/iconify-icons/generated-icons.css'
 
+const inter = Inter({ subsets: ['latin'] })
+const golosText = Golos_Text({
+  subsets: ['latin', 'cyrillic'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-golos-text'
+})
+
 export const metadata = {
-  title: 'Sneat - MUI Next.js Admin Dashboard Template',
-  description:
-    'Sneat - MUI Next.js Admin Dashboard Template - is the most developer friendly & highly customizable Admin Dashboard Template based on MUI v5.'
+  title: 'Telesklad - Система управления закупками',
+  description: 'Современная система управления закупками и складом'
 }
 
 const RootLayout = async (props: ChildrenType & { params: Promise<{ lang: Locale }> }) => {
@@ -52,7 +60,7 @@ const RootLayout = async (props: ChildrenType & { params: Promise<{ lang: Locale
         <head>
           <meta name="emotion-insertion-point" content="" />
         </head>
-        <body className='flex is-full min-bs-full flex-auto flex-col'>
+        <body className={`${inter.className} ${golosText.variable} flex is-full min-bs-full flex-auto flex-col`}>
           <InitColorSchemeScript attribute='data' defaultMode={systemMode} />
           <Providers direction={direction}>
             <ConsoleFilter />

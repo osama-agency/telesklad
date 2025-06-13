@@ -1,6 +1,14 @@
+import { requireAdminAccess } from '@/lib/auth-helpers'
+
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3011'
 
 export async function GET(request: Request) {
+  // Проверяем права администратора
+  const accessDenied = await requireAdminAccess()
+
+  if (accessDenied) {
+    return accessDenied
+  }
   try {
     const { searchParams } = new URL(request.url)
     const backendUrl = `${BACKEND_URL}/api/expenses?${searchParams.toString()}`
@@ -47,6 +55,13 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  // Проверяем права администратора
+  const accessDenied = await requireAdminAccess()
+
+  if (accessDenied) {
+    return accessDenied
+  }
+
   try {
     const body = await request.json()
     const backendUrl = `${BACKEND_URL}/api/expenses`

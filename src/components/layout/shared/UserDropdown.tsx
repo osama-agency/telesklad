@@ -81,6 +81,20 @@ const UserDropdown = () => {
 
   const handleUserLogout = async () => {
     try {
+      // Если это демо пользователь, сбрасываем демо данные
+      if (session?.user?.email === 'demo@demo.com') {
+        try {
+          await fetch('/api/demo/reset', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          })
+        } catch (error) {
+          console.error('Ошибка при сбросе демо данных:', error)
+        }
+      }
+
       // Sign out from the app
       await signOut({ callbackUrl: process.env.NEXT_PUBLIC_APP_URL })
     } catch (error) {

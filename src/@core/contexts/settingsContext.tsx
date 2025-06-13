@@ -60,7 +60,7 @@ export const SettingsProvider = (props: Props) => {
     navbarContentWidth: 'wide',
     contentWidth: 'wide',
     footerContentWidth: 'wide',
-    primaryColor: primaryColorConfig[0].main // Purple color #696CFF
+    primaryColor: primaryColorConfig[0].main // telesklad brand color #1B6EF3
   }
 
   const updatedInitialSettings = {

@@ -202,7 +202,7 @@
 
 [data-mui-color-scheme="dark"] .premium-preset-chip.active {
   background: linear-gradient(135deg,
-    rgba(99, 102, 241, 0.15) 0%,
+    rgba(27, 110, 243, 0.12) 0%,
     rgba(139, 92, 246, 0.12) 100%);
   border-color: rgba(99, 102, 241, 0.3);
   color: #a5b4fc;
@@ -298,9 +298,9 @@
 }
 
 .premium-mobile-calendar .react-datepicker__day--selected {
-  background: linear-gradient(135deg,
-    #3b82f6 0%,
-    #6366f1 100%) !important;
+      background: linear-gradient(135deg,
+      #1B6EF3 0%,
+      #3EB5EA 100%) !important;
   color: white !important;
   font-weight: 700;
   transform: scale(1.05);
@@ -331,8 +331,8 @@
   width: 100%;
   height: 56px;
   background: linear-gradient(135deg,
-    #3b82f6 0%,
-    #6366f1 100%);
+    #1B6EF3 0%,
+    #3EB5EA 100%);
   border: none;
   border-radius: 16px;
   color: white;

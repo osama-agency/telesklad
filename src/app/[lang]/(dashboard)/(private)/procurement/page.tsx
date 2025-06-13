@@ -958,13 +958,13 @@ const ProcurementPage = () => {
                                         }
                                       }),
                                       ...(purchase.status === 'delivering' && {
-                                        bgcolor: alpha('#8b5cf6', 0.12),
-                                        color: '#8b5cf6',
+                                        bgcolor: alpha('#1B6EF3', 0.12),
+                                        color: '#1B6EF3',
                                         '& .MuiSelect-select': {
-                                          bgcolor: alpha('#8b5cf6', 0.12),
+                                          bgcolor: alpha('#1B6EF3', 0.12),
                                         },
                                         '&:hover': {
-                                          bgcolor: alpha('#8b5cf6', 0.18),
+                                          bgcolor: alpha('#1B6EF3', 0.18),
                                         }
                                       }),
                                       ...(purchase.status === 'received' && {
@@ -1655,7 +1655,7 @@ const ProcurementPage = () => {
                                   { key: 'pending', label: 'Ожидает', color: '#f59e0b' },
                                   { key: 'paid', label: 'Оплачено', color: '#10b981' },
                                   { key: 'in_transit', label: 'В пути', color: '#3b82f6' },
-                                  { key: 'delivering', label: 'Доставляется', color: '#8b5cf6' },
+                                  { key: 'delivering', label: 'Доставляется', color: '#1B6EF3' },
                                   { key: 'received', label: 'Получено', color: '#6366f1' },
                                   { key: 'cancelled', label: 'Отменено', color: '#ef4444' }
                                 ].map((status) => (

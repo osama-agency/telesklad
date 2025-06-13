@@ -785,10 +785,10 @@ const PremiumReceiveModal = ({
                 <Box sx={{
                   p: 2.5,
                   borderRadius: 3,
-                  backgroundColor: alpha('#8B5CF6', 0.1),
-                  border: `1px solid ${alpha('#8B5CF6', 0.2)}`
+                                              backgroundColor: alpha('#1B6EF3', 0.1),
+                            border: `1px solid ${alpha('#1B6EF3', 0.2)}`
                 }}>
-                  <Typography variant="h4" sx={{ fontWeight: 700, color: '#8B5CF6', mb: 0.5 }}>
+                                      <Typography variant="h4" sx={{ fontWeight: 700, color: '#1B6EF3', mb: 0.5 }}>
                     {formatCurrency(totalValue)}
                   </Typography>
                   <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
@@ -4728,7 +4728,7 @@ const PremiumPurchaseAnalytics = () => {
                     </Grid>
                     <Grid item xs={12} sm={4}>
                       <Box sx={{ textAlign: 'center' }}>
-                        <Typography variant="h4" sx={{ fontWeight: 700, color: 'secondary.main' }}>
+                        <Typography variant="h4" sx={{ fontWeight: 700, color: '#1B6EF3', mb: 0.5 }}>
                           {formatCurrency(selectedProductDetail.purchaseSum)}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">

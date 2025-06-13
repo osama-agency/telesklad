@@ -1,24 +1,57 @@
+// Next Imports
 import { Inter } from 'next/font/google'
+import { Golos_Text } from 'next/font/google'
 
-import type { Metadata } from 'next'
+// MUI Imports
+import InitColorSchemeScript from '@mui/material/InitColorSchemeScript'
 
-import './globals.css'
+// Third-party Imports
+import 'react-perfect-scrollbar/dist/css/styles.css'
+
+// Type Imports
+import type { ChildrenType } from '@core/types'
+
+// Component Imports
+import ConsoleFilter from '@/components/ConsoleFilter'
+import Providers from '@/components/Providers'
+
+// Util Imports
+import { getSystemMode } from '@core/utils/serverHelpers'
+
+// Style Imports
+import '@/app/globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
 
-export const metadata: Metadata = {
+const golosText = Golos_Text({
+  subsets: ['latin', 'cyrillic'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-golos-text'
+})
+
+export const metadata = {
   title: 'Telesklad - Система управления закупками',
-  description: 'Современная система управления закупками и складом',
+  description: 'Современная система управления закупками и складом'
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+const RootLayout = async ({ children }: ChildrenType) => {
+  // Vars
+  const systemMode = await getSystemMode()
+
   return (
-    <html lang="ru">
-      <body className={inter.className}>{children}</body>
+    <html id='__next' lang='ru' dir='ltr' suppressHydrationWarning>
+      <head>
+        <meta name="emotion-insertion-point" content="" />
+      </head>
+      <body className={`${inter.className} ${golosText.variable} flex is-full min-bs-full flex-auto flex-col`}>
+        <InitColorSchemeScript attribute='data' defaultMode={systemMode} />
+        <Providers direction='ltr'>
+          <ConsoleFilter />
+          {children}
+        </Providers>
+      </body>
     </html>
   )
 }
+
+export default RootLayout

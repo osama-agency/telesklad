@@ -23,8 +23,13 @@ const navigationCustomStyles = (verticalNavOptions: VerticalNavState, theme: The
   return {
     color: 'var(--mui-palette-text-primary)',
     zIndex: 'var(--drawer-z-index) !important',
+    display: 'flex',
+    flexDirection: 'column',
     [`& .${verticalNavClasses.bgColorContainer}`]: {
-      overflow: 'visible'
+      overflow: 'visible',
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%'
     },
     [`& .${verticalNavClasses.header}`]: {
       paddingBlock: theme.spacing(4.25),
@@ -105,7 +110,10 @@ const navigationCustomStyles = (verticalNavOptions: VerticalNavState, theme: The
       }
     },
     [`& .${menuClasses.root}`]: {
-      paddingBlock: theme.spacing(1)
+      paddingBlock: theme.spacing(1),
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column'
     },
     [`& .${verticalNavClasses.backdrop}`]: {
       backgroundColor: 'var(--backdrop-color)'

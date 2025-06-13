@@ -1,7 +1,15 @@
 import { NextResponse } from 'next/server'
 
+import { requireAdminAccess } from '@/lib/auth-helpers'
+
 // GET /api/products/hidden - получить количество скрытых товаров
 export async function GET() {
+  // Проверяем права администратора
+  const accessDenied = await requireAdminAccess()
+
+  if (accessDenied) {
+    return accessDenied
+  }
   try {
     // Пробуем получить данные с backend сервера
     const response = await fetch('http://localhost:3011/api/products?hidden=true', {

@@ -29,7 +29,7 @@ const ModernDatePicker: React.FC<ModernDatePickerProps> = ({ onClose }) => {
   const [activeStep, setActiveStep] = useState<'quick' | 'calendar'>('quick')
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null)
 
-  // Format date range display  
+  // Format date range display
   const formatDateRange = useCallback(() => {
     if (!range.start || !range.end) return 'Выбрать период'
 
@@ -41,8 +41,8 @@ const ModernDatePicker: React.FC<ModernDatePickerProps> = ({ onClose }) => {
       if (date.toDateString() === today.toDateString()) return 'сегодня'
       if (date.toDateString() === yesterday.toDateString()) return 'вчера'
 
-      return date.toLocaleDateString('ru-RU', { 
-        day: 'numeric', 
+      return date.toLocaleDateString('ru-RU', {
+        day: 'numeric',
         month: 'short'
       })
     }
@@ -165,7 +165,7 @@ const ModernDatePicker: React.FC<ModernDatePickerProps> = ({ onClose }) => {
           width: 24,
           height: 24,
           borderRadius: '50%',
-          background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+          background: 'linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -175,7 +175,7 @@ const ModernDatePicker: React.FC<ModernDatePickerProps> = ({ onClose }) => {
       >
         📅
       </Box>
-      
+
       <Typography
         variant="body2"
         sx={{
@@ -230,13 +230,13 @@ const ModernDatePicker: React.FC<ModernDatePickerProps> = ({ onClose }) => {
       >
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box>
-            <Typography 
-              variant="h5" 
-              fontWeight={700} 
+            <Typography
+              variant="h5"
+              fontWeight={700}
               letterSpacing="-0.02em"
-              sx={{ 
+              sx={{
                 fontSize: '1.5rem',
-                background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                background: 'linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%)',
                 backgroundClip: 'text',
                 WebkitBackgroundClip: 'text',
                 color: 'transparent'
@@ -244,9 +244,9 @@ const ModernDatePicker: React.FC<ModernDatePickerProps> = ({ onClose }) => {
             >
               Выбор периода
             </Typography>
-            <Typography 
-              variant="body2" 
-              color="text.secondary" 
+            <Typography
+              variant="body2"
+              color="text.secondary"
               sx={{ fontSize: '0.875rem', mt: 0.5, fontWeight: 400 }}
             >
               Выберите диапазон для анализа данных
@@ -261,7 +261,7 @@ const ModernDatePicker: React.FC<ModernDatePickerProps> = ({ onClose }) => {
               borderRadius: 2.5,
               width: 40,
               height: 40,
-              '&:hover': { 
+              '&:hover': {
                 bgcolor: 'action.hover',
                 transform: 'scale(1.05)'
               }
@@ -301,11 +301,11 @@ const ModernDatePicker: React.FC<ModernDatePickerProps> = ({ onClose }) => {
               textTransform: 'none',
               transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
               ...(activeStep === tab.key ? {
-                background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                background: 'linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%)',
                 color: 'white',
                 boxShadow: `0 4px 14px ${alpha(theme.palette.primary.main, 0.25)}`,
                 '&:hover': {
-                  background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                  background: 'linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%)',
                   transform: 'translateY(-1px)',
                   boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.35)}`
                 }
@@ -343,8 +343,8 @@ const ModernDatePicker: React.FC<ModernDatePickerProps> = ({ onClose }) => {
                     key={preset.key}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ 
-                      duration: 0.4, 
+                    transition={{
+                      duration: 0.4,
                       delay: index * 0.1,
                       ease: [0.4, 0, 0.2, 1]
                     }}
@@ -365,7 +365,7 @@ const ModernDatePicker: React.FC<ModernDatePickerProps> = ({ onClose }) => {
                         border: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
                         ...(selectedPreset === preset.key ? {
                           // ВЫБРАННАЯ ПЛИТКА - ГРАДИЕНТ С GLOW
-                          background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                          background: 'linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%)',
                           color: 'white',
                           border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
                           boxShadow: `0 8px 25px ${alpha(theme.palette.primary.main, 0.25)}`,
@@ -405,12 +405,12 @@ const ModernDatePicker: React.FC<ModernDatePickerProps> = ({ onClose }) => {
                       >
                         {preset.icon}
                       </Box>
-                      
+
                       {/* ТЕКСТОВЫЙ КОНТЕНТ */}
                       <Box sx={{ flex: 1 }}>
                         <Typography
                           variant="h6"
-                          sx={{ 
+                          sx={{
                             fontSize: '1.125rem',
                             fontWeight: 600,
                             letterSpacing: '-0.01em',
@@ -422,10 +422,10 @@ const ModernDatePicker: React.FC<ModernDatePickerProps> = ({ onClose }) => {
                         </Typography>
                         <Typography
                           variant="body2"
-                          sx={{ 
+                          sx={{
                             fontSize: '0.875rem',
-                            color: selectedPreset === preset.key 
-                              ? alpha('#ffffff', 0.8) 
+                            color: selectedPreset === preset.key
+                              ? alpha('#ffffff', 0.8)
                               : 'text.secondary',
                             fontWeight: 400
                           }}
@@ -462,9 +462,9 @@ const ModernDatePicker: React.FC<ModernDatePickerProps> = ({ onClose }) => {
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            transition={{ 
-              type: "spring", 
-              damping: 25, 
+            transition={{
+              type: "spring",
+              damping: 25,
               stiffness: 400,
               duration: 0.3
             }}
@@ -496,7 +496,7 @@ const ModernDatePicker: React.FC<ModernDatePickerProps> = ({ onClose }) => {
                 <Typography
                   variant="body1"
                   fontWeight={600}
-                  sx={{ 
+                  sx={{
                     fontSize: '1rem',
                     color: 'text.primary',
                     letterSpacing: '-0.01em'
@@ -520,11 +520,11 @@ const ModernDatePicker: React.FC<ModernDatePickerProps> = ({ onClose }) => {
                   letterSpacing: '0.01em',
                   borderRadius: 2.5,
                   textTransform: 'none',
-                  background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                  background: 'linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%)',
                   boxShadow: `0 4px 14px ${alpha(theme.palette.primary.main, 0.25)}`,
                   transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                   '&:hover': {
-                    background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+                    background: 'linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%)',
                     transform: 'translateY(-1px)',
                     boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.35)}`
                   },
@@ -566,4 +566,4 @@ const ModernDatePicker: React.FC<ModernDatePickerProps> = ({ onClose }) => {
   )
 }
 
-export default ModernDatePicker 
+export default ModernDatePicker

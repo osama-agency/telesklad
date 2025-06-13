@@ -8,30 +8,36 @@ import {
   Box,
   Avatar,
   Typography,
-  IconButton,
   Menu,
   MenuItem,
   ListItemIcon,
   ListItemText,
   Divider,
-  Badge
+  Badge,
+  Chip,
+  Tooltip,
+  Card,
+  CardContent
 } from '@mui/material'
 import { useTheme, alpha } from '@mui/material/styles'
 
 // Third-party Imports
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import {
-  Settings,
-  Bell,
-  Globe,
-  Moon,
-  MoreHorizontal,
-  User,
-  LogOut
+  ChevronDown
 } from 'lucide-react'
 
+// MUI Icons
+import {
+  Person as User,
+  Settings,
+  Language as Globe,
+  DarkMode as Moon,
+  ExitToApp as LogOut
+} from '@mui/icons-material'
+
 // Hook Imports
-import useVerticalNav from '@menu/hooks/useVerticalNav'
+// import useVerticalNav from '@menu/hooks/useVerticalNav'
 
 type SidebarUserStatusProps = {
   avatar?: string
@@ -42,16 +48,19 @@ type SidebarUserStatusProps = {
 
 const SidebarUserStatus = ({
   avatar = '/images/avatars/8.png',
-  name = 'Eldar',
+  name = 'Демо пользователь',
   status = 'online',
   className
 }: SidebarUserStatusProps) => {
   const theme = useTheme()
-  const { isCollapsed, isHovered, isBreakpointReached } = useVerticalNav()
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
 
-  const isExpanded = !isCollapsed || (isCollapsed && isHovered) || isBreakpointReached
   const open = Boolean(anchorEl)
+
+  // Демо данные
+  const role = 'Администратор'
+  const apiText = 'API: Подключено'
+  const apiTooltip = 'Соединение с API активно'
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget)
@@ -86,39 +95,48 @@ const SidebarUserStatus = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.2 }}
       style={{
-        padding: theme.spacing(2),
-        borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`
+        padding: theme.spacing(2)
       }}
     >
-      <Box
+      <Card
+        elevation={3}
         sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1.5,
-          p: 1.5,
-          borderRadius: 2,
-          cursor: 'pointer',
-          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+          background: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.9)}, ${alpha(theme.palette.background.paper, 0.95)})`,
+          backdropFilter: 'blur(10px)',
+          border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+          borderRadius: 3,
+          overflow: 'visible',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           '&:hover': {
-            backgroundColor: alpha(theme.palette.action.hover, 0.06),
-            transform: 'translateY(-1px)'
+            transform: 'translateY(-2px)',
+            boxShadow: theme.shadows[8]
           }
         }}
-        onClick={!isExpanded ? handleClick : undefined}
       >
-        {/* Аватар с индикатором статуса */}
+        <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 2,
+              cursor: 'pointer'
+        }}
+            onClick={handleClick}
+      >
+            {/* Увеличенный аватар с индикатором статуса */}
         <Badge
           overlap="circular"
           anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
           badgeContent={
             <Box
               sx={{
-                width: 10,
-                height: 10,
+                    width: 14,
+                    height: 14,
                 borderRadius: '50%',
                 backgroundColor: getStatusColor(),
-                border: `2px solid ${theme.palette.background.paper}`,
-                boxShadow: `0 0 0 1px ${alpha(getStatusColor(), 0.3)}`
+                    border: `3px solid ${theme.palette.background.paper}`,
+                    boxShadow: `0 0 0 2px ${alpha(getStatusColor(), 0.3)}`
               }}
             />
           }
@@ -127,121 +145,153 @@ const SidebarUserStatus = ({
             src={avatar}
             alt={name}
             sx={{
-              width: 36,
-              height: 36,
-              border: `2px solid ${alpha(theme.palette.divider, 0.1)}`,
-              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  width: 64,
+                  height: 64,
+                  border: `3px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: `0 4px 16px ${alpha(theme.palette.primary.main, 0.2)}`,
               '&:hover': {
                 transform: 'scale(1.05)',
-                borderColor: alpha(theme.palette.primary.main, 0.3)
+                    borderColor: alpha(theme.palette.primary.main, 0.4),
+                    boxShadow: `0 6px 24px ${alpha(theme.palette.primary.main, 0.3)}`
               }
             }}
           />
         </Badge>
 
-        {/* Информация пользователя - показывается только в развернутом состоянии */}
-        <AnimatePresence mode="wait">
-          {isExpanded && (
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.2, delay: 0.1 }}
-              style={{ flex: 1, minWidth: 0 }}
-            >
+            {/* Информация пользователя */}
+            <Box sx={{ textAlign: 'center', width: '100%' }}>
               <Typography
-                variant="subtitle2"
+                variant="h6"
                 sx={{
-                  fontWeight: 600,
-                  fontSize: '0.875rem',
+                  fontWeight: 700,
+                  fontSize: '1rem',
                   color: theme.palette.text.primary,
-                  lineHeight: 1.2,
+                  lineHeight: 1.3,
+                  mb: 0.5,
                   fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif'
                 }}
               >
                 {name}
               </Typography>
+
               <Typography
-                variant="caption"
+                variant="body2"
                 sx={{
-                  fontSize: '0.75rem',
+                  fontSize: '0.875rem',
                   color: alpha(theme.palette.text.secondary, 0.8),
-                  lineHeight: 1.2,
-                  display: 'block'
+                  fontWeight: 500,
+                  mb: 1.5
                 }}
               >
-                {getStatusText()}
+                {role}
               </Typography>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
-        {/* Кнопка дополнительных действий - показывается только в развернутом состоянии */}
-        {isExpanded && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.2, delay: 0.15 }}
-          >
-            <IconButton
+              {/* Статус пользователя */}
+              <Chip
+                label={getStatusText()}
+                size="small"
+                sx={{
+                  backgroundColor: alpha(getStatusColor(), 0.15),
+                  color: getStatusColor(),
+                  fontWeight: 600,
+                  fontSize: '0.75rem',
+                  border: `1px solid ${alpha(getStatusColor(), 0.3)}`,
+                  mb: 2
+                }}
+              />
+
+              {/* Разделитель */}
+              <Divider sx={{ mb: 2, opacity: 0.6 }} />
+
+              {/* Статус API с Tooltip */}
+              <Tooltip title={apiTooltip} placement="top">
+                <Chip
+                  label={apiText}
               size="small"
-              onClick={handleClick}
+                  icon={
+                    <Box
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        backgroundColor: '#4ade80',
+                        animation: 'pulse 2s infinite'
+                      }}
+                    />
+                  }
               sx={{
-                color: alpha(theme.palette.text.secondary, 0.7),
-                '&:hover': {
-                  backgroundColor: alpha(theme.palette.action.hover, 0.08),
-                  color: theme.palette.text.primary
-                }
-              }}
-            >
-              <MoreHorizontal size={16} />
-            </IconButton>
-          </motion.div>
-        )}
+                    backgroundColor: alpha('#4ade80', 0.15),
+                    color: '#4ade80',
+                    fontWeight: 600,
+                    fontSize: '0.75rem',
+                    border: `1px solid ${alpha('#4ade80', 0.3)}`,
+                    '& .MuiChip-icon': {
+                      marginLeft: 1
+                    }
+                  }}
+                />
+              </Tooltip>
+
+              {/* Стрелка вниз */}
+              <Box sx={{ mt: 1, display: 'flex', justifyContent: 'center' }}>
+                <ChevronDown
+                  size={16}
+                  style={{
+                    color: alpha(theme.palette.text.secondary, 0.6),
+                    transition: 'transform 0.2s ease'
+                  }}
+                />
+              </Box>
+            </Box>
       </Box>
+        </CardContent>
+      </Card>
 
       {/* Dropdown меню с дополнительными действиями */}
       <Menu
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
-        transformOrigin={{ horizontal: 'left', vertical: 'bottom' }}
-        anchorOrigin={{ horizontal: 'left', vertical: 'top' }}
+        transformOrigin={{ horizontal: 'center', vertical: 'top' }}
+        anchorOrigin={{ horizontal: 'center', vertical: 'bottom' }}
         slotProps={{
           paper: {
             sx: {
-              mt: -1,
-              ml: 1,
+              mt: 1,
               minWidth: 220,
               backgroundColor: alpha(theme.palette.background.paper, 0.95),
               backdropFilter: 'blur(20px)',
               border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-              borderRadius: 2,
-              boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+              borderRadius: 3,
+              boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
               '& .MuiMenuItem-root': {
-                borderRadius: 1,
+                borderRadius: 1.5,
                 mx: 1,
                 my: 0.5,
                 fontSize: '0.875rem',
                 fontWeight: 500,
+                py: 1.5,
                 '&:hover': {
-                  backgroundColor: alpha(theme.palette.action.hover, 0.08)
-                }
+                  backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                  transform: 'translateX(4px)'
+                },
+                transition: 'all 0.2s ease'
               }
             }
           }
         }}
       >
         <MenuItem onClick={handleClose}>
-          <ListItemIcon sx={{ minWidth: 36 }}>
-            <User size={18} />
+          <ListItemIcon sx={{ minWidth: 40 }}>
+            <User />
           </ListItemIcon>
           <ListItemText primary="Профиль" />
         </MenuItem>
 
         <MenuItem onClick={handleClose}>
-          <ListItemIcon sx={{ minWidth: 36 }}>
-            <Settings size={18} />
+          <ListItemIcon sx={{ minWidth: 40 }}>
+            <Settings />
           </ListItemIcon>
           <ListItemText primary="Настройки" />
         </MenuItem>
@@ -249,35 +299,48 @@ const SidebarUserStatus = ({
         <Divider sx={{ my: 1 }} />
 
         <MenuItem onClick={handleClose}>
-          <ListItemIcon sx={{ minWidth: 36 }}>
-            <Globe size={18} />
+          <ListItemIcon sx={{ minWidth: 40 }}>
+            <Globe />
           </ListItemIcon>
           <ListItemText primary="Язык" />
         </MenuItem>
 
         <MenuItem onClick={handleClose}>
-          <ListItemIcon sx={{ minWidth: 36 }}>
-            <Moon size={18} />
+          <ListItemIcon sx={{ minWidth: 40 }}>
+            <Moon />
           </ListItemIcon>
-          <ListItemText primary="Тема" />
-        </MenuItem>
-
-        <MenuItem onClick={handleClose}>
-          <ListItemIcon sx={{ minWidth: 36 }}>
-            <Bell size={18} />
-          </ListItemIcon>
-          <ListItemText primary="Уведомления" />
+          <ListItemText primary="Переключить тему" />
         </MenuItem>
 
         <Divider sx={{ my: 1 }} />
 
-        <MenuItem onClick={handleClose}>
-          <ListItemIcon sx={{ minWidth: 36 }}>
-            <LogOut size={18} />
+        <MenuItem
+          onClick={handleClose}
+          sx={{
+            '&:hover': {
+              backgroundColor: alpha(theme.palette.error.main, 0.08) + ' !important',
+              color: theme.palette.error.main
+            }
+          }}
+        >
+          <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
+            <LogOut />
           </ListItemIcon>
           <ListItemText primary="Выйти" />
         </MenuItem>
       </Menu>
+
+      {/* CSS для анимации пульса */}
+      <style jsx>{`
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.5;
+          }
+        }
+      `}</style>
     </motion.div>
   )
 }

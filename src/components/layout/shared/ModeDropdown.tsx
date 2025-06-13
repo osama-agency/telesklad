@@ -68,8 +68,30 @@ const ModeDropdown = () => {
           popper: { className: 'capitalize' }
         }}
       >
-        <IconButton ref={anchorRef} onClick={handleToggle} className='text-textPrimary'>
-          <i className={getModeIcon()} />
+        <IconButton
+          ref={anchorRef}
+          onClick={handleToggle}
+          sx={{
+            color: 'text.primary',
+            padding: 0,
+            minWidth: 'auto',
+            width: 'auto',
+            height: 'auto',
+            '&:hover': {
+              backgroundColor: 'transparent',
+            },
+            '& .MuiTouchRipple-root': {
+              display: 'none',
+            }
+          }}
+        >
+          <i
+            className={getModeIcon()}
+            style={{
+              fontSize: '20px',
+              transition: 'all 0.3s ease',
+            }}
+          />
         </IconButton>
       </Tooltip>
       <Popper

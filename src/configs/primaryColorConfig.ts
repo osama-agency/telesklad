@@ -8,10 +8,10 @@ export type PrimaryColorConfig = {
 // Primary color config object
 const primaryColorConfig: PrimaryColorConfig[] = [
   {
-    name: 'primary-1',
-    light: '#8789FF',
-    main: '#696CFF',
-    dark: '#5E61E6'
+    name: 'telesklad-primary',
+    light: '#3EB5EA',
+    main: '#1B6EF3',
+    dark: '#134EC0'
   },
   {
     name: 'primary-pink',

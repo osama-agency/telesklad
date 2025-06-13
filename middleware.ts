@@ -1,50 +1,75 @@
-// Temporarily disabled for testing
-// import { withAuth } from "next-auth/middleware"
-
-// export default withAuth(
-//   function middleware() {
-//     // Additional middleware logic can be added here if needed
-//   },
-//   {
-//     callbacks: {
-//       authorized: ({ token }) => !!token
-//     },
-//     pages: {
-//       signIn: '/login'
-//     }
-//   }
-// )
-
+// Next Imports
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-export function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname
+// Third-party Imports
+import { withAuth } from "next-auth/middleware"
 
-  // Check if the pathname is just '/'
-  if (pathname === '/') {
-    return NextResponse.redirect(new URL('/ru/dashboard', request.url))
+export default withAuth(
+  function middleware(request: NextRequest) {
+    const pathname = request.nextUrl.pathname
+
+    // Check if the pathname is just '/'
+    if (pathname === '/') {
+      return NextResponse.redirect(new URL('/ru/dashboard', request.url))
+    }
+
+    // Check if pathname doesn't have a locale
+    const pathnameHasLocale = /^\/(ru|en|tr)/.test(pathname)
+
+    if (!pathnameHasLocale && !pathname.startsWith('/api') && !pathname.startsWith('/_next')) {
+      // Redirect to /ru version
+      return NextResponse.redirect(new URL(`/ru${pathname}`, request.url))
+    }
+
+    return NextResponse.next()
+  },
+  {
+    callbacks: {
+      authorized: ({ token, req }) => {
+        // Публичные страницы, которые не требуют авторизации
+        const publicPaths = [
+          '/login',
+          '/register',
+          '/forgot-password',
+          '/pages/auth',
+          '/api/auth',
+          '/api/login',
+          '/_next',
+          '/favicon.ico'
+        ]
+
+        const pathname = req.nextUrl.pathname
+
+        // Проверяем, является ли путь публичным
+        const isPublicPath = publicPaths.some(path =>
+          pathname.includes(path) || pathname.startsWith(path)
+        )
+
+        // Если это публичный путь, разрешаем доступ
+        if (isPublicPath) {
+          return true
+        }
+
+        // Для всех остальных путей требуем токен
+        return !!token
+      }
+    },
+    pages: {
+      signIn: '/ru/login'
+    }
   }
-
-  // Check if pathname doesn't have a locale
-  const pathnameHasLocale = /^\/(ru|en|tr)/.test(pathname)
-
-  if (!pathnameHasLocale && !pathname.startsWith('/api') && !pathname.startsWith('/_next')) {
-    // Redirect to /ru version
-    return NextResponse.redirect(new URL(`/ru${pathname}`, request.url))
-  }
-}
+)
 
 export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api (API routes)
+     * - api/auth (NextAuth API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - public assets
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|images|icons).*)',
-  ]
+    '/((?!api/auth|_next/static|_next/image|favicon.ico).*)',
+  ],
 }

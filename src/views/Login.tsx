@@ -4,18 +4,31 @@
 import { useState } from 'react'
 
 // Next Imports
-import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 
 // MUI Imports
-import Typography from '@mui/material/Typography'
-import IconButton from '@mui/material/IconButton'
-import InputAdornment from '@mui/material/InputAdornment'
-import Checkbox from '@mui/material/Checkbox'
-import Button from '@mui/material/Button'
-import FormControlLabel from '@mui/material/FormControlLabel'
-import Divider from '@mui/material/Divider'
-import { styled, useTheme } from '@mui/material/styles'
+import {
+  Box,
+  Card,
+  CardContent,
+  TextField,
+  InputAdornment,
+  IconButton,
+  Typography,
+  Link,
+  Alert,
+  Tooltip,
+  useTheme
+} from '@mui/material'
+import { LoadingButton } from '@mui/lab'
+import {
+  EmailOutlined,
+  LockOutlined,
+  Visibility,
+  VisibilityOff,
+  LightMode,
+  DarkMode
+} from '@mui/icons-material'
 
 // Third-party Imports
 import { signIn } from 'next-auth/react'
@@ -24,221 +37,480 @@ import { valibotResolver } from '@hookform/resolvers/valibot'
 import { email, object, minLength, string, pipe, nonEmpty } from 'valibot'
 import type { SubmitHandler } from 'react-hook-form'
 import type { InferInput } from 'valibot'
-import classnames from 'classnames'
 
-// Type Imports
-import type { Locale } from '@configs/i18n'
+// Hook Imports
+import { useSettings } from '@core/hooks/useSettings'
 
 // Component Imports
-import Logo from '@components/layout/shared/Logo'
-import CustomTextField from '@core/components/mui/TextField'
+import BrandLogo from '@components/layout/shared/BrandLogo'
 
-// Config Imports
-import themeConfig from '@configs/themeConfig'
-
-// Util Imports
-import { getLocalizedUrl } from '@/utils/i18n'
-
-// Styled Custom Components
-const LoginIllustration = styled('img')(({ theme }) => ({
-  zIndex: 2,
-  blockSize: 'auto',
-  maxBlockSize: 680,
-  maxInlineSize: '100%',
-  margin: theme.spacing(12),
-  [theme.breakpoints.down(1536)]: {
-    maxBlockSize: 550
-  },
-  [theme.breakpoints.down('lg')]: {
-    maxBlockSize: 450
-  }
-}))
-
-type ErrorType = {
-  message: string[]
-}
-
-type FormData = InferInput<typeof schema>
-
-const schema = object({
-  email: pipe(string(), minLength(1, 'Это поле обязательно'), email('Неверный формат email')),
-  password: pipe(
-    string(),
-    nonEmpty('Это поле обязательно'),
-    minLength(5, 'Пароль должен содержать минимум 5 символов')
-  )
+// Schema для валидации формы
+const loginSchema = object({
+  email: pipe(string(), nonEmpty('Введите email'), email('Введите корректный email')),
+  password: pipe(string(), nonEmpty('Введите пароль'), minLength(6, 'Пароль должен содержать минимум 6 символов'))
 })
 
-const Login = () => {
-  // States
-  const [isPasswordShown, setIsPasswordShown] = useState(false)
-  const [errorState, setErrorState] = useState<ErrorType | null>(null)
+type LoginFormData = InferInput<typeof loginSchema>
 
-  // Hooks
+const Login = () => {
+  const [isLoading, setIsLoading] = useState(false)
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false)
+  const [apiError, setApiError] = useState('')
+
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { lang: locale } = useParams()
+  const params = useParams()
   const theme = useTheme()
+  const { settings, updateSettings } = useSettings()
+
+  const locale = params?.lang as string || 'ru'
+  const redirectTo = searchParams?.get('redirectTo') ?? `/${locale}/dashboard`
 
   const {
     control,
     handleSubmit,
     formState: { errors }
-  } = useForm<FormData>({
-    resolver: valibotResolver(schema),
+  } = useForm<LoginFormData>({
+    resolver: valibotResolver(loginSchema),
     defaultValues: {
       email: '',
       password: ''
     }
   })
 
-  const handleClickShowPassword = () => setIsPasswordShown(show => !show)
+  const onSubmit: SubmitHandler<LoginFormData> = async (data) => {
+    setIsLoading(true)
+    setApiError('')
 
-  const onSubmit: SubmitHandler<FormData> = async (data: FormData) => {
-    const res = await signIn('credentials', {
-      email: data.email,
-      password: data.password,
-      redirect: false
-    })
+    try {
+      const result = await signIn('credentials', {
+        email: data.email,
+        password: data.password,
+        redirect: false
+      })
 
-    if (res && res.ok && res.error === null) {
-      // Vars
-      const redirectURL = searchParams.get('redirectTo') ?? '/'
-
-      router.replace(getLocalizedUrl(redirectURL, locale as Locale))
-    } else {
-      if (res?.error) {
-        try {
-          const error = JSON.parse(res.error)
-
-          setErrorState(error)
-        } catch {
-          // If error is not JSON, treat it as a string message
-          setErrorState({
-            message: [res.error]
-          })
-        }
+      if (result?.error) {
+        setApiError('Неверные учетные данные')
+      } else if (result?.ok) {
+        router.push(redirectTo)
       }
+    } catch (error) {
+      console.error('Login error:', error)
+      setApiError('Произошла ошибка при входе в систему')
+    } finally {
+      setIsLoading(false)
     }
   }
 
+  const handleThemeToggle = () => {
+    const newMode = settings.mode === 'light' ? 'dark' : 'light'
+
+    updateSettings({ mode: newMode })
+  }
+
   return (
-    <div className='flex bs-full justify-center'>
-      <div className='flex bs-full items-center justify-center flex-1 min-bs-[100dvh] relative p-6 max-md:hidden'>
-        <LoginIllustration
-          src='/images/illustrations/characters-with-objects/7.png'
-          alt='character-illustration'
-          className={classnames({ 'scale-x-[-1]': theme.direction === 'rtl' })}
-        />
-      </div>
-      <div className='flex justify-center items-center bs-full bg-backgroundPaper !min-is-full p-6 md:!min-is-[unset] md:p-12 md:is-[480px]'>
-        <div className='absolute block-start-5 sm:block-start-[33px] inline-start-6 sm:inline-start-[38px]'>
-          <Logo />
-        </div>
-        <div className='flex flex-col gap-6 is-full sm:is-auto md:is-full sm:max-is-[400px] md:max-is-[unset] mbs-11 sm:mbs-14 md:mbs-0'>
-          <div className='flex flex-col gap-1'>
-            <Typography variant='h4'>{`Welcome to ${themeConfig.templateName}! 👋🏻`}</Typography>
-            <Typography>Войдите в свой аккаунт и начните приключение</Typography>
-          </div>
-          <form
-            noValidate
-            autoComplete='off'
-            action={() => {}}
-            onSubmit={handleSubmit(onSubmit)}
-            className='flex flex-col gap-6'
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: theme.palette.mode === 'dark'
+          ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)'
+          : 'linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%)',
+        padding: 2,
+        position: 'relative'
+      }}
+    >
+      {/* Theme Toggle Button */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 16,
+          right: 16,
+          zIndex: 10
+        }}
+      >
+        <Tooltip title={`Переключить на ${settings.mode === 'light' ? 'темную' : 'светлую'} тему`}>
+          <IconButton
+            onClick={handleThemeToggle}
+            sx={{
+              backgroundColor: theme.palette.background.paper,
+              border: `1px solid ${theme.palette.divider}`,
+              '&:hover': {
+                backgroundColor: theme.palette.action.hover,
+                transform: 'scale(1.05)'
+              },
+              transition: 'all 0.2s ease-in-out'
+            }}
           >
-            <Controller
-              name='email'
-              control={control}
-              rules={{ required: true }}
-              render={({ field }) => (
-                <CustomTextField
-                  {...field}
-                  autoFocus
-                  fullWidth
-                  type='email'
-                  label='Email'
-                  placeholder='Введите ваш email'
-                  onChange={e => {
-                    field.onChange(e.target.value)
-                    errorState !== null && setErrorState(null)
-                  }}
-                  {...((errors.email || errorState !== null) && {
-                    error: true,
-                    helperText: errors?.email?.message || errorState?.message[0]
-                  })}
-                />
-              )}
-            />
-            <Controller
-              name='password'
-              control={control}
-              rules={{ required: true }}
-              render={({ field }) => (
-                <CustomTextField
-                  {...field}
-                  fullWidth
-                  label='Пароль'
-                  placeholder='············'
-                  id='login-password'
-                  type={isPasswordShown ? 'text' : 'password'}
-                  onChange={e => {
-                    field.onChange(e.target.value)
-                    errorState !== null && setErrorState(null)
-                  }}
-                  slotProps={{
-                    input: {
+            {settings.mode === 'light' ? (
+              <DarkMode sx={{ color: theme.palette.text.primary }} />
+            ) : (
+              <LightMode sx={{ color: theme.palette.text.primary }} />
+            )}
+          </IconButton>
+        </Tooltip>
+      </Box>
+
+      <Card
+        sx={{
+          maxWidth: 400,
+          width: '100%',
+          backdropFilter: 'blur(20px)',
+          backgroundColor: theme.palette.mode === 'dark'
+            ? 'rgba(30, 30, 30, 0.9)'
+            : 'rgba(255, 255, 255, 0.95)',
+          border: `1px solid ${theme.palette.divider}`,
+          borderRadius: 4,
+          boxShadow: theme.palette.mode === 'dark'
+            ? '0 20px 40px rgba(0, 0, 0, 0.4)'
+            : '0 20px 40px rgba(0, 0, 0, 0.1)'
+        }}
+      >
+        <CardContent sx={{ p: 6 }}>
+          {/* Brand Logo */}
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              mb: 4
+            }}
+          >
+            <BrandLogo size="large" showText={true} />
+          </Box>
+
+          {/* Title */}
+          <Box sx={{ textAlign: 'center', mb: 4 }}>
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: 700,
+                mb: 1,
+                background: theme.palette.mode === 'dark'
+                  ? 'linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%)'
+                  : 'linear-gradient(135deg, #2c3e50 0%, #34495e 100%)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}
+            >
+              Добро пожаловать
+            </Typography>
+            <Typography
+              variant="body1"
+              color="text.secondary"
+              sx={{ fontWeight: 500 }}
+            >
+              Войдите в свой аккаунт для продолжения
+            </Typography>
+          </Box>
+
+          {/* Form */}
+          <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ mb: 3 }}>
+            {/* Email Field */}
+            <Box sx={{ mb: 3 }}>
+              <Controller
+                name="email"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    type="email"
+                    label="Email адрес"
+                    placeholder="demo@demo.com"
+                    autoComplete="email"
+                    autoFocus
+                    error={!!errors.email}
+                    helperText={errors.email?.message}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <EmailOutlined sx={{ color: theme.palette.text.secondary }} />
+                        </InputAdornment>
+                      ),
+                      sx: {
+                        borderRadius: 2,
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: theme.palette.divider
+                        },
+                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                          borderColor: theme.palette.primary.main
+                        }
+                      }
+                    }}
+                    sx={{
+                      '& .MuiInputLabel-root': {
+                        color: theme.palette.text.secondary,
+                        fontWeight: 600
+                      },
+                      '& .MuiInputBase-input': {
+                        fontSize: '1rem',
+                        fontWeight: 500
+                      }
+                    }}
+                  />
+                )}
+              />
+            </Box>
+
+            {/* Password Field */}
+            <Box sx={{ mb: 3 }}>
+              <Controller
+                name="password"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    type={isPasswordVisible ? 'text' : 'password'}
+                    label="Пароль"
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    error={!!errors.password}
+                    helperText={errors.password?.message}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <LockOutlined sx={{ color: theme.palette.text.secondary }} />
+                        </InputAdornment>
+                      ),
                       endAdornment: (
-                        <InputAdornment position='end'>
+                        <InputAdornment position="end">
                           <IconButton
-                            edge='end'
-                            onClick={handleClickShowPassword}
-                            onMouseDown={e => e.preventDefault()}
+                            onClick={() => setIsPasswordVisible(!isPasswordVisible)}
+                            edge="end"
+                            sx={{
+                              color: theme.palette.text.secondary,
+                              '&:hover': {
+                                color: theme.palette.primary.main
+                              }
+                            }}
                           >
-                            <i className={isPasswordShown ? 'bx-show' : 'bx-hide'} />
+                            {isPasswordVisible ? <VisibilityOff /> : <Visibility />}
                           </IconButton>
                         </InputAdornment>
-                      )
-                    }
-                  }}
-                  {...(errors.password && { error: true, helperText: errors.password.message })}
-                />
-              )}
-            />
-            <div className='flex justify-between items-center flex-wrap gap-x-3 gap-y-1'>
-              <FormControlLabel control={<Checkbox />} label='Запомнить меня' />
-              <Typography
-                className='text-end'
-                color='primary.main'
-                component={Link}
-                href={getLocalizedUrl('/forgot-password', locale as Locale)}
+                      ),
+                      sx: {
+                        borderRadius: 2,
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: theme.palette.divider
+                        },
+                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                          borderColor: theme.palette.primary.main
+                        }
+                      }
+                    }}
+                    sx={{
+                      '& .MuiInputLabel-root': {
+                        color: theme.palette.text.secondary,
+                        fontWeight: 600
+                      },
+                      '& .MuiInputBase-input': {
+                        fontSize: '1rem',
+                        fontWeight: 500
+                      }
+                    }}
+                  />
+                )}
+              />
+            </Box>
+
+            {/* API Error */}
+            {apiError && (
+              <Alert
+                severity="error"
+                sx={{
+                  mb: 3,
+                  borderRadius: 2,
+                  backgroundColor: theme.palette.mode === 'dark'
+                    ? 'rgba(211, 47, 47, 0.1)'
+                    : 'rgba(211, 47, 47, 0.05)',
+                  border: `1px solid ${theme.palette.error.main}`,
+                  '& .MuiAlert-icon': {
+                    color: theme.palette.error.main
+                  }
+                }}
               >
-                Забыли пароль?
-              </Typography>
-            </div>
-            <Button fullWidth variant='contained' type='submit'>
-              Войти
-            </Button>
-            <div className='flex justify-center items-center flex-wrap gap-2'>
-              <Typography>Новый пользователь?</Typography>
-              <Typography component={Link} href={getLocalizedUrl('/register', locale as Locale)} color='primary.main'>
-                Создать аккаунт
-              </Typography>
-            </div>
-            <Divider className='gap-2 text-textPrimary'>или</Divider>
-            <Button
-              color='secondary'
-              className='self-center text-textPrimary'
-              startIcon={<img src='/images/logos/google.png' alt='Google' width={22} />}
-              sx={{ '& .MuiButton-startIcon': { marginInlineEnd: 3 } }}
-              onClick={() => signIn('google')}
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  {apiError}
+                </Typography>
+              </Alert>
+            )}
+
+            {/* Login Button */}
+            <LoadingButton
+              fullWidth
+              size="large"
+              type="submit"
+              variant="contained"
+              loading={isLoading}
+              loadingPosition="start"
+              startIcon={isLoading ? undefined : <EmailOutlined />}
+              sx={{
+                py: 1.5,
+                borderRadius: 2,
+                fontSize: '1rem',
+                fontWeight: 600,
+                background: theme.palette.mode === 'dark'
+                  ? 'linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%)'
+                  : 'linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%)',
+                border: 'none',
+                boxShadow: '0 8px 32px rgba(27, 110, 243, 0.3)',
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 12px 40px rgba(27, 110, 243, 0.4)'
+                },
+                '&:active': {
+                  transform: 'translateY(0px)'
+                },
+                transition: 'all 0.3s ease'
+              }}
             >
-              Войти с Google
-            </Button>
-          </form>
-        </div>
-      </div>
-    </div>
+              {isLoading ? 'Вход в систему...' : 'Войти в аккаунт'}
+            </LoadingButton>
+          </Box>
+
+          {/* Links */}
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 2,
+              mb: 4
+            }}
+          >
+            <Link
+              href="#"
+              onClick={(e) => {
+                e.preventDefault()
+                // TODO: Реализовать восстановление пароля
+                console.log('Forgot password clicked')
+              }}
+              sx={{
+                color: theme.palette.text.secondary,
+                textDecoration: 'none',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                '&:hover': {
+                  color: theme.palette.primary.main,
+                  textDecoration: 'underline'
+                },
+                transition: 'color 0.2s ease'
+              }}
+            >
+              Забыли пароль?
+            </Link>
+
+            <Link
+              href="#"
+              onClick={(e) => {
+                e.preventDefault()
+                // TODO: Реализовать регистрацию
+                console.log('Register clicked')
+              }}
+              sx={{
+                color: theme.palette.primary.main,
+                textDecoration: 'none',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                '&:hover': {
+                  textDecoration: 'underline'
+                },
+                transition: 'color 0.2s ease'
+              }}
+            >
+              Создать аккаунт
+            </Link>
+          </Box>
+
+          {/* Test Data Alert */}
+          <Alert
+            severity="info"
+            sx={{
+              borderRadius: 2,
+              backgroundColor: theme.palette.mode === 'dark'
+                ? 'rgba(29, 78, 216, 0.1)'
+                : 'rgba(29, 78, 216, 0.05)',
+              border: `1px solid ${theme.palette.primary.main}`,
+              '& .MuiAlert-icon': {
+                color: theme.palette.primary.main
+              }
+            }}
+          >
+            <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+              Тестовые данные для входа
+            </Typography>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'flex-start', sm: 'center' },
+                gap: 1
+              }}
+            >
+              <Box
+                component="span"
+                sx={{
+                  fontFamily: 'monospace',
+                  backgroundColor: theme.palette.mode === 'dark'
+                    ? 'rgba(29, 78, 216, 0.2)'
+                    : 'rgba(29, 78, 216, 0.1)',
+                  color: theme.palette.primary.main,
+                  px: 1,
+                  py: 0.5,
+                  borderRadius: 1,
+                  fontSize: '0.75rem',
+                  fontWeight: 600
+                }}
+              >
+                demo@demo.com
+              </Box>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: theme.palette.text.secondary,
+                  display: { xs: 'none', sm: 'inline' }
+                }}
+              >
+                /
+              </Typography>
+              <Box
+                component="span"
+                sx={{
+                  fontFamily: 'monospace',
+                  backgroundColor: theme.palette.mode === 'dark'
+                    ? 'rgba(76, 175, 80, 0.2)'
+                    : 'rgba(76, 175, 80, 0.1)',
+                  color: theme.palette.success.main,
+                  px: 1,
+                  py: 0.5,
+                  borderRadius: 1,
+                  fontSize: '0.75rem',
+                  fontWeight: 600
+                }}
+              >
+                demo123
+              </Box>
+            </Box>
+            <Typography
+              variant="caption"
+              sx={{
+                color: theme.palette.text.secondary,
+                display: 'block',
+                mt: 1,
+                fontStyle: 'italic'
+              }}
+            >
+              Демо пользователь
+            </Typography>
+          </Alert>
+        </CardContent>
+      </Card>
+    </Box>
   )
 }
 

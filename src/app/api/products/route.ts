@@ -1,8 +1,31 @@
+import { requireAdminAccess, isDemoUser } from '@/lib/auth-helpers'
+
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3011'
 
 // GET /api/products - получить список товаров
 export async function GET(request: Request) {
   try {
+    // Проверяем, является ли пользователь демо пользователем
+    if (await isDemoUser()) {
+      // Перенаправляем на демо API
+      const { searchParams } = new URL(request.url)
+      const demoUrl = new URL('/api/demo/products', request.url)
+
+      demoUrl.search = searchParams.toString()
+
+      return fetch(demoUrl.toString(), {
+        method: 'GET',
+        headers: request.headers
+      })
+    }
+
+    // Проверяем права администратора для обычных пользователей
+    const accessDenied = await requireAdminAccess()
+
+    if (accessDenied) {
+      return accessDenied
+    }
+
     const { searchParams } = new URL(request.url)
     const backendUrl = `${BACKEND_URL}/api/products?${searchParams.toString()}`
 
@@ -23,6 +46,7 @@ export async function GET(request: Request) {
 
       // Логируем точную ошибку от backend
       const errorText = await response.text()
+
       console.error(`Backend returned ${response.status}: ${errorText}`)
 
       // Если backend вернул ошибку, но не 404

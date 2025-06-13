@@ -8,12 +8,12 @@ import type { ChildrenType } from '@core/types'
 // Component Imports
 import AuthRedirect from '@/components/AuthRedirect'
 
+// Lib Imports
+import { authOptions } from '@/libs/auth'
+
 export default async function AuthGuard({ children, locale }: ChildrenType & { locale: Locale }) {
-  const session = await getServerSession()
+  const session = await getServerSession(authOptions)
 
-  // Временно пропускаем проверку авторизации для тестирования
-  return <>{children}</>
-
-  // Оригинальный код авторизации:
-  // return <>{session ? children : <AuthRedirect lang={locale} />}</>
+  // Проверяем авторизацию пользователя
+  return <>{session ? children : <AuthRedirect lang={locale} />}</>
 }

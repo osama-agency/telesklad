@@ -409,10 +409,10 @@ const PremiumDateRangePicker: React.FC<PremiumDateRangePickerProps> = ({
               width: 36,
               height: 36,
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+                          background: 'linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
               color: 'white',
               boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.25)}`
             }}
@@ -468,7 +468,7 @@ const PremiumDateRangePicker: React.FC<PremiumDateRangePickerProps> = ({
             px: 1,
             transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
             ...(activeStep === 'quick' && {
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              background: 'linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%)',
               color: 'white',
               '& .MuiChip-label': { color: 'white' },
               boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.25)}`
@@ -488,7 +488,7 @@ const PremiumDateRangePicker: React.FC<PremiumDateRangePickerProps> = ({
             px: 1,
             transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
             ...(activeStep === 'calendar' && {
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              background: 'linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%)',
               color: 'white',
               '& .MuiChip-label': { color: 'white' },
               boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.25)}`
@@ -540,13 +540,13 @@ const PremiumDateRangePicker: React.FC<PremiumDateRangePickerProps> = ({
                           position: 'relative',
                           overflow: 'hidden',
                           ...(isSelected ? {
-                            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                            background: 'linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%)',
                             color: 'white',
-                            boxShadow: `0 8px 32px ${alpha('#6366f1', 0.25)}`,
+                            boxShadow: `0 8px 32px ${alpha('#1B6EF3', 0.25)}`,
                             transform: 'translateY(-2px)',
                             '&:hover': {
                               transform: 'translateY(-3px)',
-                              boxShadow: `0 12px 40px ${alpha('#6366f1', 0.3)}`
+                              boxShadow: `0 12px 40px ${alpha('#1B6EF3', 0.3)}`
                             }
                           } : {
                             bgcolor: alpha(theme.palette.action.hover, 0.02),
@@ -759,14 +759,14 @@ const PremiumDateRangePicker: React.FC<PremiumDateRangePickerProps> = ({
                   '& .react-datepicker__day--selected': {
                     background: theme.palette.mode === 'dark'
                       ? theme.palette.primary.main
-                      : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                      : 'linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%)',
                     color: 'white !important',
                     fontWeight: 500,
                     boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.25)}`,
                     '&:hover': {
                       background: theme.palette.mode === 'dark'
                         ? theme.palette.primary.dark
-                        : 'linear-gradient(135deg, #5855d6 0%, #7c3aed 100%)',
+                        : 'linear-gradient(135deg, #134EC0 0%, #1B6EF3 100%)',
                       transform: 'scale(1.05)',
                       boxShadow: `0 3px 12px ${alpha(theme.palette.primary.main, 0.35)}`
                     }
@@ -775,13 +775,13 @@ const PremiumDateRangePicker: React.FC<PremiumDateRangePickerProps> = ({
                   '& .react-datepicker__day--in-range': {
                     bgcolor: theme.palette.mode === 'dark'
                       ? alpha(theme.palette.primary.main, 0.12)
-                      : alpha('#6366f1', 0.08),
-                    color: theme.palette.mode === 'dark' ? '#C7C9D9' : '#6366f1',
+                      : alpha('#1B6EF3', 0.08),
+                    color: theme.palette.mode === 'dark' ? '#C7C9D9' : '#1B6EF3',
                     fontWeight: 400,
                     '&:hover': {
                       bgcolor: theme.palette.mode === 'dark'
                         ? alpha(theme.palette.primary.main, 0.18)
-                        : alpha('#6366f1', 0.12),
+                        : alpha('#1B6EF3', 0.12),
                       transform: 'scale(1.05)'
                     }
                   },
@@ -789,7 +789,7 @@ const PremiumDateRangePicker: React.FC<PremiumDateRangePickerProps> = ({
                   '& .react-datepicker__day--range-start, & .react-datepicker__day--range-end': {
                     background: theme.palette.mode === 'dark'
                       ? theme.palette.primary.main
-                      : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                      : 'linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%)',
                     color: 'white !important',
                     fontWeight: 500,
                     boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.25)}`
@@ -987,13 +987,13 @@ const PremiumDateRangePicker: React.FC<PremiumDateRangePickerProps> = ({
                   fontWeight: 700,
                   textTransform: 'none',
                   borderRadius: 3,
-                  background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-                  boxShadow: `0 4px 12px ${alpha('#6366f1', 0.3)}`,
+                  background: 'linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%)',
+                  boxShadow: `0 4px 12px ${alpha('#1B6EF3', 0.3)}`,
                   minHeight: 56,
                   '&:hover': {
-                    background: 'linear-gradient(135deg, #5855d6 0%, #7c3aed 100%)',
+                    background: 'linear-gradient(135deg, #134EC0 0%, #1B6EF3 100%)',
                     transform: 'translateY(-2px)',
-                    boxShadow: `0 8px 24px ${alpha('#6366f1', 0.4)}`
+                    boxShadow: `0 8px 24px ${alpha('#1B6EF3', 0.4)}`
                   },
                   '&:active': {
                     transform: 'translateY(0)'
@@ -1264,14 +1264,14 @@ const PremiumDateRangePicker: React.FC<PremiumDateRangePickerProps> = ({
               '& .react-datepicker__day--selected': {
                 background: theme.palette.mode === 'dark'
                   ? theme.palette.primary.main
-                  : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                  : 'linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%)',
                 color: 'white !important',
                 fontWeight: 500,
                 boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.25)}`,
                 '&:hover': {
                   background: theme.palette.mode === 'dark'
                     ? theme.palette.primary.dark
-                    : 'linear-gradient(135deg, #5855d6 0%, #7c3aed 100%)',
+                    : 'linear-gradient(135deg, #134EC0 0%, #1B6EF3 100%)',
                   transform: 'scale(1.05)',
                   boxShadow: `0 3px 12px ${alpha(theme.palette.primary.main, 0.35)}`
                 }
@@ -1280,13 +1280,13 @@ const PremiumDateRangePicker: React.FC<PremiumDateRangePickerProps> = ({
               '& .react-datepicker__day--in-range': {
                 bgcolor: theme.palette.mode === 'dark'
                   ? alpha(theme.palette.primary.main, 0.12)
-                  : alpha('#6366f1', 0.08),
-                color: theme.palette.mode === 'dark' ? '#C7C9D9' : '#6366f1',
+                  : alpha('#1B6EF3', 0.08),
+                color: theme.palette.mode === 'dark' ? '#C7C9D9' : '#1B6EF3',
                 fontWeight: 400,
                 '&:hover': {
                   bgcolor: theme.palette.mode === 'dark'
                     ? alpha(theme.palette.primary.main, 0.18)
-                    : alpha('#6366f1', 0.12),
+                    : alpha('#1B6EF3', 0.12),
                   transform: 'scale(1.05)'
                 }
               },
@@ -1294,7 +1294,7 @@ const PremiumDateRangePicker: React.FC<PremiumDateRangePickerProps> = ({
               '& .react-datepicker__day--range-start, & .react-datepicker__day--range-end': {
                 background: theme.palette.mode === 'dark'
                   ? theme.palette.primary.main
-                  : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                  : 'linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%)',
                 color: 'white !important',
                 fontWeight: 500,
                 boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.25)}`
