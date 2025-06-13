@@ -1,2 +1,0 @@
-2025-06-11 19:19:53.977 +03 [20045] FATAL:  database files are incompatible with server
-2025-06-11 19:19:53.977 +03 [20045] DETAIL:  The data directory was initialized by PostgreSQL version 14, which is not compatible with this version 16.9 (Homebrew).

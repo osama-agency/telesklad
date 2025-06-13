@@ -141,7 +141,7 @@ deploy() {
 
         # Генерируем SSL сертификаты если их нет
         if [ ! -f ssl/selfsigned.crt ]; then
-            ./scripts/generate-ssl.sh
+            # SSL certificates are handled by host nginx now
         fi
 
         # Настраиваем .env если его нет

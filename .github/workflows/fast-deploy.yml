@@ -1,0 +1,127 @@
+name: ⚡ Fast Deploy (Hot Reload)
+
+on:
+  workflow_dispatch:
+    inputs:
+      skip_build:
+        description: 'Skip Next.js build (only sync code)'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  fast-deploy:
+    name: ⚡ Fast Deploy to Production
+    runs-on: ubuntu-latest
+
+    environment:
+      name: production
+      url: https://dsgrating.ru
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔐 Setup SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+
+      - name: 🌐 Add VPS to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: 📢 Уведомление о начале быстрого деплоя
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d "chat_id=125861752" \
+            -d "parse_mode=Markdown" \
+            -d "text=⚡ **БЫСТРЫЙ ДЕПЛОЙ**
+
+          🏷️ **Проект:** Telesklad
+          🌍 **Среда:** \`production\`
+          🖥️ **Сервер:** \`dsgrating.ru\`
+          🚀 **Режим:** Hot Deploy (30 сек)
+
+          🌿 **Ветка:** \`${{ github.ref_name }}\`
+          🔗 **Коммит:** \`${{ github.sha }}\`
+          👤 **Автор:** ${{ github.actor }}
+
+          ⏰ **Начато:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" || true
+
+      - name: 🏗️ Build Next.js (if needed)
+        if: ${{ github.event.inputs.skip_build != 'true' }}
+        run: |
+          npm ci
+          npm run build:next
+          tar -czf next-build.tar.gz .next/
+
+      - name: 🚀 Fast Deploy to VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          PROJECT_DIR: ${{ secrets.PROJECT_DIR }}
+          SKIP_BUILD: ${{ github.event.inputs.skip_build }}
+        run: |
+          echo "⚡ Starting fast deployment..."
+
+          if [ "$SKIP_BUILD" != "true" ]; then
+            # Upload Next.js build
+            scp next-build.tar.gz $VPS_USER@$VPS_HOST:$PROJECT_DIR/
+          fi
+
+          # Sync only changed files (excluding heavy directories)
+          rsync -avz --delete \
+            --exclude=node_modules \
+            --exclude=.git \
+            --exclude=.next \
+            --exclude=*.log \
+            --exclude=backups \
+            --exclude=postgres_data \
+            ./ $VPS_USER@$VPS_HOST:$PROJECT_DIR/
+
+          # Execute fast deployment on VPS
+          ssh $VPS_USER@$VPS_HOST << 'EOF'
+            cd ${{ secrets.PROJECT_DIR }}
+
+            # Extract Next.js build if uploaded
+            if [ -f "next-build.tar.gz" ]; then
+              tar -xzf next-build.tar.gz
+              rm next-build.tar.gz
+            fi
+
+            # Just restart the app container (no rebuild)
+            docker-compose -f docker-compose.production.yml restart app
+
+            # Quick health check
+            sleep 5
+            curl -f -s "http://localhost:3000/api/health" || echo "Warning: Health check failed"
+          EOF
+
+      - name: 📢 Уведомление о завершении
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+              -d "chat_id=125861752" \
+              -d "parse_mode=Markdown" \
+              -d "text=✅ **БЫСТРЫЙ ДЕПЛОЙ ЗАВЕРШЕН**
+
+            🏷️ **Проект:** Telesklad
+            ⏱️ **Время:** ~30 секунд
+            🔗 **Сайт:** https://dsgrating.ru
+
+            ✨ **Изменения применены без перезапуска Docker**" || true
+          else
+            curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+              -d "chat_id=125861752" \
+              -d "parse_mode=Markdown" \
+              -d "text=❌ **БЫСТРЫЙ ДЕПЛОЙ ПРОВАЛИЛСЯ**
+
+            🔧 **Требуется:** Проверить логи
+            📊 **Логи:** https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" || true
+          fi

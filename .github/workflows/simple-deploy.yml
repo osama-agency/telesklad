@@ -1,0 +1,159 @@
+name: 🚀 Simple Auto Deploy
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      skip_build:
+        description: 'Skip Docker build (only update code)'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  deploy:
+    name: 🚀 Deploy to Production
+    runs-on: ubuntu-latest
+
+    environment:
+      name: production
+      url: https://dsgrating.ru
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 🔧 Install dependencies and build
+        run: |
+          # Install all dependencies (including devDependencies for build)
+          npm ci
+
+          # Generate Prisma client
+          npx prisma generate --schema=./backend/prisma/schema.prisma
+
+          # Build Next.js
+          npm run build:next
+
+          # Create build archive
+          tar -czf next-build.tar.gz .next/
+
+      - name: 🔐 Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: 📢 Notify deployment start
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d "chat_id=125861752" \
+            -d "parse_mode=Markdown" \
+            -d "text=🚀 **АВТОДЕПЛОЙ НАЧАТ**
+
+          🏷️ **Проект:** Telesklad
+          🌍 **Среда:** \`production\`
+          🖥️ **Сервер:** \`dsgrating.ru\`
+
+          🌿 **Ветка:** \`main\`
+          🔗 **Коммит:** \`${GITHUB_SHA:0:7}\`
+          👤 **Автор:** ${{ github.actor }}
+          💬 **Сообщение:** ${{ github.event.head_commit.message }}
+
+          ⏰ **Начато:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" || true
+
+      - name: 🚀 Deploy to VPS
+        env:
+          SKIP_BUILD: ${{ github.event.inputs.skip_build || 'false' }}
+        run: |
+          # Upload files to VPS
+          scp -i ~/.ssh/deploy_key next-build.tar.gz ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.PROJECT_DIR }}/
+
+          # Sync source files (excluding heavy directories)
+          rsync -avz -e "ssh -i ~/.ssh/deploy_key" \
+            --exclude=node_modules \
+            --exclude=.git \
+            --exclude=.next \
+            --exclude=*.log \
+            --exclude=backups \
+            --exclude=postgres_data \
+            --exclude=.env \
+            ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.PROJECT_DIR }}/
+
+          # Execute deployment on VPS
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'ENDSSH'
+            set -e
+            cd ${{ secrets.PROJECT_DIR }}
+
+            # Extract Next.js build
+            tar -xzf next-build.tar.gz
+            rm next-build.tar.gz
+
+            # Install production dependencies
+            npm ci --production
+
+            # Generate Prisma client on VPS
+            cd backend && npx prisma generate && cd ..
+
+            if [ "${{ env.SKIP_BUILD }}" == "true" ]; then
+              # Just restart app without rebuilding Docker
+              docker-compose -f docker-compose.production.yml restart app
+            else
+              # Full rebuild and restart
+              docker-compose -f docker-compose.production.yml down
+              docker-compose -f docker-compose.production.yml up -d --build
+            fi
+
+            # Wait for services
+            sleep 10
+
+            # Health check
+            if curl -f -s "http://localhost:3000/api/health"; then
+              echo "✅ Health check passed"
+            else
+              echo "❌ Health check failed"
+              exit 1
+            fi
+          ENDSSH
+
+      - name: 📢 Notify success
+        if: success()
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d "chat_id=125861752" \
+            -d "parse_mode=Markdown" \
+            -d "text=✅ **АВТОДЕПЛОЙ УСПЕШЕН**
+
+          🏷️ **Проект:** Telesklad
+          🌍 **Среда:** \`production\`
+          🖥️ **Сервер:** \`dsgrating.ru\`
+
+          🔗 **Коммит:** \`${GITHUB_SHA:0:7}\`
+          ⏱️ **Время:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')
+
+          🔗 **Сайт:** https://dsgrating.ru
+          ✨ **Статус:** Все системы работают" || true
+
+      - name: 🚨 Notify failure
+        if: failure()
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d "chat_id=125861752" \
+            -d "parse_mode=Markdown" \
+            -d "text=❌ **АВТОДЕПЛОЙ ПРОВАЛИЛСЯ**
+
+          🏷️ **Проект:** Telesklad
+          🔗 **Коммит:** \`${GITHUB_SHA:0:7}\`
+
+          🔧 **Действие:** Проверить логи
+          📊 **Логи:** https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" || true
