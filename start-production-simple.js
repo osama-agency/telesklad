@@ -60,12 +60,27 @@ async function runMigrations() {
 
 // Start the application
 async function startServers() {
-  // Check if .next directory exists
+  // Check if .next directory exists and build if needed
   const nextBuildPath = path.join(__dirname, '.next');
   if (!fs.existsSync(nextBuildPath)) {
-    console.log('❌ .next directory not found. Please build the app first.');
-    console.log('💡 Run: npm run build');
-    process.exit(1);
+    console.log('📦 .next directory not found. Building the app...');
+
+    const buildProcess = spawn('npm', ['run', 'build'], {
+      env: process.env,
+      stdio: 'inherit',
+      shell: true
+    });
+
+    await new Promise((resolve) => {
+      buildProcess.on('close', (buildCode) => {
+        if (buildCode === 0) {
+          console.log('✅ Build completed successfully');
+        } else {
+          console.log('❌ Build failed, but continuing with server start...');
+        }
+        resolve();
+      });
+    });
   }
 
   console.log('✅ .next directory found, proceeding with server start...');
