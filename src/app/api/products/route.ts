@@ -5,6 +5,80 @@ import { authOptions } from '@/libs/auth'
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3011'
 
+// Демо данные товаров (дублируем из демо API)
+const DEMO_PRODUCTS = [
+  {
+    id: 1,
+    name: 'Kalyon Universal Cleaner 1L',
+    category: 'Моющие средства',
+    price: 299.99,
+    costPrice: 180.00,
+    stockQuantity: 45,
+    brand: 'Kalyon',
+    description: 'Универсальное моющее средство для всех поверхностей',
+    avgDailySales30d: 2.3,
+    daysToZero: 19,
+    isHidden: false,
+    trend: 'GROWING'
+  },
+  {
+    id: 2,
+    name: 'Kalyon Dishwashing Liquid 500ml',
+    category: 'Средства для посуды',
+    price: 149.99,
+    costPrice: 89.00,
+    stockQuantity: 67,
+    brand: 'Kalyon',
+    description: 'Концентрированная жидкость для мытья посуды',
+    avgDailySales30d: 3.1,
+    daysToZero: 21,
+    isHidden: false,
+    trend: 'STABLE'
+  },
+  {
+    id: 3,
+    name: 'Kalyon Glass Cleaner 750ml',
+    category: 'Средства для стекла',
+    price: 199.99,
+    costPrice: 120.00,
+    stockQuantity: 23,
+    brand: 'Kalyon',
+    description: 'Специальное средство для мытья стекол и зеркал',
+    avgDailySales30d: 1.8,
+    daysToZero: 12,
+    isHidden: false,
+    trend: 'DECLINING'
+  },
+  {
+    id: 4,
+    name: 'Kalyon Bathroom Cleaner 1L',
+    category: 'Средства для ванной',
+    price: 349.99,
+    costPrice: 210.00,
+    stockQuantity: 34,
+    brand: 'Kalyon',
+    description: 'Мощное средство для очистки ванной комнаты',
+    avgDailySales30d: 2.7,
+    daysToZero: 12,
+    isHidden: false,
+    trend: 'STABLE'
+  },
+  {
+    id: 5,
+    name: 'Kalyon Floor Cleaner 1.5L',
+    category: 'Средства для пола',
+    price: 259.99,
+    costPrice: 155.00,
+    stockQuantity: 89,
+    brand: 'Kalyon',
+    description: 'Эффективное средство для мытья всех типов полов',
+    avgDailySales30d: 4.2,
+    daysToZero: 21,
+    isHidden: false,
+    trend: 'GROWING'
+  }
+]
+
 // GET /api/products - получить список товаров
 export async function GET(request: Request) {
   try {
@@ -12,40 +86,39 @@ export async function GET(request: Request) {
 
     // Если пользователь не авторизован или это демо пользователь - показываем демо данные
     if (!session || await isDemoUser()) {
-      // Перенаправляем на демо API
+      // Напрямую возвращаем демо данные без fetch запроса
       const { searchParams } = new URL(request.url)
-      const demoUrl = new URL('/api/demo/products', request.url)
-      demoUrl.search = searchParams.toString()
+      const page = parseInt(searchParams.get('page') || '1')
+      const limit = parseInt(searchParams.get('limit') || '10')
+      const search = searchParams.get('search') || ''
+      const hidden = searchParams.get('hidden') === 'true'
 
-      // Создаем внутренний запрос к демо API без проверки авторизации
-      const demoRequest = new Request(demoUrl.toString(), {
-        method: 'GET',
-        headers: request.headers
+      // Фильтрация по поиску и скрытым товарам
+      const filteredProducts = DEMO_PRODUCTS.filter(product => {
+        const matchesSearch = search ? product.name.toLowerCase().includes(search.toLowerCase()) : true
+        const matchesHidden = hidden ? product.isHidden : !product.isHidden
+        return matchesSearch && matchesHidden
       })
 
-      // Вызываем демо API напрямую
-      const demoResponse = await fetch(demoUrl.toString(), {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
+      // Пагинация
+      const startIndex = (page - 1) * limit
+      const endIndex = startIndex + limit
+      const paginatedProducts = filteredProducts.slice(startIndex, endIndex)
 
-      if (demoResponse.ok) {
-        const demoData = await demoResponse.json()
-        return Response.json(demoData)
-      }
-
-      // Если демо API недоступен, возвращаем заглушку
       return Response.json({
-        products: [],
-        pagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
-        message: 'Демо данные временно недоступны'
+        products: paginatedProducts,
+        pagination: {
+          page,
+          limit,
+          total: filteredProducts.length,
+          totalPages: Math.ceil(filteredProducts.length / limit)
+        }
       })
     }
 
     // Проверяем права администратора для авторизованных пользователей
     const accessDenied = await requireAdminAccess()
+
     if (accessDenied) {
       return accessDenied
     }
