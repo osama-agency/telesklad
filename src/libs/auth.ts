@@ -34,7 +34,7 @@ export const authOptions: NextAuthOptions = {
           const baseUrl =
             process.env.NEXTAUTH_URL ??
             process.env.API_URL ??
-            (process.env.NODE_ENV === 'production' ? 'https://dsgrating.ru' : 'http://localhost:3000')
+            (process.env.NODE_ENV === 'production' ? 'https://dsgrating.ru' : `http://localhost:${process.env.PORT || 3000}`)
 
           const res = await fetch(`${baseUrl}/api/login`, {
             method: 'POST',
@@ -135,7 +135,7 @@ export const authOptions: NextAuthOptions = {
       try {
         // Используем правильный baseUrl из переменной окружения
         const correctBaseUrl = process.env.NEXTAUTH_URL ??
-          (process.env.NODE_ENV === 'production' ? 'https://dsgrating.ru' : 'http://localhost:3000')
+          (process.env.NODE_ENV === 'production' ? 'https://dsgrating.ru' : `http://localhost:${process.env.PORT || 3000}`)
 
         console.log('NextAuth redirect:', { url, baseUrl, correctBaseUrl })
 
