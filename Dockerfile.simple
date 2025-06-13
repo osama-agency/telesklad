@@ -37,13 +37,6 @@ WORKDIR /app
 # Копируем все файлы приложения
 COPY . .
 
-# Создаем файл generated-icons.css если его нет
-RUN mkdir -p src/assets/iconify-icons && \
-    echo '/* Generated icons CSS file */' > src/assets/iconify-icons/generated-icons.css && \
-    echo '.iconify { display: inline-block; width: 1em; height: 1em; }' >> src/assets/iconify-icons/generated-icons.css && \
-    echo "Created generated-icons.css" && \
-    ls -la src/assets/iconify-icons/
-
 # Копируем зависимости и сгенерированный Prisma client
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/backend/node_modules ./backend/node_modules
