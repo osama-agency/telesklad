@@ -16,8 +16,12 @@ import analyticsRoutes from './routes/analyticsRoutes';
 import purchaseRoutes from './routes/purchaseRoutes';
 import telegramRoutes from './routes/telegramRoutes';
 
-// Загружаем переменные окружения
-dotenv.config();
+// Загружаем переменные окружения только если они не установлены в системе (development режим)
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config();
+} else {
+  console.log('🚀 Production mode: using system environment variables');
+}
 
 const app = express();
 
