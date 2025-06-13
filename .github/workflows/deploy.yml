@@ -106,11 +106,34 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
+      - name: 📢 Уведомление о начале деплоя
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d "parse_mode=Markdown" \
+            -d "text=🚀 **НАЧАЛО ДЕПЛОЯ**
+
+          🏷️ **Проект:** Telesklad
+          🌍 **Среда:** \`production\`
+          🖥️ **Сервер:** \`dsgrating.ru\`
+          🔄 **Способ:** GitHub Actions
+
+          🌿 **Ветка:** \`${{ github.ref_name }}\`
+          🔗 **Коммит:** \`${{ github.sha }}\`
+          👤 **Автор:** ${{ github.actor }}
+
+          ⏰ **Начато:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')
+
+          🔗 **Сайт:** https://dsgrating.ru
+          📊 **Статус:** https://dsgrating.ru/api/health" || true
+
       - name: 📤 Deploy to VPS
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           PROJECT_DIR: ${{ secrets.PROJECT_DIR }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           echo "🚀 Starting deployment to production..."
 
@@ -126,15 +149,21 @@ jobs:
           scp deploy-package.tar.gz $VPS_USER@$VPS_HOST:$PROJECT_DIR/
 
           # Execute deployment on VPS
-          ssh $VPS_USER@$VPS_HOST << 'EOF'
-            cd ${{ secrets.PROJECT_DIR }}
+          ssh $VPS_USER@$VPS_HOST << EOF
+            cd $PROJECT_DIR
+            export TELEGRAM_BOT_TOKEN="$TELEGRAM_BOT_TOKEN"
+            export TELEGRAM_CHAT_ID="$TELEGRAM_CHAT_ID"
+            export GITHUB_REF_NAME="${{ github.ref_name }}"
+            export GITHUB_SHA="${{ github.sha }}"
+            export GITHUB_ACTOR="${{ github.actor }}"
 
             # Extract deployment package
             tar -xzf deploy-package.tar.gz
             rm deploy-package.tar.gz
 
-            # Run production deployment script
+            # Run production deployment script with notifications
             chmod +x scripts/vps-production-deploy.sh
+            chmod +x scripts/deploy-notifications.sh
             ./scripts/vps-production-deploy.sh
           EOF
 
@@ -172,17 +201,66 @@ jobs:
     if: always()
 
     steps:
-      - name: 📢 Deployment notification
+      - name: 📢 Уведомление об успешном завершении
         if: needs.deploy.result == 'success'
         run: |
-          echo "🎉 Deployment successful!"
-          echo "✅ Site is live at https://dsgrating.ru"
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d "parse_mode=Markdown" \
+            -d "text=🎉 **ДЕПЛОЙ ЗАВЕРШЕН УСПЕШНО**
 
-      - name: 🚨 Deployment failure notification
+          🏷️ **Проект:** Telesklad
+          🌍 **Среда:** \`production\`
+          🖥️ **Сервер:** \`dsgrating.ru\`
+
+          🌿 **Ветка:** \`${{ github.ref_name }}\`
+          🔗 **Коммит:** \`${{ github.sha }}\`
+          👤 **Автор:** ${{ github.actor }}
+
+          ⏰ **Завершен:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')
+
+          🔗 **Сайт:** https://dsgrating.ru
+          📊 **Здоровье:** https://dsgrating.ru/api/health
+
+          ✅ **Статус:** Все сервисы работают" || true
+
+      - name: 🚨 Уведомление об ошибке
         if: needs.deploy.result == 'failure'
         run: |
-          echo "❌ Deployment failed!"
-          echo "🔧 Please check the logs and fix the issues"
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d "parse_mode=Markdown" \
+            -d "text=❌ **ДЕПЛОЙ ЗАВЕРШЕН С ОШИБКОЙ**
+
+          🏷️ **Проект:** Telesklad
+          🌍 **Среда:** \`production\`
+          🖥️ **Сервер:** \`dsgrating.ru\`
+
+          🌿 **Ветка:** \`${{ github.ref_name }}\`
+          🔗 **Коммит:** \`${{ github.sha }}\`
+          👤 **Автор:** ${{ github.actor }}
+
+          ⏰ **Ошибка в:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')
+
+          🔧 **Требуется действие:** Проверить логи и исправить проблемы
+          📊 **Логи:** https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" || true
+
+      - name: ⚠️ Уведомление с предупреждениями
+        if: needs.deploy.result == 'success' && needs.quality.result != 'success'
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d "parse_mode=Markdown" \
+            -d "text=⚠️ **ДЕПЛОЙ ЗАВЕРШЕН С ПРЕДУПРЕЖДЕНИЯМИ**
+
+          🏷️ **Проект:** Telesklad
+          🌍 **Среда:** \`production\`
+
+          ✅ **Деплой:** Успешно
+          ⚠️ **Проверка качества:** Провалена или пропущена
+
+          🔧 **Рекомендация:** Проверить и исправить проблемы качества
+          📊 **Логи:** https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" || true
 
   # ===============================
   # 4. CLEANUP

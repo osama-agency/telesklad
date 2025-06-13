@@ -38,7 +38,11 @@
     "deploy:manual": "ssh -i ~/.ssh/telesite_deploy deploy@82.202.131.251 'cd /opt/telesite && ./deploy.sh'",
     "deploy:pro": "ssh -i ~/.ssh/telesite_deploy deploy@82.202.131.251 'cd /opt/telesite && git pull origin main && chmod +x deploy.sh && ./deploy.sh'",
     "vps:cleanup": "ssh -i ~/.ssh/telesite_deploy deploy@82.202.131.251 'bash /opt/telesite/scripts/cleanup-vps.sh'",
-    "vps:cleanup:deep": "ssh -i ~/.ssh/telesite_deploy deploy@82.202.131.251 'bash /opt/telesite/scripts/cleanup-vps.sh && docker system prune -af --volumes'"
+    "vps:cleanup:deep": "ssh -i ~/.ssh/telesite_deploy deploy@82.202.131.251 'bash /opt/telesite/scripts/cleanup-vps.sh && docker system prune -af --volumes'",
+    "notify:test": "chmod +x scripts/deploy-notifications.sh && ./scripts/deploy-notifications.sh test",
+    "notify:start": "chmod +x scripts/deploy-notifications.sh && ./scripts/deploy-notifications.sh start manual",
+    "notify:complete": "chmod +x scripts/deploy-notifications.sh && ./scripts/deploy-notifications.sh complete success '2m 30s'",
+    "notify:health": "chmod +x scripts/deploy-notifications.sh && ./scripts/deploy-notifications.sh health healthy 'All services operational'"
   },
   "dependencies": {
     "@auth/prisma-adapter": "2.7.4",

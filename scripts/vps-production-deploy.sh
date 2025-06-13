@@ -1,9 +1,16 @@
 #!/bin/bash
 
-# VPS Production Deploy Script
+# VPS Production Deploy Script with Telegram Notifications
 # Runs on VPS to deploy the application with host nginx + Docker app
 
 set -e
+
+# Load notification functions
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/deploy-notifications.sh" 2>/dev/null || echo "Warning: Notification system not available"
+
+# Track deployment start time
+DEPLOY_START_TIME=$(date +%s)
 
 # Configuration
 COMPOSE_FILE="docker-compose.production.yml"
@@ -36,76 +43,79 @@ error() {
 
 # Create backup of current deployment
 create_backup() {
-    log "📦 Creating backup of current deployment..."
+    log "📦 Создание резервной копии текущего деплоя..."
+    notify_deployment_progress "Резервное копирование" "progress" "Создание резервной копии текущего деплоя" 2>/dev/null || true
 
     mkdir -p "$BACKUP_DIR"
     BACKUP_FILE="$BACKUP_DIR/backup-$(date +%Y%m%d-%H%M%S).tar.gz"
 
     if [ -d ".next" ]; then
         tar -czf "$BACKUP_FILE" .next/ docker-compose.production.yml || true
-        success "Backup created: $BACKUP_FILE"
+        success "Резервная копия создана: $BACKUP_FILE"
+        notify_deployment_progress "Резервное копирование" "success" "Резервная копия создана: $(basename $BACKUP_FILE)" 2>/dev/null || true
     else
-        warning "No existing .next directory to backup"
+        warning "Нет существующей папки .next для резервного копирования"
+        notify_deployment_progress "Резервное копирование" "warning" "Нет существующей папки .next для резервного копирования" 2>/dev/null || true
     fi
 }
 
 # Extract build archive
 extract_build() {
-    log "📦 Extracting build archive..."
+    log "📦 Извлечение архива сборки..."
 
     if [ -f "next-build.tar.gz" ]; then
         tar -xzf next-build.tar.gz
         rm next-build.tar.gz
-        success "Build extracted successfully"
+        success "Архив сборки успешно извлечен"
     else
-        error "Build archive not found!"
+        error "Архив сборки не найден!"
     fi
 }
 
 # Install/update dependencies
 install_dependencies() {
-    log "📚 Installing dependencies..."
+    log "📚 Установка зависимостей..."
 
     # Update npm if needed
     if ! npm --version >/dev/null 2>&1; then
-        error "npm not found. Please install Node.js"
+        error "npm не найден. Установите Node.js"
     fi
 
     # Install production dependencies
     NODE_ENV=production npm ci --only=production
-    success "Dependencies installed"
+    success "Зависимости установлены"
 }
 
 # Stop current services
 stop_services() {
-    log "🛑 Stopping current services..."
+    log "🛑 Остановка текущих сервисов..."
 
     if [ -f "$COMPOSE_FILE" ]; then
-        docker-compose -f "$COMPOSE_FILE" down || warning "Failed to stop some containers"
+        docker-compose -f "$COMPOSE_FILE" down || warning "Не удалось остановить некоторые контейнеры"
     fi
 
     # Clean up orphaned containers
     docker container prune -f || true
 
-    success "Services stopped"
+    success "Сервисы остановлены"
 }
 
 # Start services
 start_services() {
-    log "🚀 Starting services..."
+    log "🚀 Запуск сервисов..."
 
     # Build and start containers
     docker-compose -f "$COMPOSE_FILE" up --build -d
 
     # Wait for services to be healthy
-    log "⏳ Waiting for services to be healthy..."
+    log "⏳ Ожидание готовности сервисов..."
     sleep 5
 
     # Check if services are running
     if docker-compose -f "$COMPOSE_FILE" ps | grep -q "Up"; then
-        success "Services started successfully"
+        success "Сервисы запущены успешно"
     else
-        error "Services failed to start properly"
+        error "Сервисы не смогли запуститься корректно"
     fi
 }
 
@@ -158,22 +168,36 @@ cleanup_backups() {
 
 # Main deployment process
 main() {
-    log "🚀 Starting VPS production deployment..."
+    log "🚀 Запуск production деплоя на VPS..."
+
+    # Send start notification
+    notify_deployment_start "VPS_Manual" 2>/dev/null || true
 
     # Change to project directory
     cd "$PROJECT_DIR"
 
-    # Run deployment steps
-    create_backup
-    extract_build
-    install_dependencies
-    stop_services
-    start_services
-    verify_nginx
-    health_check
-    cleanup_backups
+    # Run deployment steps with error handling
+    if ! {
+        create_backup
+        extract_build
+        install_dependencies
+        stop_services
+        start_services
+        verify_nginx
+        health_check
+        cleanup_backups
+    }; then
+        # Calculate duration and send failure notification
+        local duration=$(get_duration $DEPLOY_START_TIME 2>/dev/null || echo "неизвестно")
+        notify_deployment_complete "error" "$duration" "Деплой завершился с ошибкой во время выполнения" 2>/dev/null || true
+        error "Деплой завершился с ошибкой!"
+    fi
 
-    success "🎉 Production deployment completed successfully!"
+    success "🎉 Production деплой завершен успешно!"
+
+    # Calculate duration and send success notification
+    local duration=$(get_duration $DEPLOY_START_TIME 2>/dev/null || echo "неизвестно")
+    notify_deployment_complete "success" "$duration" "Все сервисы работают нормально" 2>/dev/null || true
 
     # Show final status
     log "📊 Final status:"
