@@ -37,6 +37,13 @@ WORKDIR /app
 # Копируем все файлы приложения
 COPY . .
 
+# Создаем файл generated-icons.css если его нет
+RUN mkdir -p src/assets/iconify-icons && \
+    echo '/* Generated icons CSS file */' > src/assets/iconify-icons/generated-icons.css && \
+    echo '.iconify { display: inline-block; width: 1em; height: 1em; }' >> src/assets/iconify-icons/generated-icons.css && \
+    echo "Created generated-icons.css" && \
+    ls -la src/assets/iconify-icons/
+
 # Копируем зависимости и сгенерированный Prisma client
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/backend/node_modules ./backend/node_modules
@@ -47,11 +54,6 @@ COPY --from=prisma /app/backend/node_modules/.prisma ./backend/node_modules/.pri
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV NEXT_TELEMETRY_DISABLED=1
-
-# Создаем файл generated-icons.css если его нет
-RUN mkdir -p src/assets/iconify-icons && \
-    echo '/* Generated icons CSS file */' > src/assets/iconify-icons/generated-icons.css && \
-    echo '.iconify { display: inline-block; width: 1em; height: 1em; }' >> src/assets/iconify-icons/generated-icons.css
 
 # Собираем приложение (с обработкой ошибок памяти)
 RUN npm run build || (echo "Build failed, trying without icons..." && npm run build --no-icons)
