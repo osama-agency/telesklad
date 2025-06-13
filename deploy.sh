@@ -92,6 +92,7 @@ main() {
     log "🔄 Resetting to HEAD and pulling latest changes..."
     git reset --hard HEAD
     git fetch origin
+    git reset --hard origin/"$BRANCH"
     git pull origin "$BRANCH" --ff-only
 
     local COMMIT_HASH=$(git rev-parse --short HEAD)
