@@ -78,11 +78,11 @@ jobs:
 
           echo "✅ Deployment completed!"
 
-    - name: 📨 Send Telegram notification
+    - name: 📨 Send Telegram notification to all recipients
       if: always()
       uses: appleboy/telegram-action@master
       with:
-        to: ${{ secrets.TELEGRAM_CHAT_ID }}
+        to: ${{ secrets.TELEGRAM_RECIPIENTS }}
         token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         message: |
           🚀 Deployment Status: ${{ job.status }}
