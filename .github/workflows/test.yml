@@ -1,0 +1,36 @@
+name: 🧪 Test Workflow
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ test-*, feature/* ]
+
+jobs:
+  test:
+    name: 🔍 Basic Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: 🔧 Install dependencies
+        run: npm ci
+
+      - name: 🧹 Lint check
+        run: npm run lint
+        continue-on-error: true
+
+      - name: 🏗️ Build test
+        run: npm run build:next
+
+      - name: ✅ Success
+        run: |
+          echo "🎉 Test workflow completed successfully!"
+          echo "GitHub Actions настроен корректно."

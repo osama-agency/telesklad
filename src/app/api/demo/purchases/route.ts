@@ -119,7 +119,7 @@ function resetDemoData() {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authConfig)
+    const session = await getServerSession(authOptions)
 
     // Проверяем, что это демо пользователь
     if (!session?.user?.email || session.user.email !== 'demo@demo.com') {
@@ -165,7 +165,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authConfig)
+    const session = await getServerSession(authOptions)
 
     if (!session?.user?.email || session.user.email !== 'demo@demo.com') {
       return NextResponse.json({ error: 'Доступ запрещен' }, { status: 403 })
@@ -200,7 +200,7 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession(authConfig)
+    const session = await getServerSession(authOptions)
 
     if (!session?.user?.email || session.user.email !== 'demo@demo.com') {
       return NextResponse.json({ error: 'Доступ запрещен' }, { status: 403 })
@@ -232,7 +232,7 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getServerSession(authConfig)
+    const session = await getServerSession(authOptions)
 
     if (!session?.user?.email || session.user.email !== 'demo@demo.com') {
       return NextResponse.json({ error: 'Доступ запрещен' }, { status: 403 })

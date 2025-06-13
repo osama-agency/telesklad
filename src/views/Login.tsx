@@ -17,7 +17,6 @@ import {
   Typography,
   Link,
   Alert,
-  Tooltip,
   useTheme
 } from '@mui/material'
 import { LoadingButton } from '@mui/lab'
@@ -25,9 +24,7 @@ import {
   EmailOutlined,
   LockOutlined,
   Visibility,
-  VisibilityOff,
-  LightMode,
-  DarkMode
+  VisibilityOff
 } from '@mui/icons-material'
 
 // Third-party Imports
@@ -37,9 +34,6 @@ import { valibotResolver } from '@hookform/resolvers/valibot'
 import { email, object, minLength, string, pipe, nonEmpty } from 'valibot'
 import type { SubmitHandler } from 'react-hook-form'
 import type { InferInput } from 'valibot'
-
-// Hook Imports
-import { useSettings } from '@core/hooks/useSettings'
 
 // Component Imports
 import BrandLogo from '@components/layout/shared/BrandLogo'
@@ -61,7 +55,6 @@ const Login = () => {
   const searchParams = useSearchParams()
   const params = useParams()
   const theme = useTheme()
-  const { settings, updateSettings } = useSettings()
 
   const locale = params?.lang as string || 'ru'
   const redirectTo = searchParams?.get('redirectTo') ?? `/${locale}/dashboard`
@@ -102,12 +95,6 @@ const Login = () => {
     }
   }
 
-  const handleThemeToggle = () => {
-    const newMode = settings.mode === 'light' ? 'dark' : 'light'
-
-    updateSettings({ mode: newMode })
-  }
-
   return (
     <Box
       sx={{
@@ -122,37 +109,6 @@ const Login = () => {
         position: 'relative'
       }}
     >
-      {/* Theme Toggle Button */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 16,
-          right: 16,
-          zIndex: 10
-        }}
-      >
-        <Tooltip title={`Переключить на ${settings.mode === 'light' ? 'темную' : 'светлую'} тему`}>
-          <IconButton
-            onClick={handleThemeToggle}
-            sx={{
-              backgroundColor: theme.palette.background.paper,
-              border: `1px solid ${theme.palette.divider}`,
-              '&:hover': {
-                backgroundColor: theme.palette.action.hover,
-                transform: 'scale(1.05)'
-              },
-              transition: 'all 0.2s ease-in-out'
-            }}
-          >
-            {settings.mode === 'light' ? (
-              <DarkMode sx={{ color: theme.palette.text.primary }} />
-            ) : (
-              <LightMode sx={{ color: theme.palette.text.primary }} />
-            )}
-          </IconButton>
-        </Tooltip>
-      </Box>
-
       <Card
         sx={{
           maxWidth: 400,
@@ -205,6 +161,19 @@ const Login = () => {
               Войдите в свой аккаунт для продолжения
             </Typography>
           </Box>
+
+          {/* Error Alert */}
+          {apiError && (
+            <Alert
+              severity="error"
+              sx={{
+                mb: 3,
+                borderRadius: 2
+              }}
+            >
+              {apiError}
+            </Alert>
+          )}
 
           {/* Form */}
           <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ mb: 3 }}>
@@ -317,29 +286,7 @@ const Login = () => {
               />
             </Box>
 
-            {/* API Error */}
-            {apiError && (
-              <Alert
-                severity="error"
-                sx={{
-                  mb: 3,
-                  borderRadius: 2,
-                  backgroundColor: theme.palette.mode === 'dark'
-                    ? 'rgba(211, 47, 47, 0.1)'
-                    : 'rgba(211, 47, 47, 0.05)',
-                  border: `1px solid ${theme.palette.error.main}`,
-                  '& .MuiAlert-icon': {
-                    color: theme.palette.error.main
-                  }
-                }}
-              >
-                <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                  {apiError}
-                </Typography>
-              </Alert>
-            )}
-
-            {/* Login Button */}
+            {/* Submit Button */}
             <LoadingButton
               fullWidth
               size="large"
@@ -353,9 +300,7 @@ const Login = () => {
                 borderRadius: 2,
                 fontSize: '1rem',
                 fontWeight: 600,
-                background: theme.palette.mode === 'dark'
-                  ? 'linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%)'
-                  : 'linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%)',
+                background: 'linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%)',
                 border: 'none',
                 boxShadow: '0 8px 32px rgba(27, 110, 243, 0.3)',
                 '&:hover': {
@@ -387,7 +332,6 @@ const Login = () => {
               href="#"
               onClick={(e) => {
                 e.preventDefault()
-                // TODO: Реализовать восстановление пароля
                 console.log('Forgot password clicked')
               }}
               sx={{
@@ -409,7 +353,6 @@ const Login = () => {
               href="#"
               onClick={(e) => {
                 e.preventDefault()
-                // TODO: Реализовать регистрацию
                 console.log('Register clicked')
               }}
               sx={{

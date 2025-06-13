@@ -32,9 +32,9 @@ export const authOptions: NextAuthOptions = {
         try {
           // ** Login API Call to match the user credentials and receive user data in response along with his role
           const baseUrl =
-            process.env.API_URL ??
             process.env.NEXTAUTH_URL ??
-            'http://localhost:3000' // исправлен порт для текущего сервера
+            process.env.API_URL ??
+            (process.env.NODE_ENV === 'production' ? 'https://dsgrating.ru' : 'http://localhost:3000')
 
           const res = await fetch(`${baseUrl}/api/login`, {
             method: 'POST',

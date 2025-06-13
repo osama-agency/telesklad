@@ -141,19 +141,47 @@ main() {
         log_success "PM2 processes restarted successfully"
     fi
 
-    # 8. Health check (optional)
-    log "🏥 Performing health check..."
-    sleep 5  # Give services time to start
+    # 8. Health check with retry logic
+    log "🏥 Performing comprehensive health check..."
 
-    # Check if main service is responding
+    # Wait for containers to be fully ready
+    log "⏳ Waiting for containers to stabilize..."
+    sleep 10
+
+    # Enhanced health check with retries
     if command -v curl >/dev/null 2>&1; then
-        if curl -f -s -o /dev/null --max-time 10 "http://localhost" || \
-           curl -f -s -o /dev/null --max-time 10 "https://localhost" || \
-           curl -f -s -o /dev/null --max-time 10 "http://localhost:3000"; then
-            log_success "Health check passed"
+        local max_attempts=12  # 2 minutes total (12 * 10 seconds)
+        local attempt=1
+        local health_check_passed=false
+
+        while [[ $attempt -le $max_attempts ]]; do
+            log "🔍 Health check attempt $attempt/$max_attempts..."
+
+            # Check multiple endpoints
+            if curl -f -s -o /dev/null --max-time 10 "https://dsgrating.ru" || \
+               curl -f -s -o /dev/null --max-time 10 "http://localhost:3000" || \
+               curl -f -s -o /dev/null --max-time 10 "http://localhost:3000/api/health"; then
+                log_success "✅ Health check passed on attempt $attempt"
+                health_check_passed=true
+                break
+            else
+                log "⏳ Attempt $attempt failed, waiting 10 seconds..."
+                sleep 10
+                ((attempt++))
+            fi
+        done
+
+        if [[ "$health_check_passed" == false ]]; then
+            log_error "❌ Health check failed after $max_attempts attempts"
+            log "🔍 Checking container status..."
+            docker compose ps || true
+            log "📋 Last 20 lines of app logs:"
+            docker compose logs app --tail=20 || true
         else
-            log "⚠️  Health check failed, but continuing deployment"
+            log_success "🎉 Application is healthy and ready!"
         fi
+    else
+        log "⚠️  curl not available, skipping health check"
     fi
 
     # 9. Final success notification
