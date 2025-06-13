@@ -377,7 +377,7 @@ export async function handleOrderStatusCallback(
       totalCost: Number(updatedOrder.totalCost),
       isUrgent: updatedOrder.isUrgent,
       supplier: updatedOrder.supplier || undefined,
-      items: updatedOrder.items.map((item: any) => ({
+      items: updatedOrder.items.map((item) => ({
         name: item.name,
         quantity: item.quantity,
         price: Number(item.price),
@@ -444,7 +444,7 @@ export async function getOrderById(orderId: string): Promise<OrderData | null> {
       totalCost: Number(order.totalCost),
       isUrgent: order.isUrgent,
       supplier: order.supplier || undefined,
-      items: order.items.map((item: any) => ({
+      items: order.items.map((item) => ({
         name: item.name,
         quantity: item.quantity,
         price: Number(item.price),
