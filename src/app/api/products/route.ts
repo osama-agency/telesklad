@@ -1,6 +1,6 @@
 import { getServerSession } from 'next-auth'
 
-import { requireAdminAccess, isDemoUser } from '@/lib/auth-helpers'
+import { requireAdminAccess } from '@/lib/auth-helpers'
 import { authOptions } from '@/libs/auth'
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3011'
@@ -86,7 +86,7 @@ export async function GET(request: Request) {
 
     // Если пользователь не авторизован - показываем демо данные
     // Если авторизован как демо пользователь - тоже показываем демо данные
-    if (!session || (session && await isDemoUser())) {
+    if (!session || session?.user?.email === 'demo@demo.com') {
       // Напрямую возвращаем демо данные без fetch запроса
       const { searchParams } = new URL(request.url)
       const page = parseInt(searchParams.get('page') || '1')
