@@ -1,0 +1,95 @@
+name: 🚀 Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:  # Позволяет запускать вручную
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 🔄 Deploy to VPS
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USERNAME }}
+        key: ${{ secrets.VPS_SSH_KEY }}
+        port: ${{ secrets.VPS_PORT }}
+        script: |
+          echo "🚀 Starting deployment..."
+
+          # Переходим в папку проекта
+          cd /opt/telesite
+
+          # Сохраняем локальные изменения (если есть)
+          echo "📦 Stashing local changes..."
+          git stash || true
+
+          # Получаем последние изменения
+          echo "🔄 Pulling latest changes..."
+          git pull origin main
+
+          # Проверяем, изменились ли зависимости
+          echo "📋 Checking for dependency changes..."
+          PACKAGE_CHANGED=$(git diff HEAD@{1} HEAD --name-only | grep -E "(package\.json|package-lock\.json)" || true)
+          PRISMA_CHANGED=$(git diff HEAD@{1} HEAD --name-only | grep -E "prisma/schema\.prisma" || true)
+
+          # Останавливаем контейнеры
+          echo "⏹️ Stopping containers..."
+          docker-compose -f docker-compose.ssl.yml down || true
+
+          # Очищаем старые образы для экономии места
+          echo "🧹 Cleaning old Docker images..."
+          docker image prune -f || true
+
+          # Если изменились зависимости, пересобираем с нуля
+          if [ ! -z "$PACKAGE_CHANGED" ]; then
+            echo "📦 Dependencies changed, rebuilding from scratch..."
+            docker-compose -f docker-compose.ssl.yml build --no-cache
+          else
+            echo "🔨 Building containers..."
+            docker-compose -f docker-compose.ssl.yml build
+          fi
+
+          # Запускаем контейнеры
+          echo "🚀 Starting containers..."
+          docker-compose -f docker-compose.ssl.yml up -d
+
+          # Ждем, пока контейнеры запустятся
+          echo "⏳ Waiting for containers to start..."
+          sleep 10
+
+          # Выполняем миграции Prisma (если нужно)
+          if [ ! -z "$PRISMA_CHANGED" ]; then
+            echo "🗄️ Running Prisma migrations..."
+            docker-compose -f docker-compose.ssl.yml exec -T app npx prisma migrate deploy || true
+          fi
+
+          # Проверяем статус
+          echo "✅ Checking deployment status..."
+          docker-compose -f docker-compose.ssl.yml ps
+
+          # Проверяем здоровье приложения
+          echo "🏥 Health check..."
+          curl -f http://localhost:3011/health || echo "⚠️ Backend health check failed"
+          curl -f https://dsgrating.ru || echo "⚠️ Frontend health check failed"
+
+          echo "✅ Deployment completed!"
+
+    - name: 📨 Send Telegram notification
+      if: always()
+      uses: appleboy/telegram-action@master
+      with:
+        to: ${{ secrets.TELEGRAM_CHAT_ID }}
+        token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        message: |
+          🚀 Deployment Status: ${{ job.status }}
+
+          📦 Repository: ${{ github.repository }}
+          🔀 Branch: ${{ github.ref_name }}
+          👤 Triggered by: ${{ github.actor }}
+          💬 Commit: ${{ github.event.head_commit.message }}
+
+          🔗 URL: https://dsgrating.ru

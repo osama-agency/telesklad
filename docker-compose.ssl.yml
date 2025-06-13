@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_DB: telesite
       POSTGRES_USER: telesite_user
-      POSTGRES_PASSWORD: your_secure_password_here
+      POSTGRES_PASSWORD: TeleS1te_2025_SecurePass!
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -21,7 +21,7 @@ services:
       dockerfile: Dockerfile.simple
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://telesite_user:your_secure_password_here@postgres:5432/telesite?schema=public
+      - DATABASE_URL=postgresql://telesite_user:TeleS1te_2025_SecurePass!@postgres:5432/telesite?schema=public
       - NEXTAUTH_SECRET=9u7lZjpjZUmX4CZARxgEgns04CYpdq7NEA8UZDQUGHg=
       - NEXTAUTH_URL=https://dsgrating.ru
       - BACKEND_URL=http://localhost:3011
@@ -39,6 +39,7 @@ services:
     volumes:
       - ./nginx-ssl.conf:/etc/nginx/nginx.conf
       - ./ssl:/etc/nginx/ssl
+      - ./public:/opt/telesite/public:ro
     depends_on:
       - app
 

@@ -30,7 +30,10 @@
     "vps:status": "./scripts/deploy-to-vps.sh status",
     "vps:logs": "./scripts/deploy-to-vps.sh logs",
     "vps:shell": "./scripts/deploy-to-vps.sh shell",
-    "vps:deploy:build": "./scripts/deploy-build-to-vps.sh"
+    "vps:deploy:build": "./scripts/deploy-build-to-vps.sh",
+    "deploy:test": "./scripts/test-deploy-local.sh",
+    "deploy:setup": "sudo ./scripts/setup-vps-deploy.sh",
+    "deploy:manual": "ssh -i ~/.ssh/telesite_deploy deploy@82.202.131.251 'cd /opt/telesite && git pull && docker-compose -f docker-compose.ssl.yml up -d --build'"
   },
   "dependencies": {
     "@auth/prisma-adapter": "2.7.4",

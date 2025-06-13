@@ -7,6 +7,11 @@ const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8159006212:AAEjYn-
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '-4729817036'
 const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`
 
+// Множественные получатели уведомлений
+const NOTIFICATION_RECIPIENTS = process.env.TELEGRAM_RECIPIENTS
+  ? process.env.TELEGRAM_RECIPIENTS.split(',').map(id => id.trim())
+  : ['125861752', '795960178'] // Вы и закупщик
+
 // Статусы заказов и их переходы
 export const ORDER_STATUSES = {
   pending: {
@@ -108,16 +113,26 @@ ${itemsList}
 ⏰ *Создано:* ${timestamp}`
 }
 
-// Создание кнопок для редактирования заказа (без WebApp)
+// Создание кнопок для редактирования заказа (адаптивно: WebApp для приватных чатов, URL для групп)
 function createEditOrderButtons(orderId: string, currentStatus: OrderStatus, sequenceId: number, messageId?: number, chatId?: string): any {
   // Всегда показываем кнопки, кроме отмененных заказов
   if (currentStatus === 'cancelled') {
     return null
   }
 
-  // WebApp URL для ручного перехода
+  // WebApp URL для редактирования заказа
   const webAppUrl = process.env.WEBAPP_URL || 'https://dsgrating.ru/telegram-webapp'
-  const editUrl = `${webAppUrl}/edit-order.html?orderId=${orderId}&currentStatus=${currentStatus}&sequenceId=${sequenceId}&messageId=${messageId || ''}&chatId=${chatId || ''}&backendUrl=${process.env.BACKEND_URL || 'https://dsgrating.ru'}`
+  // Для локального тестирования используем ngrok HTTPS туннель, для продакшена - VPS
+  const backendUrl = process.env.NODE_ENV === 'development' ? 'https://b594-95-10-23-170.ngrok-free.app' : (process.env.BACKEND_URL || 'https://dsgrating.ru')
+  const editUrl = `${webAppUrl}/edit-order.html?orderId=${orderId}&currentStatus=${currentStatus}&sequenceId=${sequenceId}&messageId=${messageId || ''}&chatId=${chatId || ''}&backendUrl=${backendUrl}`
+
+  console.log('🔗 WebApp URL для кнопки:', editUrl)
+
+  // Определяем тип чата: приватный (положительный ID) или групповой (отрицательный ID)
+  const targetChatId = chatId || TELEGRAM_CHAT_ID
+  const isPrivateChat = !targetChatId.startsWith('-')
+
+  console.log('💬 Тип чата:', isPrivateChat ? 'Приватный' : 'Групповой', `(ID: ${targetChatId})`)
 
   // Добавляем кнопки быстрого изменения статуса для критических переходов
   const quickActions = []
@@ -137,22 +152,43 @@ function createEditOrderButtons(orderId: string, currentStatus: OrderStatus, seq
     ])
   }
 
-  // Добавляем кнопку с ссылкой на WebApp
-  quickActions.push([
-    { text: "✏️ Редактировать заказ", url: editUrl }
-  ])
+  // КРИТИЧНО: WebApp кнопки работают ТОЛЬКО в приватных чатах!
+  // Для групповых чатов используем обычные URL кнопки
+  if (isPrivateChat) {
+    // Приватный чат: используем WebApp кнопку (открывается внутри Telegram)
+    quickActions.push([
+      {
+        text: "✏️ Редактировать заказ",
+        web_app: { url: editUrl }
+      }
+    ])
+    console.log('🔧 Используем WebApp кнопку для приватного чата')
+  } else {
+    // Групповой чат: используем обычную URL кнопку (открывается в браузере)
+    quickActions.push([
+      {
+        text: "✏️ Редактировать заказ",
+        url: editUrl
+      }
+    ])
+    console.log('🔧 Используем URL кнопку для группового чата')
+  }
 
-  return { inline_keyboard: quickActions }
+  // Проверяем структуру reply_markup перед отправкой
+  const replyMarkup = { inline_keyboard: quickActions }
+  console.log('🔍 Reply markup структура:', JSON.stringify(replyMarkup, null, 2))
+
+  return replyMarkup
 }
 
-// Отправка нового сообщения о заказе
-export async function sendOrderNotification(order: OrderData): Promise<{ success: boolean; messageId?: number; error?: string }> {
+// Отправка сообщения в один чат
+async function sendMessageToChat(chatId: string, order: OrderData): Promise<{ success: boolean; messageId?: number; error?: string }> {
   try {
     const message = formatOrderMessage(order)
-    const keyboard = createEditOrderButtons(order.id, order.status, order.sequenceId)
+    const keyboard = createEditOrderButtons(order.id, order.status, order.sequenceId, undefined, chatId)
 
     const requestBody: any = {
-      chat_id: TELEGRAM_CHAT_ID,
+      chat_id: chatId,
       text: message,
       parse_mode: 'Markdown',
       disable_web_page_preview: true
@@ -161,13 +197,6 @@ export async function sendOrderNotification(order: OrderData): Promise<{ success
     if (keyboard) {
       requestBody.reply_markup = keyboard
     }
-
-    console.log('📤 Отправляю заказ в Telegram:', {
-      orderId: order.id,
-      sequenceId: order.sequenceId,
-      status: order.status,
-      hasButtons: !!keyboard
-    })
 
     const response = await fetch(`${TELEGRAM_API_URL}/sendMessage`, {
       method: 'POST',
@@ -178,16 +207,70 @@ export async function sendOrderNotification(order: OrderData): Promise<{ success
     const data = await response.json() as any
 
     if (data.ok) {
-      console.log('✅ Заказ отправлен в Telegram, message_id:', data.result.message_id)
       return { success: true, messageId: data.result.message_id }
     } else {
-      console.error('❌ Ошибка Telegram API:', data)
       return { success: false, error: data.description || 'Unknown error' }
     }
 
   } catch (error) {
-    console.error('❌ Ошибка отправки в Telegram:', error)
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+  }
+}
+
+// Отправка нового сообщения о заказе всем получателям
+export async function sendOrderNotification(order: OrderData): Promise<{ success: boolean; messageId?: number; error?: string; results?: Array<{ chatId: string; success: boolean; messageId?: number; error?: string }> }> {
+  console.log('📤 Отправляю заказ в Telegram всем получателям:', {
+    orderId: order.id,
+    sequenceId: order.sequenceId,
+    status: order.status,
+    recipients: NOTIFICATION_RECIPIENTS
+  })
+
+  const results = []
+  let mainMessageId: number | undefined
+  let hasSuccess = false
+
+  // Отправляем всем получателям
+  for (const chatId of NOTIFICATION_RECIPIENTS) {
+    console.log(`📨 Отправляю в чат ${chatId}...`)
+
+    const result = await sendMessageToChat(chatId, order)
+    results.push({
+      chatId,
+      success: result.success,
+      messageId: result.messageId,
+      error: result.error
+    })
+
+    if (result.success) {
+      hasSuccess = true
+      // Сохраняем message_id из основного чата (первого в списке)
+      if (!mainMessageId) {
+        mainMessageId = result.messageId
+      }
+      console.log(`✅ Заказ отправлен в чат ${chatId}, message_id: ${result.messageId}`)
+    } else {
+      console.error(`❌ Ошибка отправки в чат ${chatId}:`, result.error)
+    }
+  }
+
+  // Возвращаем результат
+  if (hasSuccess) {
+    console.log(`✅ Заказ успешно отправлен в ${results.filter(r => r.success).length} из ${results.length} чатов`)
+
+    return {
+      success: true,
+      messageId: mainMessageId,
+      results
+    }
+  } else {
+    console.error('❌ Не удалось отправить заказ ни в один чат')
+
+    return {
+      success: false,
+      error: 'Failed to send to any chat',
+      results
+    }
   }
 }
 
@@ -478,8 +561,8 @@ async function handleChangeStatusMenu(
   }
 }
 
-// Тестовая функция для отправки тестового заказа
-export async function sendTestOrder(): Promise<{ success: boolean; error?: string }> {
+// Тестовая функция для отправки тестового заказа всем получателям
+export async function sendTestOrder(): Promise<{ success: boolean; error?: string; results?: Array<{ chatId: string; success: boolean; messageId?: number; error?: string }> }> {
   const testOrder: OrderData = {
     id: 'test_' + Date.now(),
     sequenceId: 999999,
@@ -494,5 +577,108 @@ export async function sendTestOrder(): Promise<{ success: boolean; error?: strin
     createdAt: new Date()
   }
 
+  console.log('🧪 Тестирую отправку всем получателям:', NOTIFICATION_RECIPIENTS)
   return await sendOrderNotification(testOrder)
+}
+
+// Отправка тестового заказа в приватный чат для проверки WebApp кнопок
+export async function sendTestOrderToPrivateChat(privateChatId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Импортируем PrismaClient для создания реального заказа
+    const { PrismaClient } = require('@prisma/client')
+    const prisma = new PrismaClient()
+
+    // Получаем следующий sequenceId
+    const lastPurchase = await prisma.purchase.findFirst({
+      orderBy: { sequenceId: 'desc' }
+    })
+    const sequenceId = (lastPurchase?.sequenceId || 0) + 1
+
+    // Создаем реальный заказ в базе данных
+    const purchase = await prisma.purchase.create({
+      data: {
+        sequenceId,
+        supplier: 'Test Supplier WebApp',
+        totalCost: 25.50,
+        isUrgent: false,
+        status: 'pending',
+        items: {
+          create: [{
+            name: 'Test Product WebApp',
+            quantity: 1,
+            price: 25.50,
+            total: 25.50
+          }]
+        }
+      },
+      include: {
+        items: true
+      }
+    })
+
+    console.log('✅ Тестовый заказ создан в БД:', purchase.id)
+
+    // Формируем данные заказа для отправки
+    const testOrder: OrderData = {
+      id: purchase.id,
+      sequenceId: purchase.sequenceId,
+      status: purchase.status as OrderStatus,
+      totalCost: parseFloat(purchase.totalCost.toString()),
+      isUrgent: purchase.isUrgent,
+      supplier: purchase.supplier || '',
+      items: purchase.items.map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        price: parseFloat(item.price.toString()),
+        total: parseFloat(item.total.toString())
+      })),
+      createdAt: purchase.createdAt
+    }
+
+    const message = formatOrderMessage(testOrder)
+    const keyboard = createEditOrderButtons(testOrder.id, testOrder.status, testOrder.sequenceId, undefined, privateChatId)
+
+    const requestBody: any = {
+      chat_id: privateChatId,
+      text: message,
+      parse_mode: 'Markdown',
+      disable_web_page_preview: true
+    }
+
+    if (keyboard) {
+      requestBody.reply_markup = keyboard
+    }
+
+    console.log('🧪 Отправляю тестовый заказ в приватный чат:', {
+      chatId: privateChatId,
+      orderId: testOrder.id,
+      hasWebAppButton: true
+    })
+
+    const response = await fetch(`${TELEGRAM_API_URL}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody)
+    })
+
+    const data = await response.json() as any
+
+    if (data.ok) {
+      // Сохраняем message_id в базе
+      await prisma.purchase.update({
+        where: { id: purchase.id },
+        data: { telegramMessageId: data.result.message_id }
+      })
+
+      console.log('✅ Тестовый заказ отправлен в приватный чат, message_id:', data.result.message_id)
+      return { success: true }
+    } else {
+      console.error('❌ Ошибка отправки в приватный чат:', data)
+      return { success: false, error: data.description || 'Unknown error' }
+    }
+
+  } catch (error) {
+    console.error('❌ Ошибка отправки тестового заказа:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+  }
 }
