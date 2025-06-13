@@ -100,6 +100,9 @@ show_secrets() {
     echo "4. PROJECT_DIR"
     echo "   Значение: $PROJECT_DIR"
     echo ""
+    echo "5. TELEGRAM_BOT_TOKEN (опционально)"
+    echo "   Значение: токен вашего Telegram бота для уведомлений"
+    echo ""
 }
 
 # Set GitHub secrets automatically
@@ -137,6 +140,17 @@ set_secrets_auto() {
     echo "$PROJECT_DIR" | gh secret set PROJECT_DIR
     success "PROJECT_DIR установлен"
 
+    # Ask for Telegram bot token
+    echo ""
+    read -p "Введите TELEGRAM_BOT_TOKEN (или нажмите Enter для пропуска): " TELEGRAM_TOKEN
+    if [ -n "$TELEGRAM_TOKEN" ]; then
+        log "🤖 Устанавливаем TELEGRAM_BOT_TOKEN..."
+        echo "$TELEGRAM_TOKEN" | gh secret set TELEGRAM_BOT_TOKEN
+        success "TELEGRAM_BOT_TOKEN установлен"
+    else
+        warning "TELEGRAM_BOT_TOKEN пропущен. Уведомления в Telegram не будут работать"
+    fi
+
     success "Все секреты установлены!"
 }
 
@@ -157,6 +171,7 @@ set_secrets_manual() {
     echo "2. VPS_HOST: $VPS_HOST"
     echo "3. VPS_USER: $VPS_USER"
     echo "4. PROJECT_DIR: $PROJECT_DIR"
+    echo "5. TELEGRAM_BOT_TOKEN: (введите токен вашего бота)"
     echo ""
 
     warning "После добавления всех секретов нажмите Enter для продолжения..."
