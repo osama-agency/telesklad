@@ -84,8 +84,9 @@ export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)
 
-    // Если пользователь не авторизован или это демо пользователь - показываем демо данные
-    if (!session || await isDemoUser()) {
+    // Если пользователь не авторизован - показываем демо данные
+    // Если авторизован как демо пользователь - тоже показываем демо данные
+    if (!session || (session && await isDemoUser())) {
       // Напрямую возвращаем демо данные без fetch запроса
       const { searchParams } = new URL(request.url)
       const page = parseInt(searchParams.get('page') || '1')
@@ -116,7 +117,7 @@ export async function GET(request: Request) {
       })
     }
 
-    // Проверяем права администратора для авторизованных пользователей
+    // Для авторизованных не-демо пользователей проверяем права администратора
     const accessDenied = await requireAdminAccess()
 
     if (accessDenied) {
