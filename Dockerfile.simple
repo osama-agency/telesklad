@@ -48,8 +48,5 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Собираем приложение (с обработкой ошибок памяти)
-RUN npm run build || (echo "Build failed, trying without icons..." && npm run build --no-icons)
-
-# Команда запуска
-CMD ["node", "start-production.js"]
+# Команда запуска (без сборки - используем start-production-simple.js)
+CMD ["node", "start-production-simple.js"]
