@@ -131,35 +131,43 @@ export const authOptions: NextAuthOptions = {
 
       return session
     },
-    async redirect({ url, baseUrl }) {
-      // Проверяем если это callbackUrl с redirectTo параметром
-      const callbackUrl = new URL(url.startsWith('/') ? `${baseUrl}${url}` : url)
-      const redirectTo = callbackUrl.searchParams.get('callbackUrl') || callbackUrl.searchParams.get('redirectTo')
+        async redirect({ url, baseUrl }) {
+      try {
+        console.log('NextAuth redirect:', { url, baseUrl })
 
-      if (redirectTo) {
-        // Убеждаемся что redirect внутри нашего домена
-        const redirectUrl = new URL(redirectTo.startsWith('/') ? `${baseUrl}${redirectTo}` : redirectTo)
+        // Если это локальный путь, проверяем и добавляем locale если нужно
+        if (url.startsWith('/')) {
+          // Если URL не содержит locale, добавляем /ru
+          const hasLocale = /^\/(ru|en|tr)/.test(url)
+          const finalUrl = hasLocale ? `${baseUrl}${url}` : `${baseUrl}/ru${url}`
 
-        if (redirectUrl.origin === new URL(baseUrl).origin) {
-          return redirectUrl.href
+          console.log('Local path redirect:', finalUrl)
+
+          return finalUrl
         }
+
+        // Для URL с тем же origin
+        const urlObj = new URL(url)
+        const baseUrlObj = new URL(baseUrl)
+
+        if (urlObj.origin === baseUrlObj.origin) {
+          console.log('Same origin redirect:', url)
+
+          return url
+        }
+
+        // По умолчанию перенаправляем на страницу продуктов (она точно существует)
+        const defaultUrl = `${baseUrl}/ru/products`
+
+        console.log('Default redirect:', defaultUrl)
+
+        return defaultUrl
+      } catch (error) {
+        console.error('Redirect error:', error)
+
+        // Fallback на продукты в случае ошибки
+        return `${baseUrl}/ru/products`
       }
-
-      // Если это редирект после входа на локальный URL
-      if (url.startsWith('/')) {
-        // Если URL не содержит locale, добавляем /ru
-        const hasLocale = /^\/(ru|en|tr)/.test(url)
-
-        return hasLocale ? `${baseUrl}${url}` : `${baseUrl}/ru${url}`
-      }
-
-      // Если внешний URL но с тем же origin, разрешаем
-      if (new URL(url).origin === new URL(baseUrl).origin) {
-        return url
-      }
-
-      // По умолчанию направляем в дашборд
-      return `${baseUrl}/ru/dashboard`
     }
   }
 }
