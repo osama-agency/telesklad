@@ -33,7 +33,10 @@
     "vps:deploy:build": "./scripts/deploy-build-to-vps.sh",
     "deploy:test": "./scripts/test-deploy-local.sh",
     "deploy:setup": "sudo ./scripts/setup-vps-deploy.sh",
-    "deploy:manual": "ssh -i ~/.ssh/telesite_deploy deploy@82.202.131.251 'cd /opt/telesite && git pull && docker-compose -f docker-compose.ssl.yml up -d --build'"
+    "deploy:manual": "ssh -i ~/.ssh/telesite_deploy deploy@82.202.131.251 'cd /opt/telesite && ./deploy.sh'",
+    "deploy:pro": "ssh -i ~/.ssh/telesite_deploy deploy@82.202.131.251 'cd /opt/telesite && git pull origin main && chmod +x deploy.sh && ./deploy.sh'",
+    "vps:cleanup": "ssh -i ~/.ssh/telesite_deploy deploy@82.202.131.251 'bash /opt/telesite/scripts/cleanup-vps.sh'",
+    "vps:cleanup:deep": "ssh -i ~/.ssh/telesite_deploy deploy@82.202.131.251 'bash /opt/telesite/scripts/cleanup-vps.sh && docker system prune -af --volumes'"
   },
   "dependencies": {
     "@auth/prisma-adapter": "2.7.4",

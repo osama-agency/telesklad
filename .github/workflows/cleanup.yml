@@ -1,0 +1,72 @@
+name: 🧹 Weekly VPS Cleanup
+
+on:
+  schedule:
+    # Каждое воскресенье в 02:00 UTC (05:00 MSK)
+    - cron: '0 2 * * 0'
+  workflow_dispatch:  # Позволяет запускать вручную
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 🧹 Deep cleanup VPS
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USERNAME }}
+        key: ${{ secrets.VPS_SSH_KEY }}
+        port: ${{ secrets.VPS_PORT }}
+        script: |
+          echo "🧹 Starting weekly VPS cleanup..."
+
+          # Переходим в папку проекта
+          cd /opt/telesite
+
+          # Показываем использование диска до очистки
+          echo "💾 Disk usage before cleanup:"
+          df -h /
+
+          # Запускаем скрипт очистки
+          bash scripts/cleanup-vps.sh
+
+          # Дополнительная глубокая очистка
+          echo "🗑️ Additional deep cleanup..."
+
+          # Удаляем старые логи (старше 7 дней)
+          sudo find /var/log -name "*.log" -type f -mtime +7 -delete || true
+          sudo find /var/log -name "*.gz" -type f -mtime +7 -delete || true
+
+          # Очищаем кэш apt
+          sudo apt-get autoclean || true
+          sudo apt-get autoremove --purge -y || true
+
+          # Очищаем старые ядра (оставляем только текущее и одно предыдущее)
+          sudo apt-get autoremove --purge -y || true
+
+          # Очищаем thumbnails и кэш пользователя
+          sudo rm -rf /home/*/.cache/* || true
+          sudo rm -rf /home/*/.thumbnails/* || true
+
+          # Показываем использование диска после очистки
+          echo "💾 Disk usage after cleanup:"
+          df -h /
+
+          echo "✅ Weekly cleanup completed!"
+
+    - name: 📨 Send cleanup report to Telegram
+      if: always()
+      uses: appleboy/telegram-action@master
+      with:
+        to: ${{ secrets.TELEGRAM_RECIPIENTS }}
+        token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        message: |
+          🧹 Weekly VPS Cleanup: ${{ job.status }}
+
+          📅 Date: $(date)
+          🖥️ Server: ${{ secrets.VPS_HOST }}
+
+          Status: ${{ job.status == 'success' && '✅ Completed successfully' || '❌ Failed' }}
+
+          🔗 Check server: https://dsgrating.ru
