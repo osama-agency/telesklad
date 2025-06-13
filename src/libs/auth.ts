@@ -133,13 +133,17 @@ export const authOptions: NextAuthOptions = {
     },
         async redirect({ url, baseUrl }) {
       try {
-        console.log('NextAuth redirect:', { url, baseUrl })
+        // Используем правильный baseUrl из переменной окружения
+        const correctBaseUrl = process.env.NEXTAUTH_URL ??
+          (process.env.NODE_ENV === 'production' ? 'https://dsgrating.ru' : 'http://localhost:3000')
+
+        console.log('NextAuth redirect:', { url, baseUrl, correctBaseUrl })
 
         // Если это локальный путь, проверяем и добавляем locale если нужно
         if (url.startsWith('/')) {
           // Если URL не содержит locale, добавляем /ru
           const hasLocale = /^\/(ru|en|tr)/.test(url)
-          const finalUrl = hasLocale ? `${baseUrl}${url}` : `${baseUrl}/ru${url}`
+          const finalUrl = hasLocale ? `${correctBaseUrl}${url}` : `${correctBaseUrl}/ru${url}`
 
           console.log('Local path redirect:', finalUrl)
 
@@ -148,16 +152,16 @@ export const authOptions: NextAuthOptions = {
 
         // Для URL с тем же origin
         const urlObj = new URL(url)
-        const baseUrlObj = new URL(baseUrl)
+        const correctBaseUrlObj = new URL(correctBaseUrl)
 
-        if (urlObj.origin === baseUrlObj.origin) {
+        if (urlObj.origin === correctBaseUrlObj.origin) {
           console.log('Same origin redirect:', url)
 
           return url
         }
 
         // По умолчанию перенаправляем на страницу продуктов (она точно существует)
-        const defaultUrl = `${baseUrl}/ru/products`
+        const defaultUrl = `${correctBaseUrl}/ru/products`
 
         console.log('Default redirect:', defaultUrl)
 
@@ -166,7 +170,9 @@ export const authOptions: NextAuthOptions = {
         console.error('Redirect error:', error)
 
         // Fallback на продукты в случае ошибки
-        return `${baseUrl}/ru/products`
+        const fallbackBaseUrl = process.env.NEXTAUTH_URL ?? 'https://dsgrating.ru'
+
+        return `${fallbackBaseUrl}/ru/products`
       }
     }
   }

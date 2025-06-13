@@ -107,7 +107,11 @@ export async function GET(request: Request) {
       const paginatedProducts = filteredProducts.slice(startIndex, endIndex)
 
       return Response.json({
-        products: paginatedProducts,
+        success: true,
+        data: {
+          products: paginatedProducts,
+          total: filteredProducts.length
+        },
         pagination: {
           page,
           limit,
