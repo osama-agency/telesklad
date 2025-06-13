@@ -1,27 +1,51 @@
+import { getServerSession } from 'next-auth'
+
 import { requireAdminAccess, isDemoUser } from '@/lib/auth-helpers'
+import { authOptions } from '@/libs/auth'
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3011'
 
 // GET /api/products - получить список товаров
 export async function GET(request: Request) {
   try {
-    // Проверяем, является ли пользователь демо пользователем
-    if (await isDemoUser()) {
+    const session = await getServerSession(authOptions)
+
+    // Если пользователь не авторизован или это демо пользователь - показываем демо данные
+    if (!session || await isDemoUser()) {
       // Перенаправляем на демо API
       const { searchParams } = new URL(request.url)
       const demoUrl = new URL('/api/demo/products', request.url)
-
       demoUrl.search = searchParams.toString()
 
-      return fetch(demoUrl.toString(), {
+      // Создаем внутренний запрос к демо API без проверки авторизации
+      const demoRequest = new Request(demoUrl.toString(), {
         method: 'GET',
         headers: request.headers
       })
+
+      // Вызываем демо API напрямую
+      const demoResponse = await fetch(demoUrl.toString(), {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (demoResponse.ok) {
+        const demoData = await demoResponse.json()
+        return Response.json(demoData)
+      }
+
+      // Если демо API недоступен, возвращаем заглушку
+      return Response.json({
+        products: [],
+        pagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
+        message: 'Демо данные временно недоступны'
+      })
     }
 
-    // Проверяем права администратора для обычных пользователей
+    // Проверяем права администратора для авторизованных пользователей
     const accessDenied = await requireAdminAccess()
-
     if (accessDenied) {
       return accessDenied
     }

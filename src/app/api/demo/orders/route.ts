@@ -160,12 +160,11 @@ function resetDemoData() {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-
-    // Проверяем, что это демо пользователь
-    if (!session?.user?.email || session.user.email !== 'demo@demo.com') {
-      return NextResponse.json({ error: 'Доступ запрещен' }, { status: 403 })
-    }
+    // Демо API доступен для всех пользователей
+    // const session = await getServerSession(authOptions)
+    // if (!session?.user?.email || session.user.email !== 'demo@demo.com') {
+    //   return NextResponse.json({ error: 'Доступ запрещен' }, { status: 403 })
+    // }
 
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
