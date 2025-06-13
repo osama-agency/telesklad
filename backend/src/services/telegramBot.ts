@@ -377,7 +377,7 @@ export async function handleOrderStatusCallback(
       totalCost: Number(updatedOrder.totalCost),
       isUrgent: updatedOrder.isUrgent,
       supplier: updatedOrder.supplier || undefined,
-      items: updatedOrder.items.map((item) => ({
+      items: updatedOrder.items.map((item: any) => ({
         name: item.name,
         quantity: item.quantity,
         price: Number(item.price),
@@ -444,7 +444,7 @@ export async function getOrderById(orderId: string): Promise<OrderData | null> {
       totalCost: Number(order.totalCost),
       isUrgent: order.isUrgent,
       supplier: order.supplier || undefined,
-      items: order.items.map((item) => ({
+      items: order.items.map((item: any) => ({
         name: item.name,
         quantity: item.quantity,
         price: Number(item.price),
@@ -626,7 +626,7 @@ export async function sendTestOrderToPrivateChat(privateChatId: string): Promise
       totalCost: parseFloat(purchase.totalCost.toString()),
       isUrgent: purchase.isUrgent,
       supplier: purchase.supplier || '',
-      items: purchase.items.map(item => ({
+      items: purchase.items.map((item: any) => ({
         name: item.name,
         quantity: item.quantity,
         price: parseFloat(item.price.toString()),
