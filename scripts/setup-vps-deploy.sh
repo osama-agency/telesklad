@@ -88,7 +88,7 @@ if [ ! -f "/opt/telesite/.env" ]; then
     echo "📝 Создание .env файла..."
     cat > /opt/telesite/.env << EOF
 NODE_ENV=production
-DATABASE_URL=postgresql://postgres:your_password@postgres:5432/telesite
+DATABASE_URL=postgresql://telesite_user:TeleS1te_2025_SecurePass!@postgres:5432/telesite
 NEXTAUTH_SECRET=your_secret_here
 NEXTAUTH_URL=https://dsgrating.ru
 TELEGRAM_BOT_TOKEN=your_bot_token
