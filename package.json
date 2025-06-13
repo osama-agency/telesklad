@@ -24,7 +24,7 @@
     "dev:all": "./scripts/dev-servers.sh start",
     "check:prisma": "node scripts/check-prisma.js",
     "type-check": "tsc --noEmit",
-    "postinstall": "prisma generate --schema=./backend/prisma/schema.prisma",
+    "postinstall": "npx prisma generate --schema=./backend/prisma/schema.prisma",
     "vps:deploy": "./scripts/deploy-to-vps.sh",
     "vps:deploy:production": "./scripts/deploy-production.sh",
     "vps:setup": "./scripts/deploy-to-vps.sh setup",
@@ -123,7 +123,8 @@
     "valibot": "0.42.1",
     "vitest": "^3.2.2",
     "zod": "^3.25.55",
-    "zustand": "^5.0.5"
+    "zustand": "^5.0.5",
+    "prisma": "^5.22.0"
   },
   "devDependencies": {
     "@iconify/json": "2.2.286",
@@ -150,7 +151,6 @@
     "postcss": "8.4.49",
     "postcss-styled-syntax": "0.7.0",
     "prettier": "3.4.2",
-    "prisma": "^5.22.0",
     "stylelint": "16.12.0",
     "stylelint-use-logical-spec": "5.0.1",
     "stylis": "4.3.4",
