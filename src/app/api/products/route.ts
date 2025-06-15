@@ -75,9 +75,12 @@ async function syncProductsFromAPI() {
 // GET - получение товаров из локальной базы с синхронизацией
 export async function GET(request: NextRequest) {
   try {
+    console.log('🛍️ Products API: Starting request...');
+    
     const session = await getServerSession();
     
     if (!session?.user?.email) {
+      console.log('❌ Products API: Unauthorized');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -85,9 +88,11 @@ export async function GET(request: NextRequest) {
     const showHidden = searchParams.get('showHidden') === 'true';
     const fromDate = searchParams.get('from');
     const toDate = searchParams.get('to');
+    
+    console.log('🛍️ Products API: Params -', { showHidden, fromDate, toDate });
 
-    // Синхронизируем товары из внешнего API
-    await syncProductsFromAPI();
+    // Временно отключаем синхронизацию для диагностики
+    // await syncProductsFromAPI();
 
     // Строим условия фильтрации
     const whereConditions: any = {
@@ -104,12 +109,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Возвращаем товары согласно фильтрам
+    console.log('🛍️ Products API: Fetching products with conditions:', whereConditions);
     const products = await prisma.product.findMany({
       where: whereConditions,
       orderBy: {
         name: 'asc'
       }
     });
+    console.log('🛍️ Products API: Found', products.length, 'products');
 
     // Получаем общие расходы за период
     let totalExpenses = 0;
@@ -132,6 +139,7 @@ export async function GET(request: NextRequest) {
         },
       });
       totalExpenses = expensesData._sum.amount || 0;
+      console.log('🛍️ Products API: Total expenses:', totalExpenses);
 
       // Получаем общее количество проданных товаров за период
       const totalSalesData = await prisma.orderItem.aggregate({
@@ -151,9 +159,11 @@ export async function GET(request: NextRequest) {
         },
       });
       totalSoldQuantity = totalSalesData._sum.quantity || 0;
+      console.log('🛍️ Products API: Total sold quantity:', totalSoldQuantity);
     }
 
     // Получаем количество проданных товаров и рассчитываем расходы
+    console.log('🛍️ Products API: Processing', products.length, 'products with sales data...');
     const productsWithSales = await Promise.all(
       products.map(async (product) => {
         // Условия для фильтрации по датам
@@ -238,9 +248,11 @@ export async function GET(request: NextRequest) {
       })
     );
 
+    console.log('🛍️ Products API: Successfully processed', productsWithSales.length, 'products');
     return NextResponse.json(productsWithSales);
   } catch (error) {
-    console.error('Error fetching products:', error);
+    console.error('❌ Products API Error:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return NextResponse.json(
       { error: 'Internal Server Error' }, 
       { status: 500 }
