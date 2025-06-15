@@ -24,20 +24,23 @@ export async function GET(request: NextRequest) {
     if (from || to) {
       whereConditions.date = {};
       if (from) {
-        whereConditions.date.gte = new Date(from);
+        // Преобразуем в строку формата YYYY-MM-DD для сравнения
+        const fromDateStr = new Date(from).toISOString().split('T')[0];
+        whereConditions.date.gte = fromDateStr;
       }
       if (to) {
-        const toDate = new Date(to);
-        toDate.setHours(23, 59, 59, 999); // Включаем весь день
-        whereConditions.date.lte = toDate;
+        // Преобразуем в строку формата YYYY-MM-DD для сравнения
+        const toDateStr = new Date(to).toISOString().split('T')[0];
+        whereConditions.date.lte = toDateStr;
       }
     }
 
     const expenses = await prisma.expense.findMany({
       where: whereConditions,
-      orderBy: {
-        date: 'desc'
-      }
+      orderBy: [
+        { date: 'desc' },
+        { createdAt: 'desc' }
+      ]
     });
 
     return NextResponse.json(expenses);
