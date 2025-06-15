@@ -116,11 +116,15 @@ export async function GET(request: NextRequest) {
     let totalSoldQuantity = 0;
 
     if (fromDate && toDate) {
+      // Преобразуем даты в строки для сравнения с полем date типа String
+      const fromDateStr = new Date(fromDate).toISOString().split('T')[0];
+      const toDateStr = new Date(toDate).toISOString().split('T')[0];
+      
       const expensesData = await prisma.expense.aggregate({
         where: {
           date: {
-            gte: fromDate,
-            lte: toDate,
+            gte: fromDateStr,
+            lte: toDateStr,
           },
         },
         _sum: {
