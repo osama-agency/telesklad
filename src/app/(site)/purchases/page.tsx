@@ -1,17 +1,21 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import InputGroup from "@/components/FormElements/InputGroup";
+import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import usePurchaseCartStore from "@/lib/stores/purchaseCartStore";
 import PurchaseModal from "@/components/Modals/PurchaseModal";
 
+// Интерфейсы для работы с базой данных
 interface Product {
-  id: string;
+  id: number;
   name: string;
+  prime_cost?: number;
+  avgPurchasePriceRub?: number;
 }
 
 interface PurchaseItem {
-  id: string;
-  productId: string;
+  id: number;
+  productId: number;
   productName: string;
   quantity: number;
   costPrice: number;
@@ -19,23 +23,23 @@ interface PurchaseItem {
 }
 
 interface Purchase {
-  id: string;
+  id: number;
   createdAt: string;
   updatedAt: string;
   items: PurchaseItem[];
   totalAmount: number;
-  status: "draft" | "ordered" | "received" | "cancelled";
+  status: "draft" | "sent" | "awaiting_payment" | "paid" | "in_transit" | "received" | "cancelled";
   isUrgent: boolean;
   expenses?: number;
 }
 
-// Типы для модального окна (используют number для id)
+// Интерфейсы для модального окна (совместимость)
 interface ModalPurchase {
   id: number;
   totalAmount: number;
   isUrgent: boolean;
   expenses?: number;
-  status: "draft" | "ordered" | "received" | "cancelled";
+  status: "draft" | "sent" | "awaiting_payment" | "paid" | "in_transit" | "received" | "cancelled";
   items: ModalPurchaseItem[];
   createdAt: string;
   updatedAt: string;
@@ -53,6 +57,8 @@ interface ModalPurchaseItem {
 interface ModalProduct {
   id: number;
   name: string;
+  prime_cost?: number;
+  avgPurchasePriceRub?: number;
 }
 
 export default function PurchasesPage() {
@@ -66,134 +72,251 @@ export default function PurchasesPage() {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPurchase, setEditingPurchase] = useState<ModalPurchase | null>(null);
-  const [deleting, setDeleting] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<number | null>(null);
+  const [sendingToTelegram, setSendingToTelegram] = useState<number | null>(null);
 
-  const exchangeRate = 2.85; // Курс лиры к рублю
+  const [exchangeRate, setExchangeRate] = useState<number>(0);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
 
-  // Mock products data
-  const mockProducts: Product[] = [
-    { id: "1", name: "iPhone 15 Pro Max" },
-    { id: "2", name: "MacBook Pro M3" },
-    { id: "3", name: "iPad Air" },
-    { id: "4", name: "AirPods Pro" },
-  ];
+  const { items: cartItems, clearCart } = usePurchaseCartStore();
 
-  // Mock products for modal (with number ids)
-  const modalProducts: ModalProduct[] = mockProducts.map(p => ({ 
-    id: parseInt(p.id), 
-    name: p.name 
-  }));
+  const modalProducts: ModalProduct[] = products;
 
-  // Set document title
+  // Отладочная информация
+  console.log('Products for modal:', modalProducts.length, modalProducts.slice(0, 3));
+
+  const removeItemFromDraft = useCallback((id: number) => {
+    setDraftItems(prev => prev.filter(item => item.id !== id));
+  }, []);
+  
+  const loadCartItemsToDraft = useCallback(() => {
+    if (cartItems.length === 0 || exchangeRate === 0) {
+      if (cartItems.length > 0) {
+        console.log("Ожидание загрузки курса валют для добавления товаров из корзины...");
+      }
+      return;
+    }
+
+    setDraftItems(currentDraftItems => {
+      const existingDraftProductIds = new Set(currentDraftItems.map(item => item.productId));
+      const newCartItems = cartItems.filter(cartItem => !existingDraftProductIds.has(cartItem.id));
+
+      if (newCartItems.length === 0) {
+        console.log("Все товары из корзины уже находятся в черновике.");
+        return currentDraftItems;
+      }
+
+      const cartDraftItems: PurchaseItem[] = newCartItems.map((item, index) => ({
+        id: Date.now() + index, // Временный ID для новых элементов
+        productId: item.id,
+        productName: item.name,
+        quantity: item.purchaseQuantity,
+        costPrice: item.prime_cost || 0,
+        total: (item.prime_cost || 0) * item.purchaseQuantity * exchangeRate,
+      }));
+      
+      console.log(`Добавлено ${newCartItems.length} новых товаров из корзины в черновик.`);
+      return [...currentDraftItems, ...cartDraftItems];
+    });
+
+    console.log("Корзина обработана и будет очищена.");
+    clearCart();
+  }, [cartItems, exchangeRate, clearCart]);
+
+  const updateDraftItemQuantity = useCallback((itemId: number, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      removeItemFromDraft(itemId);
+      return;
+    }
+    setDraftItems(prev => prev.map(item => 
+      item.id === itemId 
+        ? { ...item, quantity: newQuantity, total: item.costPrice * newQuantity * exchangeRate }
+        : item
+    ));
+  }, [exchangeRate, removeItemFromDraft]);
+  
   useEffect(() => {
-    document.title = "Закупки | NextAdmin - Next.js Dashboard Kit";
+    document.title = "Закупки | Telesklad";
   }, []);
 
-  // Load purchases from server or use mock data
   useEffect(() => {
     loadPurchases();
+    loadExchangeRate();
+    loadProducts();
   }, []);
+
+  useEffect(() => {
+    if (cartItems.length > 0 && exchangeRate > 0) {
+      loadCartItemsToDraft();
+    }
+  }, [cartItems, exchangeRate, loadCartItemsToDraft]);
 
   const loadPurchases = async () => {
     try {
       setLoading(true);
-      // For now, using mock data. Replace with actual API call when backend is ready
-      const mockPurchases: Purchase[] = [
-        {
-          id: "PUR-2024-001",
-          createdAt: "2024-01-15T10:00:00Z",
-          updatedAt: "2024-01-16T10:00:00Z",
-          totalAmount: 1050000,
-          status: "received",
-          isUrgent: false,
-          expenses: 15000,
-          items: [
-            {
-              id: "1",
-              productId: "1",
-              productName: "iPhone 15 Pro Max",
-              quantity: 10,
-              costPrice: 105000,
-              total: 1050000,
-            },
-            {
-              id: "2",
-              productId: "3",
-              productName: "iPad Air",
-              quantity: 5,
-              costPrice: 50000,
-              total: 250000,
-            },
-          ],
-        },
-        {
-          id: "PUR-2024-002",
-          createdAt: "2024-01-10T10:00:00Z",
-          updatedAt: "2024-01-12T10:00:00Z",
-          totalAmount: 540000,
-          status: "ordered",
-          isUrgent: true,
-          expenses: 8000,
-          items: [
-            {
-              id: "3",
-              productId: "2",
-              productName: "MacBook Pro M3",
-              quantity: 3,
-              costPrice: 180000,
-              total: 540000,
-            },
-          ],
-        },
-      ];
-      setPurchases(mockPurchases);
+      const response = await fetch('/api/purchases');
+      
+      if (response.ok) {
+        const data = await response.json();
+        setPurchases(data);
+      } else {
+        console.error('Failed to load purchases:', response.statusText);
+        setPurchases([]);
+      }
     } catch (error) {
       console.error("Error loading purchases:", error);
+      setPurchases([]);
     } finally {
       setLoading(false);
     }
   };
+  
+  const loadExchangeRate = async () => {
+    try {
+      const response = await fetch('/api/rates/latest?currency=TRY');
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          setExchangeRate(result.data.rate);
+          console.log(`Загружен курс TRY: 1 ₺ = ${result.data.rate} ₽`);
+        }
+      } else { console.warn('Не удалось загрузить курс TRY'); }
+    } catch (error) { console.error("Error loading exchange rate:", error); }
+  };
 
-  // Функция добавления товара в черновик
+  const loadProducts = async () => {
+    setLoadingProducts(true);
+    try {
+      console.log('🔄 Начинаем загрузку товаров...');
+      const response = await fetch('/api/products');
+      const data = await response.json();
+      console.log('📦 API response:', data);
+      
+      if (response.status === 401) {
+        console.error('❌ Пользователь не авторизован');
+        setProducts([]);
+        return;
+      }
+      
+      if (data.success) {
+        setProducts(data.data.products);
+        console.log('✅ Products loaded:', data.data.products.length);
+        console.log('📋 Первые 3 товара:', data.data.products.slice(0, 3).map((p: Product) => ({
+          id: p.id,
+          name: p.name,
+          prime_cost: p.prime_cost,
+          avgPurchasePriceRub: p.avgPurchasePriceRub
+        })));
+      } else {
+        console.error('❌ API returned error:', data);
+        setProducts([]);
+      }
+    } catch (error) { 
+      console.error("❌ Ошибка загрузки товаров:", error); 
+      setProducts([]);
+    } finally { 
+      setLoadingProducts(false); 
+    }
+  };
+  
+  const handleProductChange = (productId: string) => {
+    console.log('handleProductChange вызван с productId:', productId, typeof productId);
+    console.log('Доступные товары:', products.length);
+    console.log('Первые 3 товара с ID:', products.slice(0, 3).map(p => ({ id: p.id, type: typeof p.id, name: p.name })));
+    
+    // Преобразуем productId в число для поиска
+    const numericProductId = parseInt(productId);
+    const product = products.find(p => p.id === numericProductId);
+    console.log('Найденный товар:', product);
+    
+    setSelectedProduct(productId);
+    if (product) {
+        // Используем avgPurchasePriceRub (средняя закупочная цена) или prime_cost как fallback
+        const price = product.avgPurchasePriceRub ?? product.prime_cost ?? 0;
+        setCostPrice(price.toString());
+        console.log(`✅ Автозаполнение себестоимости для ${product.name}: ${price} ₽`);
+        console.log('Данные товара:', { 
+          avgPurchasePriceRub: product.avgPurchasePriceRub, 
+          prime_cost: product.prime_cost 
+        });
+    } else {
+        console.log('❌ Товар не найден в списке products');
+    }
+  };
+
   const addItemToDraft = () => {
     if (!selectedProduct || !quantity || !costPrice) {
+      alert("Пожалуйста, выберите товар, укажите количество и себестоимость.");
       return;
     }
-
-    const product = mockProducts.find(p => p.id === selectedProduct);
+    const numericProductId = parseInt(selectedProduct);
+    const product = products.find(p => p.id === numericProductId);
     if (!product) return;
 
     const newItem: PurchaseItem = {
-      id: Date.now().toString(),
-      productId: selectedProduct,
+      id: Date.now(), // Временный ID
+      productId: numericProductId,
       productName: product.name,
       quantity: parseInt(quantity),
       costPrice: parseFloat(costPrice),
-      total: parseInt(quantity) * parseFloat(costPrice),
+      total: parseFloat(costPrice) * parseInt(quantity) * exchangeRate,
     };
 
-    setDraftItems([...draftItems, newItem]);
+    setDraftItems(prev => [...prev, newItem]);
     setSelectedProduct("");
     setQuantity("");
     setCostPrice("");
   };
 
-  const removeItemFromDraft = (id: string) => {
-    setDraftItems(draftItems.filter(item => item.id !== id));
+  const savePurchase = async () => {
+    if (draftItems.length === 0) {
+      alert("Добавьте товары в закупку");
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/purchases', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          items: draftItems.map(item => ({
+            productId: item.productId,
+            productName: item.productName,
+            quantity: item.quantity,
+            costPrice: item.costPrice,
+            total: item.total
+          })),
+          totalAmount: totalCostLira,
+          isUrgent,
+          expenses: 0,
+          currency: 'TRY'
+        }),
+      });
+
+      if (response.ok) {
+        const newPurchase = await response.json();
+        setPurchases(prev => [newPurchase, ...prev]);
+        setDraftItems([]);
+        setIsUrgent(false);
+        alert("✅ Закупка успешно сохранена!");
+      } else {
+        const error = await response.json();
+        alert("❌ Ошибка при сохранении: " + error.error);
+      }
+    } catch (error) {
+      console.error("Error saving purchase:", error);
+      alert("❌ Произошла ошибка при сохранении");
+    }
   };
 
-  const savePurchase = () => {
-    // Implementation for saving new purchase
-    console.log("Saving purchase...");
-  };
-
-  // Helper function to convert Purchase to ModalPurchase
   const convertToModalPurchase = (purchase: Purchase): ModalPurchase => {
     return {
-      id: parseInt(purchase.id.replace(/\D/g, '') || '0'), // Extract numbers from ID
+      id: purchase.id,
       totalAmount: purchase.totalAmount,
       isUrgent: purchase.isUrgent,
       expenses: purchase.expenses,
@@ -201,8 +324,8 @@ export default function PurchasesPage() {
       createdAt: purchase.createdAt,
       updatedAt: purchase.updatedAt,
       items: purchase.items.map(item => ({
-        id: parseInt(item.id),
-        productId: parseInt(item.productId),
+        id: item.id,
+        productId: item.productId,
         productName: item.productName,
         quantity: item.quantity,
         costPrice: item.costPrice,
@@ -211,15 +334,13 @@ export default function PurchasesPage() {
     };
   };
 
-  // New functions for edit and delete
   const handleEdit = (purchase: Purchase) => {
-    const modalPurchase = convertToModalPurchase(purchase);
-    setEditingPurchase(modalPurchase);
+    setEditingPurchase(convertToModalPurchase(purchase));
     setIsModalOpen(true);
   };
 
   const handleDelete = async (purchase: Purchase) => {
-    if (!confirm(`Вы уверены, что хотите удалить закупку ${purchase.id}?`)) {
+    if (!confirm(`Вы уверены, что хотите удалить закупку #${purchase.id}?`)) {
       return;
     }
 
@@ -233,7 +354,6 @@ export default function PurchasesPage() {
         throw new Error('Failed to delete purchase');
       }
 
-      // Update local state
       setPurchases(prev => prev.filter(p => p.id !== purchase.id));
     } catch (error) {
       console.error('Error deleting purchase:', error);
@@ -242,10 +362,44 @@ export default function PurchasesPage() {
     }
   };
 
+  const handleSendToTelegram = async (purchase: Purchase) => {
+    if (!confirm("Отправить закупку закупщику в Telegram?")) {
+      return;
+    }
+
+    setSendingToTelegram(purchase.id);
+    try {
+      const response = await fetch(`/api/purchases/${purchase.id}/send-telegram`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert("✅ Закупка успешно отправлена закупщику в Telegram!");
+        console.log("Purchase sent to Telegram:", result);
+        
+        // Обновляем статус закупки локально
+        setPurchases(prev => prev.map(p => 
+          p.id === purchase.id 
+            ? { ...p, status: 'sent' as Purchase['status'] }
+            : p
+        ));
+      } else {
+        const error = await response.json();
+        console.error("Ошибка при отправке в Telegram:", error);
+        alert("❌ Не удалось отправить закупку в Telegram: " + error.error);
+      }
+    } catch (error) {
+      console.error("Error sending to Telegram:", error);
+      alert("❌ Произошла ошибка при отправке в Telegram");
+    } finally {
+      setSendingToTelegram(null);
+    }
+  };
+
   const handleModalSuccess = (updatedPurchase: ModalPurchase) => {
-    // Convert ModalPurchase back to Purchase for local state
     const convertedPurchase: Purchase = {
-      id: editingPurchase ? `PUR-2024-${updatedPurchase.id.toString().padStart(3, '0')}` : `PUR-2024-${Date.now()}`,
+      id: updatedPurchase.id,
       totalAmount: updatedPurchase.totalAmount,
       isUrgent: updatedPurchase.isUrgent,
       expenses: updatedPurchase.expenses,
@@ -253,8 +407,8 @@ export default function PurchasesPage() {
       createdAt: updatedPurchase.createdAt,
       updatedAt: updatedPurchase.updatedAt,
       items: updatedPurchase.items.map(item => ({
-        id: item.id?.toString() || Date.now().toString(),
-        productId: item.productId.toString(),
+        id: item.id || 0,
+        productId: item.productId,
         productName: item.productName,
         quantity: item.quantity,
         costPrice: item.costPrice,
@@ -263,13 +417,10 @@ export default function PurchasesPage() {
     };
 
     if (editingPurchase) {
-      // Update existing purchase
-      setPurchases(prev => prev.map(p => {
-        const editingId = `PUR-2024-${editingPurchase.id.toString().padStart(3, '0')}`;
-        return p.id === editingId ? convertedPurchase : p;
-      }));
+      setPurchases(prev => prev.map(p => 
+        p.id === editingPurchase.id ? convertedPurchase : p
+      ));
     } else {
-      // Add new purchase
       setPurchases(prev => [convertedPurchase, ...prev]);
     }
     setEditingPurchase(null);
@@ -280,18 +431,24 @@ export default function PurchasesPage() {
     setEditingPurchase(null);
   };
 
-  // Получение цвета статуса
   const getStatusBadge = (status: Purchase['status']) => {
     const baseClasses = "inline-flex items-center px-3 py-1 rounded-full text-xs font-medium";
     switch (status) {
       case "draft":
         return `${baseClasses} bg-gray-500/10 text-gray-500 border border-gray-500/20`;
-      case "ordered":
-        return `${baseClasses} bg-warning/10 text-warning border border-warning/20`;
+      case "sent":
+        return `${baseClasses} bg-blue-500/10 text-blue-500 border border-blue-500/20`;
+
+      case "awaiting_payment":
+        return `${baseClasses} bg-orange-500/10 text-orange-500 border border-orange-500/20`;
+      case "paid":
+        return `${baseClasses} bg-emerald-500/10 text-emerald-500 border border-emerald-500/20`;
+      case "in_transit":
+        return `${baseClasses} bg-purple-500/10 text-purple-500 border border-purple-500/20`;
       case "received":
-        return `${baseClasses} bg-success/10 text-success border border-success/20`;
+        return `${baseClasses} bg-teal-500/10 text-teal-500 border border-teal-500/20`;
       case "cancelled":
-        return `${baseClasses} bg-red/10 text-red border border-red/20`;
+        return `${baseClasses} bg-red-500/10 text-red-500 border border-red-500/20`;
       default:
         return `${baseClasses} bg-gray-500/10 text-gray-500 border border-gray-500/20`;
     }
@@ -299,23 +456,25 @@ export default function PurchasesPage() {
 
   const getStatusText = (status: Purchase['status']) => {
     switch (status) {
-      case "draft": return "Черновик";
-      case "ordered": return "Заказано";
-      case "received": return "Получено";
-      case "cancelled": return "Отменено";
+      case "draft": return "🗒️ Черновик";
+      case "sent": return "📤 Отправлено";
+
+      case "awaiting_payment": return "💳 Ожидает оплату";
+      case "paid": return "💰 Оплачено";
+      case "in_transit": return "🚚 В пути";
+      case "received": return "✅ Получено";
+      case "cancelled": return "❌ Отменено";
       default: return status;
     }
   };
+  
+  const totalItems = draftItems.reduce((sum, item) => sum + item.quantity, 0);
+  const totalCostLira = draftItems.reduce((sum, item) => sum + item.quantity * item.costPrice, 0);
+  const totalCostRub = draftItems.reduce((sum, item) => sum + item.total, 0);
 
-  // Calculate totals for draft items
-  const draftTotalItems = draftItems.length;
-  const draftTotalAmount = draftItems.reduce((sum, item) => sum + item.total, 0);
-  const draftTotalInTurkishLira = draftTotalAmount / exchangeRate;
-
-  // Фильтрация закупок
   const filteredPurchases = purchases.filter(purchase => {
     const matchesSearch = searchQuery === "" || 
-      purchase.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      purchase.id.toString().includes(searchQuery.toLowerCase()) ||
       purchase.items.some(item => item.productName.toLowerCase().includes(searchQuery.toLowerCase()));
     
     const matchesStatus = statusFilter === "all" || purchase.status === statusFilter;
@@ -324,380 +483,394 @@ export default function PurchasesPage() {
   });
 
   return (
-    <div className="mx-auto max-w-7xl">
-      <div className="mb-8 rounded-[10px] border border-stroke bg-white shadow-default dark:border-[#334155] dark:bg-[#1F2937]">
-        <div className="border-b border-stroke px-6.5 py-4 dark:border-[#334155]">
-          <h3 className="font-semibold text-black dark:text-[#F9FAFB] flex items-center gap-2">
-            <svg className="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            Создание закупки
-          </h3>
-        </div>
-
-        <div className="p-6.5">
-          <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
-            <div>
-              <label className="block text-body-sm font-medium text-dark dark:text-[#F9FAFB] mb-3">
-                Выберите товар
-              </label>
-              <select
-                value={selectedProduct}
-                onChange={(e) => setSelectedProduct(e.target.value)}
-                className="w-full appearance-none rounded-[10px] border border-stroke bg-transparent px-5 py-3 outline-none focus:ring-gradient dark:border-[#334155] dark:bg-[#374151] text-dark dark:text-[#F9FAFB]"
-              >
-                <option value="">Выберите товар</option>
-                {mockProducts.map((product) => (
-                  <option key={product.id} value={product.id}>
-                    {product.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <InputGroup
-              label="Количество"
-              type="number"
-              placeholder="Введите количество"
-              value={quantity}
-              handleChange={(e) => setQuantity(e.target.value)}
-            />
-
-            <InputGroup
-              label="Себестоимость (₽)"
-              type="number"
-              placeholder="Введите себестоимость"
-              value={costPrice}
-              handleChange={(e) => setCostPrice(e.target.value)}
-            />
-
-            <div className="flex items-end">
-              <button
-                onClick={addItemToDraft}
-                className="w-full rounded-[10px] bg-primary px-5 py-3 font-medium text-white transition hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                Добавить в список
-              </button>
-            </div>
+    <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10 bg-[#F8FAFC] dark:bg-gray-900 min-h-screen">
+      {/* Header Section */}
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-8"
+      >
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] bg-clip-text text-transparent">
+              Закупки
+            </h1>
+            <p className="mt-1 text-sm text-[#64748B] dark:text-gray-400">
+              Управление закупками товаров
+            </p>
           </div>
+          <button
+            onClick={() => {
+              setEditingPurchase(null);
+              setIsModalOpen(true);
+            }}
+            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] px-5 py-2.5 text-sm font-medium text-white shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Новая закупка
+          </button>
+        </div>
+      </motion.div>
 
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            <div className="lg:col-span-2">
-              <h4 className="mb-4 font-semibold text-black dark:text-[#F9FAFB]">
-                Черновой список товаров
-              </h4>
-              
-              {draftItems.length === 0 ? (
-                <div className="rounded-[10px] border border-stroke bg-gray-50 dark:border-[#334155] dark:bg-[#374151] p-8 text-center">
-                  <div className="mb-4">📝</div>
-                  <p className="text-gray-500 dark:text-[#94A3B8]">
-                    Список товаров пуст. Добавьте товары используя форму выше.
-                  </p>
-                </div>
-              ) : (
-                <div className="rounded-[10px] border border-stroke dark:border-[#334155] overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full table-auto">
-                      <thead>
-                        <tr className="bg-gray-2 text-left dark:bg-[#374151]">
-                          <th className="px-4 py-3 font-medium text-black dark:text-[#F9FAFB]">
-                            Товар
-                          </th>
-                          <th className="px-4 py-3 font-medium text-black dark:text-[#F9FAFB]">
-                            Кол-во
-                          </th>
-                          <th className="px-4 py-3 font-medium text-black dark:text-[#F9FAFB]">
-                            Цена
-                          </th>
-                          <th className="px-4 py-3 font-medium text-black dark:text-[#F9FAFB]">
-                            Сумма
-                          </th>
-                          <th className="px-4 py-3 font-medium text-black dark:text-[#F9FAFB]">
-                            
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {draftItems.map((item, index) => (
-                          <tr key={item.id} className={index % 2 === 0 ? "bg-white dark:bg-[#1F2937]" : "bg-gray-50 dark:bg-[#374151]"}>
-                            <td className="px-4 py-3 text-black dark:text-[#F9FAFB]">
-                              {item.productName}
-                            </td>
-                            <td className="px-4 py-3 text-black dark:text-[#F9FAFB]">
-                              {item.quantity}
-                            </td>
-                            <td className="px-4 py-3 text-black dark:text-[#F9FAFB]">
-                              ₽{item.costPrice.toLocaleString('ru-RU')}
-                            </td>
-                            <td className="px-4 py-3 font-semibold text-success">
-                              ₽{item.total.toLocaleString('ru-RU')}
-                            </td>
-                            <td className="px-4 py-3">
-                              <button
-                                onClick={() => removeItemFromDraft(item.id)}
-                                className="text-red hover:text-red/80 transition"
-                              >
-                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        {/* Left Column - Form */}
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.1 }}
+          className="lg:col-span-2"
+        >
+          {/* Quick Add Form */}
+          <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 mb-8">
+            <div className="border-b border-gray-100 dark:border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-[#1E293B] dark:text-white flex items-center gap-2">
+                <svg className="h-5 w-5 text-[#1A6DFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Быстрое добавление товара
+              </h3>
             </div>
 
-            <div className="rounded-[10px] border border-stroke bg-gray-50 dark:border-[#334155] dark:bg-[#374151] p-6">
-              <h4 className="mb-4 font-semibold text-black dark:text-[#F9FAFB] flex items-center gap-2">
-                <svg className="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-                Итоги закупки
-              </h4>
-              
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-500 dark:text-[#94A3B8]">Позиций:</span>
-                  <span className="font-medium text-black dark:text-[#F9FAFB]">{draftTotalItems}</span>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-500 dark:text-[#94A3B8]">Общая сумма:</span>
-                  <span className="font-semibold text-success">₽{draftTotalAmount.toLocaleString('ru-RU')}</span>
-                </div>
-                
-                <div className="border-t border-stroke dark:border-[#334155] pt-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-gray-500 dark:text-[#94A3B8]">Курс лиры:</span>
-                    <span className="text-black dark:text-[#F9FAFB]">1 ₺ = {exchangeRate} ₽</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-500 dark:text-[#94A3B8]">В лирах:</span>
-                    <span className="font-medium text-warning">₺{draftTotalInTurkishLira.toFixed(2)}</span>
-                  </div>
-                </div>
-                
-                <div className="border-t border-stroke dark:border-[#334155] pt-4">
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={isUrgent}
-                      onChange={(e) => setIsUrgent(e.target.checked)}
-                      className="sr-only"
-                    />
-                    <div className={`flex h-5 w-5 items-center justify-center rounded-[4px] border ${
-                      isUrgent 
-                        ? "border-primary bg-primary" 
-                        : "border-stroke dark:border-[#334155]"
-                    }`}>
-                      {isUrgent && (
-                        <svg className="h-3 w-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      )}
-                    </div>
-                    <span className="text-black dark:text-[#F9FAFB]">Срочная закупка</span>
+            <div className="p-6">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#374151] dark:text-gray-300 mb-2">
+                    Товар
                   </label>
+                  <select
+                    value={selectedProduct}
+                    onChange={(e) => handleProductChange(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-[#1E293B] dark:text-white transition-all focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20"
+                  >
+                    <option value="">
+                      {loadingProducts ? "Загрузка товаров..." : "Выберите товар"}
+                    </option>
+                    {products.map((product) => (
+                      <option key={product.id} value={product.id}>
+                        {product.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                
-                <button
-                  onClick={savePurchase}
-                  disabled={draftItems.length === 0}
-                  className="w-full mt-6 rounded-[10px] bg-success px-5 py-3 font-medium text-white transition hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-success disabled:bg-gray-300 disabled:cursor-not-allowed dark:disabled:bg-gray-600"
-                >
-                  <svg className="inline h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                  Сохранить закупку
-                </button>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#374151] dark:text-gray-300 mb-2">
+                    Количество
+                  </label>
+                  <input
+                    type="number"
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                    placeholder="0"
+                    className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-[#1E293B] dark:text-white transition-all focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#374151] dark:text-gray-300 mb-2">
+                    Себестоимость (₺)
+                  </label>
+                  <input
+                    type="number"
+                    value={costPrice}
+                    onChange={(e) => setCostPrice(e.target.value)}
+                    placeholder="0.00"
+                    step="0.01"
+                    className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-[#1E293B] dark:text-white transition-all focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20"
+                  />
+                </div>
+
+                <div className="flex items-end">
+                  <button
+                    onClick={addItemToDraft}
+                    className="w-full rounded-lg bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] px-4 py-2 text-sm font-medium text-white transition-all hover:shadow-lg hover:scale-105"
+                  >
+                    Добавить
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <div className="rounded-[10px] border border-stroke bg-white shadow-default dark:border-[#334155] dark:bg-[#1F2937]">
-        <div className="border-b border-stroke px-6.5 py-4 dark:border-[#334155]">
-          <h3 className="font-semibold text-black dark:text-[#F9FAFB] flex items-center gap-2">
-            <svg className="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.78 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 9.172V5L8 4z" />
-            </svg>
-            История закупок
-          </h3>
-        </div>
-
-        <div className="border-b border-stroke px-6.5 py-4 dark:border-[#334155]">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="relative flex-1 max-w-md">
-              <input
-                type="text"
-                placeholder="Поиск по ID или товару..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-[10px] border border-stroke bg-transparent px-5 py-3 pl-12 outline-none focus:ring-gradient dark:border-[#334155] dark:bg-[#374151] text-dark dark:text-[#F9FAFB]"
-              />
-              <svg className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-
-            <div className="w-full max-w-[200px]">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full appearance-none rounded-[10px] border border-stroke bg-transparent px-5 py-3 outline-none focus:ring-gradient dark:border-[#334155] dark:bg-[#374151] text-dark dark:text-[#F9FAFB]"
-              >
-                <option value="all">Все статусы</option>
-                <option value="draft">Черновик</option>
-                <option value="ordered">Заказано</option>
-                <option value="received">Получено</option>
-                <option value="cancelled">Отменено</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-6.5">
-          {loading ? (
-            <div className="rounded-[10px] border border-stroke bg-gray-50 dark:border-[#334155] dark:bg-[#374151] p-8 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-gray-500 dark:text-[#94A3B8]">Загрузка закупок...</p>
-            </div>
-          ) : filteredPurchases.length === 0 ? (
-            <div className="rounded-[10px] border border-stroke bg-gray-50 dark:border-[#334155] dark:bg-[#374151] p-8 text-center">
-              <div className="mb-4 text-6xl">📋</div>
-              <h3 className="mb-2 text-xl font-semibold text-black dark:text-[#F9FAFB]">
-                {searchQuery || statusFilter !== "all" ? "Закупки не найдены" : "История закупок пуста"}
+          {/* Draft Items */}
+          <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 mb-8">
+            <div className="border-b border-gray-100 dark:border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-[#1E293B] dark:text-white flex items-center gap-2">
+                <svg className="h-5 w-5 text-[#1A6DFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                Черновик закупки ({draftItems.length})
               </h3>
-              <p className="text-center text-gray-500 dark:text-[#94A3B8]">
-                {searchQuery || statusFilter !== "all" 
-                  ? "Попробуйте изменить критерии поиска" 
-                  : "Создайте первую закупку используя форму выше"
-                }
-              </p>
             </div>
-          ) : (
-            <div className="overflow-x-auto rounded-[10px] border border-stroke dark:border-[#334155] overflow-hidden">
-              <table className="w-full table-auto">
-                <thead>
-                  <tr className="bg-gray-2 text-left dark:bg-[#374151]">
-                    <th className="px-4 py-4 font-medium text-black dark:text-[#F9FAFB]">
-                      ID
-                    </th>
-                    <th className="px-4 py-4 font-medium text-black dark:text-[#F9FAFB]">
-                      Создано
-                    </th>
-                    <th className="px-4 py-4 font-medium text-black dark:text-[#F9FAFB]">
-                      Обновлено
-                    </th>
-                    <th className="px-4 py-4 font-medium text-black dark:text-[#F9FAFB]">
-                      Товары
-                    </th>
-                    <th className="px-4 py-4 font-medium text-black dark:text-[#F9FAFB]">
-                      Сумма
-                    </th>
-                    <th className="px-4 py-4 font-medium text-black dark:text-[#F9FAFB]">
-                      Статус
-                    </th>
-                    <th className="px-4 py-4 font-medium text-black dark:text-[#F9FAFB]">
-                      Расходы
-                    </th>
-                    <th className="px-4 py-4 font-medium text-black dark:text-[#F9FAFB]">
-                      Действия
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredPurchases.map((purchase, index) => (
-                    <tr key={purchase.id} className={`border-b border-stroke dark:border-[#334155] ${
-                      index % 2 === 0 ? "bg-white dark:bg-[#1F2937]" : "bg-gray-50 dark:bg-[#374151]"
-                    }`}>
-                      <td className="px-4 py-4">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-primary">{purchase.id}</span>
-                          {purchase.isUrgent && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-[6px] text-xs font-medium bg-red/10 text-red">
-                              Срочно
-                            </span>
-                          )}
+
+            <div className="p-6">
+              {draftItems.length === 0 ? (
+                <div className="py-12 text-center">
+                  <p className="text-sm text-[#64748B] dark:text-gray-400">
+                    Добавьте товары в закупку
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <AnimatePresence>
+                    {draftItems.map((item) => (
+                      <motion.div
+                        key={item.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="flex items-center justify-between rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 p-4"
+                      >
+                        <div className="flex-1">
+                          <h4 className="font-medium text-[#1E293B] dark:text-white">
+                            {item.productName}
+                          </h4>
+                          <div className="mt-1 flex items-center gap-4 text-sm text-[#64748B] dark:text-gray-400">
+                            <span>Количество: {item.quantity}</span>
+                            <span>Цена: ₺{item.costPrice.toLocaleString('ru-RU', { minimumFractionDigits: 2 })}</span>
+                            <span>Итого: ₺{(item.quantity * item.costPrice).toLocaleString('ru-RU', { minimumFractionDigits: 2 })}</span>
+                          </div>
                         </div>
-                      </td>
-                      <td className="px-4 py-4 text-black dark:text-[#F9FAFB]">
-                        {new Date(purchase.createdAt).toLocaleDateString('ru-RU')}
-                      </td>
-                      <td className="px-4 py-4 text-black dark:text-[#F9FAFB]">
-                        {new Date(purchase.updatedAt).toLocaleDateString('ru-RU')}
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="max-w-xs">
-                          {purchase.items.length === 1 ? (
-                            <span className="text-black dark:text-[#F9FAFB]">
-                              {purchase.items[0].productName} ({purchase.items[0].quantity} шт.)
-                            </span>
-                          ) : (
-                            <div>
-                              <span className="text-black dark:text-[#F9FAFB]">
-                                {purchase.items[0].productName} ({purchase.items[0].quantity} шт.)
-                              </span>
-                              <div className="text-xs text-gray-500 dark:text-[#94A3B8]">
-                                и ещё {purchase.items.length - 1} товаров
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 font-semibold text-success">
-                        ₽{purchase.totalAmount.toLocaleString('ru-RU')}
-                      </td>
-                      <td className="px-4 py-4">
-                        <span className={getStatusBadge(purchase.status)}>
-                          {getStatusText(purchase.status)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 text-black dark:text-[#F9FAFB]">
-                        {purchase.expenses ? `₽${purchase.expenses.toLocaleString('ru-RU')}` : "—"}
-                      </td>
-                      <td className="px-4 py-4">
                         <div className="flex items-center gap-2">
-                          <button 
-                            onClick={() => handleEdit(purchase)}
-                            className="text-primary hover:text-primary/80 transition"
-                            title="Редактировать"
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => updateDraftItemQuantity(item.id, item.quantity - 1)}
+                              className="rounded-lg p-1 text-gray-400 transition-all hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-[#1A6DFF]"
+                            >
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                              </svg>
+                            </button>
+                            <span className="mx-2 min-w-[2rem] text-center text-sm font-medium text-[#1E293B] dark:text-white">
+                              {item.quantity}
+                            </span>
+                            <button
+                              onClick={() => updateDraftItemQuantity(item.id, item.quantity + 1)}
+                              className="rounded-lg p-1 text-gray-400 transition-all hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-[#1A6DFF]"
+                            >
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                              </svg>
+                            </button>
+                          </div>
+                          <button
+                            onClick={() => removeItemFromDraft(item.id)}
+                            className="rounded-lg p-2 text-gray-400 transition-all hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-600"
                           >
                             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Recent Purchases */}
+          <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700">
+            <div className="border-b border-gray-100 dark:border-gray-700 p-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-[#1E293B] dark:text-white flex items-center gap-2">
+                  <svg className="h-5 w-5 text-[#1A6DFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  История закупок
+                </h3>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="Поиск..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-1.5 text-sm text-[#1E293B] dark:text-white transition-all focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20"
+                  />
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-1.5 text-sm text-[#1E293B] dark:text-white transition-all focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20"
+                  >
+                    <option value="all">Все статусы</option>
+                    <option value="draft">🗒️ Черновик</option>
+                    <option value="sent">📤 Отправлено</option>
+
+                    <option value="awaiting_payment">💳 Ожидает оплату</option>
+                    <option value="paid">💰 Оплачено</option>
+                    <option value="in_transit">🚚 В пути</option>
+                    <option value="received">✅ Получено</option>
+                    <option value="cancelled">❌ Отменено</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#1A6DFF] border-t-transparent"></div>
+                </div>
+              ) : filteredPurchases.length === 0 ? (
+                <div className="py-12 text-center">
+                  <p className="text-sm text-[#64748B] dark:text-gray-400">
+                    Закупки не найдены
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredPurchases.map((purchase) => (
+                    <motion.div
+                      key={purchase.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="group rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 p-4 transition-all hover:border-[#1A6DFF]/30 hover:bg-white dark:hover:bg-gray-600 hover:shadow-sm"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3">
+                            <h4 className="font-medium text-[#1E293B] dark:text-white">
+                              Закупка #{purchase.id}
+                            </h4>
+                            <span className={getStatusBadge(purchase.status)}>
+                              {getStatusText(purchase.status)}
+                            </span>
+                            {purchase.isUrgent && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 dark:bg-rose-900/30 px-2 py-0.5 text-xs font-medium text-rose-700 dark:text-rose-400">
+                                <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                </svg>
+                                Срочная
+                              </span>
+                            )}
+                          </div>
+                          <div className="mt-2 text-sm text-[#64748B] dark:text-gray-400">
+                            <p>
+                              {purchase.items.length} позиций • 
+                              ₺{purchase.totalAmount.toLocaleString('ru-RU')} • 
+                              {new Date(purchase.createdAt).toLocaleDateString('ru-RU')}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+                          <button
+                            onClick={() => handleSendToTelegram(purchase)}
+                            disabled={sendingToTelegram === purchase.id}
+                            className="rounded-lg p-2 text-gray-400 transition-all hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 disabled:opacity-50"
+                            title="Отправить закупщику в Telegram"
+                          >
+                            {sendingToTelegram === purchase.id ? (
+                              <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
+                            ) : (
+                              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                              </svg>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleEdit(purchase)}
+                            className="rounded-lg p-2 text-gray-400 transition-all hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-[#1A6DFF]"
+                          >
+                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                             </svg>
                           </button>
-                          <button 
+                          <button
                             onClick={() => handleDelete(purchase)}
                             disabled={deleting === purchase.id}
-                            className="text-red hover:text-red/80 transition disabled:opacity-50"
-                            title="Удалить"
+                            className="rounded-lg p-2 text-gray-400 transition-all hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-600 disabled:opacity-50"
                           >
                             {deleting === purchase.id ? (
-                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-red border-t-transparent"></div>
+                              <div className="h-5 w-5 animate-spin rounded-full border-2 border-rose-600 border-t-transparent"></div>
                             ) : (
-                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
                             )}
                           </button>
                         </div>
-                      </td>
-                    </tr>
+                      </div>
+                    </motion.div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        </motion.div>
+
+        {/* Right Column - Summary */}
+        <motion.div 
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3 }}
+          className="lg:col-span-1"
+        >
+          <div className="sticky top-24 rounded-xl bg-gradient-to-br from-[#1A6DFF] to-[#00C5FF] p-6 text-white shadow-lg">
+            <h3 className="mb-6 text-xl font-semibold flex items-center gap-2">
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+              Итоги закупки
+            </h3>
+
+            <div className="space-y-4">
+              <div className="rounded-lg bg-white/10 p-4 backdrop-blur">
+                <div className="flex items-baseline justify-between">
+                  <p className="text-sm text-white/80">Позиций:</p>
+                  <p className="text-2xl font-bold">{totalItems}</p>
+                </div>
+              </div>
+
+              <div className="rounded-lg bg-white/10 p-4 backdrop-blur">
+                <div className="flex items-baseline justify-between">
+                  <p className="text-sm text-white/80">В лирах:</p>
+                  <p className="text-2xl font-bold">
+                    ₺{totalCostLira.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                </div>
+                <div className="mt-1 text-right text-xs text-white/60">
+                  Курс: 1 ₺ = {exchangeRate > 0 ? exchangeRate.toFixed(4) : "..."} ₽
+                </div>
+              </div>
+
+              <div className="rounded-lg bg-white/20 p-4 backdrop-blur">
+                <p className="text-sm text-white/80">Общая сумма:</p>
+                <p className="mt-1 text-3xl font-bold">
+                  ₽{totalCostRub.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+              </div>
+
+              <div className="pt-4">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={isUrgent}
+                    onChange={(e) => setIsUrgent(e.target.checked)}
+                    className="h-5 w-5 rounded border-white/30 bg-white/20 text-white focus:ring-2 focus:ring-white/50"
+                  />
+                  <span className="text-sm font-medium">Срочная закупка</span>
+                </label>
+              </div>
+
+              <button
+                onClick={savePurchase}
+                disabled={draftItems.length === 0}
+                className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-white/20 px-5 py-3 text-base font-bold backdrop-blur transition-all hover:bg-white/30 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Сохранить закупку
+              </button>
+            </div>
+          </div>
+        </motion.div>
       </div>
 
-      {/* Purchase Modal */}
+      {/* Modal */}
       <PurchaseModal
         isOpen={isModalOpen}
         onClose={handleModalClose}

@@ -16,6 +16,10 @@ export interface Product {
   deliveryCost?: number; // Стоимость доставки
   totalCosts?: number; // Общие расходы
   netProfitPerUnit?: number; // Чистая прибыль с 1 шт
+  // НОВЫЕ ПОЛЯ ДЛЯ АНАЛИЗА ОСТАТКОВ
+  avgConsumptionPerDay?: number; // Среднее потребление в день
+  recommendedOrderQuantity?: number; // Рекомендованное количество для заказа
+  daysUntilZero?: number; // Дней до нуля остатков
   brand?: string;
   is_visible: boolean;
   created_at: string;
@@ -116,10 +120,21 @@ export function useProducts(options: UseProductsOptions = {}) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data: Product[] = await response.json();
+      const result = await response.json();
+      
+      // Проверяем структуру ответа и извлекаем данные
+      let products: Product[] = [];
+      if (result.success && result.data && Array.isArray(result.data.products)) {
+        products = result.data.products;
+      } else if (Array.isArray(result)) {
+        products = result;
+      } else {
+        console.error('Unexpected API response structure:', result);
+        throw new Error('Invalid API response structure');
+      }
       
       // Преобразуем Decimal значения в числа для корректной работы
-      const normalizedData = data.map(product => ({
+      const normalizedData = products.map(product => ({
         ...product,
         price: product.price ? (typeof product.price === 'object' ? parseFloat((product.price as any).toString()) : Number(product.price)) : 0,
         prime_cost: product.prime_cost ? (typeof product.prime_cost === 'object' ? parseFloat((product.prime_cost as any).toString()) : Number(product.prime_cost)) : 0,
@@ -132,6 +147,10 @@ export function useProducts(options: UseProductsOptions = {}) {
         deliveryCost: product.deliveryCost || 350, // Фиксированная стоимость доставки 350₽
         totalCosts: product.totalCosts || 0,
         netProfitPerUnit: product.netProfitPerUnit || 0,
+        // НОВЫЕ ПОЛЯ
+        avgConsumptionPerDay: product.avgConsumptionPerDay || 0,
+        recommendedOrderQuantity: product.recommendedOrderQuantity || 0,
+        daysUntilZero: product.daysUntilZero || 0,
       }));
       
       // Обрабатываем данные и вычисляем статистику
@@ -403,8 +422,20 @@ export function useProductStats() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data: Product[] = await response.json();
-      const processedData = processProductsData(data, { page: 1, limit: 1000 });
+      const result = await response.json();
+      
+      // Проверяем структуру ответа и извлекаем данные
+      let products: Product[] = [];
+      if (result.success && result.data && Array.isArray(result.data.products)) {
+        products = result.data.products;
+      } else if (Array.isArray(result)) {
+        products = result;
+      } else {
+        console.error('Unexpected API response structure in stats:', result);
+        throw new Error('Invalid API response structure');
+      }
+      
+      const processedData = processProductsData(products, { page: 1, limit: 1000 });
       setStats(processedData.stats);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch product stats');

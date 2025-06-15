@@ -23,15 +23,20 @@ async function syncProductsFromAPI() {
 
     const externalProducts = await response.json();
 
+    // Фильтруем категории (где ancestry is null или не содержит /)
+    const productsOnly = externalProducts.filter((p: any) => p.ancestry && p.ancestry.includes('/'));
+
+    console.log(`Синхронизация: получено ${externalProducts.length} записей, из них ${productsOnly.length} являются товарами.`);
+
     // Обновляем товары в локальной базе
-    for (const extProduct of externalProducts) {
+    for (const extProduct of productsOnly) {
       await prisma.product.upsert({
         where: { id: extProduct.id },
         update: {
           name: extProduct.name,
           description: extProduct.description,
-          price: extProduct.price ? parseFloat(extProduct.price) : null,
-          prime_cost: extProduct.prime_cost ? parseFloat(extProduct.prime_cost) : null,
+          price: extProduct.price ? Number(extProduct.price) : null,
+          prime_cost: extProduct.prime_cost ? Number(extProduct.prime_cost) : null,
           stock_quantity: extProduct.stock_quantity,
           updated_at: new Date(),
           deleted_at: extProduct.deleted_at ? new Date(extProduct.deleted_at) : null,
@@ -41,14 +46,14 @@ async function syncProductsFromAPI() {
           package_quantity: extProduct.package_quantity,
           main_ingredient: extProduct.main_ingredient,
           brand: extProduct.brand,
-          old_price: extProduct.old_price ? parseFloat(extProduct.old_price) : null,
+          old_price: extProduct.old_price ? Number(extProduct.old_price) : null,
         },
         create: {
           id: extProduct.id,
           name: extProduct.name,
           description: extProduct.description,
-          price: extProduct.price ? parseFloat(extProduct.price) : null,
-          prime_cost: extProduct.prime_cost ? parseFloat(extProduct.prime_cost) : null,
+          price: extProduct.price ? Number(extProduct.price) : null,
+          prime_cost: extProduct.prime_cost ? Number(extProduct.prime_cost) : null,
           stock_quantity: extProduct.stock_quantity,
           created_at: extProduct.created_at ? new Date(extProduct.created_at) : new Date(),
           updated_at: extProduct.updated_at ? new Date(extProduct.updated_at) : new Date(),
@@ -59,13 +64,13 @@ async function syncProductsFromAPI() {
           package_quantity: extProduct.package_quantity,
           main_ingredient: extProduct.main_ingredient,
           brand: extProduct.brand,
-          old_price: extProduct.old_price ? parseFloat(extProduct.old_price) : null,
+          old_price: extProduct.old_price ? Number(extProduct.old_price) : null,
           is_visible: true, // По умолчанию товары видимы
         },
       });
     }
 
-    return externalProducts.length;
+    return productsOnly.length;
   } catch (error) {
     console.error('Error syncing products:', error);
     throw error;
@@ -138,7 +143,7 @@ export async function GET(request: NextRequest) {
           amount: true,
         },
       });
-      totalExpenses = expensesData._sum.amount || 0;
+      totalExpenses = expensesData._sum.amount ? Number(expensesData._sum.amount.toString()) : 0;
       console.log('🛍️ Products API: Total expenses:', totalExpenses);
 
       // Получаем общее количество проданных товаров за период
@@ -217,10 +222,12 @@ export async function GET(request: NextRequest) {
         });
 
         const soldQuantity = salesData._sum.quantity || 0;
-        const revenue = Number(salesData._sum.total || 0);
+        const revenue = salesData._sum.total ? Number(salesData._sum.total.toString()) : 0;
 
         // Рассчитываем расходы
-        const costPrice = product.avgPurchasePriceRub ? Number(product.avgPurchasePriceRub) : Number(product.prime_cost || 0);
+        const avgPurchasePrice = product.avgPurchasePriceRub ? Number(product.avgPurchasePriceRub.toString()) : 0;
+        const primePrice = product.prime_cost ? Number(product.prime_cost.toString()) : 0;
+        const costPrice = avgPurchasePrice || primePrice;
         const baseCost = costPrice * soldQuantity; // базовая себестоимость
         
         // Доля общих расходов пропорционально продажам
@@ -235,8 +242,47 @@ export async function GET(request: NextRequest) {
         // Чистая прибыль с 1 штуки
         const netProfitPerUnit = soldQuantity > 0 ? (revenue - totalCosts) / soldQuantity : 0;
 
+        // НОВЫЕ РАСЧЕТЫ ДЛЯ АНАЛИЗА ОСТАТКОВ
+        let avgConsumptionPerDay = 0;
+        let recommendedOrderQuantity = 0;
+        let daysUntilZero = 0;
+
+        if (fromDate && toDate) {
+          // Рассчитываем количество дней в выбранном периоде
+          const from = new Date(fromDate);
+          const to = new Date(toDate);
+          const daysDifference = Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+          
+          // Среднее потребление в день = проданное количество / количество дней
+          avgConsumptionPerDay = daysDifference > 0 ? soldQuantity / daysDifference : 0;
+          
+          // Дни до нуля = текущие остатки / среднее потребление в день
+          const currentStock = product.stock_quantity || 0;
+          daysUntilZero = avgConsumptionPerDay > 0 ? Math.floor(currentStock / avgConsumptionPerDay) : (currentStock > 0 ? 999 : 0);
+          
+          // Рекомендованное количество для заказа (на 30 дней вперед)
+          // Если потребление есть, заказываем на месяц + 20% запас
+          // Если потребления нет, но остатки заканчиваются, заказываем минимум 10 штук
+          if (avgConsumptionPerDay > 0) {
+            const monthlyConsumption = avgConsumptionPerDay * 30;
+            const safetyStock = monthlyConsumption * 0.2; // 20% запас
+            recommendedOrderQuantity = Math.ceil(monthlyConsumption + safetyStock - currentStock);
+            
+            // Минимум 1 штука, если расчет показывает необходимость заказа
+            if (recommendedOrderQuantity < 0) recommendedOrderQuantity = 0;
+          } else if (currentStock <= 5) {
+            // Если товар не продается, но остатки критически малы, рекомендуем минимальный заказ
+            recommendedOrderQuantity = 10;
+          }
+        }
+
         return {
           ...product,
+          // Конвертируем Decimal поля в числа
+          price: product.price ? Number(product.price.toString()) : null,
+          prime_cost: product.prime_cost ? Number(product.prime_cost.toString()) : null,
+          avgPurchasePriceRub: product.avgPurchasePriceRub ? Number(product.avgPurchasePriceRub.toString()) : null,
+          old_price: product.old_price ? Number(product.old_price.toString()) : null,
           soldQuantity, // количество проданных штук
           revenue, // общая выручка
           baseCost, // себестоимость
@@ -244,12 +290,22 @@ export async function GET(request: NextRequest) {
           deliveryCost, // стоимость доставки
           totalCosts, // общие расходы
           netProfitPerUnit, // чистая прибыль с 1 шт
+          // НОВЫЕ ПОЛЯ
+          avgConsumptionPerDay, // среднее потребление в день
+          recommendedOrderQuantity, // рекомендованное количество для заказа
+          daysUntilZero, // дней до нуля остатков
         };
       })
     );
 
     console.log('🛍️ Products API: Successfully processed', productsWithSales.length, 'products');
-    return NextResponse.json(productsWithSales);
+    return NextResponse.json({
+      success: true,
+      data: {
+        products: productsWithSales,
+        total: productsWithSales.length
+      }
+    });
   } catch (error) {
     console.error('❌ Products API Error:', error);
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
@@ -275,8 +331,8 @@ export async function POST(request: NextRequest) {
       data: {
         name: productData.name,
         description: productData.description,
-        price: productData.price ? parseFloat(productData.price) : null,
-        prime_cost: productData.prime_cost ? parseFloat(productData.prime_cost) : null,
+        price: productData.price ? Number(productData.price) : null,
+        prime_cost: productData.prime_cost ? Number(productData.prime_cost) : null,
         stock_quantity: productData.stock_quantity,
         ancestry: productData.ancestry,
         weight: productData.weight,
@@ -284,7 +340,7 @@ export async function POST(request: NextRequest) {
         package_quantity: productData.package_quantity,
         main_ingredient: productData.main_ingredient,
         brand: productData.brand,
-        old_price: productData.old_price ? parseFloat(productData.old_price) : null,
+        old_price: productData.old_price ? Number(productData.old_price) : null,
         is_visible: productData.is_visible !== undefined ? productData.is_visible : true,
       }
     });

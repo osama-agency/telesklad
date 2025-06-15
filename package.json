@@ -8,8 +8,14 @@
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
+    "update-rates": "node scripts/update-exchange-rate.js",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "db:migrate:dev": "npx prisma migrate dev",
+    "db:seed": "npx ts-node prisma/seed.ts",
+    "db:add-costs": "node scripts/add-prime-costs.js",
+    "db:cleanup-categories": "node scripts/cleanup-categories.js",
+    "postinstall": "npx prisma generate"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.705.0",
@@ -48,7 +54,8 @@
     "recharts": "^2.15.3",
     "swiper": "^11.1.15",
     "tailwind-merge": "^2.5.5",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "zustand": "^5.0.5"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.3",

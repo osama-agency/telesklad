@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { motion } from "framer-motion";
 import ExpenseStats from "./ExpenseStats";
 import ExpenseTable from "./ExpenseTable";
 import ExpenseModal from "./ExpenseModal";
 import { Expense } from "../types";
 import { useExpenses } from "@/hooks/useDateFilteredData";
-
-
 
 export default function ExpensesClient() {
   const { data: expenses, isLoading: isInitialLoading, refetch } = useExpenses();
@@ -127,52 +126,71 @@ export default function ExpensesClient() {
 
   if (isInitialLoading) {
     return (
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-title-md2 font-semibold text-black dark:text-white">
-            Расходы
-          </h2>
-        </div>
+      <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10 bg-[#F8FAFC] dark:bg-gray-900 min-h-screen">
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          <span className="ml-3 text-dark-5 dark:text-dark-6">Загрузка расходов...</span>
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#1A6DFF] border-t-transparent"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-7xl">
-      {/* Заголовок и кнопка */}
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-title-md2 font-semibold text-black dark:text-[#F9FAFB]">
-          Расходы
-        </h2>
-        <button
-          onClick={handleCreateExpense}
-          disabled={isLoading}
-          className="rounded-[7px] bg-primary px-6 py-3 font-medium text-white transition hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Новый расход
-        </button>
-      </div>
+    <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10 bg-[#F8FAFC] dark:bg-gray-900 min-h-screen">
+      {/* Header Section */}
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-8"
+      >
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] bg-clip-text text-transparent">
+              Расходы
+            </h1>
+            <p className="mt-1 text-sm text-[#64748B] dark:text-gray-400">
+              Управление расходами компании
+            </p>
+          </div>
+          <button
+            onClick={handleCreateExpense}
+            disabled={isLoading}
+            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] px-5 py-2.5 text-sm font-medium text-white shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Новый расход
+          </button>
+        </div>
+      </motion.div>
 
-      {/* Статистические карточки */}
-      <div className="mb-6">
+      {/* Stats Cards */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="mb-8"
+      >
         <ExpenseStats 
           totalAmount={stats.totalAmount}
           totalCount={stats.totalCount}
         />
-      </div>
+      </motion.div>
 
-      {/* Таблица расходов */}
-      <ExpenseTable
-        expenses={expenses}
-        onEdit={handleEditExpense}
-        onDelete={handleDeleteExpense}
-      />
+      {/* Expense Table */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <ExpenseTable
+          expenses={expenses}
+          onEdit={handleEditExpense}
+          onDelete={handleDeleteExpense}
+        />
+      </motion.div>
 
-      {/* Модальное окно */}
+      {/* Modal */}
       <ExpenseModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}

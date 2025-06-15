@@ -112,6 +112,68 @@
     @apply relative flex-1 rounded-full bg-neutral-200/40 dark:bg-stroke-dark;
   }
 
+  /* Адаптивные стили для сайдбара */
+  .sidebar-responsive {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sidebar-mobile-overlay {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  /* Улучшенные анимации для сайдбара */
+  .sidebar-slide-in {
+    animation: slideInFromLeft 0.3s ease-out;
+  }
+
+  .sidebar-slide-out {
+    animation: slideOutToLeft 0.3s ease-in;
+  }
+
+  @keyframes slideInFromLeft {
+    from {
+      transform: translateX(-100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideOutToLeft {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(-100%);
+      opacity: 0;
+    }
+  }
+
+  /* Стили для адаптивного контента */
+  .main-content-responsive {
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Медиа-запросы для улучшенной адаптивности */
+  @media (max-width: 849px) {
+    .sidebar-mobile {
+      position: fixed !important;
+      z-index: 50 !important;
+    }
+  }
+
+  @media (min-width: 850px) {
+    .sidebar-desktop {
+      position: sticky !important;
+      top: 0 !important;
+      height: 100vh !important;
+    }
+  }
+
   .chat-height {
     @apply h-[calc(100vh_-_8.125rem)] lg:h-[calc(100vh_-_5.625rem)];
   }

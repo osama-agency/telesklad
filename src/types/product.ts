@@ -15,6 +15,10 @@ export interface Product {
   deliveryCost?: number; // Стоимость доставки
   totalCosts?: number; // Общие расходы
   netProfitPerUnit?: number; // Чистая прибыль с 1 шт
+  // НОВЫЕ ПОЛЯ ДЛЯ АНАЛИЗА ОСТАТКОВ
+  avgConsumptionPerDay?: number; // Среднее потребление в день
+  recommendedOrderQuantity?: number; // Рекомендованное количество для заказа
+  daysUntilZero?: number; // Дней до нуля остатков
   created_at: Date;
   updated_at: Date;
   deleted_at: Date | null;

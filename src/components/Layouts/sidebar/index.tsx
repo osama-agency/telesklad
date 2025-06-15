@@ -33,7 +33,7 @@ export function Sidebar() {
       {/* Mobile Overlay */}
       {isMobile && isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 transition-opacity duration-300"
+          className="fixed inset-0 z-40 bg-black/50 sidebar-mobile-overlay transition-opacity duration-300"
           onClick={() => setIsOpen(false)}
           aria-hidden="true"
         />
@@ -41,20 +41,33 @@ export function Sidebar() {
 
       <aside
         className={cn(
-          "max-w-[290px] overflow-hidden border-r border-gray-200 bg-white transition-[width] duration-200 ease-linear dark:border-[#334155] dark:bg-[#111827]",
-          isMobile ? "fixed bottom-0 top-0 z-50" : "sticky top-0 h-screen",
-          isOpen ? "w-full" : "w-0",
+          "border-r border-gray-200 bg-white dark:border-[#334155] dark:bg-[#111827] sidebar-responsive",
+          // Mobile styles
+          isMobile 
+            ? cn(
+                "fixed bottom-0 top-0 z-50 max-w-[290px] sidebar-mobile",
+                isOpen 
+                  ? "left-0 w-[290px] sidebar-slide-in" 
+                  : "-left-[290px] w-0 sidebar-slide-out"
+              )
+            // Desktop styles  
+            : cn(
+                "sticky top-0 h-screen sidebar-desktop",
+                isOpen ? "w-[290px] max-w-[290px]" : "w-0 max-w-0"
+              )
         )}
         aria-label="Main navigation"
         aria-hidden={!isOpen}
-        inert={!isOpen}
       >
-        <div className="flex h-full flex-col py-10 pl-[25px] pr-[7px]">
+        <div className={cn(
+          "flex h-full flex-col py-10 pl-[25px] pr-[7px] overflow-hidden transition-opacity duration-300",
+          isOpen ? "opacity-100" : "opacity-0"
+        )}>
           <div className="relative pr-4.5">
             <Link
               href={"/"}
               onClick={() => isMobile && toggleSidebar()}
-              className="px-0 py-2.5 min-[850px]:py-0"
+              className="px-0 py-2.5 min-[850px]:py-0 block"
             >
               <Logo />
             </Link>
@@ -62,11 +75,11 @@ export function Sidebar() {
             {isMobile && (
               <button
                 onClick={toggleSidebar}
-                className="absolute left-3/4 right-4.5 top-1/2 -translate-y-1/2 text-right"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors duration-200 p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                aria-label="Закрыть меню"
               >
                 <span className="sr-only">Close Menu</span>
-
-                <ArrowLeftIcon className="ml-auto size-7" />
+                <ArrowLeftIcon className="size-6" />
               </button>
             )}
           </div>
@@ -110,7 +123,7 @@ export function Sidebar() {
 
                             {expandedItems.includes(item.title) && (
                               <ul
-                                className="ml-9 mr-0 space-y-1.5 pb-[15px] pr-0 pt-2"
+                                className="ml-9 mr-0 space-y-1.5 pb-[15px] pr-0 pt-2 animate-fade-in"
                                 role="menu"
                               >
                                 {item.items.map((subItem: any) => (

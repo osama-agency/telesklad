@@ -15,15 +15,22 @@ export async function GET(
     }
 
     const { id } = await params;
+    const purchaseId = parseInt(id);
+
+    if (isNaN(purchaseId)) {
+      return NextResponse.json({ error: 'Invalid purchase ID' }, { status: 400 });
+    }
+
     const purchase = await prisma.purchase.findFirst({
       where: {
-        id: parseInt(id),
+        id: purchaseId,
         user: {
           email: session.user.email
         }
       },
       include: {
-        items: true
+        items: true,
+        user: true,
       }
     });
 
@@ -129,26 +136,32 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    // Проверяем, принадлежит ли закупка пользователю
-    const existingPurchase = await prisma.purchase.findFirst({
+    const purchaseId = parseInt(id);
+
+    if (isNaN(purchaseId)) {
+      return NextResponse.json({ error: 'Invalid purchase ID' }, { status: 400 });
+    }
+
+    // Проверяем, что закупка принадлежит пользователю
+    const purchase = await prisma.purchase.findFirst({
       where: {
-        id: parseInt(id),
+        id: purchaseId,
         user: {
           email: session.user.email
         }
       }
     });
 
-    if (!existingPurchase) {
+    if (!purchase) {
       return NextResponse.json({ error: 'Purchase not found' }, { status: 404 });
     }
 
-    // Удаляем закупку (элементы удалятся каскадно)
+    // Удаляем закупку (каскадное удаление товаров настроено в схеме)
     await prisma.purchase.delete({
-      where: { id: parseInt(id) }
+      where: { id: purchaseId }
     });
 
-    return NextResponse.json({ message: 'Purchase deleted successfully' });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting purchase:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

@@ -8,16 +8,26 @@ import { UserInfo } from "./user-info";
 import DateRangePicker from "@/components/ui/DateRangePicker";
 
 export function Header() {
-  const { toggleSidebar } = useSidebarContext();
+  const { toggleSidebar, isMobile, isOpen } = useSidebarContext();
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between border-b border-stroke bg-white px-3 py-4 dark:border-[#334155] dark:bg-[#111827] sm:px-4 sm:py-5 md:px-5 2xl:px-10">
       <div className="flex items-center gap-3">
         <button
           onClick={toggleSidebar}
-          className="rounded-lg border px-1.5 py-1 dark:border-[#334155] dark:bg-[#1F2937] hover:dark:bg-[#374151] lg:hidden"
+          className={`rounded-lg border px-1.5 py-1 dark:border-[#334155] dark:bg-[#1F2937] hover:dark:bg-[#374151] hover:bg-gray-50 transition-all duration-200 ${
+            isOpen 
+              ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-700' 
+              : 'bg-white border-gray-200'
+          }`}
+          aria-label={isOpen ? "Закрыть меню" : "Открыть меню"}
+          title={isOpen ? "Закрыть меню" : "Открыть меню"}
         >
-          <MenuIcon />
+          <MenuIcon className={`transition-colors duration-200 ${
+            isOpen 
+              ? 'text-blue-600 dark:text-blue-400' 
+              : 'text-gray-600 dark:text-gray-400'
+          }`} />
           <span className="sr-only">Toggle Sidebar</span>
         </button>
 

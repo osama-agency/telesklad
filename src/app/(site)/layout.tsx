@@ -2,10 +2,23 @@
 
 import { Header } from "@/components/Layouts/header";
 import { Sidebar } from "@/components/Layouts/sidebar";
-import { SidebarProvider } from "@/components/Layouts/sidebar/sidebar-context";
+import { SidebarProvider, useSidebarContext } from "@/components/Layouts/sidebar/sidebar-context";
 import { usePathname } from "next/navigation";
 import { type PropsWithChildren } from "react";
 import ToastContext from "../context/ToastContext";
+
+function MainContent({ children }: PropsWithChildren) {
+  const { isOpen, isMobile } = useSidebarContext();
+  
+  return (
+    <div className="w-full bg-gray-2 dark:bg-[#0B1120] main-content-responsive">
+      <Header />
+      <main className="mx-auto w-full max-w-screen-2xl overflow-hidden p-4 md:p-6 2xl:p-10">
+        {children}
+      </main>
+    </div>
+  );
+}
 
 export default function Layout({ children }: PropsWithChildren) {
   const pathname = usePathname();
@@ -27,16 +40,9 @@ export default function Layout({ children }: PropsWithChildren) {
   return (
     <>
       <SidebarProvider>
-        <div className="flex min-h-screen">
+        <div className="flex min-h-screen relative overflow-hidden">
           <Sidebar />
-
-          <div className="w-full bg-gray-2 dark:bg-[#0B1120]">
-            <Header />
-
-            <main className="mx-auto w-full max-w-screen-2xl overflow-hidden p-4 md:p-6 2xl:p-10">
-              {children}
-            </main>
-          </div>
+          <MainContent>{children}</MainContent>
         </div>
       </SidebarProvider>
 

@@ -13,7 +13,23 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const rate = await ExchangeRateService.getLatestRate(currency.toUpperCase());
+    let rate;
+    try {
+      rate = await ExchangeRateService.getLatestRate(currency.toUpperCase());
+    } catch (error) {
+      // Если курс не найден, попробуем обновить его автоматически
+      if (currency.toUpperCase() === 'TRY') {
+        console.log('TRY rate not found, fetching from CBR...');
+        const updateResult = await ExchangeRateService.updateTRYRate();
+        if (updateResult.success) {
+          rate = await ExchangeRateService.getLatestRate('TRY');
+        } else {
+          throw error;
+        }
+      } else {
+        throw error;
+      }
+    }
 
     return NextResponse.json({
       success: true,

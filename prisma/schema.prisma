@@ -173,16 +173,17 @@ model OrderItem {
 }
 
 model Purchase {
-  id          Int            @id @default(autoincrement())
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  totalAmount Float
-  status      String         @default("draft")
-  isUrgent    Boolean        @default(false)
-  expenses    Float?
-  userId      String
-  items       PurchaseItem[]
-  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                Int            @id @default(autoincrement())
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  totalAmount       Float
+  status            String         @default("draft")
+  isUrgent          Boolean        @default(false)
+  expenses          Float?
+  userId            String
+  telegramMessageId Int?
+  items             PurchaseItem[]
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("purchases")
 }
