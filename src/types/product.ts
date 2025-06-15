@@ -5,7 +5,16 @@ export interface Product {
   name: string;
   description: string | null;
   price: Decimal | null;
+  prime_cost: Decimal | null;
+  avgPurchasePriceRub: Decimal | null;
   stock_quantity: number | null;
+  soldQuantity?: number; // Количество проданных штук
+  revenue?: number; // Общая выручка
+  baseCost?: number; // Себестоимость
+  expenseShare?: number; // Доля общих расходов
+  deliveryCost?: number; // Стоимость доставки
+  totalCosts?: number; // Общие расходы
+  netProfitPerUnit?: number; // Чистая прибыль с 1 шт
   created_at: Date;
   updated_at: Date;
   deleted_at: Date | null;

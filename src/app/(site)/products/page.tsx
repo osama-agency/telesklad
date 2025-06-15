@@ -1,157 +1,166 @@
 "use client";
 
-import { SearchIcon, StatisticsChartIcon, DollarIcon, ArrowUpIcon, ArrowDownIcon, DesignToolsIcon, TrashIcon, PencilSquareIcon } from "@/assets/icons";
+import { SearchIcon } from "@/assets/icons";
 import { useState, useEffect } from "react";
+import { useProducts, Product } from "@/hooks/useProducts";
+import { AssortmentAnalysis } from "@/components/ai/AssortmentAnalysis";
+import { useDateRange } from "@/context/DateRangeContext";
+import { Tooltip } from "@/components/ui/Tooltip";
 
-// Моковые данные для метрик
-const metrics = [
-  {
-    icon: <DesignToolsIcon />,
-    title: "Всего товаров",
-    value: "247",
-    growthRate: 12,
-  },
-  {
-    icon: <DollarIcon />,
-    title: "Сумма закупки",
-    value: "₽184,500",
-    growthRate: -3,
-  },
-  {
-    icon: <StatisticsChartIcon />,
-    title: "Средняя маржа",
-    value: "47%",
-    growthRate: 8,
-  },
-  {
-    icon: <DollarIcon />,
-    title: "Критичные остатки",
-    value: "18",
-    growthRate: -15,
-  },
-];
+// Интерфейсы для ABC/XYZ анализа
+interface AbcXyzData {
+  productId: number;
+  productName: string;
+  revenue: number;
+  salesCount: number;
+  abc: 'A' | 'B' | 'C';
+  xyz: 'X' | 'Y' | 'Z';
+  coefficientOfVariation: number;
+  revenueShare: number;
+}
 
-// Моковые данные для товаров
-const mockProducts = [
-  {
-    id: 1,
-    name: "iPhone 15 Pro 256GB",
-    stock: 45,
-    sales: 127,
-    cost: "₽89,900",
-    profit: "₽34,100",
-    recommended: 20,
-    status: "В наличии",
-  },
-  {
-    id: 2,
-    name: "Samsung Galaxy S24 Ultra",
-    stock: 12,
-    sales: 89,
-    cost: "₽94,900",
-    profit: "₽28,500",
-    recommended: 15,
-    status: "Критичный",
-  },
-  {
-    id: 3,
-    name: "MacBook Air M3 13\"",
-    stock: 23,
-    sales: 56,
-    cost: "₽129,900",
-    profit: "₽41,200",
-    recommended: 10,
-    status: "В наличии",
-  },
-  {
-    id: 4,
-    name: "AirPods Pro 2 поколения",
-    stock: 8,
-    sales: 234,
-    cost: "₽24,900",
-    profit: "₽8,900",
-    recommended: 50,
-    status: "Скоро кончится",
-  },
-  {
-    id: 5,
-    name: "iPad Pro 12.9\" M2",
-    stock: 31,
-    sales: 67,
-    cost: "₽119,900",
-    profit: "₽36,800",
-    recommended: 12,
-    status: "В наличии",
-  },
-];
+interface AbcXyzMatrixData {
+  AX: number;
+  AY: number;
+  AZ: number;
+  BX: number;
+  BY: number;
+  BZ: number;
+  CX: number;
+  CY: number;
+  CZ: number;
+}
 
-const filterButtons = [
-  { id: "all", label: "Все товары", count: 247 },
-  { id: "critical", label: "Критичные", count: 18 },
-  { id: "low-stock", label: "Скоро кончатся", count: 34 },
-  { id: "need-order", label: "Нужна закупка", count: 67 },
-];
+interface AbcXyzMatrixWithProductsData {
+  AX: { count: number; products: string[] };
+  AY: { count: number; products: string[] };
+  AZ: { count: number; products: string[] };
+  BX: { count: number; products: string[] };
+  BY: { count: number; products: string[] };
+  BZ: { count: number; products: string[] };
+  CX: { count: number; products: string[] };
+  CY: { count: number; products: string[] };
+  CZ: { count: number; products: string[] };
+}
 
-// Metadata is handled by layout in App Router
+interface ProductWithAnalytics extends Product {
+  abc?: 'A' | 'B' | 'C';
+  xyz?: 'X' | 'Y' | 'Z';
+}
 
 export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
+  
+  // Используем хук для получения реальных данных
+  const { 
+    products, 
+    loading, 
+    error, 
+    stats, 
+    updateFilters, 
+    filterByStatus,
+    searchProducts 
+  } = useProducts({
+    autoRefresh: true,
+    limit: 25
+  });
 
   // Set document title
   useEffect(() => {
     document.title = "Товары | NextAdmin - Next.js Dashboard Kit";
   }, []);
 
-  const getStatusBadge = (status: string) => {
+  // Обновляем поиск при изменении запроса
+  useEffect(() => {
+    searchProducts(searchQuery);
+  }, [searchQuery, searchProducts]);
+
+  // Обновляем фильтр при изменении активного фильтра
+  useEffect(() => {
+    filterByStatus(activeFilter);
+  }, [activeFilter, filterByStatus]);
+
+  // Вычисляем данные для фильтров на основе реальных товаров
+  const filterButtons = [
+    { id: "all", label: "Все товары", count: stats?.totalProducts || 0 },
+    { id: "critical", label: "Критичные", count: products.filter(p => (p.stock_quantity || 0) < 10).length },
+    { id: "low-stock", label: "Скоро кончатся", count: products.filter(p => (p.stock_quantity || 0) >= 10 && (p.stock_quantity || 0) < 50).length },
+    { id: "need-order", label: "Нужна закупка", count: products.filter(p => (p.stock_quantity || 0) < 20).length },
+  ];
+
+
+
+  const getStatusBadge = (stock: number) => {
     const baseClasses = "inline-flex items-center px-3 py-1 rounded-full text-xs font-medium";
     
-    switch (status) {
-      case "В наличии":
-        return `${baseClasses} bg-green/10 text-green border border-green/20`;
-      case "Критичный":
-        return `${baseClasses} bg-red/10 text-red border border-red/20`;
-      case "Скоро кончится":
-        return `${baseClasses} bg-yellow-dark/10 text-yellow-dark border border-yellow-dark/20`;
-      default:
-        return `${baseClasses} bg-gray-5/10 text-gray-5 border border-gray-5/20`;
+    if (stock < 10) {
+      return `${baseClasses} bg-red/10 text-red border border-red/20`;
+    } else if (stock < 50) {
+      return `${baseClasses} bg-yellow-dark/10 text-yellow-dark border border-yellow-dark/20`;
+    } else {
+      return `${baseClasses} bg-green/10 text-green border border-green/20`;
     }
   };
 
+  const getStatusText = (stock: number) => {
+    if (stock < 10) return "Критичный";
+    if (stock < 50) return "Скоро кончится";
+    return "В наличии";
+  };
+
+  // Форматирование цены
+  const formatPrice = (price: any) => {
+    if (!price) return "—";
+    const num = typeof price === 'object' ? parseFloat(price.toString()) : price;
+    return `₽${num.toLocaleString('ru-RU')}`;
+  };
+
+
+
+  // Форматирование расходов на 1 шт
+  const formatExpensesPerUnit = (product: Product) => {
+    if (!product.totalCosts || !product.soldQuantity || product.soldQuantity === 0) {
+      return "—";
+    }
+    const expensesPerUnit = product.totalCosts / product.soldQuantity;
+    return `₽${expensesPerUnit.toFixed(2)}`;
+  };
+
+  // Форматирование чистой прибыли с 1 шт
+  const formatNetProfitPerUnit = (product: Product) => {
+    if (!product.netProfitPerUnit) {
+      return "—";
+    }
+    return `₽${product.netProfitPerUnit.toFixed(2)}`;
+  };
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-7xl">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-7xl">
+        <div className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
+          <div className="text-center text-red-500">
+            Ошибка загрузки данных: {error}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-7xl">
-      {/* Метрики */}
-      <div className="mb-7.5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 2xl:gap-7.5">
-        {metrics.map((metric, index) => (
-          <div
-            key={index}
-            className="rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card"
-          >
-            <div className="mb-4">{metric.icon}</div>
-            
-            <h4 className="mb-2 text-heading-6 font-bold text-dark dark:text-white">
-              {metric.value}
-            </h4>
-            
-            <p className="mb-2 text-sm font-medium text-dark-6">{metric.title}</p>
-            
-            <div className="flex items-center gap-1.5">
-              <span
-                className={`flex items-center gap-1 text-xs font-medium ${
-                  metric.growthRate > 0 ? "text-green" : "text-red"
-                }`}
-              >
-                {metric.growthRate > 0 ? <ArrowUpIcon /> : <ArrowDownIcon />}
-                <span>
-                  {metric.growthRate > 0 && "+"}
-                  {metric.growthRate}%
-                </span>
-              </span>
-              <span className="text-xs text-dark-6">за неделю</span>
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* ИИ-анализ ассортимента */}
+      <AssortmentAnalysis productsData={products} />
 
       {/* Поиск и фильтры */}
       <div className="mb-7.5 rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
@@ -212,77 +221,86 @@ export default function ProductsPage() {
                   Продажи
                 </th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-dark dark:text-white">
-                  Себестоимость
+                  <Tooltip content="Средняя закупочная цена в рублях">
+                    Средняя себестоимость
+                  </Tooltip>
                 </th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-dark dark:text-white">
-                  Прибыль
+                  <Tooltip content="Расходы на 1 шт = (себестоимость + доля общих расходов + 350₽ доставка) ÷ количество проданных штук">
+                    Расходы на 1 шт
+                  </Tooltip>
                 </th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-dark dark:text-white">
-                  Рекомендовано
+                  <Tooltip content="Чистая прибыль с 1 шт = (выручка – расходы) ÷ количество проданных штук">
+                    Чистая прибыль с 1 шт
+                  </Tooltip>
                 </th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-dark dark:text-white">
                   Статус
                 </th>
-                <th className="px-6 py-4 text-center text-sm font-semibold text-dark dark:text-white">
-                  Действия
-                </th>
               </tr>
             </thead>
             <tbody>
-              {mockProducts.map((product) => (
-                <tr
-                  key={product.id}
-                  className="border-b border-stroke hover:bg-gray-2/30 dark:border-dark-3 dark:hover:bg-dark-3/30"
-                >
-                  <td className="px-6 py-4">
-                    <div className="font-medium text-dark dark:text-white">
-                      {product.name}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`font-medium ${
-                      product.stock < 15 ? 'text-red' : 'text-dark dark:text-white'
-                    }`}>
-                      {product.stock} шт
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="font-medium text-dark dark:text-white">
-                      {product.sales}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="font-medium text-dark dark:text-white">
-                      {product.cost}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="font-medium text-green">
-                      {product.profit}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="font-medium text-primary">
-                      {product.recommended} шт
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={getStatusBadge(product.status)}>
-                      {product.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center justify-center gap-2">
-                      <button className="flex h-8 w-8 items-center justify-center rounded bg-primary/10 text-primary hover:bg-primary hover:text-white">
-                        <PencilSquareIcon className="size-4" />
-                      </button>
-                      <button className="flex h-8 w-8 items-center justify-center rounded bg-red/10 text-red hover:bg-red hover:text-white">
-                        <TrashIcon className="size-4" />
-                      </button>
-                    </div>
+              {products.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-12 text-center text-dark-6">
+                    {searchQuery || activeFilter !== 'all' 
+                      ? 'Товары не найдены по заданным критериям' 
+                      : 'Товары не найдены'
+                    }
                   </td>
                 </tr>
-              ))}
+              ) : (
+                products.map((product) => (
+                  <tr
+                    key={product.id}
+                    className="border-b border-stroke hover:bg-gray-2/30 dark:border-dark-3 dark:hover:bg-dark-3/30"
+                  >
+                    <td className="px-6 py-4">
+                      <div className="font-medium text-dark dark:text-white">
+                        {product.name}
+                      </div>
+                      {product.brand && (
+                        <div className="text-xs text-dark-6">{product.brand}</div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`font-medium ${
+                        (product.stock_quantity || 0) < 10 ? 'text-red' : 'text-dark dark:text-white'
+                      }`}>
+                        {product.stock_quantity || 0} шт
+                      </span>
+                    </td>
+                                         <td className="px-6 py-4">
+                       <span className="font-medium text-dark dark:text-white">
+                         {product.soldQuantity || 0}
+                       </span>
+                     </td>
+                     <td className="px-6 py-4">
+                       <span className="font-medium text-blue-600">
+                         {formatPrice(product.avgPurchasePriceRub)}
+                       </span>
+                     </td>
+                     <td className="px-6 py-4">
+                       <span className="font-medium text-purple-600">
+                         {formatExpensesPerUnit(product)}
+                       </span>
+                     </td>
+                     <td className="px-6 py-4">
+                       <span className={`font-medium ${
+                         (product.netProfitPerUnit || 0) > 0 ? 'text-green' : 'text-red'
+                       }`}>
+                         {formatNetProfitPerUnit(product)}
+                       </span>
+                     </td>
+                     <td className="px-6 py-4">
+                       <span className={getStatusBadge(product.stock_quantity || 0)}>
+                         {getStatusText(product.stock_quantity || 0)}
+                       </span>
+                     </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -290,7 +308,7 @@ export default function ProductsPage() {
         {/* Пагинация */}
         <div className="flex items-center justify-between border-t border-stroke px-6 py-4 dark:border-dark-3">
           <div className="text-sm text-dark-6">
-            Показано 1-5 из 247 товаров
+            Показано {products.length} из {stats?.totalProducts || 0} товаров
           </div>
           <div className="flex items-center gap-2">
             <button className="flex h-8 w-8 items-center justify-center rounded border border-stroke text-dark hover:bg-primary hover:text-white dark:border-dark-3 dark:text-white">

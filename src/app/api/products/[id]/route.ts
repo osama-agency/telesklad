@@ -5,7 +5,7 @@ import { prisma } from '@/libs/prismaDb';
 // GET - получение товара по ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession();
@@ -14,9 +14,10 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     const product = await prisma.product.findUnique({
       where: { 
-        id: parseInt(params.id),
+        id: parseInt(id),
         deleted_at: null 
       }
     });
@@ -35,7 +36,7 @@ export async function GET(
 // PUT - обновление товара
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession();
@@ -44,14 +45,16 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     const productData = await request.json();
 
     const product = await prisma.product.update({
-      where: { id: parseInt(params.id) },
+      where: { id: parseInt(id) },
       data: {
         name: productData.name,
         description: productData.description,
         price: productData.price ? parseFloat(productData.price) : null,
+        prime_cost: productData.prime_cost ? parseFloat(productData.prime_cost) : null,
         stock_quantity: productData.stock_quantity,
         ancestry: productData.ancestry,
         weight: productData.weight,
@@ -75,7 +78,7 @@ export async function PUT(
 // DELETE - мягкое удаление товара (soft delete)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession();
@@ -84,8 +87,9 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     const product = await prisma.product.update({
-      where: { id: parseInt(params.id) },
+      where: { id: parseInt(id) },
       data: {
         deleted_at: new Date(),
         is_visible: false,

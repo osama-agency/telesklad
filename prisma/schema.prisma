@@ -1,16 +1,12 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-datasource db {
-  provider          = "postgresql"
-  url               = env("DATABASE_URL")
-  shadowDatabaseUrl = env("SHADOW_DATABASE_URL") // Only needed when using a cloud provider that doesn't support the creation of new databases, like Heroku. Learn more: https://pris.ly/d/migrate-shadow
-}
-
 generator client {
   provider = "prisma-client-js"
 }
 
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
 
 model Account {
   id                String  @id @default(cuid())
@@ -18,15 +14,14 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -49,23 +44,23 @@ model ApiKey {
 }
 
 model User {
-  id                     String     @id @default(cuid())
-  name                   String?
-  email                  String?    @unique
-  emailVerified          DateTime?
-  image                  String?
-  coverImage             String?
-  phone                  String?
-  password               String?
-  passwordResetToken     String?    @unique
-  passwordResetTokenExp  DateTime?
-  role                   String?    @default("USER")
-  createdAt              DateTime   @default(now())
-  accounts               Account[]
-  sessions               Session[]
-  apiKeys                ApiKey[]
-  expenses               Expense[]
-  purchases              Purchase[]
+  id                    String     @id @default(cuid())
+  name                  String?
+  email                 String?    @unique
+  emailVerified         DateTime?
+  image                 String?
+  coverImage            String?
+  password              String?
+  passwordResetToken    String?    @unique
+  passwordResetTokenExp DateTime?
+  role                  String?    @default("USER")
+  createdAt             DateTime   @default(now())
+  phone                 String?
+  accounts              Account[]
+  apiKeys               ApiKey[]
+  sessions              Session[]
+  expenses              Expense[]
+  purchases             Purchase[]
 }
 
 model Expense {
@@ -75,9 +70,9 @@ model Expense {
   description String
   amount      Float
   userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("expenses")
 }
@@ -92,27 +87,45 @@ model VerificationToken {
 }
 
 model Product {
-  id               Int           @id @default(autoincrement())
-  name             String
-  description      String?
-  price            Decimal?      @db.Decimal(10,2)
-  stock_quantity   Int?
-  created_at       DateTime      @default(now())
-  updated_at       DateTime      @updatedAt
-  deleted_at       DateTime?     // Для soft delete
-  ancestry         String?
-  weight           String?
-  dosage_form      String?
-  package_quantity Int?
-  main_ingredient  String?
-  brand            String?
-  old_price        Decimal?      @db.Decimal(10,2)
-  is_visible       Boolean       @default(true)
-  items            PurchaseItem[]
+  id                  Int            @id @default(autoincrement())
+  name                String
+  description         String?
+  price               Decimal?       @db.Decimal(10, 2)
+  stock_quantity      Int?
+  created_at          DateTime       @default(now())
+  updated_at          DateTime       @updatedAt
+  deleted_at          DateTime?
+  ancestry            String?
+  weight              String?
+  dosage_form         String?
+  package_quantity    Int?
+  main_ingredient     String?
+  brand               String?
+  old_price           Decimal?       @db.Decimal(10, 2)
+  is_visible          Boolean        @default(true)
+  prime_cost          Decimal?       @db.Decimal(10, 2)
+  avgPurchasePriceRub Decimal?       @db.Decimal(10, 2)
+  items               PurchaseItem[]
 
   @@index([name])
   @@index([ancestry])
   @@map("products")
+}
+
+model ExchangeRate {
+  id             String   @id @default(cuid())
+  currency       String
+  rate           Decimal  @db.Decimal(10, 4)
+  rateWithBuffer Decimal  @db.Decimal(10, 4)
+  bufferPercent  Decimal  @default(5.0) @db.Decimal(5, 2)
+  source         String   @default("CBR")
+  effectiveDate  DateTime
+  createdAt      DateTime @default(now())
+
+  @@unique([currency, effectiveDate])
+  @@index([currency])
+  @@index([effectiveDate])
+  @@map("exchange_rates")
 }
 
 model Order {
@@ -122,15 +135,15 @@ model Order {
   customerEmail   String?
   customerPhone   String?
   status          String
-  total           Decimal     @db.Decimal(10,2)
+  total           Decimal     @db.Decimal(10, 2)
   currency        String      @default("RUB")
   orderDate       DateTime
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
   bankCard        String?
-  bonus           Decimal     @default(0) @db.Decimal(10,2)
+  bonus           Decimal     @default(0) @db.Decimal(10, 2)
   customerCity    String?
-  deliveryCost    Decimal     @default(0) @db.Decimal(10,2)
+  deliveryCost    Decimal     @default(0) @db.Decimal(10, 2)
   paidAt          DateTime?
   shippedAt       DateTime?
   customerAddress String?
@@ -148,8 +161,8 @@ model OrderItem {
   productId String?
   name      String
   quantity  Int
-  price     Decimal  @db.Decimal(10,2)
-  total     Decimal  @db.Decimal(10,2)
+  price     Decimal  @db.Decimal(10, 2)
+  total     Decimal  @db.Decimal(10, 2)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -159,19 +172,17 @@ model OrderItem {
   @@map("order_items")
 }
 
-
-
 model Purchase {
-  id           Int           @id @default(autoincrement())
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  totalAmount  Float
-  status       String        @default("draft") // draft, ordered, received, cancelled
-  isUrgent     Boolean       @default(false)
-  expenses     Float?
-  userId       String
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items        PurchaseItem[]
+  id          Int            @id @default(autoincrement())
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  totalAmount Float
+  status      String         @default("draft")
+  isUrgent    Boolean        @default(false)
+  expenses    Float?
+  userId      String
+  items       PurchaseItem[]
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("purchases")
 }
@@ -181,13 +192,13 @@ model PurchaseItem {
   quantity    Int
   costPrice   Float
   total       Float
-  productId   Int      // ID товара из локальной таблицы products
-  productName String   // Название товара на момент создания заказа
   purchaseId  Int
-  purchase    Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  productName String
+  productId   Int
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  purchase    Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
 
   @@map("purchase_items")
 }

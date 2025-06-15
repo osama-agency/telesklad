@@ -5,7 +5,7 @@ import { prisma } from '@/libs/prismaDb';
 // GET - получение конкретной закупки
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession();
@@ -14,9 +14,10 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     const purchase = await prisma.purchase.findFirst({
       where: {
-        id: parseInt(params.id),
+        id: parseInt(id),
         user: {
           email: session.user.email
         }
@@ -40,7 +41,7 @@ export async function GET(
 // PUT - обновление закупки
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession();
@@ -49,12 +50,13 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     const { items, totalAmount, isUrgent, expenses, status } = await request.json();
 
     // Проверяем, принадлежит ли закупка пользователю
     const existingPurchase = await prisma.purchase.findFirst({
       where: {
-        id: parseInt(params.id),
+        id: parseInt(id),
         user: {
           email: session.user.email
         }
@@ -69,12 +71,12 @@ export async function PUT(
     const updatedPurchase = await prisma.$transaction(async (tx) => {
       // Удаляем старые элементы
       await tx.purchaseItem.deleteMany({
-        where: { purchaseId: parseInt(params.id) }
+        where: { purchaseId: parseInt(id) }
       });
 
       // Обновляем основную закупку
       const purchase = await tx.purchase.update({
-        where: { id: parseInt(params.id) },
+        where: { id: parseInt(id) },
         data: {
           totalAmount: totalAmount || existingPurchase.totalAmount,
           isUrgent: isUrgent !== undefined ? Boolean(isUrgent) : existingPurchase.isUrgent,
@@ -88,7 +90,7 @@ export async function PUT(
       if (items && Array.isArray(items) && items.length > 0) {
         await tx.purchaseItem.createMany({
           data: items.map((item: any) => ({
-            purchaseId: parseInt(params.id),
+            purchaseId: parseInt(id),
             quantity: item.quantity,
             costPrice: item.costPrice,
             total: item.total,
@@ -103,7 +105,7 @@ export async function PUT(
 
     // Получаем обновленную закупку с элементами
     const finalPurchase = await prisma.purchase.findUnique({
-      where: { id: parseInt(params.id) },
+      where: { id: parseInt(id) },
       include: { items: true }
     });
 
@@ -117,7 +119,7 @@ export async function PUT(
 // DELETE - удаление закупки
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession();
@@ -126,10 +128,11 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     // Проверяем, принадлежит ли закупка пользователю
     const existingPurchase = await prisma.purchase.findFirst({
       where: {
-        id: parseInt(params.id),
+        id: parseInt(id),
         user: {
           email: session.user.email
         }
@@ -142,7 +145,7 @@ export async function DELETE(
 
     // Удаляем закупку (элементы удалятся каскадно)
     await prisma.purchase.delete({
-      where: { id: parseInt(params.id) }
+      where: { id: parseInt(id) }
     });
 
     return NextResponse.json({ message: 'Purchase deleted successfully' });

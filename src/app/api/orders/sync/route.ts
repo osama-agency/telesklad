@@ -163,10 +163,30 @@ async function syncOrdersFromAPI(dateFilter?: Date): Promise<SyncResult> {
             const itemPrice = parseDecimal(item.price);
             const itemQuantity = typeof item.quantity === 'string' ? parseInt(item.quantity) : item.quantity;
             
+            // Пытаемся найти товар по названию для получения productId
+            let productId: string | null = null;
+            try {
+              const matchedProduct = await prisma.product.findFirst({
+                where: {
+                  name: {
+                    contains: item.name,
+                    mode: 'insensitive'
+                  },
+                  deleted_at: null
+                }
+              });
+              
+              if (matchedProduct) {
+                productId = matchedProduct.id.toString();
+              }
+            } catch (productError) {
+              console.warn(`Warning: Could not find product for "${item.name}":`, productError);
+            }
+            
             await prisma.orderItem.create({
               data: {
                 orderId: order.id,
-                productId: null, // нет в API
+                productId, // теперь пытаемся заполнить productId
                 name: item.name,
                 quantity: itemQuantity,
                 price: itemPrice,

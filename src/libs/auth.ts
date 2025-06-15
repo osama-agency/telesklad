@@ -1,7 +1,6 @@
 import { prisma } from "@/libs/prismaDb";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import {
-  DefaultSession,
   getServerSession,
   type NextAuthOptions,
 } from "next-auth";
@@ -10,22 +9,13 @@ import GitHubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
 import EmailProvider from "next-auth/providers/email";
 import bcrypt from "bcryptjs";
-import type { User as PrismaUser } from "@prisma/client";
-
-declare module "next-auth" {
-  interface Session extends DefaultSession {
-    user: PrismaUser & DefaultSession["user"];
-  }
-  
-  interface User extends PrismaUser {}
-}
 
 export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login",
   },
   adapter: PrismaAdapter(prisma),
-  secret: process.env.NEXTAUTH_SECRET || process.env.SECRET,
+  secret: process.env.NEXTAUTH_SECRET || process.env.SECRET || (process.env.NODE_ENV === "development" ? "dev-secret-key" : undefined),
   session: {
     strategy: "jwt",
   },
@@ -71,7 +61,7 @@ export const authOptions: NextAuthOptions = {
       },
     }),
 
-    EmailProvider({
+    ...(process.env.EMAIL_SERVER_HOST ? [EmailProvider({
       server: {
         host: process.env.EMAIL_SERVER_HOST,
         port: Number(process.env.EMAIL_SERVER_PORT),
@@ -81,17 +71,17 @@ export const authOptions: NextAuthOptions = {
         },
       },
       from: process.env.EMAIL_FROM,
-    }),
+    })] : []),
 
-    GitHubProvider({
-      clientId: process.env.GITHUB_CLIENT_ID || "",
-      clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
-    }),
+    ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET ? [GitHubProvider({
+      clientId: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
+    })] : []),
 
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-    }),
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? [GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    })] : []),
   ],
 
   callbacks: {
@@ -104,7 +94,7 @@ export const authOptions: NextAuthOptions = {
 
     jwt: async (payload: any) => {
       const { token, trigger, session } = payload;
-      const user: PrismaUser = payload.user;
+      const user = payload.user;
 
       if (trigger === "update") {
         return {

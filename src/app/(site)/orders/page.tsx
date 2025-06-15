@@ -1,6 +1,6 @@
 "use client";
 
-import { SearchIcon, ArrowUpIcon, ArrowDownIcon, PencilSquareIcon, TrashIcon } from "@/assets/icons";
+import { SearchIcon, ArrowUpIcon, ArrowDownIcon } from "@/assets/icons";
 import { useState, useEffect } from "react";
 import { useOrders } from "@/hooks/useOrders";
 
@@ -258,7 +258,7 @@ export default function OrdersPage() {
                   </div>
                 </th>
                 <th className="px-4 py-4 text-center font-medium text-white">
-                  Действия
+                  Доступ
                 </th>
               </tr>
             </thead>
@@ -362,13 +362,8 @@ export default function OrdersPage() {
                       </p>
                     </td>
                     <td className="px-4 py-4">
-                      <div className="flex items-center justify-center gap-2">
-                        <button className="hover:text-blue-400 text-gray-400 transition-colors">
-                          <PencilSquareIcon className="h-5 w-5" />
-                        </button>
-                        <button className="hover:text-red-400 text-gray-400 transition-colors">
-                          <TrashIcon className="h-5 w-5" />
-                        </button>
+                      <div className="flex items-center justify-center text-gray-500 dark:text-gray-400">
+                        <span className="text-sm">Только просмотр</span>
                       </div>
                     </td>
                   </tr>

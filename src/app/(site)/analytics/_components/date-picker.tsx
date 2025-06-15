@@ -48,7 +48,7 @@ export function DatePicker() {
       </div>
 
       <input
-        className="datepicker w-full rounded-lg bg-white dark:bg-gray-dark border border-[#E2E8F0] dark:border-muted/20 py-2 pl-10 pr-4 text-sm font-medium text-foreground dark:text-white placeholder:text-muted-foreground shadow-sm dark:shadow-card focus-visible:outline-none focus:ring-gradient"
+        className="datepicker w-full rounded-lg bg-white dark:bg-gray-dark border border-[#E2E8F0] dark:border-muted/20 py-2 pl-10 pr-4 text-sm font-medium text-gray-900 dark:text-white placeholder:text-muted-foreground shadow-sm dark:shadow-card focus-visible:outline-none focus:ring-gradient"
         placeholder="Select dates"
         data-class="flatpickr-right"
       />

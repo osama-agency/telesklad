@@ -31,6 +31,7 @@ async function syncProductsFromAPI() {
           name: extProduct.name,
           description: extProduct.description,
           price: extProduct.price ? parseFloat(extProduct.price) : null,
+          prime_cost: extProduct.prime_cost ? parseFloat(extProduct.prime_cost) : null,
           stock_quantity: extProduct.stock_quantity,
           updated_at: new Date(),
           deleted_at: extProduct.deleted_at ? new Date(extProduct.deleted_at) : null,
@@ -47,6 +48,7 @@ async function syncProductsFromAPI() {
           name: extProduct.name,
           description: extProduct.description,
           price: extProduct.price ? parseFloat(extProduct.price) : null,
+          prime_cost: extProduct.prime_cost ? parseFloat(extProduct.prime_cost) : null,
           stock_quantity: extProduct.stock_quantity,
           created_at: extProduct.created_at ? new Date(extProduct.created_at) : new Date(),
           updated_at: extProduct.updated_at ? new Date(extProduct.updated_at) : new Date(),
@@ -70,7 +72,7 @@ async function syncProductsFromAPI() {
   }
 }
 
-// GET - получение товаров из локальной базы с синхронизацией и фильтрацией по датам
+// GET - получение товаров из локальной базы с синхронизацией
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession();
@@ -80,31 +82,28 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const from = searchParams.get('from');
-    const to = searchParams.get('to');
+    const showHidden = searchParams.get('showHidden') === 'true';
+    const fromDate = searchParams.get('from');
+    const toDate = searchParams.get('to');
 
     // Синхронизируем товары из внешнего API
     await syncProductsFromAPI();
 
     // Строим условия фильтрации
     const whereConditions: any = {
-      is_visible: true,
       deleted_at: null,
     };
-    
-    if (from || to) {
-      whereConditions.created_at = {};
-      if (from) {
-        whereConditions.created_at.gte = new Date(from);
-      }
-      if (to) {
-        const toDate = new Date(to);
-        toDate.setHours(23, 59, 59, 999); // Включаем весь день
-        whereConditions.created_at.lte = toDate;
-      }
+
+    // Фильтрация по видимости товаров
+    if (showHidden) {
+      // Показываем ТОЛЬКО скрытые товары
+      whereConditions.is_visible = false;
+    } else {
+      // Показываем только видимые товары
+      whereConditions.is_visible = true;
     }
 
-    // Возвращаем товары из локальной базы с фильтрацией
+    // Возвращаем товары согласно фильтрам
     const products = await prisma.product.findMany({
       where: whereConditions,
       orderBy: {
@@ -112,7 +111,130 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    return NextResponse.json(products);
+    // Получаем общие расходы за период
+    let totalExpenses = 0;
+    let totalSoldQuantity = 0;
+
+    if (fromDate && toDate) {
+      const expensesData = await prisma.expense.aggregate({
+        where: {
+          date: {
+            gte: fromDate,
+            lte: toDate,
+          },
+        },
+        _sum: {
+          amount: true,
+        },
+      });
+      totalExpenses = expensesData._sum.amount || 0;
+
+      // Получаем общее количество проданных товаров за период
+      const totalSalesData = await prisma.orderItem.aggregate({
+        where: {
+          order: {
+            paidAt: {
+              not: null
+            },
+            orderDate: {
+              gte: new Date(fromDate),
+              lte: new Date(toDate),
+            }
+          }
+        },
+        _sum: {
+          quantity: true,
+        },
+      });
+      totalSoldQuantity = totalSalesData._sum.quantity || 0;
+    }
+
+    // Получаем количество проданных товаров и рассчитываем расходы
+    const productsWithSales = await Promise.all(
+      products.map(async (product) => {
+        // Условия для фильтрации по датам
+        const dateFilter: any = {};
+        if (fromDate && toDate) {
+          const from = new Date(fromDate);
+          const to = new Date(toDate);
+          
+          // Если это один и тот же день (разница меньше суток)
+          if (Math.abs(to.getTime() - from.getTime()) < 24 * 60 * 60 * 1000) {
+            // Устанавливаем начало дня для from и конец дня для to
+            const startOfDay = new Date(from);
+            startOfDay.setHours(0, 0, 0, 0);
+            
+            const endOfDay = new Date(to);
+            endOfDay.setHours(23, 59, 59, 999);
+            
+            dateFilter.gte = startOfDay;
+            dateFilter.lte = endOfDay;
+          } else {
+            // Обычный диапазон дат
+            dateFilter.gte = from;
+            dateFilter.lte = to;
+          }
+        } else {
+          if (fromDate) {
+            dateFilter.gte = new Date(fromDate);
+          }
+          if (toDate) {
+            dateFilter.lte = new Date(toDate);
+          }
+        }
+
+        // Считаем количество проданных штук для каждого товара с учетом периода
+        const salesData = await prisma.orderItem.aggregate({
+          where: {
+            productId: product.id.toString(),
+            order: {
+              paidAt: {
+                not: null // только оплаченные заказы (paid_at !== null)
+              },
+              ...(Object.keys(dateFilter).length > 0 && {
+                orderDate: dateFilter
+              })
+            }
+          },
+          _sum: {
+            quantity: true,
+            total: true, // общая выручка с товара
+          },
+        });
+
+        const soldQuantity = salesData._sum.quantity || 0;
+        const revenue = Number(salesData._sum.total || 0);
+
+        // Рассчитываем расходы
+        const costPrice = product.avgPurchasePriceRub ? Number(product.avgPurchasePriceRub) : Number(product.prime_cost || 0);
+        const baseCost = costPrice * soldQuantity; // базовая себестоимость
+        
+        // Доля общих расходов пропорционально продажам
+        const expenseShare = totalSoldQuantity > 0 ? (soldQuantity / totalSoldQuantity) * totalExpenses : 0;
+        
+        // Фиксированная стоимость доставки (350₽ за штуку)
+        const deliveryCost = soldQuantity * 350;
+        
+        // Общие расходы
+        const totalCosts = baseCost + expenseShare + deliveryCost;
+        
+        // Чистая прибыль с 1 штуки
+        const netProfitPerUnit = soldQuantity > 0 ? (revenue - totalCosts) / soldQuantity : 0;
+
+        return {
+          ...product,
+          soldQuantity, // количество проданных штук
+          revenue, // общая выручка
+          baseCost, // себестоимость
+          expenseShare, // доля общих расходов
+          deliveryCost, // стоимость доставки
+          totalCosts, // общие расходы
+          netProfitPerUnit, // чистая прибыль с 1 шт
+        };
+      })
+    );
+
+    return NextResponse.json(productsWithSales);
   } catch (error) {
     console.error('Error fetching products:', error);
     return NextResponse.json(
@@ -138,6 +260,7 @@ export async function POST(request: NextRequest) {
         name: productData.name,
         description: productData.description,
         price: productData.price ? parseFloat(productData.price) : null,
+        prime_cost: productData.prime_cost ? parseFloat(productData.prime_cost) : null,
         stock_quantity: productData.stock_quantity,
         ancestry: productData.ancestry,
         weight: productData.weight,

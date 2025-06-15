@@ -275,7 +275,7 @@
 /* Заголовок месяца */
 span.flatpickr-weekday,
 .flatpickr-months .flatpickr-month {
-  @apply !text-foreground dark:!fill-[#E2E8F0] dark:!text-[#E2E8F0];
+  @apply !text-gray-900 dark:!fill-[#E2E8F0] dark:!text-[#E2E8F0];
 }
 
 /* Дни недели */
@@ -285,7 +285,7 @@ span.flatpickr-weekday {
 
 /* Дни месяца */
 .flatpickr-day {
-  @apply !text-sm !text-foreground dark:!text-[#E2E8F0] dark:hover:!border-gray-600 dark:hover:!bg-gray-700;
+  @apply !text-sm !text-gray-900 dark:!text-[#E2E8F0] dark:hover:!border-gray-600 dark:hover:!bg-gray-700;
 }
 
 /* Дни не текущего месяца */
@@ -331,7 +331,7 @@ span.flatpickr-weekday {
 
 /* Текущий день */
 .flatpickr-day.today {
-  @apply !font-semibold !text-foreground !border-2 !border-accent dark:!border-[#3B82F6] !bg-transparent hover:!bg-gray-50 hover:!text-foreground dark:hover:!bg-gray-700 dark:hover:!text-[#E2E8F0];
+  @apply !font-semibold !text-gray-900 !border-2 !border-blue-500 dark:!border-[#3B82F6] !bg-transparent hover:!bg-gray-50 hover:!text-gray-900 dark:hover:!bg-gray-700 dark:hover:!text-[#E2E8F0];
 }
 
 /* Активные/выбранные даты */

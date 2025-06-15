@@ -12,18 +12,24 @@ interface DateRangeContextType {
   setDateRange: (range: DateRange) => void;
   resetToDefault: () => void;
   formatDateRange: () => string;
+  formatMobileDateRange: () => string;
 }
 
 const DateRangeContext = createContext<DateRangeContextType | undefined>(undefined);
 
-// Функция для получения последних 7 дней по умолчанию
+// Функция для получения последних 30 дней по умолчанию
 const getDefaultDateRange = (): DateRange => {
   const today = new Date();
-  const sevenDaysAgo = new Date(today);
-  sevenDaysAgo.setDate(today.getDate() - 7);
+  // Устанавливаем конец дня для сегодня
+  today.setHours(23, 59, 59, 999);
+  
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(today.getDate() - 30);
+  // Устанавливаем начало дня для начальной даты
+  thirtyDaysAgo.setHours(0, 0, 0, 0);
   
   return {
-    from: sevenDaysAgo,
+    from: thirtyDaysAgo,
     to: today,
   };
 };
@@ -59,6 +65,42 @@ export function DateRangeProvider({ children }: { children: ReactNode }) {
     return `${fromStr} - ${toStr}`;
   };
 
+  const formatMobileDateRange = () => {
+    if (!dateRange.from || !dateRange.to) {
+      return 'Период';
+    }
+
+    const monthNames = [
+      'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+      'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
+    ];
+
+    const fromDay = dateRange.from.getDate().toString().padStart(2, '0');
+    const toDay = dateRange.to.getDate().toString().padStart(2, '0');
+    const fromMonth = dateRange.from.getMonth();
+    const toMonth = dateRange.to.getMonth();
+    const fromYear = dateRange.from.getFullYear();
+    const toYear = dateRange.to.getFullYear();
+
+    // Если даты одинаковые
+    if (dateRange.from.toDateString() === dateRange.to.toDateString()) {
+      return `${fromDay} ${monthNames[fromMonth]}`;
+    }
+
+    // Если тот же месяц и год
+    if (fromMonth === toMonth && fromYear === toYear) {
+      return `${fromDay}–${toDay} ${monthNames[fromMonth]}`;
+    }
+
+    // Если тот же год, но разные месяцы
+    if (fromYear === toYear) {
+      return `${fromDay} ${monthNames[fromMonth]} – ${toDay} ${monthNames[toMonth]}`;
+    }
+
+    // Разные годы
+    return `${fromDay} ${monthNames[fromMonth]} ${fromYear} – ${toDay} ${monthNames[toMonth]} ${toYear}`;
+  };
+
   return (
     <DateRangeContext.Provider
       value={{
@@ -66,6 +108,7 @@ export function DateRangeProvider({ children }: { children: ReactNode }) {
         setDateRange,
         resetToDefault,
         formatDateRange,
+        formatMobileDateRange,
       }}
     >
       {children}

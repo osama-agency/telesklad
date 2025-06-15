@@ -6,11 +6,10 @@ import { OrderFilters } from '@/types/order';
 // GET - получение списка заказов с фильтрацией
 export async function GET(request: NextRequest) {
   try {
-    // Временно отключаем проверку авторизации для тестирования
-    // const session = await getServerSession();
-    // if (!session?.user?.email) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    // }
+    const session = await getServerSession();
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const { searchParams } = new URL(request.url);
     
     // Параметры фильтрации
