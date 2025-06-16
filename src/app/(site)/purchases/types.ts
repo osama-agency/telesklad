@@ -23,7 +23,7 @@ export interface Purchase {
   createdAt: string;
   updatedAt: string;
   totalAmount: number;
-  status: "draft" | "ordered" | "received" | "cancelled";
+  status: "draft" | "ordered" | "in_transit" | "received" | "cancelled";
   isUrgent: boolean;
   expenses?: number;
   userId: string;
@@ -53,5 +53,5 @@ export interface CreatePurchaseRequest {
 }
 
 export interface UpdatePurchaseRequest extends Partial<CreatePurchaseRequest> {
-  status?: "draft" | "ordered" | "received" | "cancelled";
+  status?: "draft" | "ordered" | "in_transit" | "received" | "cancelled";
 } 

@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useDateRange } from '@/context/DateRangeContext';
 import { Order, OrderFilters, SyncResult } from '@/types/order';
+// ВРЕМЕННО ОТКЛЮЧЕНА АВТОРИЗАЦИЯ
+// import { useSession } from 'next-auth/react';
 
 interface OrdersResponse {
   orders: Order[];
@@ -30,6 +32,11 @@ interface UseOrdersOptions {
 }
 
 export function useOrders(options: UseOrdersOptions = {}) {
+  // ВРЕМЕННО ОТКЛЮЧЕНА АВТОРИЗАЦИЯ
+  // const { data: session } = useSession();
+  const session = { user: { email: 'go@osama.agency' } }; // Заглушка для авторизации
+  
+  console.log('🔧 useOrders: Hook initialized with options:', options);
   const { dateRange } = useDateRange();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
@@ -41,12 +48,19 @@ export function useOrders(options: UseOrdersOptions = {}) {
   const {
     page = 1,
     limit = 25,
-    sortBy = 'orderDate',
+    sortBy = 'created_at',
     sortOrder = 'desc',
     autoRefresh = true,
   } = options;
 
   const fetchOrders = useCallback(async () => {
+    // ВРЕМЕННО ОТКЛЮЧЕНА АВТОРИЗАЦИЯ
+    // if (!session) {
+    //   setError('Not authenticated');
+    //   return;
+    // }
+
+    console.log('🔧 useOrders: Starting fetchOrders...');
     setLoading(true);
     setError(null);
 
@@ -58,11 +72,11 @@ export function useOrders(options: UseOrdersOptions = {}) {
         sortOrder,
       });
 
-      // Добавляем параметры даты
-      if (dateRange.from) {
+      // Добавляем параметры даты только если они определены и стабильны
+      if (dateRange?.from) {
         params.append('from', dateRange.from.toISOString());
       }
-      if (dateRange.to) {
+      if (dateRange?.to) {
         params.append('to', dateRange.to.toISOString());
       }
 
@@ -73,40 +87,155 @@ export function useOrders(options: UseOrdersOptions = {}) {
         }
       });
 
-      const response = await fetch(`/api/orders?${params.toString()}`);
+      const url = `/api/orders?${params.toString()}`;
+      console.log('🔧 useOrders: Fetching from URL:', url);
+      
+      const response = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        console.error('🔧 useOrders: HTTP error!', response.status);
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || `HTTP error! status: ${response.status}`);
       }
 
       const data: OrdersResponse = await response.json();
+      console.log('🔧 useOrders: Received data:', data.orders?.length || 0, 'orders');
+      
+      if (!data.orders || !Array.isArray(data.orders)) {
+        throw new Error('Invalid response format: orders array is missing or invalid');
+      }
+
+      if (!data.pagination || typeof data.pagination !== 'object') {
+        throw new Error('Invalid response format: pagination data is missing or invalid');
+      }
+
+      if (!data.stats || typeof data.stats !== 'object') {
+        throw new Error('Invalid response format: stats data is missing or invalid');
+      }
       
       setOrders(data.orders);
       setPagination(data.pagination);
       setStats(data.stats);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch orders');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch orders';
+      setError(errorMessage);
       console.error('Error fetching orders:', err);
+      
+      // Сбрасываем данные при ошибке
+      setOrders([]);
+      setPagination(null);
+      setStats(null);
     } finally {
       setLoading(false);
     }
-  }, [dateRange, filters, page, limit, sortBy, sortOrder]);
+  }, [dateRange?.from, dateRange?.to, filters, page, limit, sortBy, sortOrder]);
 
   // Автоматическое обновление при изменении даты
   useEffect(() => {
-    if (autoRefresh) {
-      fetchOrders();
+    console.log('🔧 useOrders: useEffect triggered, autoRefresh:', autoRefresh);
+    if (autoRefresh) { // ВРЕМЕННО ОТКЛЮЧЕНА АВТОРИЗАЦИЯ - убрана проверка session
+      console.log('🔧 useOrders: Calling fetchOrders from useEffect');
+      
+      // Создаем локальную функцию для избежания зависимости от fetchOrders
+      const loadOrders = async () => {
+        setLoading(true);
+        setError(null);
+
+        try {
+          const params = new URLSearchParams({
+            page: page.toString(),
+            limit: limit.toString(),
+            sortBy,
+            sortOrder,
+          });
+
+          // Добавляем параметры даты только если они определены и стабильны
+          if (dateRange?.from) {
+            params.append('from', dateRange.from.toISOString());
+          }
+          if (dateRange?.to) {
+            params.append('to', dateRange.to.toISOString());
+          }
+
+          // Добавляем фильтры
+          Object.entries(filters).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== '') {
+              params.append(key, value.toString());
+            }
+          });
+
+          const url = `/api/orders?${params.toString()}`;
+          console.log('🔧 useOrders: Fetching from URL:', url);
+          
+          const response = await fetch(url, {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+          });
+          
+          if (!response.ok) {
+            console.error('🔧 useOrders: HTTP error!', response.status);
+            const errorData = await response.json().catch(() => null);
+            throw new Error(errorData?.error || `HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          console.log('🔧 useOrders: Received data:', data.orders?.length || 0, 'orders');
+          
+          if (!data.orders || !Array.isArray(data.orders)) {
+            throw new Error('Invalid response format: orders array is missing or invalid');
+          }
+
+          if (!data.pagination || typeof data.pagination !== 'object') {
+            throw new Error('Invalid response format: pagination data is missing or invalid');
+          }
+
+          if (!data.stats || typeof data.stats !== 'object') {
+            throw new Error('Invalid response format: stats data is missing or invalid');
+          }
+          
+          setOrders(data.orders);
+          setPagination(data.pagination);
+          setStats(data.stats);
+        } catch (err) {
+          const errorMessage = err instanceof Error ? err.message : 'Failed to fetch orders';
+          setError(errorMessage);
+          console.error('Error fetching orders:', err);
+          
+          // Сбрасываем данные при ошибке
+          setOrders([]);
+          setPagination(null);
+          setStats(null);
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      loadOrders();
     }
-  }, [fetchOrders, autoRefresh]);
+  }, [autoRefresh, page, limit, sortBy, sortOrder, dateRange?.from, dateRange?.to, filters]);
 
   // Синхронизация с внешним API
   const syncOrders = useCallback(async (): Promise<SyncResult | null> => {
+    // ВРЕМЕННО ОТКЛЮЧЕНА АВТОРИЗАЦИЯ
+    // if (!session) {
+    //   setError('Not authenticated');
+    //   return null;
+    // }
+
     try {
       const response = await fetch('/api/orders/sync', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -129,8 +258,16 @@ export function useOrders(options: UseOrdersOptions = {}) {
 
   // Получение статуса синхронизации
   const getSyncStatus = useCallback(async () => {
+    // ВРЕМЕННО ОТКЛЮЧЕНА АВТОРИЗАЦИЯ
+    // if (!session) {
+    //   setError('Not authenticated');
+    //   return null;
+    // }
+
     try {
-      const response = await fetch('/api/orders/sync');
+      const response = await fetch('/api/orders/sync', {
+        credentials: 'include',
+      });
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -159,8 +296,8 @@ export function useOrders(options: UseOrdersOptions = {}) {
   }, [updateFilters]);
 
   // Фильтрация по статусу
-  const filterByStatus = useCallback((status: string) => {
-    updateFilters({ status: status === 'all' ? undefined : status });
+  const filterByStatus = useCallback((status: number) => {
+    updateFilters({ status: status === 0 ? undefined : status });
   }, [updateFilters]);
 
   return {

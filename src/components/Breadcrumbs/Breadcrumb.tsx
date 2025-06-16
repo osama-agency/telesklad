@@ -11,12 +11,6 @@ const Breadcrumb = ({ pageName }: BreadcrumbProps) => {
 
       <nav aria-label="breadcrumb">
         <ol className="flex items-center gap-2 font-medium">
-          <li>Панель управления</li>
-
-          <li aria-hidden role="presentation">
-            /
-          </li>
-
           <li className="text-primary">{pageName}</li>
         </ol>
       </nav>

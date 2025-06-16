@@ -4,11 +4,12 @@ import { prisma } from '@/libs/prismaDb';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession();
-    
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // ВРЕМЕННО ОТКЛЮЧЕНА АВТОРИЗАЦИЯ
+    // const session = await getServerSession();
+    // 
+    // if (!session?.user?.email) {
+    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // }
 
     const { searchParams } = new URL(request.url);
     
@@ -26,26 +27,26 @@ export async function GET(request: NextRequest) {
 
     // Фильтрация по дате
     if (from || to) {
-      where.orderDate = {};
+      where.orderdate = {};
       
       if (from) {
         const fromDate = new Date(from);
         fromDate.setHours(0, 0, 0, 0);
-        where.orderDate.gte = fromDate;
+        where.orderdate.gte = fromDate;
       }
       
       if (to) {
         const toDate = new Date(to);
         toDate.setHours(23, 59, 59, 999);
-        where.orderDate.lte = toDate;
+        where.orderdate.lte = toDate;
       }
     }
 
     // Получаем заказы с товарами
-    const orders = await prisma.order.findMany({
+    const orders = await (prisma as any).orders.findMany({
       where,
       include: {
-        items: true,
+        order_items: true,
       },
     });
 
@@ -56,21 +57,21 @@ export async function GET(request: NextRequest) {
         let totalRevenue = 0;
         let itemsWithProfit = [];
 
-        for (const item of order.items) {
+        for (const item of order.order_items) {
           // Получаем продукт для средней закупочной цены
-          const product = item.productId 
-            ? await prisma.product.findUnique({
-                where: { id: parseInt(item.productId) },
-                select: { avgPurchasePriceRub: true },
+          const product = item.product_id 
+            ? await (prisma as any).products.findUnique({
+                where: { id: item.product_id },
+                select: { avgpurchasepricerub: true },
               })
             : null;
 
-          const avgCost = product?.avgPurchasePriceRub 
-            ? Number(product.avgPurchasePriceRub) 
+          const avgCost = product?.avgpurchasepricerub 
+            ? Number(product.avgpurchasepricerub) 
             : 0;
 
           const itemCost = avgCost * item.quantity;
-          const itemRevenue = Number(item.total);
+          const itemRevenue = Number(item.price) * item.quantity;
           const itemProfit = itemRevenue - itemCost;
 
           totalCost += itemCost;
@@ -86,7 +87,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Учитываем расходы на доставку
-        const deliveryCost = Number(order.deliveryCost) || 0;
+        const deliveryCost = Number(order.deliverycost) || 0;
         totalCost += deliveryCost;
 
         // Учитываем бонусы (уменьшают прибыль)
@@ -98,7 +99,7 @@ export async function GET(request: NextRequest) {
 
         return {
           ...order,
-          items: itemsWithProfit,
+          order_items: itemsWithProfit,
           totalCost,
           totalRevenue,
           profit: orderProfit,

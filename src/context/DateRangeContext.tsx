@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useMemo } from 'react';
 
 export interface DateRange {
   from: Date | null;
@@ -101,16 +101,16 @@ export function DateRangeProvider({ children }: { children: ReactNode }) {
     return `${fromDay} ${monthNames[fromMonth]} ${fromYear} – ${toDay} ${monthNames[toMonth]} ${toYear}`;
   };
 
+  const contextValue = useMemo(() => ({
+    dateRange,
+    setDateRange,
+    resetToDefault,
+    formatDateRange,
+    formatMobileDateRange,
+  }), [dateRange]);
+
   return (
-    <DateRangeContext.Provider
-      value={{
-        dateRange,
-        setDateRange,
-        resetToDefault,
-        formatDateRange,
-        formatMobileDateRange,
-      }}
-    >
+    <DateRangeContext.Provider value={contextValue}>
       {children}
     </DateRangeContext.Provider>
   );

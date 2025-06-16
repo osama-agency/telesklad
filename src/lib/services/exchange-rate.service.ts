@@ -46,7 +46,7 @@ export class ExchangeRateService {
     today.setHours(0, 0, 0, 0);
 
     // Проверяем, есть ли уже запись на сегодня
-    const existingRate = await prisma.exchangeRate.findUnique({
+    const existingRate = await (prisma as any).exchange_rates.findUnique({
       where: {
         currency_effectiveDate: {
           currency,
@@ -63,9 +63,11 @@ export class ExchangeRateService {
     // Рассчитываем курс с буфером
     const rateWithBuffer = rate * (1 + bufferPercent / 100);
 
-    // Создаем новую запись
-    const newRate = await prisma.exchangeRate.create({
+    // Создаем новую запись с уникальным ID
+    const id = `${currency}_${today.toISOString().split('T')[0]}`;
+    const newRate = await (prisma as any).exchange_rates.create({
       data: {
+        id,
         currency,
         rate: new Decimal(rate),
         rateWithBuffer: new Decimal(rateWithBuffer),
@@ -111,7 +113,7 @@ export class ExchangeRateService {
    * Получить актуальный курс валюты с буфером
    */
   static async getLatestRate(currency: string) {
-    const rate = await prisma.exchangeRate.findFirst({
+    const rate = await (prisma as any).exchange_rates.findFirst({
       where: { currency },
       orderBy: { effectiveDate: 'desc' },
     });
@@ -130,7 +132,7 @@ export class ExchangeRateService {
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
 
-    const rate = await prisma.exchangeRate.findFirst({
+    const rate = await (prisma as any).exchange_rates.findFirst({
       where: {
         currency,
         effectiveDate: {

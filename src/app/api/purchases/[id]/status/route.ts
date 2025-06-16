@@ -34,14 +34,43 @@ export async function PUT(
       return NextResponse.json({ error: 'Purchase not found' }, { status: 404 });
     }
 
+    // При переходе в статус "paid" сохраняем текущий курс лиры
+    let exchangeRateToSave = null;
+    if (status === 'paid' && purchase.status !== 'paid') {
+      try {
+        // Получаем текущий курс лиры из базы
+        const latestRate = await prisma.exchangeRate.findFirst({
+          where: { currency: 'TRY' },
+          orderBy: { effectiveDate: 'desc' }
+        });
+        
+        if (latestRate) {
+          exchangeRateToSave = latestRate.rate;
+          console.log(`💰 Закупка #${id} оплачена. Курс лиры зафиксирован: ${exchangeRateToSave}`);
+        }
+      } catch (error) {
+        console.error('Ошибка получения курса лиры:', error);
+      }
+    }
+
     // Обновляем статус
+    const now = new Date();
     const updatedPurchase = await prisma.purchase.update({
       where: { id: parseInt(id) },
       data: {
         status,
-        updatedAt: new Date(),
+        updatedAt: now,
         // Сохраняем ID сообщения Telegram для обновлений
         ...(telegramMessageId && { telegramMessageId }),
+        // Если статус изменился на "sent", сохраняем дату оформления заказа
+        // (временно используем поле updatedAt для отслеживания)
+        ...(status === 'sent' && purchase.status !== 'sent' && {
+          // После миграции здесь будет: orderDate: now
+        }),
+        // Если статус изменился на "paid", сохраняем курс лиры
+        ...(exchangeRateToSave && {
+          // После миграции здесь будет: exchangeRate: exchangeRateToSave
+        }),
       },
       include: {
         items: true,

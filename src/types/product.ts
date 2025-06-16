@@ -6,7 +6,8 @@ export interface Product {
   description: string | null;
   price: Decimal | null;
   prime_cost: Decimal | null;
-  avgPurchasePriceRub: Decimal | null;
+  avgpurchasepricerub: Decimal | null;
+  avgpurchasepricetry: Decimal | null;
   stock_quantity: number | null;
   soldQuantity?: number; // Количество проданных штук
   revenue?: number; // Общая выручка

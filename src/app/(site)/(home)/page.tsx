@@ -1,71 +1,65 @@
-import { PaymentsOverview } from "@/components/Charts/advanced/payments-overview";
-import { WeeksProfit } from "@/components/Charts/advanced/profit";
-import { UsedDevices } from "@/components/Charts/basic/used-devices";
-import { structuredAlgoliaHtmlData } from "@/libs/crawlIndex";
-import { createTimeFrameExtractor } from "@/utils/timeframe-extractor";
-import { Suspense } from "react";
-import { ChatsCard } from "./_components/chats-card";
-import { OverviewCardsGroup } from "./_components/overview-cards";
-import { OverviewCardsSkeleton } from "./_components/overview-cards/skeleton";
-import { RegionLabels } from "./_components/region-labels";
-import { TopChannels } from "./_components/top-channels";
-import { TopChannelsSkeleton } from "./_components/top-channels/skeleton";
+"use client";
 
-type PropsType = {
-  searchParams: Promise<{
-    selected_time_frame?: string;
-  }>;
-};
+import { SmartProductsTable } from "./_components/SmartProductsTable";
+import { PurchasesTable } from "./_components/PurchasesTable";
+import { OrdersTable } from "./_components/OrdersTable";
+import { ExpensesTable } from "./_components/ExpensesTable";
+import { Tabs, TabContent, TabList, TabTrigger } from "@/components/ui-elements/tabs";
 
-export default async function Home({ searchParams }: PropsType) {
-  await structuredAlgoliaHtmlData({
-    pageUrl: process.env.SITE_URL,
-    htmlString: "",
-    title: "Панель управления Next.js E-commerce",
-    type: "page",
-    imageURL: "",
-  });
+type TabValue = "products" | "purchases" | "orders" | "expenses";
 
-  const { selected_time_frame } = await searchParams;
-  const extractTimeFrame = createTimeFrameExtractor(selected_time_frame);
-
+export default function HomePage() {
   return (
-    <>
-      <Suspense fallback={<OverviewCardsSkeleton />}>
-        <OverviewCardsGroup />
-      </Suspense>
+    <div className="w-full space-y-6 lg:space-y-8 xl:space-y-10">
+      {/* Header */}
+      <div className="flex flex-col gap-3 lg:gap-4 xl:gap-5">
+        <h1 className="text-2xl lg:text-3xl xl:text-4xl 2xl:text-5xl font-bold bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] bg-clip-text text-transparent">
+          Управление данными
+        </h1>
+        <p className="text-sm lg:text-base xl:text-lg text-[#64748B] dark:text-gray-400">
+          🚀 Умная аналитика закупок: товары, остатки, тренды и рекомендации к заказу
+        </p>
+      </div>
 
-      <div className="mt-4 grid grid-cols-12 gap-4 md:mt-6 md:gap-6 2xl:mt-9 2xl:gap-7.5">
-        <PaymentsOverview
-          className="col-span-12 xl:col-span-7"
-          key={extractTimeFrame("payments_overview")}
-          timeFrame={extractTimeFrame("payments_overview")?.split(":")[1]}
-        />
-
-        <WeeksProfit
-          key={extractTimeFrame("weeks_profit")}
-          timeFrame={extractTimeFrame("weeks_profit")?.split(":")[1]}
-          className="col-span-12 xl:col-span-5"
-        />
-
-        <UsedDevices
-          className="col-span-12 xl:col-span-5"
-          key={extractTimeFrame("used_devices")}
-          timeFrame={extractTimeFrame("used_devices")?.split(":")[1]}
-        />
-
-        <RegionLabels />
-
-        <div className="col-span-12 grid xl:col-span-8">
-          <Suspense fallback={<TopChannelsSkeleton />}>
-            <TopChannels />
-          </Suspense>
+      {/* Tabs */}
+      <Tabs defaultValue="products" variants="styleOne">
+        <div className="mb-6">
+          <TabList className="overflow-x-auto">
+            <TabTrigger value="products" className="whitespace-nowrap">
+              <span className="text-lg lg:text-xl xl:text-xl mr-2 lg:mr-3">🧠</span>
+              Умная аналитика товаров
+            </TabTrigger>
+            <TabTrigger value="purchases" className="whitespace-nowrap">
+              <span className="text-lg lg:text-xl xl:text-xl mr-2 lg:mr-3">📦</span>
+              Закупки
+            </TabTrigger>
+            <TabTrigger value="orders" className="whitespace-nowrap">
+              <span className="text-lg lg:text-xl xl:text-xl mr-2 lg:mr-3">🛒</span>
+              Заказы
+            </TabTrigger>
+            <TabTrigger value="expenses" className="whitespace-nowrap">
+              <span className="text-lg lg:text-xl xl:text-xl mr-2 lg:mr-3">💰</span>
+              Расходы
+            </TabTrigger>
+          </TabList>
         </div>
 
-        <Suspense fallback={null}>
-          <ChatsCard />
-        </Suspense>
-      </div>
-    </>
+        <TabContent value="products">
+          <SmartProductsTable />
+        </TabContent>
+
+        <TabContent value="purchases">
+          <PurchasesTable />
+        </TabContent>
+
+        <TabContent value="orders">
+          <OrdersTable />
+        </TabContent>
+
+        <TabContent value="expenses">
+          <ExpensesTable />
+        </TabContent>
+      </Tabs>
+    </div>
   );
 }

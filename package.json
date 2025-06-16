@@ -9,13 +9,17 @@
     "lint": "next lint",
     "test": "jest",
     "update-rates": "node scripts/update-exchange-rate.js",
+    "demo:delivery": "npx tsx scripts/demo-delivery-tracking.ts",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "db:migrate:dev": "npx prisma migrate dev",
     "db:seed": "npx ts-node prisma/seed.ts",
     "db:add-costs": "node scripts/add-prime-costs.js",
     "db:cleanup-categories": "node scripts/cleanup-categories.js",
-    "postinstall": "npx prisma generate"
+    "postinstall": "npx prisma generate",
+    "migrate:to-remote": "node scripts/migrate-data-to-remote.js",
+    "migrate:structure": "node scripts/safe-migrate-structure.js",
+    "db:compare": "node scripts/compare-and-sync-structure.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.705.0",

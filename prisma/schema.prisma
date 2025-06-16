@@ -8,112 +8,265 @@ datasource db {
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
+model account_tiers {
+  id               BigInt   @id @default(autoincrement())
+  title            String   @unique(map: "index_account_tiers_on_title") @db.VarChar
+  order_threshold  Int      @default(0)
+  bonus_percentage Int      @default(0)
+  order_min_amount Int      @default(0)
+  created_at       DateTime @db.Timestamp(6)
+  updated_at       DateTime @db.Timestamp(6)
+  users            users[]
 }
 
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+model active_storage_attachments {
+  id                   BigInt               @id @default(autoincrement())
+  name                 String               @db.VarChar
+  record_type          String               @db.VarChar
+  record_id            BigInt
+  blob_id              BigInt
+  created_at           DateTime             @db.Timestamp(6)
+  active_storage_blobs active_storage_blobs @relation(fields: [blob_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rails_c3b3935057")
+
+  @@unique([record_type, record_id, name, blob_id], map: "index_active_storage_attachments_uniqueness")
+  @@index([blob_id], map: "index_active_storage_attachments_on_blob_id")
 }
 
-model ApiKey {
-  id        String   @id @default(cuid())
-  key       String
-  name      String   @unique
-  userId    String
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+model active_storage_blobs {
+  id                             BigInt                           @id @default(autoincrement())
+  key                            String                           @unique(map: "index_active_storage_blobs_on_key") @db.VarChar
+  filename                       String                           @db.VarChar
+  content_type                   String?                          @db.VarChar
+  metadata                       String?
+  service_name                   String                           @db.VarChar
+  byte_size                      BigInt
+  checksum                       String?                          @db.VarChar
+  created_at                     DateTime                         @db.Timestamp(6)
+  active_storage_attachments     active_storage_attachments[]
+  active_storage_variant_records active_storage_variant_records[]
 }
 
-model User {
-  id                    String     @id @default(cuid())
-  name                  String?
-  email                 String?    @unique
-  emailVerified         DateTime?
-  image                 String?
-  coverImage            String?
-  password              String?
-  passwordResetToken    String?    @unique
-  passwordResetTokenExp DateTime?
-  role                  String?    @default("USER")
-  createdAt             DateTime   @default(now())
-  phone                 String?
-  accounts              Account[]
-  apiKeys               ApiKey[]
-  sessions              Session[]
-  expenses              Expense[]
-  purchases             Purchase[]
+model active_storage_variant_records {
+  id                   BigInt               @id @default(autoincrement())
+  blob_id              BigInt
+  variation_digest     String               @db.VarChar
+  active_storage_blobs active_storage_blobs @relation(fields: [blob_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rails_993965df05")
+
+  @@unique([blob_id, variation_digest], map: "index_active_storage_variant_records_uniqueness")
 }
 
-model Expense {
-  id          Int      @id @default(autoincrement())
-  date        String
-  category    String
-  description String
-  amount      Float
-  userId      String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+model ahoy_events {
+  id         BigInt    @id @default(autoincrement())
+  visit_id   BigInt?
+  user_id    BigInt?
+  name       String?   @db.VarChar
+  properties Json?
+  time       DateTime? @db.Timestamp(6)
 
-  @@map("expenses")
+  @@index([name, time], map: "index_ahoy_events_on_name_and_time")
+  @@index([properties(ops: JsonbPathOps)], map: "index_ahoy_events_on_properties", type: Gin)
+  @@index([user_id], map: "index_ahoy_events_on_user_id")
+  @@index([visit_id], map: "index_ahoy_events_on_visit_id")
 }
 
-model VerificationToken {
-  id         String   @id @default(cuid())
-  identifier String
-  token      String   @unique
-  expires    DateTime
+model ahoy_visits {
+  id               BigInt    @id @default(autoincrement())
+  visit_token      String?   @unique(map: "index_ahoy_visits_on_visit_token") @db.VarChar
+  visitor_token    String?   @db.VarChar
+  user_id          BigInt?
+  ip               String?   @db.VarChar
+  user_agent       String?
+  referrer         String?
+  referring_domain String?   @db.VarChar
+  landing_page     String?
+  browser          String?   @db.VarChar
+  os               String?   @db.VarChar
+  device_type      String?   @db.VarChar
+  country          String?   @db.VarChar
+  region           String?   @db.VarChar
+  city             String?   @db.VarChar
+  latitude         Float?
+  longitude        Float?
+  utm_source       String?   @db.VarChar
+  utm_medium       String?   @db.VarChar
+  utm_term         String?   @db.VarChar
+  utm_content      String?   @db.VarChar
+  utm_campaign     String?   @db.VarChar
+  app_version      String?   @db.VarChar
+  os_version       String?   @db.VarChar
+  platform         String?   @db.VarChar
+  started_at       DateTime? @db.Timestamp(6)
 
-  @@unique([identifier, token])
+  @@index([user_id], map: "index_ahoy_visits_on_user_id")
+  @@index([visitor_token, started_at], map: "index_ahoy_visits_on_visitor_token_and_started_at")
 }
 
-model Product {
-  id                  Int            @id @default(autoincrement())
-  name                String
-  description         String?
-  price               Decimal?       @db.Decimal(10, 2)
-  stock_quantity      Int?
-  created_at          DateTime       @default(now())
-  updated_at          DateTime       @updatedAt
-  deleted_at          DateTime?
-  ancestry            String?
-  weight              String?
-  dosage_form         String?
-  package_quantity    Int?
-  main_ingredient     String?
-  brand               String?
-  old_price           Decimal?       @db.Decimal(10, 2)
-  is_visible          Boolean        @default(true)
-  prime_cost          Decimal?       @db.Decimal(10, 2)
-  avgPurchasePriceRub Decimal?       @db.Decimal(10, 2)
-  items               PurchaseItem[]
+model answer_options {
+  id          BigInt    @id @default(autoincrement())
+  question_id BigInt
+  text        String?   @db.VarChar
+  created_at  DateTime  @db.Timestamp(6)
+  updated_at  DateTime  @db.Timestamp(6)
+  questions   questions @relation(fields: [question_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rails_4d660e1508")
+  answers     answers[]
 
-  @@index([name])
-  @@index([ancestry])
-  @@map("products")
+  @@index([question_id], map: "index_answer_options_on_question_id")
 }
 
-model ExchangeRate {
-  id             String   @id @default(cuid())
+model answers {
+  id               BigInt          @id @default(autoincrement())
+  user_id          BigInt
+  question_id      BigInt
+  answer_option_id BigInt?
+  answer_text      String?
+  created_at       DateTime        @db.Timestamp(6)
+  updated_at       DateTime        @db.Timestamp(6)
+  answer_options   answer_options? @relation(fields: [answer_option_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rails_08b3e6cd40")
+  questions        questions       @relation(fields: [question_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rails_3d5ed4418f")
+  users            users           @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rails_584be190c2")
+
+  @@unique([user_id, question_id], map: "index_answers_on_user_id_and_question_id")
+  @@index([answer_option_id], map: "index_answers_on_answer_option_id")
+  @@index([question_id], map: "index_answers_on_question_id")
+  @@index([user_id], map: "index_answers_on_user_id")
+}
+
+model ar_internal_metadata {
+  key        String   @id @db.VarChar
+  value      String?  @db.VarChar
+  created_at DateTime @db.Timestamp(6)
+  updated_at DateTime @db.Timestamp(6)
+}
+
+model bank_cards {
+  id         BigInt   @id @default(autoincrement())
+  fio        String?  @db.VarChar
+  number     String?  @db.VarChar
+  active     Boolean  @default(true)
+  created_at DateTime @db.Timestamp(6)
+  updated_at DateTime @db.Timestamp(6)
+  name       String   @db.VarChar
+  orders     orders[]
+}
+
+model blazer_audits {
+  id          BigInt    @id @default(autoincrement())
+  user_id     BigInt?
+  query_id    BigInt?
+  statement   String?
+  data_source String?   @db.VarChar
+  created_at  DateTime? @db.Timestamp(6)
+
+  @@index([query_id], map: "index_blazer_audits_on_query_id")
+  @@index([user_id], map: "index_blazer_audits_on_user_id")
+}
+
+model blazer_checks {
+  id             BigInt    @id @default(autoincrement())
+  creator_id     BigInt?
+  query_id       BigInt?
+  state          String?   @db.VarChar
+  schedule       String?   @db.VarChar
+  emails         String?
+  slack_channels String?
+  check_type     String?   @db.VarChar
+  message        String?
+  last_run_at    DateTime? @db.Timestamp(6)
+  created_at     DateTime  @db.Timestamp(6)
+  updated_at     DateTime  @db.Timestamp(6)
+
+  @@index([creator_id], map: "index_blazer_checks_on_creator_id")
+  @@index([query_id], map: "index_blazer_checks_on_query_id")
+}
+
+model blazer_dashboard_queries {
+  id           BigInt   @id @default(autoincrement())
+  dashboard_id BigInt?
+  query_id     BigInt?
+  position     Int?
+  created_at   DateTime @db.Timestamp(6)
+  updated_at   DateTime @db.Timestamp(6)
+
+  @@index([dashboard_id], map: "index_blazer_dashboard_queries_on_dashboard_id")
+  @@index([query_id], map: "index_blazer_dashboard_queries_on_query_id")
+}
+
+model blazer_dashboards {
+  id         BigInt   @id @default(autoincrement())
+  creator_id BigInt?
+  name       String?  @db.VarChar
+  created_at DateTime @db.Timestamp(6)
+  updated_at DateTime @db.Timestamp(6)
+
+  @@index([creator_id], map: "index_blazer_dashboards_on_creator_id")
+}
+
+model blazer_queries {
+  id          BigInt   @id @default(autoincrement())
+  creator_id  BigInt?
+  name        String?  @db.VarChar
+  description String?
+  statement   String?
+  data_source String?  @db.VarChar
+  status      String?  @db.VarChar
+  created_at  DateTime @db.Timestamp(6)
+  updated_at  DateTime @db.Timestamp(6)
+
+  @@index([creator_id], map: "index_blazer_queries_on_creator_id")
+}
+
+model bonus_logs {
+  id           BigInt   @id @default(autoincrement())
+  user_id      BigInt
+  bonus_amount Int?
+  reason       String?  @db.VarChar
+  created_at   DateTime @db.Timestamp(6)
+  updated_at   DateTime @db.Timestamp(6)
+  source_type  String?  @db.VarChar
+  source_id    BigInt?
+  users        users    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rails_eb5f71fb81")
+
+  @@index([source_type, source_id], map: "index_bonus_logs_on_source")
+  @@index([user_id], map: "index_bonus_logs_on_user_id")
+}
+
+model cart_items {
+  id         BigInt   @id @default(autoincrement())
+  cart_id    BigInt
+  product_id BigInt
+  quantity   Int      @default(1)
+  created_at DateTime @db.Timestamp(6)
+  updated_at DateTime @db.Timestamp(6)
+  products   products @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rails_681a180e84")
+  carts      carts    @relation(fields: [cart_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rails_6cdb1f0139")
+
+  @@unique([cart_id, product_id], map: "index_cart_items_on_cart_id_and_product_id")
+  @@index([cart_id], map: "index_cart_items_on_cart_id")
+  @@index([product_id], map: "index_cart_items_on_product_id")
+}
+
+model carts {
+  id         BigInt       @id @default(autoincrement())
+  user_id    BigInt
+  status     String?      @db.VarChar
+  created_at DateTime     @db.Timestamp(6)
+  updated_at DateTime     @db.Timestamp(6)
+  cart_items cart_items[]
+  users      users        @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rails_ea59a35211")
+
+  @@index([user_id], map: "index_carts_on_user_id")
+}
+
+model exception_tracks {
+  id         BigInt   @id @default(autoincrement())
+  title      String?  @db.VarChar
+  body       String?
+  created_at DateTime @db.Timestamp(6)
+  updated_at DateTime @db.Timestamp(6)
+}
+
+model exchange_rates {
+  id             String   @id
   currency       String
   rate           Decimal  @db.Decimal(10, 4)
   rateWithBuffer Decimal  @db.Decimal(10, 4)
@@ -125,81 +278,387 @@ model ExchangeRate {
   @@unique([currency, effectiveDate])
   @@index([currency])
   @@index([effectiveDate])
-  @@map("exchange_rates")
 }
 
-model Order {
-  id              String      @id @default(cuid())
-  externalId      String      @unique
-  customerName    String?
-  customerEmail   String?
-  customerPhone   String?
-  status          String
-  total           Decimal     @db.Decimal(10, 2)
-  currency        String      @default("RUB")
-  orderDate       DateTime
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  bankCard        String?
-  bonus           Decimal     @default(0) @db.Decimal(10, 2)
-  customerCity    String?
-  deliveryCost    Decimal     @default(0) @db.Decimal(10, 2)
-  paidAt          DateTime?
-  shippedAt       DateTime?
-  customerAddress String?
-  items           OrderItem[]
-
-  @@index([externalId])
-  @@index([status])
-  @@index([orderDate])
-  @@map("orders")
-}
-
-model OrderItem {
-  id        String   @id @default(cuid())
-  orderId   String
-  productId String?
-  name      String
-  quantity  Int
-  price     Decimal  @db.Decimal(10, 2)
-  total     Decimal  @db.Decimal(10, 2)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
-  @@index([orderId])
-  @@index([productId])
-  @@map("order_items")
-}
-
-model Purchase {
-  id                Int            @id @default(autoincrement())
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  totalAmount       Float
-  status            String         @default("draft")
-  isUrgent          Boolean        @default(false)
-  expenses          Float?
-  userId            String
-  telegramMessageId Int?
-  items             PurchaseItem[]
-  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("purchases")
-}
-
-model PurchaseItem {
+model expenses {
   id          Int      @id @default(autoincrement())
-  quantity    Int
-  costPrice   Float
-  total       Float
-  purchaseId  Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  productName String
-  productId   Int
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  purchase    Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  date        String   @db.VarChar
+  category    String   @db.VarChar
+  description String   @db.VarChar
+  amount      Float
+  userid      BigInt
+  createdat   DateTime @default(now()) @db.Timestamp(6)
+  updatedat   DateTime @default(now()) @db.Timestamp(6)
+  users       users    @relation(fields: [userid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_expenses_user")
 
-  @@map("purchase_items")
+  @@index([date], map: "idx_expenses_date")
+  @@index([userid], map: "idx_expenses_userid")
+}
+
+model favorites {
+  id         BigInt   @id @default(autoincrement())
+  user_id    BigInt
+  product_id BigInt
+  created_at DateTime @db.Timestamp(6)
+  updated_at DateTime @db.Timestamp(6)
+  products   products @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rails_54567c0f67")
+  users      users    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rails_d15744e438")
+
+  @@unique([user_id, product_id], map: "index_favorites_on_user_id_and_product_id")
+  @@index([product_id], map: "index_favorites_on_product_id")
+  @@index([user_id], map: "index_favorites_on_user_id")
+}
+
+model mailings {
+  id         BigInt   @id @default(autoincrement())
+  user_id    BigInt
+  target     Int      @default(0)
+  send_at    DateTime @db.Timestamp(6)
+  completed  Boolean? @default(false)
+  message    String?
+  created_at DateTime @db.Timestamp(6)
+  updated_at DateTime @db.Timestamp(6)
+  data       Json?
+  users      users    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rails_0f20949501")
+
+  @@index([user_id], map: "index_mailings_on_user_id")
+}
+
+model messages {
+  id          BigInt   @id @default(autoincrement())
+  text        String?
+  tg_id       BigInt?
+  created_at  DateTime @db.Timestamp(6)
+  updated_at  DateTime @db.Timestamp(6)
+  is_incoming Boolean  @default(true)
+  tg_msg_id   BigInt?
+  data        Json?
+}
+
+model order_items {
+  id         BigInt    @id @default(autoincrement())
+  order_id   BigInt
+  product_id BigInt
+  quantity   Int       @default(1)
+  price      Decimal?  @db.Decimal
+  created_at DateTime  @db.Timestamp(6)
+  updated_at DateTime  @db.Timestamp(6)
+  productid  String?
+  createdat  DateTime  @default(now()) @db.Timestamp(6)
+  orderid    BigInt?
+  name       String?   @db.VarChar
+  total      Decimal?  @db.Decimal(10, 2)
+  updatedat  DateTime? @default(now()) @db.Timestamp(6)
+  orders     orders    @relation(fields: [order_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rails_e3cb28f071")
+  products   products  @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rails_f1a29ddd47")
+
+  @@unique([order_id, product_id], map: "index_order_items_on_order_id_and_product_id")
+  @@index([order_id], map: "index_order_items_on_order_id")
+  @@index([product_id], map: "index_order_items_on_product_id")
+}
+
+model orders {
+  id              BigInt        @id @default(autoincrement())
+  user_id         BigInt
+  total_amount    Decimal       @default(0.0) @db.Decimal
+  status          Int           @default(0)
+  created_at      DateTime      @db.Timestamp(6)
+  updated_at      DateTime      @db.Timestamp(6)
+  msg_id          Int?
+  tracking_number String?       @db.VarChar
+  paid_at         DateTime?     @db.Timestamp(6)
+  shipped_at      DateTime?     @db.Timestamp(6)
+  has_delivery    Boolean       @default(false)
+  bank_card_id    BigInt?
+  bonus           Int           @default(0)
+  externalid      String?       @unique(map: "orders_externalid_unique") @db.VarChar
+  customername    String?       @db.VarChar
+  customeremail   String?       @db.VarChar
+  customerphone   String?       @db.VarChar
+  currency        String?       @default("RUB") @db.VarChar
+  orderdate       DateTime?     @db.Timestamp(6)
+  bankcard        String?       @db.VarChar
+  customercity    String?       @db.VarChar
+  deliverycost    Decimal?      @default(0) @db.Decimal(10, 2)
+  customeraddress String?       @db.VarChar
+  createdat       DateTime      @default(now()) @db.Timestamp(6)
+  paidat          DateTime?     @db.Timestamp(6)
+  shippedat       DateTime?     @db.Timestamp(6)
+  total           Decimal?      @db.Decimal(10, 2)
+  updatedat       DateTime?     @default(now()) @db.Timestamp(6)
+  order_items     order_items[]
+  bank_cards      bank_cards?   @relation(fields: [bank_card_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rails_d3724f948a")
+  users           users         @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rails_f868b47f6a")
+
+  @@index([bank_card_id], map: "index_orders_on_bank_card_id")
+  @@index([user_id], map: "index_orders_on_user_id")
+}
+
+model product_subscriptions {
+  id         BigInt   @id @default(autoincrement())
+  user_id    BigInt
+  product_id BigInt
+  created_at DateTime @db.Timestamp(6)
+  updated_at DateTime @db.Timestamp(6)
+  users      users    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rails_9ed0ef2866")
+  products   products @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rails_e9046ab5da")
+
+  @@unique([user_id, product_id], map: "index_product_subscriptions_on_user_id_and_product_id")
+  @@index([product_id], map: "index_product_subscriptions_on_product_id")
+  @@index([user_id], map: "index_product_subscriptions_on_user_id")
+}
+
+model products {
+  id                    BigInt                  @id @default(autoincrement())
+  name                  String?                 @db.VarChar
+  description           String?
+  price                 Decimal?                @db.Decimal
+  stock_quantity        Int                     @default(0)
+  created_at            DateTime                @db.Timestamp(6)
+  updated_at            DateTime                @db.Timestamp(6)
+  deleted_at            DateTime?               @db.Timestamp(6)
+  ancestry              String?                 @db.VarChar
+  weight                String?                 @db.VarChar
+  dosage_form           String?                 @db.VarChar
+  package_quantity      Int?
+  main_ingredient       String?                 @db.VarChar
+  brand                 String?                 @db.VarChar
+  old_price             Decimal?                @db.Decimal(10, 2)
+  is_visible            Boolean?                @default(true)
+  prime_cost            Decimal?                @db.Decimal(10, 2)
+  avgpurchasepricerub   Decimal?                @db.Decimal(10, 2)
+  avgpurchasepricetry   Decimal?                @db.Decimal(10, 2)
+  cart_items            cart_items[]
+  favorites             favorites[]
+  order_items           order_items[]
+  product_subscriptions product_subscriptions[]
+  purchase_items        purchase_items[]
+  reviews               reviews[]
+
+  @@index([ancestry], map: "index_products_on_ancestry")
+  @@index([deleted_at], map: "index_products_on_deleted_at")
+}
+
+model purchase_items {
+  id           Int       @id @default(autoincrement())
+  quantity     Int
+  costprice    Float?
+  total        Float?
+  purchaseid   Int
+  createdat    DateTime  @default(now()) @db.Timestamp(6)
+  updatedat    DateTime  @default(now()) @db.Timestamp(6)
+  productname  String    @db.VarChar
+  productid    BigInt
+  totalcostrub Decimal?  @db.Decimal(10, 2)
+  totalcosttry Decimal?  @db.Decimal(10, 2)
+  unitcostrub  Decimal?  @db.Decimal(10, 2)
+  unitcosttry  Decimal?  @db.Decimal(10, 2)
+  products     products  @relation(fields: [productid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_purchase_items_product")
+  purchases    purchases @relation(fields: [purchaseid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_purchase_items_purchase")
+
+  @@index([productid], map: "idx_purchase_items_productid")
+  @@index([purchaseid], map: "idx_purchase_items_purchaseid")
+}
+
+model purchases {
+  id                     Int              @id @default(autoincrement())
+  createdat              DateTime         @default(now()) @db.Timestamp(6)
+  updatedat              DateTime         @default(now()) @db.Timestamp(6)
+  totalamount            Float?
+  status                 String?          @default("draft") @db.VarChar
+  isurgent               Boolean?         @default(false)
+  expenses               Float?
+  userid                 BigInt
+  telegrammessageid      Int?
+  telegramchatid         String?          @db.VarChar
+  suppliername           String?          @db.VarChar
+  supplierphone          String?          @db.VarChar
+  supplieraddress        String?          @db.VarChar
+  notes                  String?
+  deliverydate           DateTime?        @db.Timestamp(6)
+  deliverytrackingnumber String?          @db.VarChar
+  deliverystatus         String?          @db.VarChar
+  deliverycarrier        String?          @db.VarChar
+  deliverynotes          String?
+  purchase_items         purchase_items[]
+  users                  users            @relation(fields: [userid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_purchases_user")
+
+  @@index([status], map: "idx_purchases_status")
+  @@index([userid], map: "idx_purchases_userid")
+}
+
+model questions {
+  id             BigInt           @id @default(autoincrement())
+  text           String?          @db.VarChar
+  created_at     DateTime         @db.Timestamp(6)
+  updated_at     DateTime         @db.Timestamp(6)
+  answer_options answer_options[]
+  answers        answers[]
+}
+
+model reviews {
+  id         BigInt   @id @default(autoincrement())
+  user_id    BigInt
+  product_id BigInt
+  content    String?
+  rating     Int      @default(0)
+  created_at DateTime @db.Timestamp(6)
+  updated_at DateTime @db.Timestamp(6)
+  approved   Boolean  @default(false)
+  users      users    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rails_74a66bd6c5")
+  products   products @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rails_bedd9094d4")
+
+  @@unique([user_id, product_id], map: "index_reviews_on_user_id_and_product_id")
+  @@index([product_id], map: "index_reviews_on_product_id")
+  @@index([user_id], map: "index_reviews_on_user_id")
+}
+
+model schema_migrations {
+  version String @id @db.VarChar
+}
+
+model settings {
+  id          BigInt   @id @default(autoincrement())
+  variable    String?  @unique(map: "index_settings_on_variable") @db.VarChar
+  value       String?  @db.VarChar
+  description String?  @db.VarChar
+  created_at  DateTime @db.Timestamp(6)
+  updated_at  DateTime @db.Timestamp(6)
+}
+
+model supplier_stats {
+  id                 Int       @id
+  supplier           String    @unique
+  totalPurchases     Int       @default(0)
+  completedPurchases Int       @default(0)
+  avgDeliveryDays    Float     @default(20.0)
+  totalDeliveryDays  Int       @default(0)
+  minDeliveryDays    Int?
+  maxDeliveryDays    Int?
+  lastDeliveryDate   DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime
+}
+
+model support_entries {
+  id         BigInt   @id @default(autoincrement())
+  question   String?  @db.VarChar
+  answer     String?
+  created_at DateTime @db.Timestamp(6)
+  updated_at DateTime @db.Timestamp(6)
+}
+
+model tg_media_files {
+  id                BigInt   @id @default(autoincrement())
+  file_id           String?  @db.VarChar
+  file_hash         String   @unique(map: "index_tg_media_files_on_file_hash") @db.VarChar
+  file_type         String?  @db.VarChar
+  original_filename String?  @db.VarChar
+  created_at        DateTime @db.Timestamp(6)
+  updated_at        DateTime @db.Timestamp(6)
+}
+
+model users {
+  id                     BigInt                  @id @default(autoincrement())
+  email                  String                  @unique(map: "index_users_on_email") @default("") @db.VarChar
+  encrypted_password     String                  @default("") @db.VarChar
+  reset_password_token   String?                 @unique(map: "index_users_on_reset_password_token") @db.VarChar
+  reset_password_sent_at DateTime?               @db.Timestamp(6)
+  remember_created_at    DateTime?               @db.Timestamp(6)
+  created_at             DateTime                @db.Timestamp(6)
+  updated_at             DateTime                @db.Timestamp(6)
+  tg_id                  BigInt                  @unique(map: "index_users_on_tg_id")
+  username               String?                 @db.VarChar
+  first_name             String?                 @db.VarChar
+  last_name              String?                 @db.VarChar
+  photo_url              String?                 @db.VarChar
+  address                String?                 @db.VarChar
+  postal_code            Int?
+  phone_number           String?                 @db.VarChar
+  middle_name            String?                 @db.VarChar
+  street                 String?                 @db.VarChar
+  home                   String?                 @db.VarChar
+  apartment              String?                 @db.VarChar
+  build                  String?                 @db.VarChar
+  role                   Int                     @default(0)
+  is_blocked             Boolean                 @default(false)
+  started                Boolean                 @default(false)
+  confirmation_token     String?                 @unique(map: "index_users_on_confirmation_token") @db.VarChar
+  confirmed_at           DateTime?               @db.Timestamp(6)
+  confirmation_sent_at   DateTime?               @db.Timestamp(6)
+  bonus_balance          Int                     @default(0)
+  account_tier_id        BigInt?
+  order_count            Int                     @default(0)
+  first_name_raw         String?                 @db.VarChar
+  last_name_raw          String?                 @db.VarChar
+  answers                answers[]
+  bonus_logs             bonus_logs[]
+  carts                  carts[]
+  expenses               expenses[]
+  favorites              favorites[]
+  mailings               mailings[]
+  orders                 orders[]
+  product_subscriptions  product_subscriptions[]
+  purchases              purchases[]
+  reviews                reviews[]
+  account_tiers          account_tiers?          @relation(fields: [account_tier_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rails_f4512aba16")
+
+  @@index([account_tier_id], map: "index_users_on_account_tier_id")
+}
+
+model telesklad_user {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          String    @default("USER")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+
+  @@map("telesklad_users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user telesklad_user @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user telesklad_user @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verificationtokens")
 }

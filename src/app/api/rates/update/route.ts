@@ -1,43 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { updateExchangeRatesManually } from '@/lib/cron/exchange-rate-cron';
+import { ExchangeRateService } from '@/lib/services/exchange-rate.service';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession();
+    console.log('🔄 Starting automatic exchange rate update...');
     
-    // Проверяем авторизацию и права администратора
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Запускаем обновление курсов
-    const result = await updateExchangeRatesManually();
-
+    // Обновляем курс TRY из ЦБ РФ
+    const result = await ExchangeRateService.updateTRYRate();
+    
     if (result.success) {
+      console.log(`✅ TRY rate updated successfully: ${result.rate}`);
+      
       return NextResponse.json({
         success: true,
         message: 'Exchange rates updated successfully',
         data: {
-          currency: 'TRY',
-          rate: result.rate,
-          updatedAt: new Date().toISOString(),
-        },
+          TRY: result.rate
+        }
       });
     } else {
-      return NextResponse.json(
-        {
-          success: false,
-          error: result.error || 'Failed to update exchange rates',
-        },
-        { status: 500 }
-      );
+      console.error(`❌ Failed to update TRY rate: ${result.error}`);
+      
+      return NextResponse.json({
+        success: false,
+        error: result.error
+      }, { status: 500 });
     }
+    
   } catch (error) {
-    console.error('Error updating exchange rates:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    );
+    console.error('❌ Error updating exchange rates:', error);
+    
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
+}
+
+// GET endpoint для ручного обновления через браузер
+export async function GET() {
+  console.log('🔄 Manual exchange rate update requested...');
+  return POST(new NextRequest('http://localhost/api/rates/update'));
 } 

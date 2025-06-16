@@ -1,29 +1,14 @@
 "use client";
 
 import { Header } from "@/components/Layouts/header";
-import { Sidebar } from "@/components/Layouts/sidebar";
-import { SidebarProvider, useSidebarContext } from "@/components/Layouts/sidebar/sidebar-context";
 import { usePathname } from "next/navigation";
 import { type PropsWithChildren } from "react";
 import ToastContext from "../context/ToastContext";
 
-function MainContent({ children }: PropsWithChildren) {
-  const { isOpen, isMobile } = useSidebarContext();
-  
-  return (
-    <div className="w-full bg-gray-2 dark:bg-[#0B1120] main-content-responsive">
-      <Header />
-      <main className="mx-auto w-full max-w-screen-2xl overflow-hidden p-4 md:p-6 2xl:p-10">
-        {children}
-      </main>
-    </div>
-  );
-}
-
 export default function Layout({ children }: PropsWithChildren) {
   const pathname = usePathname();
 
-  // Do not render sidebar and header on these pages
+  // Do not render header on these pages
   if (
     ["/coming-soon", "/two-step-verification", "/under-maintenance"].some(
       (value) => pathname.endsWith(value),
@@ -39,12 +24,15 @@ export default function Layout({ children }: PropsWithChildren) {
 
   return (
     <>
-      <SidebarProvider>
-        <div className="flex min-h-screen relative overflow-hidden">
-          <Sidebar />
-          <MainContent>{children}</MainContent>
-        </div>
-      </SidebarProvider>
+      <div className="min-h-screen bg-gray-2 dark:bg-[#020d1a]">
+        <Header />
+
+        <main className="w-full px-4 md:px-6 lg:px-8 xl:px-12 2xl:px-16">
+          <div className="mx-auto max-w-screen-2xl py-6 md:py-8 lg:py-10 xl:py-12">
+            {children}
+          </div>
+        </main>
+      </div>
 
       <ToastContext />
     </>

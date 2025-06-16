@@ -32,13 +32,7 @@ export function SidebarProvider({
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    // На мобильных устройствах сайдбар по умолчанию закрыт
-    // На десктопе - открыт
-    if (isMobile) {
-      setIsOpen(false);
-    } else {
-      setIsOpen(true);
-    }
+    setIsOpen(isMobile ? false : true);
   }, [isMobile]);
 
   function toggleSidebar() {

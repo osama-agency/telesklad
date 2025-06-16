@@ -23,9 +23,22 @@ export function Sidebar() {
     // );
   };
 
-  // Simplified useEffect since we don't have submenus anymore
   useEffect(() => {
-    // No submenu logic needed for current simple structure
+    // Keep collapsible open, when it's subpage is active
+    NAV_DATA.some((section: any) => {
+      return section.items.some((item: any) => {
+        return item.items.some((subItem: any) => {
+          if (subItem.url === pathname) {
+            if (!expandedItems.includes(item.title)) {
+              toggleExpanded(item.title);
+            }
+
+            // Break the loop
+            return true;
+          }
+        });
+      });
+    });
   }, [pathname]);
 
   return (
@@ -33,7 +46,7 @@ export function Sidebar() {
       {/* Mobile Overlay */}
       {isMobile && isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 sidebar-mobile-overlay transition-opacity duration-300"
+          className="fixed inset-0 z-40 bg-black/50 transition-opacity duration-300"
           onClick={() => setIsOpen(false)}
           aria-hidden="true"
         />
@@ -41,33 +54,20 @@ export function Sidebar() {
 
       <aside
         className={cn(
-          "border-r border-gray-200 bg-white dark:border-[#334155] dark:bg-[#111827] sidebar-responsive",
-          // Mobile styles
-          isMobile 
-            ? cn(
-                "fixed bottom-0 top-0 z-50 max-w-[290px] sidebar-mobile",
-                isOpen 
-                  ? "left-0 w-[290px] sidebar-slide-in" 
-                  : "-left-[290px] w-0 sidebar-slide-out"
-              )
-            // Desktop styles  
-            : cn(
-                "sticky top-0 h-screen sidebar-desktop",
-                isOpen ? "w-[290px] max-w-[290px]" : "w-0 max-w-0"
-              )
+          "max-w-[290px] overflow-hidden border-r border-gray-200 bg-white transition-[width] duration-200 ease-linear dark:border-gray-800 dark:bg-gray-dark",
+          isMobile ? "fixed bottom-0 top-0 z-50" : "sticky top-0 h-screen",
+          isOpen ? "w-full" : "w-0",
         )}
         aria-label="Main navigation"
         aria-hidden={!isOpen}
+        inert={!isOpen}
       >
-        <div className={cn(
-          "flex h-full flex-col py-10 pl-[25px] pr-[7px] overflow-hidden transition-opacity duration-300",
-          isOpen ? "opacity-100" : "opacity-0"
-        )}>
+        <div className="flex h-full flex-col py-10 pl-[25px] pr-[7px]">
           <div className="relative pr-4.5">
             <Link
               href={"/"}
               onClick={() => isMobile && toggleSidebar()}
-              className="px-0 py-2.5 min-[850px]:py-0 block"
+              className="px-0 py-2.5 min-[850px]:py-0"
             >
               <Logo />
             </Link>
@@ -75,11 +75,11 @@ export function Sidebar() {
             {isMobile && (
               <button
                 onClick={toggleSidebar}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors duration-200 p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
-                aria-label="Закрыть меню"
+                className="absolute left-3/4 right-4.5 top-1/2 -translate-y-1/2 text-right"
               >
                 <span className="sr-only">Close Menu</span>
-                <ArrowLeftIcon className="size-6" />
+
+                <ArrowLeftIcon className="ml-auto size-7" />
               </button>
             )}
           </div>
@@ -88,7 +88,7 @@ export function Sidebar() {
           <div className="custom-scrollbar mt-6 flex-1 overflow-y-auto pr-3 min-[850px]:mt-10">
             {NAV_DATA.map((section) => (
               <div key={section.label} className="mb-6">
-                <h2 className="mb-5 text-sm font-medium text-dark-4 dark:text-[#94A3B8]">
+                <h2 className="mb-5 text-sm font-medium text-dark-4 dark:text-dark-6">
                   {section.label}
                 </h2>
 
@@ -96,11 +96,11 @@ export function Sidebar() {
                   <ul className="space-y-2">
                     {section.items.map((item: any) => (
                       <li key={item.title}>
-                        {item.items && item.items.length ? (
+                        {item.items.length ? (
                           <div>
                             <MenuItem
                               isActive={item.items.some(
-                                (subItem: any) => subItem.url === pathname,
+                                ({ url }: any) => url === pathname,
                               )}
                               onClick={() => toggleExpanded(item.title)}
                             >
@@ -123,7 +123,7 @@ export function Sidebar() {
 
                             {expandedItems.includes(item.title) && (
                               <ul
-                                className="ml-9 mr-0 space-y-1.5 pb-[15px] pr-0 pt-2 animate-fade-in"
+                                className="ml-9 mr-0 space-y-1.5 pb-[15px] pr-0 pt-2"
                                 role="menu"
                               >
                                 {item.items.map((subItem: any) => (

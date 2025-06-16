@@ -112,68 +112,6 @@
     @apply relative flex-1 rounded-full bg-neutral-200/40 dark:bg-stroke-dark;
   }
 
-  /* Адаптивные стили для сайдбара */
-  .sidebar-responsive {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .sidebar-mobile-overlay {
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-  }
-
-  /* Улучшенные анимации для сайдбара */
-  .sidebar-slide-in {
-    animation: slideInFromLeft 0.3s ease-out;
-  }
-
-  .sidebar-slide-out {
-    animation: slideOutToLeft 0.3s ease-in;
-  }
-
-  @keyframes slideInFromLeft {
-    from {
-      transform: translateX(-100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
-  }
-
-  @keyframes slideOutToLeft {
-    from {
-      transform: translateX(0);
-      opacity: 1;
-    }
-    to {
-      transform: translateX(-100%);
-      opacity: 0;
-    }
-  }
-
-  /* Стили для адаптивного контента */
-  .main-content-responsive {
-    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  /* Медиа-запросы для улучшенной адаптивности */
-  @media (max-width: 849px) {
-    .sidebar-mobile {
-      position: fixed !important;
-      z-index: 50 !important;
-    }
-  }
-
-  @media (min-width: 850px) {
-    .sidebar-desktop {
-      position: sticky !important;
-      top: 0 !important;
-      height: 100vh !important;
-    }
-  }
-
   .chat-height {
     @apply h-[calc(100vh_-_8.125rem)] lg:h-[calc(100vh_-_5.625rem)];
   }
@@ -690,4 +628,44 @@ input[type="search"]::-webkit-search-cancel-button {
   box-shadow: 0 0 0 2px rgba(27, 110, 243, 0.1), 
               0 0 0 3px #1B6EF3, 
               0 0 12px rgba(27, 110, 243, 0.3);
+}
+
+/* ===== FIXED SIDEBAR SUPPORT ===== */
+/* Desktop sidebar with fixed positioning */
+@media (min-width: 850px) {
+  .sidebar-desktop {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 30;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Main content adjustment when sidebar is visible */
+  .main-content-responsive {
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .main-content-responsive.sidebar-open {
+    margin-left: 290px;
+  }
+  
+  .main-content-responsive.sidebar-closed {
+    margin-left: 0;
+  }
+}
+
+/* Enhanced header positioning when sidebar is fixed */
+.header-responsive {
+  position: sticky;
+  top: 0;
+  z-index: 25;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Prevent layout shift on sidebar toggle */
+.layout-container {
+  position: relative;
+  min-height: 100vh;
 }

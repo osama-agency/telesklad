@@ -3,36 +3,34 @@ import { Decimal } from '@prisma/client/runtime/library';
 // Основные типы для Order и OrderItem
 export interface Order {
   id: string;
-  externalId: string;
-  customerName: string | null;
-  customerEmail: string | null;
-  customerPhone: string | null;
-  status: string;
-  total: Decimal;
+  externalid: string | null;
+  customername: string | null;
+  customeremail: string | null;
+  customerphone: string | null;
+  status: number;
+  total_amount: Decimal;
   currency: string;
-  orderDate: Date;
-  createdAt: Date;
-  updatedAt: Date;
-  bankCard: string | null;
-  bonus: Decimal;
-  customerCity: string | null;
-  deliveryCost: Decimal;
-  paidAt: Date | null;
-  shippedAt: Date | null;
-  customerAddress: string | null;
+  orderdate: Date | null;
+  created_at: Date;
+  updated_at: Date;
+  bankcard: string | null;
+  bonus: number;
+  customercity: string | null;
+  deliverycost: Decimal | null;
+  paid_at: Date | null;
+  shipped_at: Date | null;
+  customeraddress: string | null;
   items?: OrderItem[];
 }
 
 export interface OrderItem {
   id: string;
-  orderId: string;
-  productId: string | null;
-  name: string;
+  order_id: string;
+  product_id: string;
   quantity: number;
-  price: Decimal;
-  total: Decimal;
-  createdAt: Date;
-  updatedAt: Date;
+  price: Decimal | null;
+  created_at: Date;
+  updated_at: Date;
 }
 
 // Типы для внешнего API (обновлено под реальную структуру)
@@ -87,10 +85,10 @@ export interface OrderStats {
 // Фильтры для заказов
 export interface OrderFilters {
   search?: string;
-  status?: string;
+  status?: number;
   dateFrom?: Date;
   dateTo?: Date;
-  customerCity?: string;
+  customercity?: string;
   minTotal?: number;
   maxTotal?: number;
   currency?: string;
@@ -100,27 +98,25 @@ export interface OrderFilters {
 
 // Формат для создания/обновления заказа
 export interface OrderFormData {
-  customerName?: string;
-  customerEmail?: string;
-  customerPhone?: string;
-  status: string;
-  total: number;
+  customername?: string;
+  customeremail?: string;
+  customerphone?: string;
+  status: number;
+  total_amount: number;
   currency?: string;
-  orderDate: Date;
-  bankCard?: string;
+  orderdate: Date;
+  bankcard?: string;
   bonus?: number;
-  customerCity?: string;
-  deliveryCost?: number;
-  customerAddress?: string;
+  customercity?: string;
+  deliverycost?: number;
+  customeraddress?: string;
   items: OrderItemFormData[];
 }
 
 export interface OrderItemFormData {
-  productId?: string;
-  name: string;
+  product_id: string;
   quantity: number;
   price: number;
-  total: number;
 }
 
 // Константы статусов заказов

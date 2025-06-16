@@ -8,6 +8,8 @@ export interface Product {
   price: number;
   prime_cost: number;
   avgPurchasePriceRub?: number; // Средняя закупочная цена в рублях
+  avgPurchasePriceTry?: number; // Средняя закупочная цена в лирах
+  inTransitQuantity?: number; // Количество товаров в пути (в закупках со статусом in_transit)
   stock_quantity: number;
   soldQuantity?: number; // Количество проданных штук
   revenue?: number; // Общая выручка
@@ -21,6 +23,7 @@ export interface Product {
   recommendedOrderQuantity?: number; // Рекомендованное количество для заказа
   daysUntilZero?: number; // Дней до нуля остатков
   brand?: string;
+  supplier_name?: string;
   is_visible: boolean;
   created_at: string;
   updated_at: string;
