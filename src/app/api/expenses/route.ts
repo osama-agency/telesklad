@@ -23,35 +23,37 @@ export async function GET(request: NextRequest) {
       // Сначала пробуем expenses
       const whereConditions: any = {};
       
+      // Поскольку поле date имеет тип String, фильтруем по строковому представлению
       if (from || to) {
         whereConditions.date = {};
         if (from) {
-          const fromDateStr = new Date(from).toISOString().split('T')[0];
+          const fromDateStr = new Date(from).toISOString().split('T')[0]; // YYYY-MM-DD
           whereConditions.date.gte = fromDateStr;
         }
         if (to) {
-          const toDateStr = new Date(to).toISOString().split('T')[0];
+          const toDateStr = new Date(to).toISOString().split('T')[0]; // YYYY-MM-DD
           whereConditions.date.lte = toDateStr;
         }
+        console.log('📅 Date filter conditions:', whereConditions);
       }
 
       expenses = await (prisma as any).expenses.findMany({
         where: whereConditions,
         orderBy: [
           { date: 'desc' },
-          { created_at: 'desc' }
+          { createdat: 'desc' }
         ],
         take: 100 // Ограничиваем количество для безопасности
       });
-      console.log('✅ Found expenses table');
+      console.log(`✅ Found expenses table with ${expenses.length} records`);
     } catch (expensesError) {
-      console.log('❌ expenses table not found:', expensesError);
+      console.log('❌ expenses table error:', expensesError);
       
       try {
         // Пробуем expense (единственное число)
         expenses = await (prisma as any).expense.findMany({
           orderBy: {
-            created_at: 'desc'
+            createdat: 'desc'
           },
           take: 100
         });
@@ -79,6 +81,7 @@ export async function GET(request: NextRequest) {
     }));
 
     console.log(`✅ Expenses API: Found ${serializedExpenses.length} expenses`);
+    console.log('📋 Sample expense:', serializedExpenses[0]);
     return NextResponse.json(serializedExpenses);
   } catch (error) {
     console.error('❌ Error fetching expenses:', error);

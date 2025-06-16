@@ -1,0 +1,9 @@
+# Добавьте эти строки в ваш .env файл:
+
+# Telegram участники системы закупок
+TELEGRAM_GROUP_CHAT_ID="-4729817036"
+TELEGRAM_SUPPLIER_ID="7828956680"
+TELEGRAM_ADMIN_ID="125861752"
+
+# Webhook URL (для продакшена, для локалки не нужен)
+# TELEGRAM_WEBHOOK_URL="https://your-domain.com/api/telegram/webhook" 

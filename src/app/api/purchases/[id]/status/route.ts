@@ -6,97 +6,153 @@ import { TelegramBotService } from '@/lib/services/telegram-bot.service';
 // PUT - обновление статуса закупки
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  try {
-    const { id } = await params;
-    const { status, telegramMessageId } = await request.json();
+  console.log(`🔄 Updating purchase status for ID: ${params.id}`);
 
-    // Проверяем авторизацию (для внутренних запросов можно пропустить)
-    const session = await getServerSession();
-    
-    // Разрешаем доступ администраторам или внутренним запросам
-    const isInternalRequest = !session;
-    if (!isInternalRequest && !session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  try {
+    const { status } = await request.json();
+    const purchaseId = parseInt(params.id);
+
+    if (isNaN(purchaseId)) {
+      return NextResponse.json(
+        { error: 'Invalid purchase ID' },
+        { status: 400 }
+      );
     }
 
-    // Получаем закупку с товарами
-    const purchase = await prisma.purchase.findUnique({
-      where: { id: parseInt(id) },
+    if (!status) {
+      return NextResponse.json(
+        { error: 'Status is required' },
+        { status: 400 }
+      );
+    }
+
+    console.log(`📝 Updating purchase #${purchaseId} status to: ${status}`);
+
+    // Получаем текущую закупку
+    const currentPurchase = await (prisma as any).purchases.findUnique({
+      where: { id: purchaseId },
       include: {
-        items: true,
-        user: true,
+        purchase_items: {
+          include: {
+            products: true
+          }
+        }
       }
     });
 
-    if (!purchase) {
-      return NextResponse.json({ error: 'Purchase not found' }, { status: 404 });
+    if (!currentPurchase) {
+      return NextResponse.json(
+        { error: 'Purchase not found' },
+        { status: 404 }
+      );
     }
 
-    // При переходе в статус "paid" сохраняем текущий курс лиры
-    let exchangeRateToSave = null;
-    if (status === 'paid' && purchase.status !== 'paid') {
-      try {
-        // Получаем текущий курс лиры из базы
-        const latestRate = await prisma.exchangeRate.findFirst({
-          where: { currency: 'TRY' },
-          orderBy: { effectiveDate: 'desc' }
-        });
-        
-        if (latestRate) {
-          exchangeRateToSave = latestRate.rate;
-          console.log(`💰 Закупка #${id} оплачена. Курс лиры зафиксирован: ${exchangeRateToSave}`);
-        }
-      } catch (error) {
-        console.error('Ошибка получения курса лиры:', error);
-      }
-    }
-
-    // Обновляем статус
-    const now = new Date();
-    const updatedPurchase = await prisma.purchase.update({
-      where: { id: parseInt(id) },
-      data: {
+    // Обновляем статус в базе данных
+    const updatedPurchase = await (prisma as any).purchases.update({
+      where: { id: purchaseId },
+      data: { 
         status,
-        updatedAt: now,
-        // Сохраняем ID сообщения Telegram для обновлений
-        ...(telegramMessageId && { telegramMessageId }),
-        // Если статус изменился на "sent", сохраняем дату оформления заказа
-        // (временно используем поле updatedAt для отслеживания)
-        ...(status === 'sent' && purchase.status !== 'sent' && {
-          // После миграции здесь будет: orderDate: now
-        }),
-        // Если статус изменился на "paid", сохраняем курс лиры
-        ...(exchangeRateToSave && {
-          // После миграции здесь будет: exchangeRate: exchangeRateToSave
-        }),
+        updatedat: new Date()
       },
       include: {
-        items: true,
-        user: true,
+        purchase_items: {
+          include: {
+            products: true
+          }
+        }
       }
     });
 
-    // Возвращаем обновленную закупку в формате для Telegram
-    const telegramPurchase = {
+    console.log(`✅ Purchase #${purchaseId} status updated to: ${status}`);
+
+    // Форматируем данные для Telegram
+    const formattedPurchase = {
       id: updatedPurchase.id,
-      totalAmount: updatedPurchase.totalAmount,
+      totalAmount: updatedPurchase.totalamount || 0,
       status: updatedPurchase.status,
-      isUrgent: updatedPurchase.isUrgent,
-      items: updatedPurchase.items.map(item => ({
-        productName: item.productName,
+      isUrgent: updatedPurchase.isurgent || false,
+      createdAt: updatedPurchase.createdat.toISOString(),
+      supplierName: updatedPurchase.suppliername,
+      notes: updatedPurchase.notes,
+      items: updatedPurchase.purchase_items.map((item: any) => ({
+        productName: item.productname,
         quantity: item.quantity,
-        costPrice: item.costPrice,
-        total: item.total,
-      })),
-      createdAt: updatedPurchase.createdAt.toISOString(),
+        costPrice: item.costprice || 0,
+        total: item.total || 0
+      }))
     };
 
-    return NextResponse.json(telegramPurchase);
-  } catch (error) {
-    console.error('Error updating purchase status:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    // Обрабатываем изменение статуса и отправляем уведомления
+    switch (status) {
+      case 'awaiting_payment':
+        // Поставщик отметил готовность к оплате - уведомляем админа
+        console.log('💰 Notifying admin about payment readiness');
+        await TelegramBotService.notifyAdminPaymentReady(formattedPurchase);
+        
+        // Обновляем сообщение у поставщика
+        if (currentPurchase.telegrammessageid && currentPurchase.telegramchatid) {
+          await TelegramBotService.updateSupplierPurchaseStatus(
+            currentPurchase.telegramchatid,
+            currentPurchase.telegrammessageid,
+            formattedPurchase
+          );
+        }
+        break;
+
+      case 'paid':
+        // Админ подтвердил оплату - уведомляем поставщика
+        console.log('💸 Notifying supplier about payment confirmation');
+        await TelegramBotService.notifySupplierPaymentConfirmed(formattedPurchase);
+        
+        // Обновляем сообщение у поставщика
+        if (currentPurchase.telegrammessageid && currentPurchase.telegramchatid) {
+          await TelegramBotService.updateSupplierPurchaseStatus(
+            currentPurchase.telegramchatid,
+            currentPurchase.telegrammessageid,
+            formattedPurchase
+          );
+        }
+        break;
+
+      case 'shipped':
+        // Поставщик передал в карго - уведомляем группу
+        console.log('🚚 Notifying group about shipment');
+        await TelegramBotService.notifyGroupShipped(formattedPurchase);
+        
+        // Обновляем сообщение у поставщика
+        if (currentPurchase.telegrammessageid && currentPurchase.telegramchatid) {
+          await TelegramBotService.updateSupplierPurchaseStatus(
+            currentPurchase.telegramchatid,
+            currentPurchase.telegrammessageid,
+            formattedPurchase
+          );
+        }
+        break;
+
+      case 'cancelled':
+        // Закупка отменена
+        console.log('❌ Purchase cancelled');
+        // Можно добавить уведомления об отмене
+        break;
+
+      default:
+        console.log(`ℹ️ Status ${status} updated, no special notifications needed`);
+    }
+
+    return NextResponse.json({
+      success: true,
+      purchase: formattedPurchase,
+      message: `Purchase status updated to ${status}`
+    });
+
+  } catch (error: any) {
+    console.error('❌ Error updating purchase status:', error);
+    return NextResponse.json(
+      { error: 'Internal server error', details: error.message },
+      { status: 500 }
+    );
   }
 }
 

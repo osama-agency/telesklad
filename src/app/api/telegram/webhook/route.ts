@@ -3,37 +3,49 @@ import { TelegramBotService } from '@/lib/services/telegram-bot.service';
 
 // POST - обработка webhook от Telegram
 export async function POST(request: NextRequest) {
+  console.log('🤖 Telegram webhook received');
+
   try {
-    const update = await request.json();
-    
-    console.log('Telegram webhook received:', JSON.stringify(update, null, 2));
-    
-    // Обработка callback query (нажатие на inline кнопки)
-    if (update.callback_query) {
-      const handled = await TelegramBotService.handleCallback(update.callback_query);
+    const body = await request.json();
+    console.log('📨 Webhook body:', JSON.stringify(body, null, 2));
+
+    // Обработка callback query (нажатия на кнопки)
+    if (body.callback_query) {
+      console.log('🔄 Processing callback query');
+      const success = await TelegramBotService.handleCallback(body.callback_query);
       
-      if (handled) {
-        return NextResponse.json({ ok: true });
-      } else {
-        console.warn('Unhandled callback query:', update.callback_query.data);
-        return NextResponse.json({ ok: true, warning: 'Unhandled callback' });
-      }
+      return NextResponse.json({ 
+        success, 
+        message: success ? 'Callback processed' : 'Callback processing failed' 
+      });
     }
-    
+
     // Обработка обычных сообщений (если нужно)
-    if (update.message) {
-      // Здесь можно добавить обработку текстовых команд
-      console.log('Message received:', update.message.text);
-      return NextResponse.json({ ok: true });
+    if (body.message) {
+      console.log('💬 Processing message from:', body.message.from?.username || body.message.from?.id);
+      
+      // Здесь можно добавить обработку команд бота
+      const text = body.message.text;
+      const chatId = body.message.chat.id;
+      const userId = body.message.from.id;
+
+      if (text === '/start') {
+        // Приветственное сообщение
+        console.log('👋 Start command received');
+      }
+
+      return NextResponse.json({ success: true, message: 'Message processed' });
     }
-    
-    // Неизвестный тип обновления
-    console.log('Unknown update type:', Object.keys(update));
-    return NextResponse.json({ ok: true });
-    
-  } catch (error) {
-    console.error('Error processing Telegram webhook:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+
+    console.log('ℹ️ Unknown webhook type, ignoring');
+    return NextResponse.json({ success: true, message: 'Webhook received but not processed' });
+
+  } catch (error: any) {
+    console.error('❌ Error processing webhook:', error);
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    );
   }
 }
 
