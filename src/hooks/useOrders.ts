@@ -109,7 +109,7 @@ export function useOrdersQuery(params: OrdersParams = {}) {
     limit,
     search,
     status,
-    sortBy,
+        sortBy,
     sortOrder
   };
 

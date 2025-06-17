@@ -234,82 +234,14 @@ async function syncOrdersFromAPI(dateFilter?: Date): Promise<SyncResult> {
 
 // POST - запуск синхронизации вручную
 export async function POST(request: NextRequest) {
-  try {
-    // Временно отключаем авторизацию для тестирования
-    // const session = await getServerSession();
-    // if (!session?.user?.email) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    // }
-
-    // Получаем параметры синхронизации
-    const body = await request.json().catch(() => ({}));
-    const { syncType, days, hours } = body;
-
-    console.log(`Starting ${syncType || 'manual'} orders sync...`);
-    
-    // Определяем временной диапазон для синхронизации
-    let dateFilter: Date | undefined;
-    
-    if (syncType === 'login' && days) {
-      // Синхронизация при входе - последние N дней
-      dateFilter = new Date();
-      dateFilter.setDate(dateFilter.getDate() - days);
-      console.log(`Синхронизация за последние ${days} дней (с ${dateFilter.toISOString()})`);
-    } else if (syncType === 'hourly' && hours) {
-      // Почасовая синхронизация - последние N часов
-      dateFilter = new Date();
-      dateFilter.setHours(dateFilter.getHours() - hours);
-      console.log(`Синхронизация за последние ${hours} часов (с ${dateFilter.toISOString()})`);
-    } else {
-      console.log('Полная синхронизация всех заказов');
-    }
-    
-    const result = await syncOrdersFromAPI(dateFilter);
-    
-    console.log('Sync completed:', result);
-    return NextResponse.json({
-      ...result,
-      syncType: syncType || 'manual',
-      dateFilter: dateFilter?.toISOString()
-    });
-  } catch (error) {
-    console.error('Error in manual sync:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error' }, 
-      { status: 500 }
-    );
-  }
+  return NextResponse.json({
+    error: 'Синхронизация заказов с внешним API отключена. Теперь работаем только с локальной базой.'
+  }, { status: 501 });
 }
 
 // GET - получение статуса последней синхронизации
 export async function GET(request: NextRequest) {
-  try {
-    // ВРЕМЕННО ОТКЛЮЧЕНА АВТОРИЗАЦИЯ
-    // const session = await getServerSession();
-    // 
-    // if (!session?.user?.email) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    // }
-
-    // Получаем статистику последней синхронизации
-    const totalOrders = await (prisma as any).orders.count();
-    const lastOrder = await (prisma as any).orders.findFirst({
-      orderBy: { updated_at: 'desc' },
-      select: { updated_at: true },
-    });
-
-    const stats = {
-      totalOrders,
-      lastSyncAt: lastOrder?.updated_at || null,
-      isReady: true,
-    };
-
-    return NextResponse.json(stats);
-  } catch (error) {
-    console.error('Error getting sync status:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error' }, 
-      { status: 500 }
-    );
-  }
+  return NextResponse.json({
+    error: 'Синхронизация заказов с внешним API отключена. Теперь работаем только с локальной базой.'
+  }, { status: 501 });
 } 

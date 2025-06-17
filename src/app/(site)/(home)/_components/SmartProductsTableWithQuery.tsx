@@ -428,7 +428,8 @@ function SmartProductsTableContent() {
     try {
       await updateProductMutation.mutateAsync({
         id: productId,
-        data: { stock_quantity: newStock }
+        data: { stock_quantity: newStock },
+        period,
       });
       toast.success('Остаток товара обновлен');
     } catch (error) {
@@ -441,7 +442,8 @@ function SmartProductsTableContent() {
     try {
       await updateProductMutation.mutateAsync({
         id: productId,
-        data: { price: newPrice }
+        data: { price: newPrice },
+        period,
       });
       toast.success('Цена товара обновлена');
     } catch (error) {
@@ -454,7 +456,8 @@ function SmartProductsTableContent() {
     try {
       await updateProductMutation.mutateAsync({
         id: productId,
-        data: { old_price: newOldPrice }
+        data: { old_price: newOldPrice },
+        period,
       });
       toast.success('Старая цена обновлена');
     } catch (error) {

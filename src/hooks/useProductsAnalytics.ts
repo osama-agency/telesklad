@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { get, post, patch, queryKeys } from '@/lib/api';
+import toast from 'react-hot-toast';
 
 // Типы для продуктовой аналитики
 export interface ProductAnalytics {
@@ -140,26 +141,89 @@ export function useExchangeRate(currency: string = 'TRY') {
 export function useUpdateProduct() {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: ({ id, data }: { 
-      id: number; 
-      data: {
-        stock_quantity?: number;
-        price?: number;
-        old_price?: number;
-      };
-    }) => patch<{ success: boolean; data: any; message: string }>(`/products/${id}/update`, data),
-    onSuccess: (response, variables) => {
-      // Инвалидируем кэш аналитики товаров для перезагрузки данных
-      queryClient.invalidateQueries({ queryKey: queryKeys.productsAnalytics() });
-      
-      // Также инвалидируем простой список товаров на всякий случай
-      queryClient.invalidateQueries({ queryKey: queryKeys.productsSimple });
-      
-      console.log(`✅ Товар #${variables.id} обновлен:`, response.message);
+  type UpdateProductArgs = {
+    id: number;
+    data: Partial<Pick<ProductAnalytics, 'currentStock' | 'avgSalePrice' | 'oldPrice'>> & Record<string, any>;
+    period?: number;
+  };
+
+  const updateProductMutation = useMutation<
+    any, // server response type
+    Error,
+    UpdateProductArgs,
+    { previousData?: AnalyticsResponse | ProductAnalytics[] | undefined }
+  >({
+    mutationFn: async ({ id, data }: UpdateProductArgs): Promise<any> => patch(`/products/${id}/update`, data),
+    onMutate: async ({ id, data, period }: UpdateProductArgs) => {
+      const queryKey = queryKeys.productsAnalytics(period);
+      await queryClient.cancelQueries({ queryKey });
+      const previousData = queryClient.getQueryData<AnalyticsResponse>(queryKey);
+
+      queryClient.setQueryData(queryKey, (old: AnalyticsResponse | undefined) => {
+        if (!old || !Array.isArray(old.products)) return old;
+        // Обновляем products
+        let newProducts = old.products.map((product: ProductAnalytics) =>
+          product.id === id ? { ...product, ...data } : product
+        );
+        // Обновляем summary (например, критичные остатки)
+        let criticalStock = newProducts.filter(p => Number(p.currentStock) < 10).length;
+        let lowStock = newProducts.filter(p => Number(p.currentStock) >= 10 && Number(p.currentStock) < 30).length;
+        let needsReorder = newProducts.filter(p => p.recommendedOrderQuantity > 0).length;
+        let avgProfitMargin = newProducts.length > 0 ? Math.round(newProducts.reduce((sum, p) => sum + (p.profitMargin || 0), 0) / newProducts.length) : 0;
+        return {
+          ...old,
+          products: newProducts,
+          summary: {
+            ...old.summary,
+            criticalStock,
+            lowStock,
+            needsReorder,
+            avgProfitMargin,
+          },
+        };
+      });
+
+      return { previousData };
     },
-    onError: (error, variables) => {
-      console.error(`❌ Ошибка обновления товара #${variables.id}:`, error);
-    }
+    onError: (err: Error, variables: UpdateProductArgs, context: { previousData?: AnalyticsResponse | ProductAnalytics[] | undefined } | undefined) => {
+      if (context?.previousData) {
+        const queryKey = queryKeys.productsAnalytics(variables.period);
+        queryClient.setQueryData(queryKey, context.previousData);
+      }
+      toast.error('Ошибка при обновлении товара: ' + err.message);
+    },
+    onSuccess: (data, variables) => {
+      // Если сервер вернул обновленный товар, подменяем его в кэше
+      if (data && data.data && data.data.id) {
+        const queryKey = queryKeys.productsAnalytics(variables.period);
+        queryClient.setQueryData(queryKey, (old: AnalyticsResponse | undefined) => {
+          if (!old || !Array.isArray(old.products)) return old;
+          let newProducts = old.products.map((product: ProductAnalytics) =>
+            product.id === data.data.id ? { ...product, ...data.data } : product
+          );
+          // Пересчитываем summary
+          let criticalStock = newProducts.filter(p => Number(p.currentStock) < 10).length;
+          let lowStock = newProducts.filter(p => Number(p.currentStock) >= 10 && Number(p.currentStock) < 30).length;
+          let needsReorder = newProducts.filter(p => p.recommendedOrderQuantity > 0).length;
+          let avgProfitMargin = newProducts.length > 0 ? Math.round(newProducts.reduce((sum, p) => sum + (p.profitMargin || 0), 0) / newProducts.length) : 0;
+          return {
+            ...old,
+            products: newProducts,
+            summary: {
+              ...old.summary,
+              criticalStock,
+              lowStock,
+              needsReorder,
+              avgProfitMargin,
+            },
+          };
+        });
+      }
+    },
+    onSettled: (data, error, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.productsAnalytics(variables.period) });
+    },
   });
+
+  return updateProductMutation;
 } 
