@@ -50,7 +50,6 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
   const [formData, setFormData] = useState({
     totalAmount: 0,
     isUrgent: false,
-    expenses: 0,
     status: "draft" as StatusType,
   });
   const [items, setItems] = useState<PurchaseItem[]>([]);
@@ -86,19 +85,20 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
   }, [isOpen]);
 
   useEffect(() => {
+    console.log('🔧 PurchaseModal useEffect - isOpen:', isOpen, 'purchase:', purchase);
     if (purchase) {
+      console.log('🔧 Setting form data from purchase:', purchase);
       setFormData({
         totalAmount: purchase.totalAmount,
         isUrgent: purchase.isUrgent,
-        expenses: purchase.expenses || 0,
         status: purchase.status,
       });
       setItems(purchase.items);
     } else {
+      console.log('🔧 No purchase, setting default form data');
       setFormData({
         totalAmount: 0,
         isUrgent: false,
-        expenses: 0,
         status: "draft",
       });
       setItems([]);
@@ -133,14 +133,31 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
 
   const addItem = () => {
     if (!newItem.productId || !newItem.quantity || !newItem.costPrice) {
+      alert("Пожалуйста, заполните все поля");
       return;
     }
 
     const product = products.find((p) => p.id === parseInt(newItem.productId));
-    if (!product) return;
+    if (!product) {
+      alert("Товар не найден");
+      return;
+    }
 
     const quantity = parseInt(newItem.quantity);
     const costPrice = parseFloat(newItem.costPrice);
+    
+    // Проверяем что значения корректные
+    if (isNaN(quantity) || quantity <= 0) {
+      alert("Количество должно быть больше 0");
+      return;
+    }
+    
+    if (isNaN(costPrice) || costPrice <= 0) {
+      alert("Себестоимость должна быть больше 0");
+      return;
+    }
+    
+    // Считаем total в рублях (costPrice уже в рублях)
     const total = quantity * costPrice;
 
     const item: PurchaseItem = {
@@ -151,6 +168,7 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
       total,
     };
 
+    console.log('Adding item:', item);
     setItems((prev) => [...prev, item]);
     setNewItem({ productId: "", quantity: "", costPrice: "" });
   };
@@ -190,32 +208,42 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (items.length === 0) return;
+    if (items.length === 0) {
+      alert("Добавьте хотя бы один товар в закупку");
+      return;
+    }
 
     setLoading(true);
     try {
       const url = purchase ? `/api/purchases/${purchase.id}` : "/api/purchases";
       const method = purchase ? "PUT" : "POST";
 
+      const requestData = {
+        totalAmount: formData.totalAmount,
+        isUrgent: formData.isUrgent,
+        status: formData.status,
+        items: items.map((item) => ({
+          productId: item.productId,
+          productName: item.productName,
+          quantity: item.quantity,
+          costPrice: item.costPrice,
+          total: item.total,
+        })),
+      };
+
+      console.log('Sending purchase data:', requestData);
+
       const response = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          ...formData,
-          items: items.map((item) => ({
-            productId: item.productId,
-            productName: item.productName,
-            quantity: item.quantity,
-            costPrice: item.costPrice,
-            total: item.total,
-          })),
-        }),
+        body: JSON.stringify(requestData),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to save purchase");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to save purchase");
       }
 
       const savedPurchase = await response.json();
@@ -223,10 +251,13 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
       onClose();
     } catch (error) {
       console.error("Error saving purchase:", error);
+      alert(`Ошибка при сохранении: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`);
     } finally {
       setLoading(false);
     }
   };
+
+  console.log('🔧 PurchaseModal render - isOpen:', isOpen, 'purchase:', purchase, 'products:', products.length);
 
   if (!isOpen) return null;
 
@@ -294,12 +325,14 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
 
                     <input
                       type="number"
-                      placeholder="Себестоимость"
+                      placeholder="Себестоимость (₽)"
                       value={newItem.costPrice}
                       onChange={(e) =>
                         setNewItem((prev) => ({ ...prev, costPrice: e.target.value }))
                       }
                       className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-[#1E293B] dark:text-white transition-all focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20"
+                      step="0.01"
+                      min="0"
                     />
 
                     <button
@@ -356,8 +389,36 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
                                   : "bg-gray-50 dark:bg-gray-800"
                               }
                             >
-                              <td className="px-4 py-3 text-sm text-[#1E293B] dark:text-white">
-                                {item.productName}
+                              <td className="px-4 py-3">
+                                <select
+                                  value={item.productId}
+                                  onChange={(e) => {
+                                    const newProductId = parseInt(e.target.value);
+                                    const product = products.find(p => p.id === newProductId);
+                                    if (product) {
+                                      setItems(prev => prev.map((prevItem, i) => {
+                                        if (i === index) {
+                                          const newCostPrice = product.avgPurchasePriceRub || product.prime_cost || prevItem.costPrice;
+                                          return {
+                                            ...prevItem,
+                                            productId: newProductId,
+                                            productName: product.name,
+                                            costPrice: newCostPrice,
+                                            total: prevItem.quantity * newCostPrice
+                                          };
+                                        }
+                                        return prevItem;
+                                      }));
+                                    }
+                                  }}
+                                  className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-2 py-1 text-sm text-[#1E293B] dark:text-white transition-all focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20"
+                                >
+                                  {products.map((product) => (
+                                    <option key={product.id} value={product.id}>
+                                      {product.name}
+                                    </option>
+                                  ))}
+                                </select>
                               </td>
                               <td className="px-4 py-3">
                                 <input
@@ -414,7 +475,7 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
                         <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        Вы можете редактировать количество и цену прямо в таблице
+                        Вы можете редактировать товар, количество и цену прямо в таблице
                       </p>
                     </div>
                   </div>
@@ -488,24 +549,6 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
                       <option value="received">✅ Получено</option>
                       <option value="cancelled">❌ Отменено</option>
                     </select>
-                  </div>
-
-                  {/* Expenses */}
-                  <div>
-                    <label className="block text-sm font-medium text-[#1E293B] dark:text-gray-300 mb-2">
-                      Расходы (₽)
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.expenses}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          expenses: parseInt(e.target.value) || 0,
-                        }))
-                      }
-                      className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-[#1E293B] dark:text-white transition-all focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20"
-                    />
                   </div>
 
                   {/* Urgent */}

@@ -26,6 +26,7 @@ interface ProductAnalytics {
   avgpurchasepricetry: number;
   prime_cost: number;
   avgSalePrice: number;
+  oldPrice?: number;
   profitMargin: number;
   profitMarginBasic: number;
   deliveryCostPerUnit: number;
@@ -190,6 +191,7 @@ export async function GET(request: NextRequest) {
         ancestry: true,
         stock_quantity: true,
         price: true,
+        old_price: true,
         prime_cost: true,
         avgpurchasepricerub: true
       }
@@ -351,6 +353,7 @@ export async function GET(request: NextRequest) {
         avgpurchasepricetry,
         prime_cost,
         avgSalePrice,
+        oldPrice: Number(product.old_price) || undefined,
         profitMargin: Number(realProfitMargin.toFixed(2)),
         profitMarginBasic: Number(profitMarginBasic.toFixed(2)),
         deliveryCostPerUnit,

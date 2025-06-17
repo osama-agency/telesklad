@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { prisma } from '@/libs/prismaDb';
+import { ExchangeRateService } from '@/lib/services/exchange-rate.service';
+import { Decimal } from '@prisma/client/runtime/library';
 
 // GET - получение конкретной закупки
 export async function GET(
@@ -8,39 +10,43 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession();
-    
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { id } = await params;
     const purchaseId = parseInt(id);
 
-    if (isNaN(purchaseId)) {
-      return NextResponse.json({ error: 'Invalid purchase ID' }, { status: 400 });
-    }
-
-    const purchase = await prisma.purchase.findFirst({
-      where: {
-        id: purchaseId,
-        user: {
-          email: session.user.email
-        }
-      },
-      include: {
-        items: true,
-        user: true,
-      }
+    const purchase = await (prisma as any).purchases.findUnique({
+      where: { id: purchaseId }
     });
 
     if (!purchase) {
       return NextResponse.json({ error: 'Purchase not found' }, { status: 404 });
     }
 
-    return NextResponse.json(purchase);
+    // Загружаем элементы закупки
+    const purchaseItems = await (prisma as any).purchase_items.findMany({
+      where: { purchaseid: purchaseId }
+    });
+
+    const serializedPurchase = {
+      ...purchase,
+      id: purchase.id.toString(),
+      userid: purchase.userid ? purchase.userid.toString() : null,
+      createdAt: purchase.createdat || new Date().toISOString(),
+      updatedAt: purchase.updatedat || new Date().toISOString(),
+      totalAmount: purchase.totalamount || 0,
+      isUrgent: purchase.isurgent || false,
+      items: purchaseItems.map((item: any) => ({
+        id: item.id.toString(),
+        productId: item.productid ? item.productid.toString() : null,
+        productName: item.productname || 'Unknown Product',
+        quantity: item.quantity || 0,
+        costPrice: item.costprice || 0,
+        total: item.total || 0
+      }))
+    };
+
+    return NextResponse.json(serializedPurchase);
   } catch (error) {
-    console.error('Error fetching purchase:', error);
+    console.error('❌ Error fetching purchase:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
@@ -51,74 +57,93 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession();
-    
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { id } = await params;
+    const purchaseId = parseInt(id);
+    const { items, totalAmount, isUrgent, expenses, status, currency = 'TRY' } = await request.json();
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return NextResponse.json({ error: 'Items are required' }, { status: 400 });
     }
 
-    const { id } = await params;
-    const { items, totalAmount, isUrgent, expenses, status } = await request.json();
+    if (!totalAmount || typeof totalAmount !== 'number') {
+      return NextResponse.json({ error: 'Total amount is required' }, { status: 400 });
+    }
 
-    // Проверяем, принадлежит ли закупка пользователю
-    const existingPurchase = await prisma.purchase.findFirst({
-      where: {
-        id: parseInt(id),
-        user: {
-          email: session.user.email
-        }
-      }
+    // Проверяем, существует ли закупка
+    const existingPurchase = await (prisma as any).purchases.findUnique({
+      where: { id: purchaseId }
     });
 
     if (!existingPurchase) {
       return NextResponse.json({ error: 'Purchase not found' }, { status: 404 });
     }
 
-    // Обновляем закупку в транзакции
+    // Начинаем транзакцию для атомарности операций
     const updatedPurchase = await prisma.$transaction(async (tx) => {
-      // Удаляем старые элементы
-      await tx.purchaseItem.deleteMany({
-        where: { purchaseId: parseInt(id) }
-      });
-
-      // Обновляем основную закупку
-      const purchase = await tx.purchase.update({
-        where: { id: parseInt(id) },
+      // Обновляем закупку
+      const purchase = await (tx as any).purchases.update({
+        where: { id: purchaseId },
         data: {
-          totalAmount: totalAmount || existingPurchase.totalAmount,
-          isUrgent: isUrgent !== undefined ? Boolean(isUrgent) : existingPurchase.isUrgent,
-          expenses: expenses !== undefined ? expenses : existingPurchase.expenses,
-          status: status || existingPurchase.status,
-          updatedAt: new Date()
+          totalamount: totalAmount,
+          isurgent: Boolean(isUrgent),
+          expenses: expenses || null,
+          status: status || 'draft',
+          updatedat: new Date()
         }
       });
 
-      // Создаем новые элементы если они переданы
-      if (items && Array.isArray(items) && items.length > 0) {
-        await tx.purchaseItem.createMany({
-          data: items.map((item: any) => ({
-            purchaseId: parseInt(id),
-            quantity: item.quantity,
-            costPrice: item.costPrice,
-            total: item.total,
-            productId: item.productId,
-            productName: item.productName
-          }))
+      // Удаляем старые элементы закупки
+      await (tx as any).purchase_items.deleteMany({
+        where: { purchaseid: purchaseId }
+      });
+
+      // Создаем новые элементы закупки
+      const purchaseItems = [];
+      for (const item of items) {
+        const purchaseItem = await (tx as any).purchase_items.create({
+          data: {
+            purchaseid: purchaseId,
+            quantity: parseInt(item.quantity),
+            costprice: parseFloat(item.costPrice),
+            total: parseFloat(item.total),
+            productid: parseInt(item.productId),
+            productname: item.productName || `Product ${item.productId}`
+          }
         });
+        purchaseItems.push(purchaseItem);
       }
 
-      return purchase;
+      return {
+        ...purchase,
+        items: purchaseItems
+      };
     });
 
-    // Получаем обновленную закупку с элементами
-    const finalPurchase = await prisma.purchase.findUnique({
-      where: { id: parseInt(id) },
-      include: { items: true }
-    });
+    // Преобразуем BigInt поля в строки для JSON сериализации
+    const serializedPurchase = {
+      ...updatedPurchase,
+      id: updatedPurchase.id.toString(),
+      userid: updatedPurchase.userid ? updatedPurchase.userid.toString() : null,
+      createdAt: updatedPurchase.createdat || new Date().toISOString(),
+      updatedAt: updatedPurchase.updatedat || new Date().toISOString(),
+      totalAmount: updatedPurchase.totalamount || 0,
+      isUrgent: updatedPurchase.isurgent || false,
+      items: updatedPurchase.items?.map((item: any) => ({
+        ...item,
+        id: item.id.toString(),
+        purchaseid: item.purchaseid ? item.purchaseid.toString() : null,
+        productid: item.productid ? item.productid.toString() : null,
+        productId: item.productid ? item.productid.toString() : null,
+        productName: item.productname || 'Unknown Product',
+        quantity: item.quantity || 0,
+        costPrice: item.costprice || 0,
+        total: item.total || 0
+      })) || [],
+    };
 
-    return NextResponse.json(finalPurchase);
+    return NextResponse.json(serializedPurchase);
   } catch (error) {
-    console.error('Error updating purchase:', error);
+    console.error('❌ Error updating purchase:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
@@ -129,41 +154,34 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession();
-    
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { id } = await params;
     const purchaseId = parseInt(id);
 
-    if (isNaN(purchaseId)) {
-      return NextResponse.json({ error: 'Invalid purchase ID' }, { status: 400 });
-    }
-
-    // Проверяем, что закупка принадлежит пользователю
-    const purchase = await prisma.purchase.findFirst({
-      where: {
-        id: purchaseId,
-        user: {
-          email: session.user.email
-        }
-      }
-    });
-
-    if (!purchase) {
-      return NextResponse.json({ error: 'Purchase not found' }, { status: 404 });
-    }
-
-    // Удаляем закупку (каскадное удаление товаров настроено в схеме)
-    await prisma.purchase.delete({
+    // Проверяем, существует ли закупка
+    const existingPurchase = await (prisma as any).purchases.findUnique({
       where: { id: purchaseId }
     });
 
-    return NextResponse.json({ success: true });
+    if (!existingPurchase) {
+      return NextResponse.json({ error: 'Purchase not found' }, { status: 404 });
+    }
+
+    // Удаляем закупку и связанные элементы в транзакции
+    await prisma.$transaction(async (tx) => {
+      // Сначала удаляем элементы закупки
+      await (tx as any).purchase_items.deleteMany({
+        where: { purchaseid: purchaseId }
+      });
+
+      // Затем удаляем саму закупку
+      await (tx as any).purchases.delete({
+      where: { id: purchaseId }
+      });
+    });
+
+    return NextResponse.json({ message: 'Purchase deleted successfully' });
   } catch (error) {
-    console.error('Error deleting purchase:', error);
+    console.error('❌ Error deleting purchase:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 } 

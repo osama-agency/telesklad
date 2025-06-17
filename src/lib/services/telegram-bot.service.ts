@@ -320,31 +320,31 @@ ${this.formatPurchase({ ...purchase, status: 'shipped' })}
     if (purchase.status === 'sent_to_supplier' || purchase.status === 'supplier_editing') {
       replyMarkup = {
         inline_keyboard: [
-          [
-            {
+        [
+          {
               text: '📝 Редактировать закупку',
-              web_app: {
-                url: webAppUrl
-              }
+            web_app: {
+              url: webAppUrl
             }
+          }
           ],
           [
             {
               text: '💰 Готово к оплате',
               callback_data: `purchase_ready_${purchase.id}`
             }
-          ]
+        ]
         ]
       };
     } else if (purchase.status === 'paid') {
       replyMarkup = {
         inline_keyboard: [
-          [
-            {
+        [
+          {
               text: '📦 Передано в карго',
               callback_data: `purchase_shipped_${purchase.id}`
-            }
-          ]
+          }
+        ]
         ]
       };
     }
@@ -392,7 +392,7 @@ ${this.formatPurchase({ ...purchase, status: 'shipped' })}
             }
             
             await this.answerCallbackQuery(callbackQueryId, 'Уведомляем администратора об готовности к оплате...');
-            
+
             // Здесь должен быть вызов API для обновления статуса и уведомления админа
             // Пока что просто логируем
             console.log(`✅ Purchase #${purchaseIdNum} marked as ready for payment by supplier`);
@@ -444,9 +444,9 @@ ${this.formatPurchase({ ...purchase, status: 'shipped' })}
             await this.answerCallbackQuery(callbackQueryId, 'Неизвестное действие');
             return false;
         }
-
-        return true;
-      }
+          
+          return true;
+        }
 
       await this.answerCallbackQuery(callbackQueryId, 'Неизвестная команда');
       return false;
@@ -465,12 +465,12 @@ ${this.formatPurchase({ ...purchase, status: 'shipped' })}
     try {
       const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
       const response = await fetch(`${baseUrl}/api/purchases/${purchaseId}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
         body: JSON.stringify({ status: newStatus }),
-      });
+        });
 
       if (!response.ok) {
         throw new Error(`API call failed: ${response.status} ${response.statusText}`);

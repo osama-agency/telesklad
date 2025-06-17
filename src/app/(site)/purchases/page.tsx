@@ -79,11 +79,10 @@ export default function PurchasesPage() {
 
   const [exchangeRate, setExchangeRate] = useState<number>(0);
   const [products, setProducts] = useState<Product[]>([]);
+  const [modalProducts, setModalProducts] = useState<ModalProduct[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
 
   const { items: cartItems, clearCart } = usePurchaseCartStore();
-
-  const modalProducts: ModalProduct[] = products;
 
   // Отладочная информация
   console.log('Products for modal:', modalProducts.length, modalProducts.slice(0, 3));
@@ -157,10 +156,13 @@ export default function PurchasesPage() {
   const loadPurchases = async () => {
     try {
       setLoading(true);
+      console.log('🔄 Loading purchases...');
       const response = await fetch('/api/purchases');
       
       if (response.ok) {
         const data = await response.json();
+        console.log('✅ Purchases loaded:', data.length, 'items');
+        console.log('📦 First purchase:', data[0]);
         setPurchases(data);
       } else {
         console.error('Failed to load purchases:', response.statusText);
@@ -191,32 +193,48 @@ export default function PurchasesPage() {
     setLoadingProducts(true);
     try {
       console.log('🔄 Начинаем загрузку товаров...');
-      const response = await fetch('/api/products');
+      const response = await fetch('/api/products/simple');
       const data = await response.json();
       console.log('📦 API response:', data);
       
       if (response.status === 401) {
         console.error('❌ Пользователь не авторизован');
         setProducts([]);
+        setModalProducts([]);
         return;
       }
       
-      if (data.success) {
-        setProducts(data.data.products);
-        console.log('✅ Products loaded:', data.data.products.length);
-        console.log('📋 Первые 3 товара:', data.data.products.slice(0, 3).map((p: Product) => ({
-          id: p.id,
+      if (data.success && data.data && data.data.products) {
+        // Преобразуем товары для основной страницы
+        const productsForPage = data.data.products.map((p: any) => ({
+          id: parseInt(p.id),
           name: p.name,
           prime_cost: p.prime_cost,
-          avgPurchasePriceRub: p.avgPurchasePriceRub
-        })));
+          avgPurchasePriceRub: p.avgpurchasepricerub
+        }));
+        
+        // Преобразуем товары для модального окна
+        const productsForModal = data.data.products.map((p: any) => ({
+          id: parseInt(p.id),
+          name: p.name,
+          prime_cost: p.prime_cost,
+          avgPurchasePriceRub: p.avgpurchasepricerub
+        }));
+        
+        setProducts(productsForPage);
+        setModalProducts(productsForModal);
+        console.log('✅ Products loaded:', productsForPage.length);
+        console.log('✅ Modal products loaded:', productsForModal.length);
+        console.log('📋 Первые 3 товара:', productsForPage.slice(0, 3));
       } else {
         console.error('❌ API returned error:', data);
         setProducts([]);
+        setModalProducts([]);
       }
     } catch (error) { 
       console.error("❌ Ошибка загрузки товаров:", error); 
       setProducts([]);
+      setModalProducts([]);
     } finally { 
       setLoadingProducts(false); 
     }
@@ -335,8 +353,12 @@ export default function PurchasesPage() {
   };
 
   const handleEdit = (purchase: Purchase) => {
-    setEditingPurchase(convertToModalPurchase(purchase));
+    console.log('🔧 handleEdit called with purchase:', purchase);
+    const modalPurchase = convertToModalPurchase(purchase);
+    console.log('🔧 Converted to modal purchase:', modalPurchase);
+    setEditingPurchase(modalPurchase);
     setIsModalOpen(true);
+    console.log('🔧 Modal should be open now');
   };
 
   const handleDelete = async (purchase: Purchase) => {
@@ -481,6 +503,12 @@ export default function PurchasesPage() {
     
     return matchesSearch && matchesStatus;
   });
+
+  // Отладочная информация
+  console.log('🔍 Purchases state:', purchases.length, 'total');
+  console.log('🔍 Filtered purchases:', filteredPurchases.length, 'visible');
+  console.log('🔍 Search query:', searchQuery);
+  console.log('🔍 Status filter:', statusFilter);
 
   return (
     <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10 bg-[#F8FAFC] dark:bg-gray-900 min-h-screen">
@@ -759,14 +787,14 @@ export default function PurchasesPage() {
                           <button
                             onClick={() => handleSendToTelegram(purchase)}
                             disabled={sendingToTelegram === purchase.id}
-                            className="rounded-lg p-2 text-gray-400 transition-all hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 disabled:opacity-50"
+                            className="rounded-lg p-2 text-gray-400 transition-all hover:bg-[#0088cc]/10 dark:hover:bg-[#0088cc]/20 hover:text-[#0088cc] disabled:opacity-50"
                             title="Отправить закупщику в Telegram"
                           >
                             {sendingToTelegram === purchase.id ? (
-                              <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
+                              <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#0088cc] border-t-transparent"></div>
                             ) : (
-                              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
                               </svg>
                             )}
                           </button>

@@ -101,7 +101,7 @@ const Toast = ({ id, type, title, message, duration = 5000, onClose }: ToastProp
     >
       <div className="flex items-start">
         <div className={`flex-shrink-0 ${styles.icon}`}>
-          {getIcon()}
+      {getIcon()}
         </div>
         <div className="ml-3 w-0 flex-1">
           <p className={`text-sm font-medium ${styles.title}`}>
@@ -114,15 +114,15 @@ const Toast = ({ id, type, title, message, duration = 5000, onClose }: ToastProp
           )}
         </div>
         <div className="ml-4 flex-shrink-0 flex">
-          <button
+      <button
             onClick={() => onClose(id)}
             className={`inline-flex ${styles.icon} hover:opacity-75 transition-opacity`}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
       </div>
     </motion.div>
   );

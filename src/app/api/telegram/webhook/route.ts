@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     console.log('📨 Webhook body:', JSON.stringify(body, null, 2));
-
+    
     // Обработка callback query (нажатия на кнопки)
     if (body.callback_query) {
       console.log('🔄 Processing callback query');
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
         message: success ? 'Callback processed' : 'Callback processing failed' 
       });
     }
-
+    
     // Обработка обычных сообщений (если нужно)
     if (body.message) {
       console.log('💬 Processing message from:', body.message.from?.username || body.message.from?.id);
@@ -36,10 +36,10 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({ success: true, message: 'Message processed' });
     }
-
+    
     console.log('ℹ️ Unknown webhook type, ignoring');
     return NextResponse.json({ success: true, message: 'Webhook received but not processed' });
-
+    
   } catch (error: any) {
     console.error('❌ Error processing webhook:', error);
     return NextResponse.json(

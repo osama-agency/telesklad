@@ -52,7 +52,7 @@ export async function PUT(
     // Обновляем статус в базе данных
     const updatedPurchase = await (prisma as any).purchases.update({
       where: { id: purchaseId },
-      data: { 
+      data: {
         status,
         updatedat: new Date()
       },

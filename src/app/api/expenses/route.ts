@@ -24,23 +24,23 @@ export async function GET(request: NextRequest) {
       const whereConditions: any = {};
       
       // Поскольку поле date имеет тип String, фильтруем по строковому представлению
-      if (from || to) {
-        whereConditions.date = {};
-        if (from) {
+    if (from || to) {
+      whereConditions.date = {};
+      if (from) {
           const fromDateStr = new Date(from).toISOString().split('T')[0]; // YYYY-MM-DD
-          whereConditions.date.gte = fromDateStr;
-        }
-        if (to) {
-          const toDateStr = new Date(to).toISOString().split('T')[0]; // YYYY-MM-DD
-          whereConditions.date.lte = toDateStr;
-        }
-        console.log('📅 Date filter conditions:', whereConditions);
+        whereConditions.date.gte = fromDateStr;
       }
+      if (to) {
+          const toDateStr = new Date(to).toISOString().split('T')[0]; // YYYY-MM-DD
+        whereConditions.date.lte = toDateStr;
+      }
+        console.log('📅 Date filter conditions:', whereConditions);
+    }
 
       expenses = await (prisma as any).expenses.findMany({
-        where: whereConditions,
-        orderBy: [
-          { date: 'desc' },
+      where: whereConditions,
+      orderBy: [
+        { date: 'desc' },
           { createdat: 'desc' }
         ],
         take: 100 // Ограничиваем количество для безопасности
@@ -140,11 +140,11 @@ export async function POST(request: NextRequest) {
     try {
       // Пробуем создать в таблице expenses
       expense = await (prisma as any).expenses.create({
-        data: {
-          date,
-          category,
-          description,
-          amount,
+      data: {
+        date,
+        category,
+        description,
+        amount,
           userid: user.id  // Используем userid вместо userId
         }
       });
@@ -161,8 +161,8 @@ export async function POST(request: NextRequest) {
             description,
             amount,
             userid: user.id  // Используем userid вместо userId
-          }
-        });
+      }
+    });
         console.log('✅ Created expense in expense table');
       } catch (expenseError) {
         console.log('❌ Failed to create in expense table:', expenseError);

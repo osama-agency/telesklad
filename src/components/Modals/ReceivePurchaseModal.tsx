@@ -1,216 +1,378 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import toast from 'react-hot-toast';
+
+interface PurchaseItem {
+  id: number;
+  productId: number;
+  quantity: number;
+  costPrice: number;
+  total: number;
+  product?: {
+    id: number;
+    name: string;
+  };
+}
+
+interface Purchase {
+  id: number;
+  status: string;
+  totalAmount: number;
+  createdAt: string;
+  items: PurchaseItem[];
+}
 
 interface ReceivePurchaseModalProps {
   isOpen: boolean;
   onClose: () => void;
-  purchaseId: number;
-  purchaseName: string;
-  onReceived: (data: any) => void;
+  purchase: Purchase | null;
+  onReceive: (data: {
+    purchaseId: number;
+    items: Array<{
+      id: number;
+      receivedQuantity: number;
+    }>;
+    logisticsExpense: number;
+    receivedAt: string;
+    notes?: string;
+  }) => Promise<void>;
+  isLoading?: boolean;
 }
 
-const ReceivePurchaseModal: React.FC<ReceivePurchaseModalProps> = ({
+export function ReceivePurchaseModal({
   isOpen,
   onClose,
-  purchaseId,
-  purchaseName,
-  onReceived,
-}) => {
-  const [deliveryDays, setDeliveryDays] = useState<number>(20);
-  const [additionalExpenses, setAdditionalExpenses] = useState<number>(0);
+  purchase,
+  onReceive,
+  isLoading = false
+}: ReceivePurchaseModalProps) {
+  const [receivedItems, setReceivedItems] = useState<Array<{
+    id: number;
+    receivedQuantity: number;
+  }>>([]);
+  
+  const [logisticsExpense, setLogisticsExpense] = useState<number>(0);
+  const [receivedAt, setReceivedAt] = useState<string>(
+    new Date().toISOString().split('T')[0]
+  );
   const [notes, setNotes] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!deliveryDays || deliveryDays <= 0) {
-      alert('Пожалуйста, укажите количество дней доставки');
+  // Инициализация данных при открытии модального окна
+  const initializeItems = () => {
+    if (purchase?.items) {
+      setReceivedItems(
+        purchase.items.map(item => ({
+          id: item.id,
+          receivedQuantity: item.quantity
+        }))
+      );
+    }
+  };
+
+  // Обновление полученного количества для товара
+  const updateReceivedQuantity = (itemId: number, quantity: number) => {
+    setReceivedItems(prev => 
+      prev.map(item => 
+        item.id === itemId 
+          ? { ...item, receivedQuantity: Math.max(0, quantity) }
+          : item
+      )
+    );
+  };
+
+  // Обработка оприходования
+  const handleReceive = async () => {
+    if (!purchase) return;
+
+    // Валидация
+    if (receivedItems.some(item => item.receivedQuantity < 0)) {
+      toast.error('Количество не может быть отрицательным');
       return;
     }
 
-    setIsLoading(true);
+    if (logisticsExpense < 0) {
+      toast.error('Расходы на логистику не могут быть отрицательными');
+      return;
+    }
+
+    if (!receivedAt) {
+      toast.error('Укажите дату получения товара');
+      return;
+    }
 
     try {
-      const response = await fetch(`/api/purchases/${purchaseId}/receive`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          deliveryDays,
-          additionalExpenses: additionalExpenses > 0 ? additionalExpenses : undefined,
-          notes: notes.trim() || undefined,
-        }),
+      await onReceive({
+        purchaseId: purchase.id,
+        items: receivedItems,
+        logisticsExpense,
+        receivedAt,
+        notes: notes.trim() || undefined
       });
 
-      const result = await response.json();
-
-      if (result.success) {
-        onReceived(result.data);
-        onClose();
-        // Сбрасываем форму
-        setDeliveryDays(20);
-        setAdditionalExpenses(0);
-        setNotes('');
-        alert(result.message || 'Закупка успешно оприходована!');
-      } else {
-        alert(result.error || 'Ошибка при оприходовании закупки');
-      }
+      // Закрываем модальное окно
+      onClose();
+      
+      // Сброс формы
+      setReceivedItems([]);
+      setLogisticsExpense(0);
+      setReceivedAt(new Date().toISOString().split('T')[0]);
+      setNotes('');
+      
+      toast.success('Товар успешно оприходован!');
     } catch (error) {
       console.error('Ошибка оприходования:', error);
-      alert('Ошибка при оприходовании закупки');
-    } finally {
-      setIsLoading(false);
+      toast.error('Ошибка при оприходовании товара');
     }
   };
 
-  const handleClose = () => {
-    if (!isLoading) {
-      onClose();
-      // Сбрасываем форму при закрытии
-      setDeliveryDays(20);
-      setAdditionalExpenses(0);
-      setNotes('');
-    }
-  };
+  // Инициализация при открытии
+  if (isOpen && purchase && receivedItems.length === 0) {
+    initializeItems();
+  }
 
-  if (!isOpen) return null;
+  // Расчет общих показателей
+  const totalReceivedItems = receivedItems.reduce((sum, item) => sum + item.receivedQuantity, 0);
+  const originalTotalItems = purchase?.items.reduce((sum, item) => sum + item.quantity, 0) || 0;
+  const completionPercentage = originalTotalItems > 0 ? (totalReceivedItems / originalTotalItems) * 100 : 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black bg-opacity-50"
-        onClick={handleClose}
-      />
-      
-      {/* Modal */}
-      <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-[#1E293B] dark:text-white">
-            Оприходование закупки
-          </h3>
-          <button
-            onClick={handleClose}
-            disabled={isLoading}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors disabled:opacity-50"
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Overlay */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={onClose}
+          />
+
+          {/* Modal */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden bg-white dark:bg-gray-dark rounded-xl shadow-2xl"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-stroke dark:border-dark-3">
+              <div>
+                <h2 className="text-2xl font-bold text-dark dark:text-white">
+                  🚚 Оприходование закупки #{purchase?.id}
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  Укажите фактически полученное количество товара и расходы на логистику
+                </p>
+              </div>
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 max-h-[calc(90vh-140px)] overflow-y-auto">
+              {/* Progress indicator */}
+              <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                    Процент получения товара
+                  </span>
+                  <span className="text-lg font-bold text-blue-800 dark:text-blue-300">
+                    {completionPercentage.toFixed(1)}%
+                  </span>
+                </div>
+                <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
+                  <div 
+                    className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${Math.min(completionPercentage, 100)}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs text-blue-600 dark:text-blue-400 mt-1">
+                  <span>Получено: {totalReceivedItems} шт.</span>
+                  <span>Заказано: {originalTotalItems} шт.</span>
+                </div>
+              </div>
+
+              {/* Items list */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-dark dark:text-white mb-4">
+                  📦 Товары в закупке
+                </h3>
+                <div className="space-y-3">
+                  {purchase?.items.map((item, index) => {
+                    const receivedItem = receivedItems.find(ri => ri.id === item.id);
+                    const receivedQty = receivedItem?.receivedQuantity || 0;
+                    const isPartial = receivedQty < item.quantity;
+                    const isOverReceived = receivedQty > item.quantity;
+                    
+                    return (
+                      <div 
+                        key={item.id}
+                        className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+                      >
+                        <div className="flex-1">
+                          <h4 className="font-medium text-dark dark:text-white">
+                            {item.product?.name || `Товар ${item.productId}`}
+                          </h4>
+                          <div className="text-sm text-gray-500 space-x-4">
+                            <span>Заказано: {item.quantity} шт.</span>
+                            <span>Цена: {item.costPrice.toLocaleString()} ₽/шт</span>
+                            <span>Сумма: {item.total.toLocaleString()} ₽</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-3">
+                          {/* Quantity input */}
+                          <div className="flex items-center gap-2">
+                            <label className="text-sm font-medium text-dark dark:text-white whitespace-nowrap">
+                              Получено:
+                            </label>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => updateReceivedQuantity(item.id, receivedQty - 1)}
+                                className="w-8 h-8 flex items-center justify-center bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                              >
+                                −
+                              </button>
+                              <input
+                                type="number"
+                                value={receivedQty}
+                                onChange={(e) => updateReceivedQuantity(item.id, parseInt(e.target.value) || 0)}
+                                className="w-20 px-2 py-1 text-center border border-stroke dark:border-dark-3 rounded-lg bg-transparent dark:text-white"
+                                min="0"
+                              />
+                              <button
+                                onClick={() => updateReceivedQuantity(item.id, receivedQty + 1)}
+                                className="w-8 h-8 flex items-center justify-center bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Status indicator */}
+                          <div className="flex items-center gap-2">
+                            {isOverReceived ? (
+                              <span className="px-2 py-1 bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400 text-xs rounded-full">
+                                📈 Больше заказанного
+                              </span>
+                            ) : isPartial ? (
+                              <span className="px-2 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 text-xs rounded-full">
+                                ⚠️ Частично
+                              </span>
+                            ) : receivedQty === item.quantity ? (
+                              <span className="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 text-xs rounded-full">
+                                ✅ Полностью
+                              </span>
+                            ) : (
+                              <span className="px-2 py-1 bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 text-xs rounded-full">
+                                ❌ Не получено
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Logistics and date section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                {/* Logistics expense */}
+                <div>
+                  <label className="block text-sm font-medium text-dark dark:text-white mb-2">
+                    💸 Расходы на логистику (₽)
+                  </label>
+                  <input
+                    type="number"
+                    value={logisticsExpense}
+                    onChange={(e) => setLogisticsExpense(Number(e.target.value) || 0)}
+                    className="w-full px-4 py-2 border border-stroke dark:border-dark-3 rounded-lg bg-transparent dark:text-white focus:border-primary dark:focus:border-primary outline-none"
+                    placeholder="0"
+                    min="0"
+                    step="0.01"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Будет добавлено в расходы с категорией "Логистика"
+                  </p>
+                </div>
+
+                {/* Received date */}
+                <div>
+                  <label className="block text-sm font-medium text-dark dark:text-white mb-2">
+                    📅 Дата получения товара
+                  </label>
+                  <input
+                    type="date"
+                    value={receivedAt}
+                    onChange={(e) => setReceivedAt(e.target.value)}
+                    className="w-full px-4 py-2 border border-stroke dark:border-dark-3 rounded-lg bg-transparent dark:text-white focus:border-primary dark:focus:border-primary outline-none"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Используется для расчета среднего времени доставки
+                  </p>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-dark dark:text-white mb-2">
+                  📝 Примечания (необязательно)
+                </label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className="w-full px-4 py-2 border border-stroke dark:border-dark-3 rounded-lg bg-transparent dark:text-white focus:border-primary dark:focus:border-primary outline-none"
+                  rows={3}
+                  placeholder="Дополнительная информация о получении товара..."
+                />
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between p-6 border-t border-stroke dark:border-dark-3 bg-gray-50 dark:bg-gray-800">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                {logisticsExpense > 0 && (
+                  <span>Расходы на логистику: <strong>{logisticsExpense.toLocaleString()} ₽</strong></span>
+                )}
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={onClose}
+                  className="px-6 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+                  disabled={isLoading}
+                >
+                  Отмена
+                </button>
+                <button
+                  onClick={handleReceive}
+                  disabled={isLoading || totalReceivedItems === 0}
+                  className="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-lg transform hover:scale-105 active:scale-95"
+                >
+                  {isLoading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Оприходование...
+                    </div>
+                  ) : (
+                    '✅ Оприходовать товар'
+                  )}
+                </button>
+              </div>
+            </div>
+          </motion.div>
         </div>
-
-        <div className="mb-4">
-          <p className="text-sm text-[#64748B] dark:text-gray-400 mb-2">
-            Закупка: <span className="font-medium text-[#374151] dark:text-gray-300">{purchaseName}</span>
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Количество дней доставки */}
-          <div>
-            <label className="block text-sm font-medium text-[#374151] dark:text-gray-300 mb-2">
-              Количество дней доставки *
-            </label>
-            <input
-              type="number"
-              value={deliveryDays}
-              onChange={(e) => setDeliveryDays(Number(e.target.value))}
-              min="1"
-              max="365"
-              required
-              disabled={isLoading}
-              className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg 
-                       bg-white dark:bg-gray-700 text-[#1E293B] dark:text-white
-                       focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20
-                       disabled:opacity-50 disabled:cursor-not-allowed"
-              placeholder="Например: 15"
-            />
-            <p className="mt-1 text-xs text-[#64748B] dark:text-gray-400">
-              Укажите фактическое количество дней от оформления до получения товара
-            </p>
-          </div>
-
-          {/* Дополнительные расходы */}
-          <div>
-            <label className="block text-sm font-medium text-[#374151] dark:text-gray-300 mb-2">
-              Дополнительные расходы на логистику (₽)
-            </label>
-            <input
-              type="number"
-              value={additionalExpenses}
-              onChange={(e) => setAdditionalExpenses(Number(e.target.value))}
-              min="0"
-              step="0.01"
-              disabled={isLoading}
-              className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg 
-                       bg-white dark:bg-gray-700 text-[#1E293B] dark:text-white
-                       focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20
-                       disabled:opacity-50 disabled:cursor-not-allowed"
-              placeholder="0"
-            />
-          </div>
-
-          {/* Примечания */}
-          <div>
-            <label className="block text-sm font-medium text-[#374151] dark:text-gray-300 mb-2">
-              Примечания при получении
-            </label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-              disabled={isLoading}
-              className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg 
-                       bg-white dark:bg-gray-700 text-[#1E293B] dark:text-white
-                       focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20
-                       disabled:opacity-50 disabled:cursor-not-allowed resize-none"
-              placeholder="Дополнительная информация о получении товара..."
-            />
-          </div>
-
-          {/* Кнопки */}
-          <div className="flex space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
-            <button
-              type="button"
-              onClick={handleClose}
-              disabled={isLoading}
-              className="flex-1 px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg 
-                       text-[#374151] dark:text-gray-300 bg-white dark:bg-gray-700
-                       hover:bg-gray-50 dark:hover:bg-gray-600 
-                       transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Отмена
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading || !deliveryDays || deliveryDays <= 0}
-              className="flex-1 px-4 py-2 rounded-lg text-white font-medium
-                       bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF]
-                       hover:scale-105 transition-all duration-300
-                       disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
-                       flex items-center justify-center"
-            >
-              {isLoading ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Оприходование...
-                </>
-              ) : (
-                'Оприходовать'
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+      )}
+    </AnimatePresence>
   );
-};
-
-export default ReceivePurchaseModal; 
+} 

@@ -135,7 +135,7 @@ export async function DELETE(
 
     if (deleted) {
       console.log('✅ Expense deleted successfully');
-      return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true });
     } else {
       return NextResponse.json(
         { error: 'Failed to delete expense' },

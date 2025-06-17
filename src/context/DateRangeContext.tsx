@@ -102,11 +102,11 @@ export function DateRangeProvider({ children }: { children: ReactNode }) {
   };
 
   const contextValue = useMemo(() => ({
-    dateRange,
-    setDateRange,
-    resetToDefault,
-    formatDateRange,
-    formatMobileDateRange,
+        dateRange,
+        setDateRange,
+        resetToDefault,
+        formatDateRange,
+        formatMobileDateRange,
   }), [dateRange]);
 
   return (

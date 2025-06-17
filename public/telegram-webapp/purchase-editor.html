@@ -11,7 +11,7 @@
             padding: 0;
             box-sizing: border-box;
         }
-
+        
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: var(--tg-theme-bg-color, #ffffff);
@@ -19,21 +19,21 @@
             padding: 16px;
             line-height: 1.4;
         }
-
+        
         .header {
             text-align: center;
             margin-bottom: 24px;
             padding-bottom: 16px;
             border-bottom: 1px solid var(--tg-theme-hint-color, #e0e0e0);
         }
-
+        
         .purchase-id {
             font-size: 24px;
             font-weight: bold;
             color: var(--tg-theme-button-color, #0088cc);
             margin-bottom: 8px;
         }
-
+        
         .status {
             font-size: 14px;
             padding: 4px 12px;
@@ -42,11 +42,11 @@
             color: var(--tg-theme-button-text-color, #ffffff);
             display: inline-block;
         }
-
+        
         .items-container {
             margin-bottom: 24px;
         }
-
+        
         .item {
             background: var(--tg-theme-secondary-bg-color, #f8f8f8);
             border-radius: 12px;
@@ -54,14 +54,14 @@
             margin-bottom: 12px;
             border: 1px solid var(--tg-theme-hint-color, #e0e0e0);
         }
-
+        
         .item-name {
             font-weight: bold;
             font-size: 16px;
             margin-bottom: 12px;
             color: var(--tg-theme-text-color, #000000);
         }
-
+        
         .item-controls {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -81,7 +81,7 @@
             text-transform: uppercase;
             font-weight: 500;
         }
-
+        
         .control-input {
             display: flex;
             align-items: center;
@@ -90,7 +90,7 @@
             border-radius: 8px;
             overflow: hidden;
         }
-
+        
         .control-btn {
             background: var(--tg-theme-button-color, #0088cc);
             color: var(--tg-theme-button-text-color, #ffffff);
@@ -104,16 +104,16 @@
             font-size: 18px;
             font-weight: bold;
         }
-
+        
         .control-btn:hover {
             opacity: 0.8;
         }
-
+        
         .control-btn:disabled {
             opacity: 0.3;
             cursor: not-allowed;
         }
-
+        
         .control-value {
             flex: 1;
             text-align: center;
@@ -124,7 +124,7 @@
             border: none;
             color: var(--tg-theme-text-color, #000000);
         }
-
+        
         .item-total {
             text-align: right;
             font-size: 18px;
@@ -133,7 +133,7 @@
             padding-top: 8px;
             border-top: 1px solid var(--tg-theme-hint-color, #e0e0e0);
         }
-
+        
         .summary {
             background: var(--tg-theme-secondary-bg-color, #f8f8f8);
             border-radius: 12px;
@@ -141,21 +141,21 @@
             margin-bottom: 24px;
             border: 2px solid var(--tg-theme-button-color, #0088cc);
         }
-
+        
         .summary-title {
             font-size: 18px;
             font-weight: bold;
             margin-bottom: 12px;
             color: var(--tg-theme-text-color, #000000);
         }
-
+        
         .summary-row {
             display: flex;
             justify-content: space-between;
             margin-bottom: 8px;
             font-size: 16px;
         }
-
+        
         .summary-total {
             font-size: 20px;
             font-weight: bold;
@@ -164,13 +164,13 @@
             padding-top: 8px;
             margin-top: 8px;
         }
-
+        
         .actions {
             display: flex;
             gap: 12px;
             margin-top: 24px;
         }
-
+        
         .btn {
             flex: 1;
             padding: 14px;
@@ -181,27 +181,27 @@
             cursor: pointer;
             transition: opacity 0.2s;
         }
-
+        
         .btn:hover {
             opacity: 0.8;
         }
-
+        
         .btn:disabled {
             opacity: 0.3;
             cursor: not-allowed;
         }
-
+        
         .btn-primary {
             background: var(--tg-theme-button-color, #0088cc);
             color: var(--tg-theme-button-text-color, #ffffff);
         }
-
+        
         .btn-secondary {
             background: var(--tg-theme-secondary-bg-color, #f8f8f8);
             color: var(--tg-theme-text-color, #000000);
             border: 1px solid var(--tg-theme-hint-color, #e0e0e0);
         }
-
+        
         .loading {
             text-align: center;
             padding: 40px;
@@ -216,7 +216,7 @@
             margin-bottom: 16px;
             border: 1px solid #ffcdd2;
         }
-
+        
         .spinner {
             display: inline-block;
             width: 20px;
@@ -226,11 +226,11 @@
             border-top-color: var(--tg-theme-button-color, #0088cc);
             animation: spin 1s ease-in-out infinite;
         }
-
+        
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-
+        
         .urgent-badge {
             background: #ff5722;
             color: white;
@@ -240,7 +240,7 @@
             font-weight: bold;
             margin-left: 8px;
         }
-
+        
         @media (max-width: 480px) {
             .item-controls {
                 grid-template-columns: 1fr;
@@ -266,11 +266,11 @@
         const tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
-
+        
         // Глобальные переменные
         let purchaseData = null;
         let isModified = false;
-
+        
         // Получение параметров из URL
         function getUrlParams() {
             const params = new URLSearchParams(window.location.search);
@@ -304,7 +304,7 @@
                 showError(`Ошибка загрузки: ${error.message}`);
             }
         }
-
+        
         // Отображение ошибки
         function showError(message) {
             document.getElementById('app').innerHTML = `
@@ -399,7 +399,7 @@
             // Обновляем кнопки Telegram
             updateTelegramButtons();
         }
-
+        
         // Получение текста статуса
         function getStatusText(status) {
             const statusMap = {
@@ -416,7 +416,7 @@
             };
             return statusMap[status] || status;
         }
-
+        
         // Изменение количества
         function changeQuantity(index, delta) {
             const newQuantity = Math.max(1, purchaseData.items[index].quantity + delta);
@@ -431,7 +431,7 @@
                 purchaseData.items[index].total = quantity * purchaseData.items[index].costPrice;
                 isModified = true;
                 renderPurchase();
-            }
+        }
         }
 
         // Изменение цены
@@ -439,7 +439,7 @@
             const newPrice = Math.max(0.1, purchaseData.items[index].costPrice + delta);
             updatePrice(index, newPrice);
         }
-
+        
         // Обновление цены
         function updatePrice(index, value) {
             const price = Math.max(0.1, parseFloat(value) || 0.1);
@@ -467,7 +467,7 @@
             const originalText = saveBtn.textContent;
             saveBtn.disabled = true;
             saveBtn.innerHTML = '<span class="spinner"></span> Сохранение...';
-
+            
             try {
                 const response = await fetch(`/api/purchases/${purchaseData.id}`, {
                     method: 'PUT',
@@ -483,15 +483,15 @@
                         }))
                     })
                 });
-
+                
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
-
+                
                 isModified = false;
                 tg.showAlert('Изменения сохранены!');
                 renderPurchase();
-
+                
             } catch (error) {
                 console.error('Error saving changes:', error);
                 tg.showAlert(`Ошибка сохранения: ${error.message}`);
@@ -522,7 +522,7 @@
                 }
 
                 tg.showAlert('Администратор уведомлен о готовности к оплате!');
-                tg.close();
+            tg.close();
 
             } catch (error) {
                 console.error('Error marking ready for payment:', error);
@@ -558,13 +558,13 @@
                 markReadyForPayment();
             }
         });
-
+        
         // Предупреждение о несохраненных изменениях
         window.addEventListener('beforeunload', (e) => {
             if (isModified) {
                 e.preventDefault();
                 e.returnValue = 'У вас есть несохраненные изменения. Вы уверены, что хотите покинуть страницу?';
-            }
+        }
         });
     </script>
 </body>

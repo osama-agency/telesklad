@@ -36,13 +36,15 @@ const TelegramPurchasesPage: React.FC = () => {
       const testPurchase = {
         items: [
           {
-            productName: 'Тестовый товар 1',
+            productId: 35, // Risperdal 1 Mg/ml сироп
+            productName: 'Risperdal 1 Mg/ml сироп',
             quantity: 2,
             costPrice: 15.50,
             total: 31.00
           },
           {
-            productName: 'Тестовый товар 2',
+            productId: 4, // Attex 100 mg
+            productName: 'Attex 100 mg',
             quantity: 1,
             costPrice: 25.00,
             total: 25.00

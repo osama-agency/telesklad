@@ -97,19 +97,19 @@ export function ExpensesTable() {
   const handleConfirmDelete = async () => {
     if (!deletingExpense) return;
     
-    setIsLoading(true);
-    try {
+      setIsLoading(true);
+      try {
       await deleteExpenseAPI(deletingExpense.id);
-      refetch();
+        refetch();
       setIsDeleteModalOpen(false);
       setDeletingExpense(null);
       success('Расход удален', 'Расход успешно удален из системы');
     } catch (err) {
       console.error('Ошибка при удалении расхода:', err);
       error('Ошибка удаления', 'Не удалось удалить расход. Попробуйте еще раз.');
-    } finally {
-      setIsLoading(false);
-    }
+      } finally {
+        setIsLoading(false);
+      }
   };
 
   // Обработчик отмены удаления
@@ -158,65 +158,65 @@ export function ExpensesTable() {
 
   return (
     <>
-      <div className="space-y-6">
-        {/* Header Section */}
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+    <div className="space-y-6">
+      {/* Header Section */}
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <div>
+          <h2 className="text-2xl font-bold text-dark dark:text-white">
+            Расходы
+          </h2>
+          <p className="mt-1 text-sm text-[#64748B] dark:text-gray-400">
+            Управление расходами компании
+          </p>
+        </div>
+        <button
+          onClick={handleCreateExpense}
+          disabled={isLoading}
+          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] px-5 py-2.5 text-sm font-medium text-white shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
         >
-          <div>
-            <h2 className="text-2xl font-bold text-dark dark:text-white">
-              Расходы
-            </h2>
-            <p className="mt-1 text-sm text-[#64748B] dark:text-gray-400">
-              Управление расходами компании
-            </p>
-          </div>
-          <button
-            onClick={handleCreateExpense}
-            disabled={isLoading}
-            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] px-5 py-2.5 text-sm font-medium text-white shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Новый расход
-          </button>
-        </motion.div>
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          Новый расход
+        </button>
+      </motion.div>
 
-        {/* Stats Cards */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <ExpenseStats 
-            totalAmount={stats.totalAmount}
-            totalCount={stats.totalCount}
-          />
-        </motion.div>
+      {/* Stats Cards */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        <ExpenseStats 
+          totalAmount={stats.totalAmount}
+          totalCount={stats.totalCount}
+        />
+      </motion.div>
 
-        {/* Expense Table */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <ExpenseTable
-            expenses={expenses}
-            onEdit={handleEditExpense}
-            onDelete={handleDeleteExpense}
-          />
-        </motion.div>
+      {/* Expense Table */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <ExpenseTable
+          expenses={expenses}
+          onEdit={handleEditExpense}
+          onDelete={handleDeleteExpense}
+        />
+      </motion.div>
 
         {/* Expense Modal */}
-        <ExpenseModal
-          isOpen={isModalOpen}
-          onClose={handleCloseModal}
-          onSave={handleSaveExpense}
-          editExpense={editingExpense}
-        />
+      <ExpenseModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onSave={handleSaveExpense}
+        editExpense={editingExpense}
+      />
 
         {/* Delete Confirmation Modal */}
         <ConfirmDeleteModal
@@ -226,7 +226,7 @@ export function ExpensesTable() {
           expense={deletingExpense}
           isLoading={isLoading}
         />
-      </div>
+    </div>
 
       {/* Toast Container */}
       <ToastContainer toasts={toasts} onClose={removeToast} />

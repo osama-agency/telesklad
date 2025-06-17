@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useDateRange } from '@/context/DateRangeContext';
 import { Order, OrderFilters, SyncResult } from '@/types/order';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { get, post, put, del, queryKeys, PaginatedResponse } from '@/lib/api';
 // ВРЕМЕННО ОТКЛЮЧЕНА АВТОРИЗАЦИЯ
 // import { useSession } from 'next-auth/react';
 
@@ -31,298 +33,185 @@ interface UseOrdersOptions {
   autoRefresh?: boolean;
 }
 
-export function useOrders(options: UseOrdersOptions = {}) {
-  // ВРЕМЕННО ОТКЛЮЧЕНА АВТОРИЗАЦИЯ
-  // const { data: session } = useSession();
-  const session = { user: { email: 'go@osama.agency' } }; // Заглушка для авторизации
-  
-  console.log('🔧 useOrders: Hook initialized with options:', options);
-  const { dateRange } = useDateRange();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState<OrdersResponse['pagination'] | null>(null);
-  const [stats, setStats] = useState<OrdersResponse['stats'] | null>(null);
-  const [filters, setFilters] = useState<Partial<OrderFilters>>(options.initialFilters || {});
+// Типы для заказов
+export interface OrderEntity {
+  id: number;
+  user_id: number | null;
+  total_amount: number;
+  status: number;
+  created_at: string;
+  updated_at: string;
+  msg_id: string | null;
+  tracking_number: string | null;
+  paid_at: string | null;
+  shipped_at: string | null;
+  has_delivery: boolean;
+  bank_card_id: number | null;
+  bonus: number;
+  externalid: string | null;
+  customername: string | null;
+  customeremail: string | null;
+  customerphone: string | null;
+  currency: string | null;
+  orderdate: string | null;
+  bankcard: string | null;
+  customercity: string | null;
+  deliverycost: number | null;
+  customeraddress: string | null;
+  createdat: string | null;
+  paidat: string | null;
+  shippedat: string | null;
+  total: number | null;
+  updatedat: string | null;
+}
 
+export interface OrdersStats {
+  totalOrders: number;
+  totalAmount: number;
+  averageOrderValue: number;
+  statusCounts: Record<number, number>;
+}
+
+export interface OrdersParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface OrdersApiResponse {
+  orders: OrderEntity[];
+  pagination: {
+    page: number;
+    totalCount: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+  stats: OrdersStats;
+}
+
+// Основной хук для получения заказов
+export function useOrdersQuery(params: OrdersParams = {}) {
   const {
     page = 1,
     limit = 25,
+    search = '',
+    status,
     sortBy = 'created_at',
-    sortOrder = 'desc',
-    autoRefresh = true,
-  } = options;
+    sortOrder = 'desc'
+  } = params;
 
-  const fetchOrders = useCallback(async () => {
-    // ВРЕМЕННО ОТКЛЮЧЕНА АВТОРИЗАЦИЯ
-    // if (!session) {
-    //   setError('Not authenticated');
-    //   return;
-    // }
-
-    console.log('🔧 useOrders: Starting fetchOrders...');
-    setLoading(true);
-    setError(null);
-
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        sortBy,
-        sortOrder,
-      });
-
-      // Добавляем параметры даты только если они определены и стабильны
-      if (dateRange?.from) {
-        params.append('from', dateRange.from.toISOString());
-      }
-      if (dateRange?.to) {
-        params.append('to', dateRange.to.toISOString());
-      }
-
-      // Добавляем фильтры
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          params.append(key, value.toString());
-        }
-      });
-
-      const url = `/api/orders?${params.toString()}`;
-      console.log('🔧 useOrders: Fetching from URL:', url);
-      
-      const response = await fetch(url, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
-      
-      if (!response.ok) {
-        console.error('🔧 useOrders: HTTP error!', response.status);
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.error || `HTTP error! status: ${response.status}`);
-      }
-
-      const data: OrdersResponse = await response.json();
-      console.log('🔧 useOrders: Received data:', data.orders?.length || 0, 'orders');
-      
-      if (!data.orders || !Array.isArray(data.orders)) {
-        throw new Error('Invalid response format: orders array is missing or invalid');
-      }
-
-      if (!data.pagination || typeof data.pagination !== 'object') {
-        throw new Error('Invalid response format: pagination data is missing or invalid');
-      }
-
-      if (!data.stats || typeof data.stats !== 'object') {
-        throw new Error('Invalid response format: stats data is missing or invalid');
-      }
-      
-      setOrders(data.orders);
-      setPagination(data.pagination);
-      setStats(data.stats);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch orders';
-      setError(errorMessage);
-      console.error('Error fetching orders:', err);
-      
-      // Сбрасываем данные при ошибке
-      setOrders([]);
-      setPagination(null);
-      setStats(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [dateRange?.from, dateRange?.to, filters, page, limit, sortBy, sortOrder]);
-
-  // Автоматическое обновление при изменении даты
-  useEffect(() => {
-    console.log('🔧 useOrders: useEffect triggered, autoRefresh:', autoRefresh);
-    if (autoRefresh) { // ВРЕМЕННО ОТКЛЮЧЕНА АВТОРИЗАЦИЯ - убрана проверка session
-      console.log('🔧 useOrders: Calling fetchOrders from useEffect');
-      
-      // Создаем локальную функцию для избежания зависимости от fetchOrders
-      const loadOrders = async () => {
-        setLoading(true);
-        setError(null);
-
-        try {
-          const params = new URLSearchParams({
-            page: page.toString(),
-            limit: limit.toString(),
-            sortBy,
-            sortOrder,
-          });
-
-          // Добавляем параметры даты только если они определены и стабильны
-          if (dateRange?.from) {
-            params.append('from', dateRange.from.toISOString());
-          }
-          if (dateRange?.to) {
-            params.append('to', dateRange.to.toISOString());
-          }
-
-          // Добавляем фильтры
-          Object.entries(filters).forEach(([key, value]) => {
-            if (value !== undefined && value !== null && value !== '') {
-              params.append(key, value.toString());
-            }
-          });
-
-          const url = `/api/orders?${params.toString()}`;
-          console.log('🔧 useOrders: Fetching from URL:', url);
-          
-          const response = await fetch(url, {
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-          });
-          
-          if (!response.ok) {
-            console.error('🔧 useOrders: HTTP error!', response.status);
-            const errorData = await response.json().catch(() => null);
-            throw new Error(errorData?.error || `HTTP error! status: ${response.status}`);
-          }
-
-          const data = await response.json();
-          console.log('🔧 useOrders: Received data:', data.orders?.length || 0, 'orders');
-          
-          if (!data.orders || !Array.isArray(data.orders)) {
-            throw new Error('Invalid response format: orders array is missing or invalid');
-          }
-
-          if (!data.pagination || typeof data.pagination !== 'object') {
-            throw new Error('Invalid response format: pagination data is missing or invalid');
-          }
-
-          if (!data.stats || typeof data.stats !== 'object') {
-            throw new Error('Invalid response format: stats data is missing or invalid');
-          }
-          
-          setOrders(data.orders);
-          setPagination(data.pagination);
-          setStats(data.stats);
-        } catch (err) {
-          const errorMessage = err instanceof Error ? err.message : 'Failed to fetch orders';
-          setError(errorMessage);
-          console.error('Error fetching orders:', err);
-          
-          // Сбрасываем данные при ошибке
-          setOrders([]);
-          setPagination(null);
-          setStats(null);
-        } finally {
-          setLoading(false);
-        }
-      };
-      
-      loadOrders();
-    }
-  }, [autoRefresh, page, limit, sortBy, sortOrder, dateRange?.from, dateRange?.to, filters]);
-
-  // Синхронизация с внешним API
-  const syncOrders = useCallback(async (): Promise<SyncResult | null> => {
-    // ВРЕМЕННО ОТКЛЮЧЕНА АВТОРИЗАЦИЯ
-    // if (!session) {
-    //   setError('Not authenticated');
-    //   return null;
-    // }
-
-    try {
-      const response = await fetch('/api/orders/sync', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result: SyncResult = await response.json();
-      
-      // После синхронизации обновляем список заказов
-      if (result.ordersCreated > 0 || result.ordersUpdated > 0) {
-        await fetchOrders();
-      }
-
-      return result;
-    } catch (err) {
-      console.error('Error syncing orders:', err);
-      return null;
-    }
-  }, [fetchOrders]);
-
-  // Получение статуса синхронизации
-  const getSyncStatus = useCallback(async () => {
-    // ВРЕМЕННО ОТКЛЮЧЕНА АВТОРИЗАЦИЯ
-    // if (!session) {
-    //   setError('Not authenticated');
-    //   return null;
-    // }
-
-    try {
-      const response = await fetch('/api/orders/sync', {
-        credentials: 'include',
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (err) {
-      console.error('Error getting sync status:', err);
-      return null;
-    }
-  }, []);
-
-  // Обновление фильтров
-  const updateFilters = useCallback((newFilters: Partial<OrderFilters>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
-  }, []);
-
-  // Очистка фильтров
-  const clearFilters = useCallback(() => {
-    setFilters({});
-  }, []);
-
-  // Поиск заказов
-  const searchOrders = useCallback((searchTerm: string) => {
-    updateFilters({ search: searchTerm });
-  }, [updateFilters]);
-
-  // Фильтрация по статусу
-  const filterByStatus = useCallback((status: number) => {
-    updateFilters({ status: status === 0 ? undefined : status });
-  }, [updateFilters]);
-
-  return {
-    // Данные
-    orders,
-    pagination,
-    stats,
-    loading,
-    error,
-    filters,
-
-    // Методы
-    fetchOrders,
-    syncOrders,
-    getSyncStatus,
-    updateFilters,
-    clearFilters,
-    searchOrders,
-    filterByStatus,
-
-    // Вспомогательные значения
-    hasOrders: orders.length > 0,
-    totalOrders: pagination?.totalCount || 0,
-    isFiltered: Object.keys(filters).length > 0,
+  const queryParams = {
+    page,
+    limit,
+    search,
+    status,
+    sortBy,
+    sortOrder
   };
+
+  return useQuery({
+    queryKey: queryKeys.ordersList(queryParams),
+    queryFn: () => {
+      const searchParams = new URLSearchParams();
+      Object.entries(queryParams).forEach(([key, value]) => {
+        if (value !== undefined && value !== '') {
+          searchParams.append(key, String(value));
+        }
+      });
+      
+      return get<OrdersApiResponse>(`/orders?${searchParams.toString()}`);
+    },
+    staleTime: 30 * 1000, // 30 секунд для заказов (часто обновляемые данные)
+    gcTime: 2 * 60 * 1000, // 2 минуты в кэше
+  });
+}
+
+// Получение одного заказа
+export function useOrderQuery(id: number) {
+  return useQuery({
+    queryKey: queryKeys.order(id),
+    queryFn: () => get<OrderEntity>(`/orders/${id}`),
+    enabled: !!id,
+    staleTime: 60 * 1000, // 1 минута
+  });
+}
+
+// Мутация для создания заказа
+export function useCreateOrder() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (orderData: Partial<OrderEntity>) => post<OrderEntity>('/orders', orderData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders });
+    },
+  });
+}
+
+// Мутация для обновления заказа
+export function useUpdateOrder() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<OrderEntity> }) => 
+      put<OrderEntity>(`/orders/${id}`, data),
+    onSuccess: (data, variables) => {
+      // Обновляем кэш конкретного заказа
+      queryClient.setQueryData(queryKeys.order(variables.id), data);
+      // Перезагружаем список заказов
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders });
+    },
+  });
+}
+
+// Мутация для удаления заказа
+export function useDeleteOrder() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => del(`/orders/${id}`),
+    onSuccess: (_, id) => {
+      // Удаляем из кэша конкретный заказ
+      queryClient.removeQueries({ queryKey: queryKeys.order(id) });
+      // Перезагружаем список заказов
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders });
+    },
+  });
+}
+
+// Хук для обновления статуса заказа
+export function useUpdateOrderStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, status }: { id: number; status: number }) => 
+      put<OrderEntity>(`/orders/${id}/status`, { status }),
+    onSuccess: (data, variables) => {
+      // Обновляем кэш конкретного заказа
+      queryClient.setQueryData(queryKeys.order(variables.id), data);
+      // Перезагружаем список заказов
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders });
+    },
+  });
+}
+
+// Утилиты для работы со статусами
+export const ORDER_STATUSES = {
+  1: 'Ожидает',
+  2: 'На отправке', 
+  3: 'Доставлен',
+  4: 'Отправлен',
+  5: 'Отменён',
+  6: 'Возврат',
+  7: 'Просрочен',
+} as const;
+
+export function getOrderStatusLabel(status: number): string {
+  return ORDER_STATUSES[status as keyof typeof ORDER_STATUSES] || 'Неизвестно';
 }
 
 // Хук для получения одного заказа
