@@ -132,9 +132,11 @@ export async function GET(request: NextRequest) {
       
       let avgPurchasePriceTry = 0;
       if (avgPurchasePrice > 0) {
+        // avgPurchasePrice в рублях, конвертируем в лиры
         avgPurchasePriceTry = avgPurchasePrice / exchangeRate;
       } else if (primePrice > 0) {
-        avgPurchasePriceTry = primePrice / exchangeRate;
+        // prime_cost уже в лирах, используем как есть
+        avgPurchasePriceTry = primePrice;
       }
 
       return {

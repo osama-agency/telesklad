@@ -58,6 +58,7 @@ export interface AnalyticsResponse {
     criticalStock: number;
     lowStock: number;
     needsReorder: number;
+    inTransitTotal: number;
     avgProfitMargin: number;
   };
   period: {
@@ -116,7 +117,7 @@ export function useCreatePurchase() {
       totalRUB: number;
       supplierName?: string;
       notes?: string;
-    }) => post('/purchases', data),
+    }) => post('/purchases/create', data),
     onSuccess: () => {
       // Инвалидируем кэш закупок
       queryClient.invalidateQueries({ queryKey: queryKeys.purchases });
@@ -169,6 +170,7 @@ export function useUpdateProduct() {
         let criticalStock = newProducts.filter(p => Number(p.currentStock) < 10).length;
         let lowStock = newProducts.filter(p => Number(p.currentStock) >= 10 && Number(p.currentStock) < 30).length;
         let needsReorder = newProducts.filter(p => p.recommendedOrderQuantity > 0).length;
+        let inTransitTotal = newProducts.reduce((sum, p) => sum + (p.inTransitQuantity || 0), 0);
         let avgProfitMargin = newProducts.length > 0 ? Math.round(newProducts.reduce((sum, p) => sum + (p.profitMargin || 0), 0) / newProducts.length) : 0;
         return {
           ...old,
@@ -178,6 +180,7 @@ export function useUpdateProduct() {
             criticalStock,
             lowStock,
             needsReorder,
+            inTransitTotal,
             avgProfitMargin,
           },
         };

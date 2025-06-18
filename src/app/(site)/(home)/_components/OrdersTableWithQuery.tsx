@@ -5,7 +5,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { 
   useOrdersQuery, 
-  getOrderStatusLabel,
+  ORDER_STATUSES,
   type OrderEntity,
   type OrdersParams 
 } from "@/hooks/useOrders";
@@ -14,7 +14,7 @@ const statusOptions = [
   { value: 0, label: "Все статусы" },
   { value: 1, label: "Ожидает" },
   { value: 2, label: "На отправке" },
-  { value: 3, label: "Доставлен" },
+  { value: 3, label: "Готовим к отправке" },
   { value: 4, label: "Отправлен" },
   { value: 5, label: "Отменён" },
   { value: 6, label: "Возврат" },
@@ -48,6 +48,26 @@ export function OrdersTable() {
   const orders = ordersData?.orders || [];
   const pagination = ordersData?.pagination;
 
+  const formatCurrency = (amount: number | string | any) => {
+    let numAmount: number;
+    if (typeof amount === 'string') {
+      numAmount = parseFloat(amount);
+    } else if (typeof amount === 'number') {
+      numAmount = amount;
+    } else if (amount && typeof amount === 'object' && 'toNumber' in amount) {
+      // Prisma Decimal type
+      numAmount = amount.toNumber();
+    } else {
+      numAmount = 0;
+    }
+    
+    return new Intl.NumberFormat('ru-RU', {
+      style: 'currency',
+      currency: 'RUB',
+      minimumFractionDigits: 0
+    }).format(numAmount);
+  };
+
   if (loading) {
     return (
       <section className="data-table-common rounded-[10px] bg-white shadow-1 dark:bg-gray-dark dark:shadow-card">
@@ -77,12 +97,48 @@ export function OrdersTable() {
 
   return (
     <section className="data-table-common rounded-[10px] bg-white shadow-1 dark:bg-gray-dark dark:shadow-card">
+      {/* Header with filters */}
+      <div className="flex flex-col gap-4 border-b border-stroke px-4 sm:px-7.5 py-4.5 dark:border-dark-3">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          {/* Search */}
+          <div className="relative z-20 w-full sm:max-w-[414px]">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-lg border border-stroke bg-transparent px-5 py-2.5 outline-none focus:border-primary dark:border-dark-3 dark:bg-dark-2 dark:focus:border-primary dark:text-white"
+              placeholder="Поиск заказов..."
+            />
+            <button className="absolute right-0 top-0 flex h-11.5 w-11.5 items-center justify-center rounded-r-md bg-primary text-white hover:bg-opacity-90 transition-colors duration-200">
+              <SearchIcon className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Status filter */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <label className="text-sm font-medium text-dark dark:text-white whitespace-nowrap">Статус:</label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(Number(e.target.value))}
+              className="flex-1 sm:flex-none rounded border border-stroke bg-transparent px-3 py-1.5 text-dark dark:border-dark-3 dark:bg-dark-2 dark:text-white focus:border-primary dark:focus:border-primary outline-none"
+            >
+              {statusOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
       <div className="overflow-x-auto">
         <table className="w-full table-auto">
           <thead>
             <tr className="bg-gray-2 text-left dark:bg-dark-2">
               <th className="py-4 px-4 font-medium text-dark dark:text-white">ID</th>
               <th className="py-4 px-4 font-medium text-dark dark:text-white">Клиент</th>
+              <th className="py-4 px-4 font-medium text-dark dark:text-white">Товары</th>
               <th className="py-4 px-4 font-medium text-dark dark:text-white">Статус</th>
               <th className="py-4 px-4 font-medium text-dark dark:text-white">Дата</th>
               <th className="py-4 px-4 font-medium text-dark dark:text-white">Сумма</th>
@@ -100,20 +156,35 @@ export function OrdersTable() {
                     <span className="text-sm text-gray-500">{order.customeremail || order.customerphone || 'Нет контактов'}</span>
                   </div>
                 </td>
+                <td className="py-5 px-4 dark:text-white">
+                  {order.order_items && order.order_items.length > 0 ? (
+                    <div className="space-y-1">
+                      <div className="font-medium text-sm">
+                        {order.order_items[0].name}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {order.order_items[0].quantity} × {formatCurrency(order.order_items[0].price)}
+                      </div>
+                      {order.order_items.length > 1 && (
+                        <div className="text-xs text-gray-400">
+                          +{order.order_items.length - 1} товар{order.order_items.length - 1 === 1 ? '' : order.order_items.length - 1 < 5 ? 'а' : 'ов'}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-gray-400">—</span>
+                  )}
+                </td>
                 <td className="py-5 px-4">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
-                    {getOrderStatusLabel(order.status)}
+                    {ORDER_STATUSES[order.status as keyof typeof ORDER_STATUSES] || 'Неизвестно'}
                   </span>
                 </td>
                 <td className="py-5 px-4 dark:text-white">
                   {new Date(order.created_at).toLocaleDateString('ru-RU')}
                 </td>
                 <td className="py-5 px-4 dark:text-white">
-                  {new Intl.NumberFormat('ru-RU', {
-                    style: 'currency',
-                    currency: 'RUB',
-                    minimumFractionDigits: 0
-                  }).format(order.total_amount)}
+                  {formatCurrency(order.total_amount)}
                 </td>
               </tr>
             ))}

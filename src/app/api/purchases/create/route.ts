@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { getServerSession } from 'next-auth';
+import { authOptions } from '@/libs/auth';
+import { TelegramBotService } from '@/lib/services/telegram-bot.service';
 
 const prisma = new PrismaClient();
 
@@ -24,7 +26,7 @@ interface CreatePurchaseRequest {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json({ error: 'Не авторизован' }, { status: 401 });
     }
@@ -36,37 +38,45 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Корзина пуста' }, { status: 400 });
     }
 
+    // Находим пользователя в таблице users по email из сессии
+    const user = await prisma.users.findFirst({
+      where: {
+        email: session.user.email!,
+      },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: 'Пользователь не найден' }, { status: 404 });
+    }
+
     // Создаем закупку в транзакции
     const purchase = await prisma.$transaction(async (tx) => {
-      // Создаем основную запись закупки (временно используем старые поля)
-      const newPurchase = await tx.purchase.create({
+      // Создаем основную запись закупки
+      const newPurchase = await tx.purchases.create({
         data: {
-          // supplier: supplierName, // будет добавлено после миграции
-          // totalCost: totalRUB, // будет добавлено после миграции
-          // totalCostTRY: totalTRY, // будет добавлено после миграции
-          // exchangeRate НЕ сохраняется при создании
+          suppliername: supplierName,
+          totalamount: totalRUB,
           status: 'draft',
-          // notes: notes || '', // будет добавлено после миграции
-          userId: session.user.id!,
-          totalAmount: totalRUB, // используем старое поле
+          notes: notes || '',
+          userid: user.id, // используем BigInt ID из таблицы users
         },
       });
 
-      // Создаем позиции закупки (временно используем старые поля)
+      // Создаем позиции закупки
       const purchaseItems = await Promise.all(
         items.map(item => 
-          tx.purchaseItem.create({
+          tx.purchase_items.create({
             data: {
-              purchaseId: newPurchase.id,
-              productId: item.id,
+              purchaseid: newPurchase.id,
+              productid: BigInt(item.id),
               quantity: item.quantity,
-              // unitCostRub: item.costPrice, // будет добавлено после миграции
-              // unitCostTry: item.costPriceTRY, // будет добавлено после миграции
-              // totalCostRub: item.costPrice * item.quantity, // будет добавлено после миграции
-              // totalCostTry: item.costPriceTRY * item.quantity, // будет добавлено после миграции
-              productName: item.name,
+              unitcostrub: item.costPrice,
+              unitcosttry: item.costPriceTRY,
+              totalcostrub: item.costPrice * item.quantity,
+              totalcosttry: item.costPriceTRY * item.quantity,
+              productname: item.name,
               // используем старые поля для совместимости
-              costPrice: item.costPrice,
+              costprice: item.costPrice,
               total: item.costPrice * item.quantity,
             },
           })
@@ -79,6 +89,9 @@ export async function POST(request: NextRequest) {
       };
     });
 
+    // Уведомление в Telegram отправляется только при смене статуса на "sent_to_supplier"
+    console.log(`✅ Закупка #${purchase.id} создана в статусе "draft". Уведомление в Telegram будет отправлено при смене статуса на "Отправлено".`);
+
     return NextResponse.json({
       success: true,
       data: {
@@ -88,7 +101,7 @@ export async function POST(request: NextRequest) {
         totalCostTRY: totalTRY,
         status: purchase.status,
         itemsCount: items.length,
-        createdAt: purchase.createdAt,
+        createdAt: purchase.createdat,
       },
       message: `Закупка #${purchase.id} успешно создана`,
     });

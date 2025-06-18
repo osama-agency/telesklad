@@ -2,7 +2,9 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useDateRange } from "@/context/DateRangeContext";
-import { useProductsAnalytics, useExchangeRate, useUpdateProduct } from "@/hooks/useProductsAnalytics";
+import { useProductsAnalytics, useExchangeRate, useUpdateProduct, useCreatePurchase } from "@/hooks/useProductsAnalytics";
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/api';
 import { PurchaseCartModal } from "./PurchaseCartModal";
 import { EditablePriceTRY } from "./EditablePriceTRY";
 import { EditableField } from "@/components/ui/EditableField";
@@ -166,26 +168,29 @@ function ProductCartActions({
   onUpdateQuantity, 
   onRemoveFromCart 
 }: ProductCartActionsProps) {
-  const [quantity, setQuantity] = useState(product.recommendedOrderQuantity || 1);
   const [isAdding, setIsAdding] = useState(false);
+  const [showQuantitySelector, setShowQuantitySelector] = useState(false);
+  const [quantity, setQuantity] = useState(product.recommendedOrderQuantity || 1);
   
   const cartItem = cartItems.find(item => item.id === product.id);
   const isInCart = !!cartItem;
+  const recommendedQty = product.recommendedOrderQuantity || 1;
   
-  const handleAddToCart = async () => {
+  const handleQuickAdd = async (qty: number) => {
     setIsAdding(true);
     
     try {
-      onAddToCart(product, quantity);
+      onAddToCart(product, qty);
       toast.success(
-        `${product.name} (${quantity} шт.) добавлено в корзину`,
+        `${product.name} (${qty} шт.) добавлено в корзину`,
         {
-          duration: 2000,
+          duration: 1500,
           icon: '🛒',
           style: {
-            borderRadius: '10px',
+            borderRadius: '8px',
             background: '#1A6DFF',
             color: '#fff',
+            fontSize: '14px',
           },
         }
       );
@@ -193,79 +198,127 @@ function ProductCartActions({
       toast.error('Ошибка при добавлении в корзину');
     } finally {
       setIsAdding(false);
+      setShowQuantitySelector(false);
     }
   };
-  
-  const handleQuantityChange = (newQuantity: number) => {
-    if (newQuantity >= 1 && newQuantity <= 9999) {
-      setQuantity(newQuantity);
-    }
+
+  const handleCustomAdd = async () => {
+    await handleQuickAdd(quantity);
   };
   
+  // Состояние "уже в корзине"
   if (isInCart) {
     return (
-      <button className="w-full px-3 py-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg text-green-700 dark:text-green-300 font-medium text-sm transition-colors hover:bg-green-100 dark:hover:bg-green-900/30">
-        <div className="flex items-center justify-center gap-2">
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-          </svg>
-          <span>✓ В корзине ({cartItem.quantity} шт.)</span>
+      <div className="flex items-center gap-1">
+        <div className="flex-1 px-2 py-1.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-md text-green-700 dark:text-green-300 text-xs font-medium text-center">
+          ✓ {cartItem.quantity}
         </div>
-      </button>
+        <button
+          onClick={() => onRemoveFromCart(product.id)}
+          className="w-6 h-6 flex items-center justify-center rounded-md bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+          title="Удалить из корзины"
+        >
+          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+          </svg>
+        </button>
+      </div>
     );
   }
-  
+
+  // Селектор количества
+  if (showQuantitySelector) {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setQuantity(Math.max(1, quantity - 1))}
+            className="w-6 h-6 flex items-center justify-center rounded border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
+            disabled={quantity <= 1}
+          >
+            −
+          </button>
+          <input
+            type="number"
+            value={quantity}
+            onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+            className="w-12 h-6 text-center text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+            min="1"
+          />
+          <button
+            onClick={() => setQuantity(quantity + 1)}
+            className="w-6 h-6 flex items-center justify-center rounded border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
+          >
+            +
+          </button>
+        </div>
+        <div className="flex gap-1">
+          <button
+            onClick={handleCustomAdd}
+            disabled={isAdding}
+            className="flex-1 px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 disabled:opacity-50"
+          >
+            {isAdding ? '...' : '✓'}
+          </button>
+          <button
+            onClick={() => setShowQuantitySelector(false)}
+            className="px-2 py-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs rounded hover:bg-gray-400 dark:hover:bg-gray-500"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Основные кнопки добавления
+  if (recommendedQty > 0) {
+    return (
+      <div className="flex gap-1">
+        {/* Быстрое добавление рекомендуемого количества */}
+        <button
+          onClick={() => handleQuickAdd(recommendedQty)}
+          disabled={isAdding}
+          className="flex-1 px-2 py-1.5 bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] text-white text-xs font-medium rounded-md hover:opacity-90 transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-1"
+          title={`Добавить ${recommendedQty} шт. (рекомендуемое количество)`}
+        >
+          {isAdding ? (
+            <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            <>
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              <span>{recommendedQty}</span>
+            </>
+          )}
+        </button>
+        
+        {/* Кнопка выбора количества */}
+        <button
+          onClick={() => setShowQuantitySelector(true)}
+          className="w-7 h-7 flex items-center justify-center bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+          title="Выбрать количество"
+        >
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      </div>
+    );
+  }
+
+  // Для товаров без рекомендации к заказу
   return (
     <button
-      onClick={handleAddToCart}
-      disabled={isAdding}
-      className={`
-        w-full px-3 py-2 rounded-lg font-medium text-sm transition-all duration-200 hover:shadow-md transform hover:scale-105 active:scale-95 group
-        ${product.recommendedOrderQuantity > 0 
-          ? 'bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] text-white hover:opacity-90' 
-          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'
-        }
-        ${isAdding ? 'opacity-50 cursor-not-allowed' : ''}
-      `}
+      onClick={() => setShowQuantitySelector(true)}
+      className="w-full px-2 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center justify-center gap-1"
+      title="Товар в достатке, но можно добавить в корзину"
     >
-      <div className="flex items-center justify-center gap-2">
-        {isAdding ? (
-          <>
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            <span>Добавление...</span>
-          </>
-        ) : (
-          <>
-            {/* Встроенный stepper в кнопку */}
-            <div className="flex items-center gap-1">
-              <div
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (quantity > 1) {
-                    handleQuantityChange(quantity - 1);
-                  }
-                }}
-                className={`w-6 h-6 flex items-center justify-center rounded border border-white/30 text-white/80 hover:bg-white/20 transition-colors cursor-pointer select-none ${
-                  quantity <= 1 ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-              >
-                −
-              </div>
-              <span className="mx-2 min-w-[20px] text-center font-bold">{quantity}</span>
-              <div
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleQuantityChange(quantity + 1);
-                }}
-                className="w-6 h-6 flex items-center justify-center rounded border border-white/30 text-white/80 hover:bg-white/20 transition-colors cursor-pointer select-none"
-              >
-                +
-              </div>
-            </div>
-            <span className="ml-2">🛒 в корзину</span>
-          </>
-        )}
-      </div>
+      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+      </svg>
+      <span>Добавить</span>
     </button>
   );
 }
@@ -293,6 +346,8 @@ function SmartProductsTableContent() {
   const { data: analyticsData, isLoading: loading, error } = useProductsAnalytics(period);
   const { data: exchangeRateData } = useExchangeRate('TRY');
   const updateProductMutation = useUpdateProduct();
+  const createPurchaseMutation = useCreatePurchase();
+  const queryClient = useQueryClient();
 
   const products = analyticsData?.products || [];
   const summary = analyticsData?.summary;
@@ -354,8 +409,8 @@ function SmartProductsTableContent() {
         name: product.name,
         brand: product.brand,
         quantity,
-        costPrice: product.avgPurchasePrice || 0,
-        costPriceTRY: 0 // будет рассчитано в модальном окне
+        costPrice: (product.prime_cost || 0) * (exchangeRate || 2.1), // себестоимость в рублях
+        costPriceTRY: product.prime_cost || 0 // себестоимость в лирах из prime_cost
       };
       setCartItems(prev => [...prev, newItem]);
     }
@@ -383,40 +438,27 @@ function SmartProductsTableContent() {
 
   const createPurchase = async (items: CartItem[], totalTRY: number, totalRUB: number, supplierName: string = 'Поставщик Турция', notes: string = '') => {
     try {
-      // Получаем актуальный курс лиры
-      const currentExchangeRate = exchangeRate || 2.02;
-
-      // Пересчитываем цены в лирах для каждого товара
+      // Используем уже правильные значения costPriceTRY из prime_cost
       const itemsWithTRY = items.map(item => ({
-        ...item,
-        costPriceTRY: item.costPrice / currentExchangeRate
+        ...item
+        // costPriceTRY уже содержит правильное значение из prime_cost
       }));
 
-      const response = await fetch('/api/purchases/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          items: itemsWithTRY,
-          totalTRY,
-          totalRUB,
-          supplierName,
-          notes,
-          exchangeRate: currentExchangeRate,
-        }),
+      const result = await createPurchaseMutation.mutateAsync({
+        items: itemsWithTRY,
+        totalTRY,
+        totalRUB,
+        supplierName,
+        notes,
       });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Ошибка при создании закупки');
-      }
 
       // Очищаем корзину после успешного создания
       setCartItems([]);
       
-      toast.success(`Закупка успешно создана! ID: ${result.data.id}`);
+      toast.success(`Закупка успешно создана! ID: ${(result as any)?.data?.id || 'неизвестен'}`);
+
+      // Инвалидируем кэш закупок
+      queryClient.invalidateQueries({ queryKey: queryKeys.purchases });
     } catch (error) {
       console.error('Ошибка создания закупки:', error);
       toast.error(error instanceof Error ? error.message : 'Ошибка при создании закупки');
@@ -466,6 +508,20 @@ function SmartProductsTableContent() {
     }
   };
 
+  const handleUpdatePrimeCost = async (productId: number, newPrimeCost: number) => {
+    try {
+      await updateProductMutation.mutateAsync({
+        id: productId,
+        data: { prime_cost: newPrimeCost },
+        period,
+      });
+      toast.success('Себестоимость в лирах обновлена');
+    } catch (error) {
+      toast.error('Ошибка при обновлении себестоимости');
+      throw error;
+    }
+  };
+
   if (loading) {
     return (
       <section className="data-table-common rounded-[10px] bg-white shadow-1 dark:bg-gray-dark dark:shadow-card">
@@ -492,7 +548,7 @@ function SmartProductsTableContent() {
       {/* Сводка */}
       {summary && (
         <div className="border-b border-stroke px-7.5 py-4.5 dark:border-dark-3">
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-red-500">{summary.criticalStock}</div>
               <div className="text-xs text-gray-500">Критичные остатки</div>
@@ -504,6 +560,10 @@ function SmartProductsTableContent() {
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-500">{summary.needsReorder}</div>
               <div className="text-xs text-gray-500">Нужно заказать</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-500">{summary.inTransitTotal || 0}</div>
+              <div className="text-xs text-gray-500">В пути</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-500">{summary.avgProfitMargin}%</div>
@@ -582,7 +642,7 @@ function SmartProductsTableContent() {
               <th className="cursor-pointer px-4 py-4 text-left font-medium text-dark dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800" onClick={() => handleSort('abcClass')}>
                 ABC/XYZ ↕️
               </th>
-              <th className="px-4 py-4 text-left font-medium text-dark dark:text-white">
+              <th className="px-4 py-4 text-left font-medium text-dark dark:text-white w-28">
                 Действия
               </th>
             </tr>
@@ -647,14 +707,26 @@ function SmartProductsTableContent() {
                           </button>
                         )}
 
-                        {/* Себестоимость (только отображение) */}
+                        {/* Себестоимость с возможностью редактирования */}
                         {exchangeRate && (
                           <>
                             <div className="text-xs text-green-600 dark:text-green-400">
                               💰 {Math.round(product.prime_cost * exchangeRate).toLocaleString()} ₽ (себест.)
                             </div>
-                            <div className="text-xs text-blue-600 dark:text-blue-400">
-                              💸 ₺{product.prime_cost.toFixed(2)}
+                            <div className="flex items-center gap-2">
+                              <span className="text-blue-600 dark:text-blue-400">💸</span>
+                              <EditableField
+                                value={product.prime_cost}
+                                label="себестоимость в лирах"
+                                suffix="₺"
+                                type="decimal"
+                                min={0}
+                                step={0.01}
+                                onSave={(value) => handleUpdatePrimeCost(product.id, value)}
+                                isLoading={updateProductMutation.isPending}
+                                displayClassName="text-xs text-blue-600 dark:text-blue-400"
+                                formatDisplay={(value) => `₺${value.toFixed(2)} (себест.)`}
+                              />
                             </div>
                           </>
                         )}

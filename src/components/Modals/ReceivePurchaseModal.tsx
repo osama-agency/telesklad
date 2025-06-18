@@ -219,13 +219,19 @@ export function ReceivePurchaseModal({
                         className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
                       >
                         <div className="flex-1">
-                          <h4 className="font-medium text-dark dark:text-white">
-                            {item.product?.name || `Товар ${item.productId}`}
+                          <h4 className="font-semibold text-dark dark:text-white text-base">
+                            {item.product?.name || `Товар #${item.productId}`}
                           </h4>
-                          <div className="text-sm text-gray-500 space-x-4">
-                            <span>Заказано: {item.quantity} шт.</span>
-                            <span>Цена: {item.costPrice.toLocaleString()} ₽/шт</span>
-                            <span>Сумма: {item.total.toLocaleString()} ₽</span>
+                          <div className="text-sm text-gray-500 mt-1 flex flex-wrap items-center gap-4">
+                            <span className="flex items-center gap-1">
+                              📦 <strong>Заказано:</strong> {item.quantity} шт.
+                            </span>
+                            <span className="flex items-center gap-1">
+                              💰 <strong>Цена:</strong> {item.costPrice.toLocaleString()} ₽/шт
+                            </span>
+                            <span className="flex items-center gap-1">
+                              💳 <strong>Сумма:</strong> {item.total.toLocaleString()} ₽
+                            </span>
                           </div>
                         </div>
                         

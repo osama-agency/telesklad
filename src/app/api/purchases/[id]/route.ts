@@ -38,8 +38,10 @@ export async function GET(
         id: item.id.toString(),
         productId: item.productid ? item.productid.toString() : null,
         productName: item.productname || 'Unknown Product',
+        productname: item.productname || 'Unknown Product', // для совместимости с removePaymentButton
         quantity: item.quantity || 0,
         costPrice: item.costprice || 0,
+        unitcosttry: item.unitcosttry || item.costprice || 0, // для совместимости с removePaymentButton
         total: item.total || 0
       }))
     };

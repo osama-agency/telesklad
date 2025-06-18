@@ -459,8 +459,8 @@ function SmartProductsTableContent() {
         name: product.name,
         brand: product.brand,
         quantity,
-        costPrice: product.avgPurchasePrice || 0,
-        costPriceTRY: 0 // будет рассчитано в модальном окне
+        costPrice: (product.prime_cost || 0) * (exchangeRate || 2.1), // себестоимость в рублях
+        costPriceTRY: product.prime_cost || 0 // себестоимость в лирах из prime_cost
       };
       setCartItems(prev => [...prev, newItem]);
     }
@@ -488,15 +488,10 @@ function SmartProductsTableContent() {
 
   const createPurchase = async (items: CartItem[], totalTRY: number, totalRUB: number, supplierName: string = 'Поставщик Турция', notes: string = '') => {
     try {
-      // Получаем актуальный курс лиры
-      const rateResponse = await fetch('/api/rates/latest?currency=TRY');
-      const rateData = await rateResponse.json();
-      const exchangeRate = rateData?.rate || 2.02;
-
-      // Пересчитываем цены в лирах для каждого товара
+      // Используем уже правильные значения costPriceTRY из prime_cost
       const itemsWithTRY = items.map(item => ({
         ...item,
-        costPriceTRY: item.costPrice / exchangeRate
+        // costPriceTRY уже содержит правильное значение из prime_cost
       }));
 
       const response = await fetch('/api/purchases/create', {
@@ -510,7 +505,7 @@ function SmartProductsTableContent() {
           totalRUB,
           supplierName,
           notes,
-          exchangeRate,
+          // exchangeRate больше не нужен для API
         }),
       });
 

@@ -4,12 +4,13 @@ import { TelegramBotService } from '@/lib/services/telegram-bot.service';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  console.log(`📤 Sending purchase to supplier, ID: ${params.id}`);
+  const resolvedParams = await params;
+  console.log(`📤 Sending purchase to supplier, ID: ${resolvedParams.id}`);
 
   try {
-    const purchaseId = parseInt(params.id);
+    const purchaseId = parseInt(resolvedParams.id);
 
     if (isNaN(purchaseId)) {
       return NextResponse.json(
@@ -72,6 +73,34 @@ export async function POST(
         { error: 'Failed to send purchase to supplier via Telegram' },
         { status: 500 }
       );
+    }
+
+    // Отправляем уведомление в группу о новой закупке
+    try {
+      const itemsWithTRY = purchase.purchase_items.map((item: any) => ({
+        productName: item.productname,
+        quantity: item.quantity,
+        costPrice: item.unitcosttry || 0, // используем себестоимость в лирах
+        total: (item.unitcosttry || 0) * item.quantity
+      }));
+
+      const totalAmountTRY = itemsWithTRY.reduce((sum: number, item: any) => sum + item.total, 0);
+
+      const groupNotificationData = {
+        ...formattedPurchase,
+        totalAmount: totalAmountTRY, // общая сумма в лирах
+        items: itemsWithTRY
+      };
+
+      const groupResult = await TelegramBotService.notifyGroupNewPurchase(groupNotificationData);
+      if (groupResult.success) {
+        console.log(`✅ Уведомление о закупке #${purchaseId} отправлено в группу`);
+      } else {
+        console.log(`⚠️ Не удалось отправить уведомление о закупке #${purchaseId} в группу`);
+      }
+    } catch (groupError) {
+      console.error('Ошибка отправки уведомления в группу:', groupError);
+      // Не прерываем выполнение, если группа недоступна
     }
 
     // Обновляем статус закупки и сохраняем ID сообщения Telegram

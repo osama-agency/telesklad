@@ -9,6 +9,7 @@ interface UpdateProductRequest {
   stock_quantity?: number;
   price?: number;
   old_price?: number;
+  prime_cost?: number;
 }
 
 export async function PATCH(
@@ -28,7 +29,7 @@ export async function PATCH(
     const body: UpdateProductRequest = await request.json();
     console.log('🔧 Request body received:', body);
     
-    const { stock_quantity, price, old_price } = body;
+    const { stock_quantity, price, old_price, prime_cost } = body;
 
     // Валидация данных
     if (stock_quantity !== undefined && (stock_quantity < 0 || !Number.isInteger(stock_quantity))) {
@@ -46,6 +47,12 @@ export async function PATCH(
     if (old_price !== undefined && old_price < 0) {
       return NextResponse.json({ 
         error: 'Старая цена не может быть отрицательной' 
+      }, { status: 400 });
+    }
+
+    if (prime_cost !== undefined && prime_cost < 0) {
+      return NextResponse.json({ 
+        error: 'Стоимость производства не может быть отрицательной' 
       }, { status: 400 });
     }
 
@@ -76,6 +83,10 @@ export async function PATCH(
     
     if (old_price !== undefined) {
       updateData.old_price = old_price;
+    }
+
+    if (prime_cost !== undefined) {
+      updateData.prime_cost = prime_cost;
     }
 
     // Если нет данных для обновления
@@ -109,6 +120,9 @@ export async function PATCH(
     if (old_price !== undefined) {
       changes.push(`старая цена: ${existingProduct.old_price || 'не указана'} → ${old_price}₽`);
     }
+    if (prime_cost !== undefined) {
+      changes.push(`стоимость производства: ${existingProduct.prime_cost || 'не указана'} → ${prime_cost}₽`);
+    }
 
     console.log(`📝 Товар #${productId} (${existingProduct.name}) обновлен: ${changes.join(', ')}`);
 
@@ -120,6 +134,7 @@ export async function PATCH(
         stock_quantity: updatedProduct.stock_quantity,
         price: updatedProduct.price,
         old_price: updatedProduct.old_price,
+        prime_cost: updatedProduct.prime_cost,
         changes: changes
       },
       message: `Товар "${existingProduct.name}" успешно обновлен`

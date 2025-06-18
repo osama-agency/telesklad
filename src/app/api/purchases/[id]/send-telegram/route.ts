@@ -23,16 +23,14 @@ export async function POST(
     }
 
     // Получаем закупку с товарами
-    const purchase = await prisma.purchase.findFirst({
-      where: {
-        id: purchaseId,
-        user: {
-          email: session.user.email
-        }
-      },
+    const purchase = await (prisma as any).purchases.findUnique({
+      where: { id: purchaseId },
       include: {
-        items: true,
-        user: true,
+        purchase_items: {
+          include: {
+            products: true
+          }
+        }
       }
     });
 
@@ -43,16 +41,18 @@ export async function POST(
     // Формируем данные для Telegram
     const telegramPurchase = {
       id: purchase.id,
-      totalAmount: purchase.totalAmount,
+      totalAmount: purchase.totalamount,
       status: purchase.status,
-      isUrgent: purchase.isUrgent,
-      items: purchase.items.map(item => ({
-        productName: item.productName,
+      isUrgent: purchase.isurgent,
+      items: purchase.purchase_items.map((item: any) => ({
+        productName: item.productname,
         quantity: item.quantity,
-        costPrice: item.costPrice,
-        total: item.total,
+        costPrice: item.unitcosttry || item.costprice, // используем себестоимость в лирах
+        total: (item.unitcosttry || item.costprice) * item.quantity,
       })),
-      createdAt: purchase.createdAt.toISOString(),
+      createdAt: purchase.createdat.toISOString(),
+      supplierName: purchase.suppliername,
+      notes: purchase.notes,
     };
 
     // Отправляем в Telegram
@@ -60,11 +60,12 @@ export async function POST(
 
     if (result.success && result.messageId) {
       // Обновляем статус закупки
-      await prisma.purchase.update({
+      await (prisma as any).purchases.update({
         where: { id: purchaseId },
         data: {
-          status: 'sent',
-          updatedAt: new Date(),
+          status: 'sent_to_supplier',
+          updatedat: new Date(),
+          telegrammessageid: result.messageId,
         }
       });
 

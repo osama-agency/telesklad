@@ -7,10 +7,13 @@ import {
   useDeletePurchase, 
   useSendPurchaseToTelegram,
   useReceivePurchase,
+  useUpdatePurchaseStatus,
+  useUpdatePurchase,
   getPurchaseStatusLabel,
   type Purchase 
 } from "@/hooks/usePurchases";
 import { ReceivePurchaseModal } from "@/components/Modals/ReceivePurchaseModal";
+import { EditPurchaseModal } from "@/components/Modals/EditPurchaseModal";
 import toast from 'react-hot-toast';
 
 export function PurchasesTable() {
@@ -24,22 +27,24 @@ export function PurchasesTable() {
   // Состояние модального окна оприходования
   const [isReceiveModalOpen, setIsReceiveModalOpen] = useState(false);
   const [selectedPurchaseForReceive, setSelectedPurchaseForReceive] = useState<Purchase | null>(null);
+  
+  // Состояние для редактирования
+  const [editingPurchaseId, setEditingPurchaseId] = useState<number | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedPurchaseForEdit, setSelectedPurchaseForEdit] = useState<Purchase | null>(null);
 
   // React Query hooks
   const { 
     data: purchases = [], 
     isLoading: loading, 
     error 
-  } = usePurchases({
-    page: currentPage + 1,
-    limit: pageSize,
-    search: globalFilter || undefined,
-    status: statusFilter === "all" ? undefined : statusFilter,
-  });
+  } = usePurchases({ page: currentPage + 1, limit: pageSize, search: globalFilter, status: statusFilter === 'all' ? undefined : statusFilter });
 
   const deletePurchaseMutation = useDeletePurchase();
   const sendToTelegramMutation = useSendPurchaseToTelegram();
   const receivePurchaseMutation = useReceivePurchase();
+  const updatePurchaseStatusMutation = useUpdatePurchaseStatus();
+  const updatePurchaseMutation = useUpdatePurchase();
 
   // Фильтрация закупок
   const filteredPurchases = purchases.filter(purchase => {
@@ -75,11 +80,33 @@ export function PurchasesTable() {
     });
   };
 
-  // Получение основного товара для отображения
+  // Получение списка товаров для отображения
+  const getProductsList = (items: Purchase['items']) => {
+    if (!items || items.length === 0) return "Нет товаров";
+    
+    // Показываем все товары, но не более 3х для экономии места
+    const maxItemsToShow = 3;
+    const itemsToShow = items.slice(0, maxItemsToShow);
+    
+    const productNames = itemsToShow.map(item => {
+      const name = item.product?.name || `Товар #${item.productId}`;
+      return `${name} (${item.quantity} шт.)`;
+    });
+    
+    let result = productNames.join(", ");
+    
+    if (items.length > maxItemsToShow) {
+      result += ` и еще ${items.length - maxItemsToShow} товаров`;
+    }
+    
+    return result;
+  };
+
+  // Получение краткого описания товаров для мобильной версии
   const getMainProduct = (items: Purchase['items']) => {
     if (!items || items.length === 0) return "Нет товаров";
-    if (items.length === 1) return items[0]?.product?.name || "Товар";
-    return `${items[0]?.product?.name || "Товар"} +${items.length - 1} др.`;
+    if (items.length === 1) return items[0]?.product?.name || `Товар #${items[0]?.productId}`;
+    return `${items[0]?.product?.name || `Товар #${items[0]?.productId}`} +${items.length - 1} др.`;
   };
 
   // Функция форматирования статуса
@@ -151,22 +178,62 @@ export function PurchasesTable() {
     notes?: string;
   }) => {
     try {
-      await receivePurchaseMutation.mutateAsync({
-        id: data.purchaseId,
-        data: {
-          items: data.items,
-          logisticsExpense: data.logisticsExpense,
-          receivedAt: data.receivedAt,
-          notes: data.notes
-        }
-      });
-
-      toast.success('Закупка успешно оприходована!');
+      await receivePurchaseMutation.mutateAsync({ id: data.purchaseId, data });
       setIsReceiveModalOpen(false);
       setSelectedPurchaseForReceive(null);
+      toast.success('Закупка успешно оприходована');
     } catch (error) {
-      console.error('Error receiving purchase:', error);
-      throw error; // Re-throw для обработки в модальном окне
+      console.error('Ошибка при оприходовании:', error);
+      toast.error('Ошибка при оприходовании закупки');
+    }
+  };
+
+  // Обработка изменения статуса
+  const handleStatusChange = async (purchaseId: number, newStatus: Purchase['status']) => {
+    try {
+      await updatePurchaseStatusMutation.mutateAsync({ id: purchaseId, status: newStatus });
+      toast.success('Статус закупки обновлен');
+    } catch (error) {
+      console.error('Ошибка при обновлении статуса:', error);
+      toast.error('Ошибка при обновлении статуса');
+    }
+  };
+
+  // Обработка открытия модального окна редактирования
+  const handleOpenEditModal = (purchase: Purchase) => {
+    setSelectedPurchaseForEdit(purchase);
+    setIsEditModalOpen(true);
+  };
+
+  // Обработка закрытия модального окна редактирования
+  const handleCloseEditModal = () => {
+    setSelectedPurchaseForEdit(null);
+    setIsEditModalOpen(false);
+  };
+
+  // Обработка сохранения изменений закупки
+  const handleSavePurchase = async (data: {
+    id: number;
+    totalAmount?: number;
+    items?: Array<{
+      id: number;
+      quantity: number;
+      costPrice: number;
+    }>;
+  }) => {
+    try {
+      // Преобразуем данные в правильный формат
+      const updateData: Partial<Purchase> = {
+        totalAmount: data.totalAmount,
+      };
+
+      await updatePurchaseMutation.mutateAsync({ id: data.id, data: updateData });
+      setIsEditModalOpen(false);
+      setSelectedPurchaseForEdit(null);
+      toast.success('Закупка успешно обновлена');
+    } catch (error) {
+      console.error('Ошибка при обновлении закупки:', error);
+      toast.error('Ошибка при обновлении закупки');
     }
   };
 
@@ -266,20 +333,41 @@ export function PurchasesTable() {
                   <td className="py-5 px-4 dark:text-white font-medium">
                     #{purchase.id}
                   </td>
-                  <td className="py-5 px-4">
+                  <td className="py-5 px-4 max-w-xs">
                     <div className="flex flex-col">
-                      <span className="font-medium text-dark dark:text-white">
-                        {getMainProduct(purchase.items)}
-                      </span>
-                      <span className="text-sm text-gray-500">
-                        {purchase.items?.length || 0} позиций
+                      <div className="font-medium text-dark dark:text-white text-sm leading-relaxed">
+                        {getProductsList(purchase.items)}
+                      </div>
+                      <span className="text-xs text-gray-500 mt-1">
+                        Всего {purchase.items?.length || 0} позиций
                       </span>
                     </div>
                   </td>
                   <td className="py-5 px-4">
-                    <span className={getStatusBadge(purchase.status)}>
-                      {getPurchaseStatusLabel(purchase.status)}
-                    </span>
+                    <select
+                      value={purchase.status}
+                      onChange={(e) => handleStatusChange(purchase.id, e.target.value as Purchase['status'])}
+                      disabled={updatePurchaseStatusMutation.isPending}
+                      className={`
+                        px-3 py-1.5 rounded-full text-xs font-medium border-0 outline-none cursor-pointer transition-all
+                        ${purchase.status === 'draft' ? 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300' : ''}
+                        ${purchase.status === 'sent' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' : ''}
+                        ${purchase.status === 'awaiting_payment' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400' : ''}
+                        ${purchase.status === 'paid' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' : ''}
+                        ${purchase.status === 'in_transit' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400' : ''}
+                        ${purchase.status === 'received' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400' : ''}
+                        ${purchase.status === 'cancelled' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' : ''}
+                        ${updatePurchaseStatusMutation.isPending ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80'}
+                      `}
+                    >
+                      <option value="draft">🗒️ Черновик</option>
+                      <option value="sent">📤 Отправлено</option>
+                      <option value="awaiting_payment">💳 Ожидает оплату</option>
+                      <option value="paid">💰 Оплачено</option>
+                      <option value="in_transit">🚚 В пути</option>
+                      <option value="received">✅ Получено</option>
+                      <option value="cancelled">❌ Отменено</option>
+                    </select>
                   </td>
                   <td className="py-5 px-4 dark:text-white font-semibold">
                     {new Intl.NumberFormat('ru-RU', {
@@ -293,6 +381,16 @@ export function PurchasesTable() {
                   </td>
                   <td className="py-5 px-4">
                     <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleOpenEditModal(purchase)}
+                        className="p-2 text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-900/20 rounded-lg transition-colors"
+                        title="Редактировать закупку"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+
                       {purchase.status === 'draft' && (
                         <button
                           onClick={() => handleSendTelegram(purchase.id)}
@@ -376,6 +474,15 @@ export function PurchasesTable() {
         purchase={selectedPurchaseForReceive}
         onReceive={handleReceivePurchase}
         isLoading={receivePurchaseMutation.isPending}
+      />
+
+      {/* Модальное окно редактирования */}
+      <EditPurchaseModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        purchase={selectedPurchaseForEdit}
+        onSave={handleSavePurchase}
+        isLoading={updatePurchaseMutation.isPending}
       />
     </section>
   );

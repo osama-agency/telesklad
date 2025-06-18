@@ -196,8 +196,8 @@ export async function POST(request: NextRequest) {
           data: {
               stock_quantity: currentStock + parseInt(item.quantity),
               avgpurchasepricerub: new Decimal(newAvgPrice),
-            // Обновляем prime_cost для обратной совместимости
-            prime_cost: new Decimal(newAvgPrice)
+            // prime_cost должен храниться в лирах - конвертируем из рублей
+            prime_cost: new Decimal(await ExchangeRateService.convertFromRub(newAvgPrice, currency, new Date()))
           }
         });
         } catch (exchangeError) {

@@ -229,7 +229,7 @@ export async function GET(request: NextRequest) {
           productid: product.id,
           purchases: {
             status: {
-              in: ['pending', 'ordered', 'shipped']
+              in: ['sent']
             }
           }
         },
@@ -271,6 +271,7 @@ export async function GET(request: NextRequest) {
       // 6. Финансовые расчеты с учетом расходов на доставку И общих расходов
       const avgPurchasePrice = Number(product.avgpurchasepricerub || product.prime_cost || 0);
       const avgpurchasepricetry = 0; // Пока что нет данных
+      // prime_cost хранится в лирах в базе данных
       const prime_cost = Number(product.prime_cost || 0);
       const avgSalePrice = Number(product.price || 0);
       
@@ -397,6 +398,7 @@ export async function GET(request: NextRequest) {
           criticalStock: analytics.filter(p => p.stockStatus === 'critical').length,
           lowStock: analytics.filter(p => p.stockStatus === 'low').length,
           needsReorder: analytics.filter(p => p.recommendedOrderQuantity > 0).length,
+          inTransitTotal: analytics.reduce((sum, p) => sum + p.inTransitQuantity, 0),
           avgProfitMargin: Number((analytics.reduce((sum, p) => sum + p.profitMargin, 0) / analytics.length).toFixed(2))
         },
         period: {

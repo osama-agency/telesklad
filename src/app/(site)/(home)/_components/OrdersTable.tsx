@@ -2,7 +2,7 @@
 
 import { SearchIcon, ArrowUpIcon, ArrowDownIcon } from "@/assets/icons";
 import { useState, useEffect } from "react";
-import { useOrders } from "@/hooks/useOrders";
+import { useOrdersQuery, OrderEntity } from "@/hooks/useOrders";
 import { motion } from "framer-motion";
 // ВРЕМЕННО ОТКЛЮЧЕНА АВТОРИЗАЦИЯ
 // import { useSession } from "next-auth/react";
@@ -12,7 +12,7 @@ const statusOptions = [
   { value: 0, label: "Все статусы" },
   { value: 1, label: "Ожидает" },
   { value: 2, label: "На отправке" },
-  { value: 3, label: "Доставлен" },
+  { value: 3, label: "Готовим к отправке" },
   { value: 4, label: "Отправлен" },
   { value: 5, label: "Отменён" },
   { value: 6, label: "Возврат" },
@@ -29,26 +29,23 @@ export function OrdersTable() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [currentPage, setCurrentPage] = useState(1);
 
-  const {
-    orders,
-    pagination,
-    stats,
-    loading,
+  const { 
+    data: ordersData, 
+    isLoading: loading, 
     error,
-    searchOrders,
-    filterByStatus,
-    fetchOrders,
-  } = useOrders({
+    refetch: fetchOrders 
+  } = useOrdersQuery({
     page: currentPage,
     limit: 25,
+    search: searchQuery || undefined,
+    status: statusFilter === 0 ? undefined : statusFilter,
     sortBy: sortField || 'created_at',
     sortOrder: sortDirection,
-    autoRefresh: true, // Включаем автоматическую загрузку данных
-    initialFilters: {
-      search: searchQuery,
-      status: statusFilter === 0 ? undefined : statusFilter,
-    },
   });
+
+  const orders = ordersData?.orders || [];
+  const pagination = ordersData?.pagination;
+  const stats = ordersData?.stats;
 
   // ВРЕМЕННО ОТКЛЮЧЕНА АВТОРИЗАЦИЯ
   // useEffect(() => {
@@ -57,19 +54,7 @@ export function OrdersTable() {
   //   }
   // }, [status, router]);
 
-  // Обновление поиска с задержкой
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      searchOrders(searchQuery);
-    }, 500);
-    
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery, searchOrders]);
-
-  // Обновление фильтра по статусу
-  useEffect(() => {
-    filterByStatus(statusFilter);
-  }, [statusFilter, filterByStatus]);
+  // Поиск и фильтрация теперь работают автоматически через React Query
 
   // ВРЕМЕННО ОТКЛЮЧЕНА АВТОРИЗАЦИЯ
   // if (status === 'loading') {
@@ -158,7 +143,7 @@ export function OrdersTable() {
     switch (status) {
       case 1: return "Ожидает";
       case 2: return "На отправке";
-      case 3: return "Доставлен";
+      case 3: return "Готовим к отправке";
       case 4: return "Отправлен";
       case 5: return "Отменён";
       case 6: return "Возврат";
@@ -237,7 +222,7 @@ export function OrdersTable() {
     return (
       <section className="data-table-common rounded-[10px] bg-white shadow-1 dark:bg-gray-dark dark:shadow-card">
         <div className="flex flex-col items-center justify-center py-16">
-          <div className="text-red-500 mb-4">{error}</div>
+          <div className="text-red-500 mb-4">{error?.message || 'Произошла ошибка'}</div>
           <button
             onClick={() => fetchOrders()}
             className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
@@ -320,6 +305,9 @@ export function OrdersTable() {
                 Клиент
               </th>
               <th className="py-4 px-4 font-medium text-dark dark:text-white">
+                Товары
+              </th>
+              <th className="py-4 px-4 font-medium text-dark dark:text-white">
                 Статус
               </th>
               <th className="py-4 px-4 font-medium text-dark dark:text-white">
@@ -347,6 +335,25 @@ export function OrdersTable() {
                     <span className="font-medium">{order.customername || 'Без имени'}</span>
                     <span className="text-sm text-gray-500">{order.customeremail || order.customerphone || 'Нет контактов'}</span>
                   </div>
+                </td>
+                <td className="py-5 px-4 dark:text-white">
+                  {order.order_items && order.order_items.length > 0 ? (
+                    <div className="space-y-1">
+                      <div className="font-medium text-sm">
+                        {order.order_items[0].name}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {order.order_items[0].quantity} × {formatCurrency(order.order_items[0].price)}
+                      </div>
+                      {order.order_items.length > 1 && (
+                        <div className="text-xs text-gray-400">
+                          +{order.order_items.length - 1} товар{order.order_items.length - 1 === 1 ? '' : order.order_items.length - 1 < 5 ? 'а' : 'ов'}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-gray-400">—</span>
+                  )}
                 </td>
                 <td className="py-5 px-4">
                   {getStatusBadge(order.status)}

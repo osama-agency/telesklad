@@ -63,6 +63,21 @@ export interface OrderEntity {
   shippedat: string | null;
   total: number | null;
   updatedat: string | null;
+  order_items?: {
+    id: string;
+    order_id: string;
+    product_id: string;
+    quantity: number;
+    price: string;
+    created_at: string;
+    updated_at: string;
+    productid: string;
+    createdat: string;
+    orderid: string;
+    name: string;
+    total: string;
+    updatedat: string;
+  }[];
 }
 
 export interface OrdersStats {
@@ -203,7 +218,7 @@ export function useUpdateOrderStatus() {
 export const ORDER_STATUSES = {
   1: 'Ожидает',
   2: 'На отправке', 
-  3: 'Доставлен',
+  3: 'Готовим к отправке',
   4: 'Отправлен',
   5: 'Отменён',
   6: 'Возврат',

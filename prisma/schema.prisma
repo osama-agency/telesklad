@@ -428,6 +428,7 @@ model products {
   prime_cost            Decimal?                @db.Decimal(10, 2)
   avgpurchasepricerub   Decimal?                @db.Decimal(10, 2)
   avgpurchasepricetry   Decimal?                @db.Decimal(10, 2)
+  quantity_in_transit   Int?                    @default(0)
   cart_items            cart_items[]
   favorites             favorites[]
   order_items           order_items[]
@@ -480,6 +481,7 @@ model purchases {
   deliverystatus         String?          @db.VarChar
   deliverycarrier        String?          @db.VarChar
   deliverynotes          String?
+  paymentbuttonclicks    Int?             @default(0)
   purchase_items         purchase_items[]
   users                  users            @relation(fields: [userid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_purchases_user")
 

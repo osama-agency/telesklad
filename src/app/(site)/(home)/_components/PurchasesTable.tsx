@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Purchase, PurchaseItem } from "../../purchases/types";
-import ReceivePurchaseModal from "@/components/Modals/ReceivePurchaseModal";
+import { ReceivePurchaseModal } from "@/components/Modals/ReceivePurchaseModal";
 import PurchaseModal from "@/components/Modals/PurchaseModal";
 
 interface Product {
@@ -290,11 +290,33 @@ export function PurchasesTable({ className }: PurchasesTableProps) {
     });
   };
 
-  // Получение основного товара для отображения
+  // Получение списка товаров для отображения
+  const getProductsList = (items: PurchaseItem[]) => {
+    if (!items || items.length === 0) return "Нет товаров";
+    
+    // Показываем все товары, но не более 3х для экономии места
+    const maxItemsToShow = 3;
+    const itemsToShow = items.slice(0, maxItemsToShow);
+    
+    const productNames = itemsToShow.map(item => {
+      const name = item.product?.name || `Товар #${item.productId}`;
+      return `${name} (${item.quantity} шт.)`;
+    });
+    
+    let result = productNames.join(", ");
+    
+    if (items.length > maxItemsToShow) {
+      result += ` и еще ${items.length - maxItemsToShow} товаров`;
+    }
+    
+    return result;
+  };
+
+  // Получение основного товара для отображения (для совместимости)
   const getMainProduct = (items: PurchaseItem[]) => {
     if (!items || items.length === 0) return "Нет товаров";
-    if (items.length === 1) return items[0]?.product?.name || "Товар";
-    return `${items[0]?.product?.name || "Товар"} +${items.length - 1} др.`;
+    if (items.length === 1) return items[0]?.product?.name || `Товар #${items[0]?.productId}`;
+    return `${items[0]?.product?.name || `Товар #${items[0]?.productId}`} +${items.length - 1} др.`;
   };
 
   // Расчет и отображение времени доставки
@@ -383,11 +405,20 @@ export function PurchasesTable({ className }: PurchasesTableProps) {
   };
 
   // Обработчик успешного оприходования
-  const handleReceiveSuccess = (data: any) => {
+  const handleReceiveSuccess = async (data: {
+    purchaseId: number;
+    items: Array<{
+      id: number;
+      receivedQuantity: number;
+    }>;
+    logisticsExpense: number;
+    receivedAt: string;
+    notes?: string;
+  }) => {
     // Обновляем список закупок
     setPurchases(prev => prev.map(p => 
-      p.id === data.id 
-        ? { ...p, status: 'received' }
+      p.id === data.purchaseId 
+        ? { ...p, status: 'received' as Purchase['status'] }
         : p
     ));
     
@@ -928,13 +959,15 @@ export function PurchasesTable({ className }: PurchasesTableProps) {
                     <span>{formatDate(purchase.createdAt)}</span>
                   </div>
 
-                  <div className="flex items-center gap-2 text-sm">
-                    <svg className="w-4 h-4 text-[#64748B] dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex items-start gap-2 text-sm">
+                    <svg className="w-4 h-4 text-[#64748B] dark:text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
-                    <span className="text-[#1E293B] dark:text-white font-medium">
-                      {getMainProduct(purchase.items)}
-                    </span>
+                    <div className="flex-1">
+                      <div className="text-[#1E293B] dark:text-white font-medium leading-relaxed">
+                        {getProductsList(purchase.items)}
+                      </div>
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2 text-sm">
@@ -1120,7 +1153,14 @@ export function PurchasesTable({ className }: PurchasesTableProps) {
                       {selectedPurchase.items.map((item) => (
                         <tr key={item.id}>
                           <td className="px-4 py-3 text-[#1E293B] dark:text-white">
-                            {item.product?.name || 'Товар'}
+                            <div>
+                              <div className="font-medium">
+                                {item.product?.name || `Товар #${item.productId}`}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                ID: {item.productId}
+                              </div>
+                            </div>
                           </td>
                           <td className="px-4 py-3 text-[#1E293B] dark:text-white">
                             {item.quantity} шт.
@@ -1170,9 +1210,9 @@ export function PurchasesTable({ className }: PurchasesTableProps) {
             setShowReceiveModal(false);
             setCurrentReceivingPurchase(null);
           }}
-          purchaseId={currentReceivingPurchase.id}
-          purchaseName={getMainProduct(currentReceivingPurchase.items)}
-          onReceived={handleReceiveSuccess}
+          purchase={currentReceivingPurchase}
+          onReceive={handleReceiveSuccess}
+          isLoading={false}
         />
       )}
 

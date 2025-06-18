@@ -180,4 +180,19 @@ export class ExchangeRateService {
 
     return amount * Number(rate.rateWithBuffer);
   }
+
+  /**
+   * Конвертировать цену из рублей в валюту
+   */
+  static async convertFromRub(amount: number, currency: string, date?: Date): Promise<number> {
+    if (currency === 'RUB') {
+      return amount;
+    }
+
+    const rate = date 
+      ? await this.getRateForDate(currency, date)
+      : await this.getLatestRate(currency);
+
+    return amount / Number(rate.rateWithBuffer);
+  }
 } 
