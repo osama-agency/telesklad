@@ -61,7 +61,8 @@
 /* Убираем лишнюю высоту для страниц с коротким контентом */
 .webapp-container.profile-page {
   min-height: auto;
-  padding-bottom: 80px; /* Отступ для меню + небольшой буфер */
+  padding-bottom: 62px; /* Точно по размеру меню (60px) + 2px буфер */
+  overflow: hidden; /* Предотвращаем скролл */
 }
 
 .webapp-container.favorites-page,
@@ -1510,7 +1511,7 @@
 
   .bonus-block-footer {
     background-color: #48C928;
-    padding: 20px;
+    padding: 16px; /* Уменьшаем padding в footer блока бонусов */
     color: white;
     border-radius: 0 0 20px 20px;
   }
@@ -1628,6 +1629,12 @@
   margin-bottom: 20px;
 }
 
+/* Компактные стили для main-block на странице профиля */
+.profile-page .main-block {
+  padding: 16px; /* Уменьшаем padding */
+  margin-bottom: 16px; /* Уменьшаем margin */
+}
+
 /* Button styles - Rails exact copy */
 .btn {
   border-radius: 16px;
@@ -1683,12 +1690,17 @@
 .profile-page {
   /* Убираем лишнее пространство между компонентами */
   .bonus-block {
-    margin-bottom: 12px; /* Еще меньше отступа */
+    margin-bottom: 12px; /* Увеличенный отступ для комфорта */
   }
   
   /* Убираем отступы в header для профиля */
-  .webapp-header .container-adaptive {
-    padding-bottom: 8px; /* Уменьшенный отступ снизу в header */
+  .webapp-header {
+    margin-bottom: 12px; /* Увеличенный отступ после header */
+    
+    .container-adaptive {
+      padding-bottom: 6px; /* Увеличенный отступ снизу в header */
+      padding-top: 10px; /* Увеличенный верхний отступ */
+    }
   }
   
   /* Оптимизируем пространство в main */
@@ -1698,7 +1710,13 @@
   
   /* Убираем лишний отступ после action-cards */
   .action-cards-container {
-    margin-bottom: -8px; /* Компенсируем gap последней карточки */
+    margin-bottom: -16px; /* Максимально компенсируем gap */
+    gap: 12px; /* Увеличенный gap между карточками */
+  }
+  
+  /* Уменьшаем отступы в заголовке профиля */
+  .flex.items-center.gap-3 {
+    margin-bottom: 10px; /* Увеличенный отступ для заголовка */
   }
 }
 
@@ -1731,8 +1749,8 @@
   .action-card-content {
     display: flex;
     align-items: center;
-    padding: 16px 20px;
-    gap: 16px;
+    padding: 12px 16px; /* Уменьшаем padding для профиля */
+    gap: 12px; /* Уменьшаем gap */
   }
   
   .action-card-icon {
@@ -1788,13 +1806,13 @@
   }
   
   .action-card-footer {
-    padding: 12px 20px;
+    padding: 8px 16px; /* Уменьшаем padding */
     background: #f8f9fb;
     border-top: 1px solid #f0f0f0;
     
     /* Больше padding для карточки доставки с многострочным текстом */
     &:has(.delivery-data) {
-      padding: 14px 20px 16px;
+      padding: 10px 16px 12px; /* Уменьшаем для delivery */
     }
     
     .action-card-footer-text {
