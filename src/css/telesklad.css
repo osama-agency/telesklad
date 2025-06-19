@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* === TeleSklad custom utilities === */
+@layer base {
+  :root {
+    /* Основные фоны страниц */
+    --bg-main-light: #F8FAFC;
+    --bg-main-dark: #030C1A;
+    
+    /* Фоны контейнеров */
+    --bg-container-light: #FFFFFF;
+    --bg-container-dark: #1E293B;
+  }
+}
+
+@layer utilities {
+  /* Градиентная анимация фирменных цветов */
+  @keyframes gradient-shift {
+    0%, 100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+
+  .gradient-animation {
+    @apply bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] bg-[length:200%_200%] animate-[gradient-shift_8s_ease_infinite];
+  }
+
+  /* Скрыть скроллбар */
+  .no-scrollbar {
+    scrollbar-width: none; /* Firefox */
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+  }
+
+  /* Единые фоны для всего приложения */
+  .bg-main {
+    background-color: var(--bg-main-light);
+  }
+  
+  .dark .bg-main {
+    background-color: var(--bg-main-dark);
+  }
+  
+  .bg-container {
+    background-color: var(--bg-container-light);
+  }
+  
+  .dark .bg-container {
+    background-color: var(--bg-container-dark);
+  }
+} 

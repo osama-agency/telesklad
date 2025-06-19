@@ -7,7 +7,7 @@ export interface Product {
   description?: string;
   price: number;
   prime_cost: number;
-  avgPurchasePriceRub?: number; // Средняя закупочная цена в рублях
+  avgpurchasepricerub?: number; // Средняя закупочная цена в рублях
   avgPurchasePriceTry?: number; // Средняя закупочная цена в лирах
   inTransitQuantity?: number; // Количество товаров в пути (в закупках со статусом in_transit)
   stock_quantity: number;
@@ -141,7 +141,7 @@ export function useProducts(options: UseProductsOptions = {}) {
         ...product,
         price: product.price ? (typeof product.price === 'object' ? parseFloat((product.price as any).toString()) : Number(product.price)) : 0,
         prime_cost: product.prime_cost ? (typeof product.prime_cost === 'object' ? parseFloat((product.prime_cost as any).toString()) : Number(product.prime_cost)) : 0,
-        avgPurchasePriceRub: product.avgPurchasePriceRub ? (typeof product.avgPurchasePriceRub === 'object' ? parseFloat((product.avgPurchasePriceRub as any).toString()) : Number(product.avgPurchasePriceRub)) : 0,
+        avgpurchasepricerub: product.avgpurchasepricerub ? (typeof product.avgpurchasepricerub === 'object' ? parseFloat((product.avgpurchasepricerub as any).toString()) : Number(product.avgpurchasepricerub)) : 0,
         stock_quantity: product.stock_quantity || 0,
         soldQuantity: product.soldQuantity || 0,
         revenue: product.revenue || 0,
@@ -318,7 +318,7 @@ function processProductsData(data: Product[], options: { page: number; limit: nu
   const totalProducts = filteredProducts.length;
   const totalPurchaseValue = filteredProducts.reduce((sum, product) => {
     // Используем среднюю закупочную цену если есть, иначе обычную себестоимость
-    const purchasePrice = Number(product.avgPurchasePriceRub) || Number(product.prime_cost) || 0;
+    const purchasePrice = Number(product.avgpurchasepricerub) || Number(product.prime_cost) || 0;
     const stockQty = Number(product.stock_quantity) || 0;
     return sum + (purchasePrice * stockQty);
   }, 0);
@@ -330,7 +330,7 @@ function processProductsData(data: Product[], options: { page: number; limit: nu
   const averageMargin = filteredProducts.length > 0 
     ? filteredProducts.reduce((sum, product) => {
         // Используем среднюю закупочную цену для более точного расчета маржи
-        const purchasePrice = Number(product.avgPurchasePriceRub) || Number(product.prime_cost) || 0;
+        const purchasePrice = Number(product.avgpurchasepricerub) || Number(product.prime_cost) || 0;
         const price = Number(product.price) || 0;
         if (price === 0) return sum;
         const margin = ((price - purchasePrice) / price) * 100;

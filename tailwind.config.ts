@@ -96,7 +96,7 @@ const config: Config = {
             DEFAULT: "#FCD34D",
           },
         },
-        "level-1": "#111827",
+        "level-1": "#030C1A",
         "level-2": "#1F2937",
         "level-3": "#374151",
         muted: "#6B7280",

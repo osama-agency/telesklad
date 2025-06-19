@@ -47,19 +47,19 @@ export class AnalyticsService {
   ): Promise<{ products: AbcXyzAnalysis[]; matrix: AbcXyzMatrix; matrixWithProducts: AbcXyzMatrixWithProducts }> {
     try {
       // Получаем данные о продажах товаров за период
-      const salesData = await prisma.orderItem.groupBy({
-        by: ['productId', 'name'],
+      const salesData = await prisma.order_items.groupBy({
+        by: ['productid', 'name'],
         where: {
-          order: {
-            orderDate: {
+          orders: {
+            orderdate: {
               gte: from,
               lte: to,
             },
-            paidAt: {
+            paidat: {
               not: null // только оплаченные заказы (paid_at !== null)
             }
           },
-          productId: {
+          productid: {
             not: null
           }
         },
@@ -96,24 +96,24 @@ export class AnalyticsService {
 
       // Получаем детальные данные продаж по дням для расчета коэффициента вариации
       const dailySalesPromises = salesData.map(async (item) => {
-        const dailySales = await prisma.orderItem.findMany({
+        const dailySales = await prisma.order_items.findMany({
           where: {
-            productId: item.productId,
-            order: {
-              orderDate: {
+            productid: item.productid,
+            orders: {
+              orderdate: {
                 gte: from,
                 lte: to,
               },
-              paidAt: {
+              paidat: {
                 not: null // только оплаченные заказы (paid_at !== null)
               }
             }
           },
           select: {
             quantity: true,
-            order: {
+            orders: {
               select: {
-                orderDate: true
+                orderdate: true
               }
             }
           }
@@ -124,11 +124,11 @@ export class AnalyticsService {
         const coefficientOfVariation = this.calculateCoefficientOfVariation(dailyQuantities);
 
         return {
-          productId: parseInt(item.productId!),
-          productName: item.name,
-          revenue: Number(item._sum.total || 0),
-          salesCount: item._sum.quantity || 0,
-          orderCount: item._count._all,
+          productId: parseInt(item.productid!),
+          productName: item.name || 'Неизвестный товар',
+          revenue: Number(item._sum?.total || 0),
+          salesCount: item._sum?.quantity || 0,
+          orderCount: item._count?._all || 0,
           coefficientOfVariation
         };
       });
@@ -206,7 +206,7 @@ export class AnalyticsService {
    * Группировка продаж по дням
    */
   private static groupSalesByDay(
-    sales: Array<{ quantity: number; order: { orderDate: Date } }>,
+    sales: Array<{ quantity: number; orders: { orderdate: Date | null } }>,
     from: Date,
     to: Date
   ): number[] {
@@ -222,8 +222,10 @@ export class AnalyticsService {
 
     // Заполняем реальными данными
     sales.forEach(sale => {
-      const day = sale.order.orderDate.toISOString().split('T')[0];
-      dayMap.set(day, (dayMap.get(day) || 0) + sale.quantity);
+      if (sale.orders.orderdate) {
+        const day = sale.orders.orderdate.toISOString().split('T')[0];
+        dayMap.set(day, (dayMap.get(day) || 0) + sale.quantity);
+      }
     });
 
     return Array.from(dayMap.values());

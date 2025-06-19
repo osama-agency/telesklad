@@ -7,16 +7,11 @@ export async function DELETE(request: Request) {
 	const body = await request.json();
 	const { email } = body;
 
-	if (!email) {
-		return new NextResponse("Missing Fields", { status: 400 });
-	}
-
 	const session = await getServerSession(authOptions);
-	const formatedEmail = email.toLowerCase();
 
-	const user = await prisma.user.findUnique({
+	const user = await prisma.telesklad_user.findUnique({
 		where: {
-			email: formatedEmail,
+			email: email.toLowerCase(),
 		},
 	});
 
@@ -26,20 +21,20 @@ export async function DELETE(request: Request) {
 		return new NextResponse("Unauthorized", { status: 401 });
 	}
 
-	const isDemoUser = user?.email?.includes("demo-");
+	const isDemo = user?.email?.includes("demo-");
 
-	if (isDemoUser) {
+	if (isDemo) {
 		return new NextResponse("Can't delete demo user", { status: 401 });
 	}
 
 	try {
-		await prisma.user.delete({
+		const user = await prisma.telesklad_user.delete({
 			where: {
-				email: formatedEmail,
+				email: email.toLowerCase(),
 			},
 		});
 
-		return new NextResponse("Account Deleted Successfully!", { status: 200 });
+		return NextResponse.json(user);
 	} catch (error) {
 		return new NextResponse("Something went wrong", { status: 500 });
 	}

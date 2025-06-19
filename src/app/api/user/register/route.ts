@@ -12,7 +12,7 @@ export async function POST(request: Request) {
 
 	const formatedEmail = email.toLowerCase();
 
-	const exist = await prisma.user.findUnique({
+	const exist = await prisma.telesklad_user.findUnique({
 		where: {
 			email: formatedEmail,
 		},
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
 	}
 
 	try {
-		const user = await prisma.user.create({
+		const user = await prisma.telesklad_user.create({
 			data: {
 				...newUser,
 			},

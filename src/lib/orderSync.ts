@@ -1,6 +1,15 @@
 // Вся синхронизация заказов с внешним API отключена
-export function getOrderSyncService() {
-  return {};
+
+// Заглушка для интерфейса OrderSyncService
+interface OrderSyncService {
+  stopAutoSync(): void;
+}
+
+// Заглушка для класса OrderSyncService
+class OrderSyncService {
+  stopAutoSync() {
+    // Заглушка
+  }
 }
 
 export async function initOrderSync() {

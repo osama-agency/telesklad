@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
 
     // Рассчитываем прибыль для каждого заказа
     const ordersWithProfit = await Promise.all(
-      orders.map(async (order) => {
+      orders.map(async (order: any) => {
         let totalCost = 0;
         let totalRevenue = 0;
         let itemsWithProfit = [];

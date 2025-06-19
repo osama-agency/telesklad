@@ -28,7 +28,7 @@ const OrderStatusExample: React.FC = () => {
       </div>
       
       <div className="mt-6 text-sm text-gray-600">
-        <p><strong>Учитываются как продажи:</strong> все статусы, кроме "Не оплачен" и "Просрочен"</p>
+        <p><strong>Учитываются как продажи:</strong> все статусы, кроме &quot;Не оплачен&quot; и &quot;Просрочен&quot;</p>
         <p><strong>Критерий продажи:</strong> поле paid_at !== null в базе данных</p>
       </div>
     </div>

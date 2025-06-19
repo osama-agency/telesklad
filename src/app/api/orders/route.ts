@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (customerCity) {
-      where.customercity = customerCity;
+      where.customercity = { equals: customerCity, mode: 'insensitive' };
     }
 
     if (currency) {
@@ -199,6 +199,42 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    // Дополнительная статистика
+    const additionalStats = await Promise.all([
+      // Количество уникальных городов
+      (prisma as any).orders.groupBy({
+        by: ['customercity'],
+        where: {
+          ...where,
+          customercity: { not: null }
+        },
+        _count: true,
+      }),
+      // Количество заказов с отслеживанием
+      (prisma as any).orders.count({
+        where: {
+          ...where,
+          tracking_number: { not: null }
+        }
+      }),
+      // Количество оплаченных заказов
+      (prisma as any).orders.count({
+        where: {
+          ...where,
+          paid_at: { not: null }
+        }
+      }),
+      // Количество отправленных заказов
+      (prisma as any).orders.count({
+        where: {
+          ...where,
+          shipped_at: { not: null }
+        }
+      }),
+    ]);
+
+    const [uniqueCities, ordersWithTracking, paidOrders, shippedOrders] = additionalStats;
+
     // Получаем уникальные user_id для загрузки пользователей
     const userIds = [...new Set(orders.map((order: any) => order.user_id).filter(Boolean))];
     
@@ -322,6 +358,10 @@ export async function GET(request: NextRequest) {
         averageOrderValue: stats._avg.total_amount ? (typeof stats._avg.total_amount === 'bigint' ? stats._avg.total_amount.toString() : stats._avg.total_amount) : 0,
         totalDeliveryCost: stats._sum.deliverycost ? (typeof stats._sum.deliverycost === 'bigint' ? stats._sum.deliverycost.toString() : stats._sum.deliverycost) : 0,
         totalBonus: stats._sum.bonus ? (typeof stats._sum.bonus === 'bigint' ? stats._sum.bonus.toString() : stats._sum.bonus) : 0,
+        uniqueCities: uniqueCities.length,
+        ordersWithTracking,
+        paidOrders,
+        shippedOrders,
       },
     });
 

@@ -7,13 +7,11 @@ export async function GET() {
 	const session = await getServerSession(authOptions);
 
 	if (!session?.user?.email) {
-		return new NextResponse(JSON.stringify({ error: "Unauthorized" }), { 
-			status: 401 
-		});
+		return new NextResponse("User not found", { status: 400 });
 	}
 
 	try {
-		const user = await prisma.user.findUnique({
+		const user = await prisma.telesklad_user.findUnique({
 			where: {
 				email: session.user.email,
 			},
@@ -21,24 +19,13 @@ export async function GET() {
 				id: true,
 				name: true,
 				email: true,
-				phone: true,
 				image: true,
 				role: true,
-				createdAt: true,
 			},
 		});
 
-		if (!user) {
-			return new NextResponse(JSON.stringify({ error: "User not found" }), { 
-				status: 404 
-			});
-		}
-
-		return NextResponse.json(user, { status: 200 });
+		return NextResponse.json(user);
 	} catch (error) {
-		console.error("Error fetching user:", error);
-		return new NextResponse(JSON.stringify({ error: "Something went wrong" }), { 
-			status: 500 
-		});
+		return new NextResponse("Something went wrong", { status: 500 });
 	}
 } 

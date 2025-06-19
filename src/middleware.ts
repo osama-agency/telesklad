@@ -2,11 +2,47 @@
 // import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 import type { NextRequest } from 'next/server';
+import { withAuth } from "next-auth/middleware";
 
-// Временная функция middleware без авторизации
-export default function middleware(req: NextRequest) {
+function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Редиректы для старых analytics маршрутов
+  if (pathname.startsWith('/analytics/')) {
+    const redirectMap: Record<string, string> = {
+      '/analytics/ai': '/products',
+      '/analytics/purchases': '/purchases-analytics',
+      '/analytics/orders': '/orders-analytics', 
+      '/analytics/expenses': '/expenses-analytics',
+    };
+
+    const newPath = redirectMap[pathname];
+    if (newPath) {
+      const url = request.nextUrl.clone();
+      url.pathname = newPath;
+      return NextResponse.redirect(url);
+    }
+  }
+
+  // Редиректы для API маршрутов
+  if (pathname.startsWith('/api/analytics/')) {
+    const apiRedirectMap: Record<string, string> = {
+      '/api/analytics/ai': '/api/ai',
+      '/api/analytics/abcxyz': '/api/abcxyz',
+    };
+
+    const newApiPath = apiRedirectMap[pathname];
+    if (newApiPath) {
+      const url = request.nextUrl.clone();
+      url.pathname = newApiPath;
+      return NextResponse.redirect(url);
+    }
+  }
+
   return NextResponse.next();
 }
+
+export default middleware;
 
 // ЗАКОММЕНТИРОВАННЫЙ КОД АВТОРИЗАЦИИ (для восстановления позже):
 /*
@@ -37,10 +73,15 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-    '/api/orders/:path*',
-    '/api/products/:path*',
-    '/api/expenses/:path*',
-    '/api/purchases/:path*',
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    "/((?!api|_next/static|_next/image|favicon.ico|public).*)",
+    "/api/((?!auth).*)", // Include API routes except auth
   ],
 };

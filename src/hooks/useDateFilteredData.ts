@@ -47,6 +47,7 @@ export function useDateFilteredData<T>(options: UseDateFilteredDataOptions) {
     } finally {
       setIsLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [endpoint, dateRange, ...dependencies]);
 
   useEffect(() => {

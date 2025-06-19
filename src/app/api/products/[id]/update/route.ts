@@ -14,9 +14,10 @@ interface UpdateProductRequest {
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params;
     console.log('🔧 Product update request started for ID:', params.id);
     
     // TODO: Enable authentication after NEXTAUTH_SECRET is configured

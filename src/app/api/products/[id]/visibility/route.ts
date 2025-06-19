@@ -21,7 +21,7 @@ export async function PATCH(
     }
 
     const resolvedParams = await params;
-    const product = await prisma.product.update({
+    const product = await prisma.products.update({
       where: { 
         id: parseInt(resolvedParams.id),
         deleted_at: null // Нельзя изменять видимость удаленных товаров

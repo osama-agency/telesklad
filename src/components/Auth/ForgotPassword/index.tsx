@@ -65,7 +65,7 @@ export default function ForgotPassword() {
           className="mb-6"
           name="email"
           value={email}
-          handleChange={handleChange}
+          onChange={handleChange}
           icon={<EmailIcon />}
         />
 

@@ -57,9 +57,13 @@ export interface AnalyticsResponse {
     totalProducts: number;
     criticalStock: number;
     lowStock: number;
+    normalStock: number;
+    excessStock: number;
     needsReorder: number;
     inTransitTotal: number;
     avgProfitMargin: number;
+    totalExpensesAllocated: number;
+    expensePerUnit: number;
   };
   period: {
     days: number;
@@ -81,7 +85,7 @@ export interface SimpleProduct {
   id: number;
   name: string;
   prime_cost?: number;
-  avgPurchasePriceRub?: number;
+  avgpurchasepricerub?: number;
 }
 
 // Хук для получения аналитики товаров
@@ -166,9 +170,11 @@ export function useUpdateProduct() {
         let newProducts = old.products.map((product: ProductAnalytics) =>
           product.id === id ? { ...product, ...data } : product
         );
-        // Обновляем summary (например, критичные остатки)
-        let criticalStock = newProducts.filter(p => Number(p.currentStock) < 10).length;
-        let lowStock = newProducts.filter(p => Number(p.currentStock) >= 10 && Number(p.currentStock) < 30).length;
+        // Обновляем summary
+        let criticalStock = newProducts.filter(p => p.stockStatus === 'critical').length;
+        let lowStock = newProducts.filter(p => p.stockStatus === 'low').length;
+        let normalStock = newProducts.filter(p => p.stockStatus === 'normal').length;
+        let excessStock = newProducts.filter(p => p.stockStatus === 'excess').length;
         let needsReorder = newProducts.filter(p => p.recommendedOrderQuantity > 0).length;
         let inTransitTotal = newProducts.reduce((sum, p) => sum + (p.inTransitQuantity || 0), 0);
         let avgProfitMargin = newProducts.length > 0 ? Math.round(newProducts.reduce((sum, p) => sum + (p.profitMargin || 0), 0) / newProducts.length) : 0;
@@ -179,6 +185,8 @@ export function useUpdateProduct() {
             ...old.summary,
             criticalStock,
             lowStock,
+            normalStock,
+            excessStock,
             needsReorder,
             inTransitTotal,
             avgProfitMargin,
@@ -205,9 +213,12 @@ export function useUpdateProduct() {
             product.id === data.data.id ? { ...product, ...data.data } : product
           );
           // Пересчитываем summary
-          let criticalStock = newProducts.filter(p => Number(p.currentStock) < 10).length;
-          let lowStock = newProducts.filter(p => Number(p.currentStock) >= 10 && Number(p.currentStock) < 30).length;
+          let criticalStock = newProducts.filter(p => p.stockStatus === 'critical').length;
+          let lowStock = newProducts.filter(p => p.stockStatus === 'low').length;
+          let normalStock = newProducts.filter(p => p.stockStatus === 'normal').length;
+          let excessStock = newProducts.filter(p => p.stockStatus === 'excess').length;
           let needsReorder = newProducts.filter(p => p.recommendedOrderQuantity > 0).length;
+          let inTransitTotal = newProducts.reduce((sum, p) => sum + (p.inTransitQuantity || 0), 0);
           let avgProfitMargin = newProducts.length > 0 ? Math.round(newProducts.reduce((sum, p) => sum + (p.profitMargin || 0), 0) / newProducts.length) : 0;
           return {
             ...old,
@@ -216,7 +227,10 @@ export function useUpdateProduct() {
               ...old.summary,
               criticalStock,
               lowStock,
+              normalStock,
+              excessStock,
               needsReorder,
+              inTransitTotal,
               avgProfitMargin,
             },
           };

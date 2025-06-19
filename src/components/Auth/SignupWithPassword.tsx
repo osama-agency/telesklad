@@ -82,7 +82,7 @@ const SignupWithPassword = () => {
         className="mb-4 [&_input]:py-[15px]"
         placeholder="Enter your full name"
         name="name"
-        handleChange={handleChange}
+        onChange={handleChange}
         value={data.name}
         icon={<UserIcon />}
       />
@@ -93,7 +93,7 @@ const SignupWithPassword = () => {
         className="mb-4 [&_input]:py-[15px]"
         placeholder="Enter your email"
         name="email"
-        handleChange={handleChange}
+        onChange={handleChange}
         value={data.email}
         icon={<EmailIcon />}
       />
@@ -104,7 +104,7 @@ const SignupWithPassword = () => {
         className="mb-4 [&_input]:py-[15px]"
         placeholder="Enter your password"
         name="password"
-        handleChange={handleChange}
+        onChange={handleChange}
         value={data.password}
         icon={<PasswordIcon />}
       />
@@ -115,7 +115,7 @@ const SignupWithPassword = () => {
         className="mb-6 [&_input]:py-[15px]"
         placeholder="Re-enter your password"
         name="reEnterPassword"
-        handleChange={handleChange}
+        onChange={handleChange}
         value={data.reEnterPassword}
         icon={<PasswordIcon />}
       />

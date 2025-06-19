@@ -31,10 +31,10 @@ export function AssortmentAnalysis({ productsData }: AssortmentAnalysisProps) {
       if (dateRange.from) params.append('from', dateRange.from.toISOString());
       if (dateRange.to) params.append('to', dateRange.to.toISOString());
       
-      const response = await fetch(`/api/analytics/ai?${params.toString()}`);
+      const response = await fetch(`/api/ai?${params.toString()}`);
       
       if (!response.ok) {
-        throw new Error('Ошибка получения ИИ-анализа');
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const result = await response.json();

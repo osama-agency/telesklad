@@ -15,83 +15,137 @@ export async function GET(request: NextRequest) {
 
     console.log('🔧 Purchases API: Starting...');
 
-    // Пробуем разные варианты названий таблиц
-    let purchases = [];
-    
+    const { searchParams } = new URL(request.url);
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const page = parseInt(searchParams.get('page') || '1');
+    const offset = (page - 1) * limit;
+
+    // ✅ ИСПРАВЛЕНИЕ N+1: Используем include для загрузки связанных данных одним запросом
     try {
-      // Сначала пробуем purchases
-      purchases = await (prisma as any).purchases.findMany({
-        orderBy: {
-          createdat: 'desc'
-        },
-        take: 10 // Ограничиваем количество для безопасности
-      });
-      console.log('✅ Found purchases table');
-    } catch (purchasesError) {
-      console.log('❌ purchases table not found:', purchasesError);
-      
-      try {
-        // Пробуем purchase (единственное число)
-        purchases = await (prisma as any).purchase.findMany({
+      const [purchases, totalCount] = await Promise.all([
+        (prisma as any).purchases.findMany({
+          include: {
+            purchase_items: {
+              include: {
+                products: {
+                  select: {
+                    id: true,
+                    name: true
+                  }
+                }
+              }
+            },
+            users: {
+              select: {
+                id: true,
+                email: true,
+                first_name: true,
+                last_name: true
+              }
+            }
+          },
           orderBy: {
             createdat: 'desc'
           },
-          take: 10
-        });
-        console.log('✅ Found purchase table');
-      } catch (purchaseError) {
-        console.log('❌ purchase table not found:', purchaseError);
-        
-        // Возвращаем пустой массив если таблицы нет
-        console.log('📝 Returning empty purchases array');
-        return NextResponse.json([]);
-      }
-    }
+          skip: offset,
+          take: limit
+        }),
+        (prisma as any).purchases.count()
+      ]);
 
-    // Загружаем элементы закупки для каждой закупки
-    const serializedPurchases = await Promise.all(purchases.map(async (purchase: any) => {
-      let items = [];
-      try {
-        const purchaseItems = await (prisma as any).purchase_items.findMany({
-      where: {
-            purchaseid: purchase.id
-          }
-        });
-        
-        items = purchaseItems.map((item: any) => ({
-          id: item.id ? item.id.toString() : null,
-          productId: item.productid ? item.productid.toString() : null,
-          productName: item.productname || 'Unknown Product',
+      console.log('✅ Found purchases table');
+
+      // Сериализуем данные без дополнительных запросов
+      const serializedPurchases = purchases.map((purchase: any) => {
+        const items = purchase.purchase_items?.map((item: any) => ({
+          id: item.id ? String(item.id) : null,
+          productId: item.productid ? String(item.productid) : null,
+          productName: item.productname || item.products?.name || 'Unknown Product',
           quantity: item.quantity || 0,
           costPrice: item.costprice || 0,
-          total: item.total || 0
-        }));
-      } catch (itemsError) {
-        console.log('⚠️ Failed to load items for purchase', purchase.id, itemsError);
-      }
+          total: item.total || 0,
+          totalCostRub: item.totalcostrub ? Number(item.totalcostrub) : null,
+          totalCostTry: item.totalcosttry ? Number(item.totalcosttry) : null,
+          unitCostRub: item.unitcostrub ? Number(item.unitcostrub) : null,
+          unitCostTry: item.unitcosttry ? Number(item.unitcosttry) : null
+        })) || [];
 
-      return {
-        ...purchase,
-        id: purchase.id ? purchase.id.toString() : null,
-        user_id: purchase.user_id ? purchase.user_id.toString() : null,
-        userid: purchase.userid ? purchase.userid.toString() : null,
-        // Добавляем поля, которые ожидает фронтенд
-        createdAt: purchase.createdat || purchase.created_at || new Date().toISOString(),
-        updatedAt: purchase.updatedat || purchase.updated_at || new Date().toISOString(),
-        totalAmount: purchase.totalamount || purchase.total_amount || 0,
-        status: purchase.status || 'draft',
-        isUrgent: purchase.isurgent || purchase.is_urgent || false,
-        expenses: purchase.expenses || 0,
-        items: items
-      };
-    }));
+        return {
+          id: purchase.id ? String(purchase.id) : null,
+          userid: purchase.userid ? String(purchase.userid) : null,
+          // Добавляем поля, которые ожидает фронтенд
+          createdAt: purchase.createdat || purchase.created_at || new Date().toISOString(),
+          updatedAt: purchase.updatedat || purchase.updated_at || new Date().toISOString(),
+          totalAmount: Number(purchase.totalamount || purchase.total_amount || 0),
+          status: purchase.status || 'draft',
+          isUrgent: Boolean(purchase.isurgent || purchase.is_urgent || false),
+          expenses: Number(purchase.expenses || 0),
+          items: items,
+          // Информация о пользователе
+          user: purchase.users ? {
+            id: String(purchase.users.id),
+            email: purchase.users.email,
+            firstName: purchase.users.first_name,
+            lastName: purchase.users.last_name
+          } : null,
+          // Дополнительные поля для Telegram
+          telegramMessageId: purchase.telegrammessageid ? String(purchase.telegrammessageid) : null,
+          telegramChatId: purchase.telegramchatid ? String(purchase.telegramchatid) : null,
+          supplierName: purchase.suppliername || null,
+          supplierPhone: purchase.supplierphone || null,
+          supplierAddress: purchase.supplieraddress || null,
+          notes: purchase.notes || null,
+          deliveryDate: purchase.deliverydate || null,
+          deliveryTrackingNumber: purchase.deliverytrackingnumber || null,
+          deliveryStatus: purchase.deliverystatus || null,
+          deliveryCarrier: purchase.deliverycarrier || null,
+          deliveryNotes: purchase.deliverynotes || null,
+          paymentButtonClicks: Number(purchase.paymentbuttonclicks || 0)
+        };
+      });
 
-    console.log(`✅ Purchases API: Found ${serializedPurchases.length} purchases`);
-    return NextResponse.json(serializedPurchases);
+      console.log(`✅ Purchases API: Found ${serializedPurchases.length} purchases`);
+      
+      return NextResponse.json({
+        purchases: serializedPurchases,
+        pagination: {
+          page,
+          limit,
+          totalCount,
+          totalPages: Math.ceil(totalCount / limit),
+          hasNextPage: page < Math.ceil(totalCount / limit),
+          hasPrevPage: page > 1
+        }
+      });
+    } catch (purchasesError) {
+      console.log('❌ purchases table not found:', purchasesError);
+      console.log('📝 Returning empty purchases array');
+      return NextResponse.json({
+        purchases: [],
+        pagination: {
+          page: 1,
+          limit: 50,
+          totalCount: 0,
+          totalPages: 0,
+          hasNextPage: false,
+          hasPrevPage: false
+        }
+      });
+    }
   } catch (error) {
     console.error('❌ Error fetching purchases:', error);
     // Возвращаем пустой массив вместо ошибки для стабильности UI
-    return NextResponse.json([]);
+    return NextResponse.json({
+      purchases: [],
+      pagination: {
+        page: 1,
+        limit: 50,
+        totalCount: 0,
+        totalPages: 0,
+        hasNextPage: false,
+        hasPrevPage: false
+      }
+    });
   }
 }
 

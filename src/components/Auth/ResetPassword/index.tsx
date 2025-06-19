@@ -88,7 +88,7 @@ export default function ResetPassword({ token }: { token: string }) {
           className="mb-5 [&_input]:py-[15px]"
           placeholder="Enter your new password"
           name="newPassword"
-          handleChange={handleChange}
+          onChange={handleChange}
           value={data.newPassword}
           icon={<PasswordIcon />}
         />
@@ -99,7 +99,7 @@ export default function ResetPassword({ token }: { token: string }) {
           className="mb-6 [&_input]:py-[15px]"
           placeholder="Re-enter your new password"
           name="ReNewPassword"
-          handleChange={handleChange}
+          onChange={handleChange}
           value={data.ReNewPassword}
           icon={<PasswordIcon />}
         />

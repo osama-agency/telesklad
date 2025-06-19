@@ -24,11 +24,11 @@ export default function Layout({ children }: PropsWithChildren) {
 
   return (
     <>
-      <div className="min-h-screen bg-gray-2 dark:bg-[#020d1a]">
+      <div className="min-h-screen bg-main">
         <Header />
 
         <main className="w-full px-4 md:px-6 lg:px-8 xl:px-12 2xl:px-16">
-          <div className="mx-auto max-w-screen-2xl py-6 md:py-8 lg:py-10 xl:py-12">
+          <div className="mx-auto max-w-screen-xl xl:max-w-[90vw] 2xl:max-w-[95vw] py-6 md:py-8 lg:py-10 xl:py-12">
             {children}
           </div>
         </main>

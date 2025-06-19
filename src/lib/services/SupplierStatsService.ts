@@ -9,7 +9,7 @@ export class SupplierStatsService {
    */
   static async getAvgDeliveryDays(supplier: string): Promise<number> {
     try {
-      const stats = await prisma.supplierStats.findUnique({
+      const stats = await prisma.supplier_stats.findUnique({
         where: { supplier }
       });
 
@@ -32,9 +32,10 @@ export class SupplierStatsService {
     try {
       await prisma.$transaction(async (tx) => {
         // Получаем текущую статистику или создаем новую
-        const currentStats = await tx.supplierStats.upsert({
+        const currentStats = await tx.supplier_stats.upsert({
           where: { supplier },
           create: {
+            id: Math.floor(Math.random() * 1000000), // Генерируем случайный ID
             supplier,
             totalPurchases: 1,
             completedPurchases: 1,
@@ -42,17 +43,11 @@ export class SupplierStatsService {
             totalDeliveryDays: deliveryDays,
             minDeliveryDays: deliveryDays,
             maxDeliveryDays: deliveryDays,
-            lastDeliveryDate: receivedDate,
+            lastDeliveryDate: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date()
           },
-          update: {
-            completedPurchases: {
-              increment: 1
-            },
-            totalDeliveryDays: {
-              increment: deliveryDays
-            },
-            lastDeliveryDate: receivedDate,
-          }
+          update: {},
         });
 
         // Пересчитываем среднее значение
@@ -61,7 +56,7 @@ export class SupplierStatsService {
           (currentStats.completedPurchases + 1);
 
         // Обновляем статистику
-        await tx.supplierStats.update({
+        await tx.supplier_stats.update({
           where: { supplier },
           data: {
             avgDeliveryDays: newAvgDeliveryDays,
@@ -86,18 +81,23 @@ export class SupplierStatsService {
    */
   static async incrementTotalPurchases(supplier: string): Promise<void> {
     try {
-      await prisma.supplierStats.upsert({
+      await prisma.supplier_stats.upsert({
         where: { supplier },
         create: {
+          id: Math.floor(Math.random() * 1000000), // Генерируем случайный ID
           supplier,
           totalPurchases: 1,
           completedPurchases: 0,
           avgDeliveryDays: 20.0,
+          totalDeliveryDays: 0,
+          createdAt: new Date(),
+          updatedAt: new Date()
         },
         update: {
           totalPurchases: {
             increment: 1
-          }
+          },
+          updatedAt: new Date()
         }
       });
     } catch (error) {
@@ -110,7 +110,7 @@ export class SupplierStatsService {
    */
   static async getAllSuppliersStats() {
     try {
-      const stats = await prisma.supplierStats.findMany({
+      const stats = await prisma.supplier_stats.findMany({
         orderBy: {
           avgDeliveryDays: 'asc'
         }

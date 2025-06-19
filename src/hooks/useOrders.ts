@@ -21,6 +21,10 @@ interface OrdersResponse {
     averageOrderValue: number;
     totalDeliveryCost: number;
     totalBonus: number;
+    uniqueCities: number;
+    ordersWithTracking: number;
+    paidOrders: number;
+    shippedOrders: number;
   };
 }
 
@@ -83,7 +87,14 @@ export interface OrderEntity {
 export interface OrdersStats {
   totalOrders: number;
   totalAmount: number;
+  totalRevenue: number;
   averageOrderValue: number;
+  totalDeliveryCost: number;
+  totalBonus: number;
+  uniqueCities: number;
+  ordersWithTracking: number;
+  paidOrders: number;
+  shippedOrders: number;
   statusCounts: Record<number, number>;
 }
 
@@ -92,6 +103,7 @@ export interface OrdersParams {
   limit?: number;
   search?: string;
   status?: number;
+  customerCity?: string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }
@@ -115,6 +127,7 @@ export function useOrdersQuery(params: OrdersParams = {}) {
     limit = 25,
     search = '',
     status,
+    customerCity,
     sortBy = 'created_at',
     sortOrder = 'desc'
   } = params;
@@ -124,6 +137,7 @@ export function useOrdersQuery(params: OrdersParams = {}) {
     limit,
     search,
     status,
+    customerCity,
         sortBy,
     sortOrder
   };
@@ -320,4 +334,120 @@ export function useOrderStats() {
     error,
     refetch: fetchStats,
   };
+}
+
+// Основной хук для страницы заказов
+export function useOrders(options: UseOrdersOptions = {}) {
+  const [filters, setFilters] = useState<{
+    search?: string;
+    status?: number;
+    customercity?: string;
+  }>({
+    search: options.initialFilters?.search || '',
+    status: options.initialFilters?.status,
+    customercity: options.initialFilters?.customercity,
+  });
+
+  const { data, isLoading, error, refetch } = useOrdersQuery({
+    page: options.page || 1,
+    limit: options.limit || 25,
+    search: filters.search,
+    status: filters.status,
+    customerCity: filters.customercity,
+    sortBy: options.sortBy || 'created_at',
+    sortOrder: options.sortOrder || 'desc',
+  });
+
+  const searchOrders = useCallback((query: string) => {
+    setFilters(prev => ({ ...prev, search: query }));
+  }, []);
+
+  const filterByStatus = useCallback((status: string) => {
+    setFilters(prev => ({ 
+      ...prev, 
+      status: status === 'all' ? undefined : parseInt(status)
+    }));
+  }, []);
+
+  const filterByCity = useCallback((city: string) => {
+    setFilters(prev => ({ 
+      ...prev, 
+      customercity: city === 'all' ? undefined : city
+    }));
+  }, []);
+
+  // Преобразуем данные в формат, ожидаемый страницей
+  const orders = data?.orders.map(order => ({
+    id: order.id,
+    externalId: order.externalid || `#${order.id}`,
+    customerName: order.customername,
+    customerEmail: order.customeremail,
+    customerPhone: order.customerphone,
+    customerCity: order.customercity,
+    customerAddress: order.customeraddress,
+    total: order.total_amount || order.total || 0,
+    currency: order.currency || 'RUB',
+    status: mapOrderStatus(order.status),
+    createdAt: order.created_at || order.createdat,
+    paidAt: order.paid_at || order.paidat,
+    shippedAt: order.shipped_at || order.shippedat,
+    trackingNumber: order.tracking_number,
+    deliveryCost: order.deliverycost || 0,
+    bonusUsed: order.bonus || 0,
+    bankCard: order.bankcard,
+    items: order.order_items?.map(item => ({
+      id: item.id,
+      name: item.name,
+      quantity: item.quantity,
+      price: item.price,
+      total: item.total,
+    })) || [],
+  })) || [];
+
+  return {
+    orders,
+    pagination: data?.pagination ? {
+      ...data.pagination,
+      limit: options.limit || 25
+    } : null,
+    stats: data?.stats ? {
+      totalRevenue: data.stats.totalRevenue || 0,
+      averageOrderValue: data.stats.averageOrderValue || 0,
+      totalDeliveryCost: data.stats.totalDeliveryCost || 0,
+      totalBonus: data.stats.totalBonus || 0,
+      uniqueCities: data.stats.uniqueCities || 0,
+      ordersWithTracking: data.stats.ordersWithTracking || 0,
+      paidOrders: data.stats.paidOrders || 0,
+      shippedOrders: data.stats.shippedOrders || 0,
+    } : null,
+    loading: isLoading,
+    error: error as Error | null,
+    searchOrders,
+    filterByStatus,
+    filterByCity,
+  };
+}
+
+// Хук для получения городов
+export function useCities() {
+  return useQuery({
+    queryKey: ['cities'],
+    queryFn: () => get<{ cities: { value: string; label: string; count: number }[] }>('/orders/cities'),
+    staleTime: 5 * 60 * 1000, // 5 минут
+    gcTime: 10 * 60 * 1000, // 10 минут
+  });
+}
+
+// Маппинг числовых статусов в строковые
+function mapOrderStatus(status: number): string {
+  const statusMap: Record<number, string> = {
+    1: 'pending',
+    2: 'processing',
+    3: 'processing',
+    4: 'shipped',
+    5: 'cancelled',
+    6: 'refunded',
+    7: 'overdue',
+  };
+  return statusMap[status] || 'pending';
 } 

@@ -308,7 +308,7 @@ export function ReceivePurchaseModal({
                     step="0.01"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Будет добавлено в расходы с категорией "Логистика"
+                    Будет добавлено в расходы с категорией &quot;Логистика&quot;
                   </p>
                 </div>
 

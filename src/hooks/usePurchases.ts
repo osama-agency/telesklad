@@ -19,6 +19,7 @@ export interface PurchaseItem {
   quantity: number;
   costPrice: number;
   total: number;
+  productName?: string; // Добавляем поле productName из API
   product?: {
     id: number;
     name: string;
@@ -44,7 +45,7 @@ export function usePurchases(params: PurchasesParams = {}) {
 
   return useQuery({
     queryKey: queryKeys.purchasesList(queryParams),
-    queryFn: () => {
+    queryFn: async () => {
       const searchParams = new URLSearchParams();
       Object.entries(queryParams).forEach(([key, value]) => {
         if (value !== undefined && value !== '') {
@@ -52,7 +53,28 @@ export function usePurchases(params: PurchasesParams = {}) {
         }
       });
       
-      return get<Purchase[]>(`/purchases?${searchParams.toString()}`);
+      const endpoint = `/purchases?${searchParams.toString()}`;
+      console.log('🔍 usePurchases: Making request to:', endpoint);
+      
+      try {
+        const result = await get<any>(endpoint);
+        console.log('✅ usePurchases: Received data:', result);
+        
+        // Проверяем новую структуру API с пагинацией
+        if (result && result.purchases) {
+          // Новая структура с пагинацией
+          return result.purchases as Purchase[];
+        } else if (Array.isArray(result)) {
+          // Старая структура - просто массив
+          return result as Purchase[];
+        } else {
+          console.warn('⚠️ Unexpected API response structure:', result);
+          return [];
+        }
+      } catch (error) {
+        console.error('❌ usePurchases: Error:', error);
+        throw error;
+      }
     },
     staleTime: 60 * 1000, // 1 минута
     gcTime: 5 * 60 * 1000, // 5 минут в кэше

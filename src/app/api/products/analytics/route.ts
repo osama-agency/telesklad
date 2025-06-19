@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { prisma } from '@/libs/prismaDb';
+import { analyticsCache } from '@/lib/cache/analytics-cache';
 
 interface ProductAnalytics {
   id: string;
@@ -120,6 +121,17 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const period = parseInt(searchParams.get('period') || '30');
     
+    // ✅ КЭШИРОВАНИЕ: Попытка получить данные из кэша
+    const cacheKey = `products-analytics-${period}`;
+    const cachedResult = analyticsCache.get(cacheKey);
+    
+    if (cachedResult) {
+      console.log(`📦 Using cached analytics for period ${period} days`);
+      return NextResponse.json(cachedResult);
+    }
+
+    console.log(`🔄 Computing fresh analytics for period ${period} days`);
+    
     const fromDate = new Date();
     fromDate.setDate(fromDate.getDate() - period);
     
@@ -199,46 +211,83 @@ export async function GET(request: NextRequest) {
 
     console.log(`📊 Found ${products.length} products to analyze`);
 
-    // Параллельно обрабатываем каждый товар
-    const analyticsPromises = products.map(async (product: any): Promise<ProductAnalytics> => {
-      
-      // 1. Получаем данные о продажах за период по paid_at (только оплаченные заказы)
-      const salesData = await (prisma as any).order_items.findMany({
-        where: {
-          product_id: product.id,
-          orders: {
-            paid_at: {
-              gte: fromDate,
-              lte: new Date()
-            }
-          }
+    // ✅ ИСПРАВЛЕНИЕ N+1: Получаем все данные о продажах одним запросом
+    const allSalesData = await (prisma as any).order_items.findMany({
+      where: {
+        product_id: {
+          in: products.map((p: any) => p.id)
         },
-        include: {
-          orders: {
-            select: {
-              paid_at: true,
-              total_amount: true
-            }
+        orders: {
+          paid_at: {
+            gte: fromDate,
+            lte: new Date()
           }
         }
-      });
-      
-      // 2. Получаем количество товара в пути из закупок
-      const inTransitData = await (prisma as any).purchase_items.findMany({
-        where: {
-          productid: product.id,
-          purchases: {
-            status: {
-              in: ['sent']
-            }
+      },
+      include: {
+        orders: {
+          select: {
+            paid_at: true,
+            total_amount: true
           }
-        },
-        select: {
-          quantity: true
         }
-      });
+      }
+    });
+
+    // ✅ ИСПРАВЛЕНИЕ N+1: Получаем все данные о товарах в пути одним запросом
+    // Товары считаются "в пути" с момента отправки поставщику до получения
+    const allInTransitData = await (prisma as any).purchase_items.findMany({
+      where: {
+        productid: {
+          in: products.map((p: any) => p.id)
+        },
+        purchases: {
+          status: {
+            in: ['sent', 'awaiting_payment', 'paid', 'shipped', 'in_transit']
+          }
+        }
+      },
+      select: {
+        productid: true,
+        quantity: true,
+        purchases: {
+          select: {
+            status: true
+          }
+        }
+      }
+    });
+
+    // Группируем данные по товарам для быстрого поиска
+    const salesByProduct = new Map();
+    const inTransitByProduct = new Map();
+
+    // Группируем продажи по товарам
+    allSalesData.forEach((item: any) => {
+      const productId = item.product_id;
+      if (!salesByProduct.has(productId)) {
+        salesByProduct.set(productId, []);
+      }
+      salesByProduct.get(productId).push(item);
+    });
+
+    // Группируем товары в пути по товарам
+    allInTransitData.forEach((item: any) => {
+      const productId = item.productid;
+      if (!inTransitByProduct.has(productId)) {
+        inTransitByProduct.set(productId, 0);
+      }
+      inTransitByProduct.set(productId, inTransitByProduct.get(productId) + item.quantity);
+    });
+
+    console.log(`🚛 Found ${allInTransitData.length} items in transit across ${inTransitByProduct.size} products`);
+
+    // Обрабатываем каждый товар без дополнительных запросов к БД
+    const analyticsPromises = products.map(async (product: any) => {
       
-      const inTransitQuantity = inTransitData.reduce((sum: number, item: any) => sum + item.quantity, 0);
+      // Получаем данные о продажах для этого товара
+      const salesData = salesByProduct.get(product.id) || [];
+      const inTransitQuantity = inTransitByProduct.get(product.id) || 0;
 
       // 3. Расчеты по продажам
       const totalSold = salesData.reduce((sum: number, item: any) => sum + item.quantity, 0);
@@ -389,7 +438,16 @@ export async function GET(request: NextRequest) {
 
     console.log(`📊 Analytics completed for ${analytics.length} products`);
 
-    return NextResponse.json({
+    // Вычисляем сводные данные
+    const totalInTransit = analytics.reduce((sum, p) => sum + (p.inTransitQuantity || 0), 0);
+    const avgProfitMargin = analytics.length > 0 
+      ? Math.round(analytics.reduce((sum, p) => sum + (p.profitMargin || 0), 0) / analytics.length) 
+      : 0;
+    const needsReorder = analytics.filter(p => p.recommendedOrderQuantity > 0).length;
+
+    console.log(`📊 Summary calculated: totalInTransit=${totalInTransit}, avgProfitMargin=${avgProfitMargin}%, needsReorder=${needsReorder}`);
+
+    const result = {
       success: true,
       data: {
         products: sortedAnalytics,
@@ -397,9 +455,13 @@ export async function GET(request: NextRequest) {
           totalProducts: analytics.length,
           criticalStock: analytics.filter(p => p.stockStatus === 'critical').length,
           lowStock: analytics.filter(p => p.stockStatus === 'low').length,
-          needsReorder: analytics.filter(p => p.recommendedOrderQuantity > 0).length,
-          inTransitTotal: analytics.reduce((sum, p) => sum + p.inTransitQuantity, 0),
-          avgProfitMargin: Number((analytics.reduce((sum, p) => sum + p.profitMargin, 0) / analytics.length).toFixed(2))
+          normalStock: analytics.filter(p => p.stockStatus === 'normal').length,
+          excessStock: analytics.filter(p => p.stockStatus === 'excess').length,
+          needsReorder,
+          inTransitTotal: totalInTransit,
+          avgProfitMargin,
+          totalExpensesAllocated: Number(totalExpenses.toFixed(2)),
+          expensePerUnit: Number(expensePerUnit.toFixed(2))
         },
         period: {
           days: period,
@@ -407,12 +469,19 @@ export async function GET(request: NextRequest) {
           to: new Date().toISOString()
         }
       }
-    });
+    };
 
+    // ✅ КЭШИРОВАНИЕ: Сохраняем результат в кэш на 10 минут
+    analyticsCache.set(cacheKey, result, 10 * 60 * 1000);
+    
+    console.log(`📊 Analytics completed for ${analytics.length} products and cached`);
+
+    return NextResponse.json(result);
   } catch (error) {
     console.error('❌ Products Analytics API Error:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return NextResponse.json(
-      { error: 'Internal Server Error' }, 
+      { error: 'Internal Server Error', details: error instanceof Error ? error.message : 'Unknown error' }, 
       { status: 500 }
     );
   }

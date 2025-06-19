@@ -15,7 +15,7 @@ export async function GET(
     }
 
     const { id } = await params;
-    const product = await prisma.product.findUnique({
+    const product = await prisma.products.findUnique({
       where: { 
         id: parseInt(id),
         deleted_at: null 
@@ -48,7 +48,7 @@ export async function PUT(
     const { id } = await params;
     const productData = await request.json();
 
-    const product = await prisma.product.update({
+    const product = await prisma.products.update({
       where: { id: parseInt(id) },
       data: {
         name: productData.name,
@@ -88,7 +88,7 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const product = await prisma.product.update({
+    const product = await prisma.products.update({
       where: { id: parseInt(id) },
       data: {
         deleted_at: new Date(),

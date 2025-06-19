@@ -24,9 +24,9 @@ export async function PUT(
 
     // Если это prime_cost, обновляем его
     const productId = parseInt(id);
-    const product = await prisma.product.findUnique({
+    const product = await prisma.products.findUnique({
       where: { id: productId },
-      select: { avgPurchasePriceTRY: true, prime_cost: true }
+      select: { avgpurchasepricetry: true, prime_cost: true }
     });
 
     if (!product) {
@@ -36,10 +36,10 @@ export async function PUT(
     // Если нет средней цены в лирах, обновляем prime_cost
     let updateData: any = {};
     
-    if (!product.avgPurchasePriceTRY || Number(product.avgPurchasePriceTRY) === 0) {
+    if (!product.avgpurchasepricetry || Number(product.avgpurchasepricetry) === 0) {
       // Обновляем prime_cost в лирах (конвертируем в рубли для хранения)
       // Получаем курс валют
-      const exchangeRate = await prisma.exchangeRate.findFirst({
+      const exchangeRate = await prisma.exchange_rates.findFirst({
         where: { currency: 'TRY' },
         orderBy: { effectiveDate: 'desc' }
       });
@@ -51,10 +51,10 @@ export async function PUT(
       }
     } else {
       // Обновляем среднюю цену в лирах
-      updateData.avgPurchasePriceTRY = priceTRY;
+      updateData.avgpurchasepricetry = priceTRY;
     }
 
-    const updatedProduct = await prisma.product.update({
+    const updatedProduct = await prisma.products.update({
       where: { id: productId },
       data: {
         ...updateData,

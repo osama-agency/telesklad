@@ -1,20 +1,25 @@
-import Messages from "@/components/Messages";
+"use client";
 
+import { useEffect } from 'react';
+import { MessagesProvider } from '@/context/MessagesContext';
+import MessagesImproved from '@/components/Messages/MessagesImproved';
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
-import { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "Messages",
-  // other metadata
-};
 
-export default function Page() {
+export default function MessagesPage() {
+  // Set document title
+  useEffect(() => {
+    document.title = "Сообщения | NextAdmin - Next.js Dashboard Kit";
+  }, []);
+
   return (
-    <>
-      <Breadcrumb pageName="Messages" />
-
-      <Messages />
-    </>
+    <div className="min-h-screen bg-main">
+      <div className="mx-auto max-w-screen-xl xl:max-w-[90vw] 2xl:max-w-[95vw] p-4 md:p-6 2xl:p-10">
+        <MessagesProvider>
+          <MessagesImproved />
+        </MessagesProvider>
+      </div>
+    </div>
   );
-};
+}
 

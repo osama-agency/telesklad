@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode, useMemo } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useMemo, useCallback } from 'react';
 
 export interface DateRange {
   from: Date | null;
@@ -37,11 +37,11 @@ const getDefaultDateRange = (): DateRange => {
 export function DateRangeProvider({ children }: { children: ReactNode }) {
   const [dateRange, setDateRange] = useState<DateRange>(getDefaultDateRange());
 
-  const resetToDefault = () => {
+  const resetToDefault = useCallback(() => {
     setDateRange(getDefaultDateRange());
-  };
+  }, []);
 
-  const formatDateRange = () => {
+  const formatDateRange = useCallback(() => {
     if (!dateRange.from || !dateRange.to) {
       return 'Выберите период';
     }
@@ -63,9 +63,9 @@ export function DateRangeProvider({ children }: { children: ReactNode }) {
     }
 
     return `${fromStr} - ${toStr}`;
-  };
+  }, [dateRange.from, dateRange.to]);
 
-  const formatMobileDateRange = () => {
+  const formatMobileDateRange = useCallback(() => {
     if (!dateRange.from || !dateRange.to) {
       return 'Период';
     }
@@ -99,7 +99,7 @@ export function DateRangeProvider({ children }: { children: ReactNode }) {
 
     // Разные годы
     return `${fromDay} ${monthNames[fromMonth]} ${fromYear} – ${toDay} ${monthNames[toMonth]} ${toYear}`;
-  };
+  }, [dateRange.from, dateRange.to]);
 
   const contextValue = useMemo(() => ({
         dateRange,
@@ -107,7 +107,7 @@ export function DateRangeProvider({ children }: { children: ReactNode }) {
         resetToDefault,
         formatDateRange,
         formatMobileDateRange,
-  }), [dateRange]);
+  }), [dateRange, resetToDefault, formatDateRange, formatMobileDateRange]);
 
   return (
     <DateRangeContext.Provider value={contextValue}>

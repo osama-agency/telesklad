@@ -44,7 +44,7 @@ export async function POST(request: Request) {
 	}
 
 	try {
-		const user = await prisma.user.update({
+		const user = await prisma.telesklad_user.update({
 			where: {
 				email: session?.user?.email as string,
 			},
@@ -55,7 +55,6 @@ export async function POST(request: Request) {
 				id: true,
 				name: true,
 				email: true,
-				phone: true,
 				image: true,
 				role: true,
 			},
@@ -66,6 +65,26 @@ export async function POST(request: Request) {
 		return NextResponse.json(user, { status: 200 });
 	} catch (error) {
 		console.error("Error updating user:", error);
+		return new NextResponse("Something went wrong", { status: 500 });
+	}
+}
+
+export async function PUT(request: Request) {
+	const body = await request.json();
+
+	try {
+		const user = await prisma.telesklad_user.update({
+			where: {
+				email: body.email.toLowerCase(),
+			},
+			data: {
+				...body,
+				email: body.email.toLowerCase(),
+			},
+		});
+
+		return NextResponse.json(user);
+	} catch (error) {
 		return new NextResponse("Something went wrong", { status: 500 });
 	}
 }

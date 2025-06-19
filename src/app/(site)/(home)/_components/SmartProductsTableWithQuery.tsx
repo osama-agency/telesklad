@@ -524,10 +524,10 @@ function SmartProductsTableContent() {
 
   if (loading) {
     return (
-      <section className="data-table-common rounded-[10px] bg-white shadow-1 dark:bg-gray-dark dark:shadow-card">
+      <section className="bg-container rounded-xl border border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-center py-16">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          <span className="ml-3 text-dark dark:text-white">Загрузка умной аналитики...</span>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1A6DFF]"></div>
+          <span className="ml-3 text-[#1E293B] dark:text-white">Загрузка умной аналитики...</span>
         </div>
       </section>
     );
@@ -535,7 +535,7 @@ function SmartProductsTableContent() {
 
   if (error) {
     return (
-      <section className="data-table-common rounded-[10px] bg-white shadow-1 dark:bg-gray-dark dark:shadow-card">
+      <section className="bg-container rounded-xl border border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-center py-16">
           <div className="text-red-500 dark:text-red-400">Ошибка: {error.message}</div>
         </div>
@@ -544,41 +544,41 @@ function SmartProductsTableContent() {
   }
 
   return (
-    <section className="data-table-common rounded-[10px] bg-white shadow-1 dark:bg-gray-dark dark:shadow-card">
+    <section className="bg-container rounded-xl border border-gray-200 dark:border-gray-700 hover:border-[#1A6DFF]/30 dark:hover:border-[#1A6DFF]/30 transition-all duration-300">
       {/* Сводка */}
       {summary && (
-        <div className="border-b border-stroke px-7.5 py-4.5 dark:border-dark-3">
+        <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-5">
           <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-red-500">{summary.criticalStock}</div>
-              <div className="text-xs text-gray-500">Критичные остатки</div>
+              <div className="text-xs text-[#64748B] dark:text-gray-400">Критичные остатки</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-orange-500">{summary.lowStock}</div>
-              <div className="text-xs text-gray-500">Мало товара</div>
+              <div className="text-xs text-[#64748B] dark:text-gray-400">Мало товара</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-500">{summary.needsReorder}</div>
-              <div className="text-xs text-gray-500">Нужно заказать</div>
+              <div className="text-xs text-[#64748B] dark:text-gray-400">Нужно заказать</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-500">{summary.inTransitTotal || 0}</div>
-              <div className="text-xs text-gray-500">В пути</div>
+              <div className="text-xs text-[#64748B] dark:text-gray-400">В пути</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-500">{summary.avgProfitMargin}%</div>
-              <div className="text-xs text-gray-500">Средняя маржа</div>
+              <div className="text-xs text-[#64748B] dark:text-gray-400">Средняя маржа</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-dark dark:text-white">{summary.totalProducts}</div>
-              <div className="text-xs text-gray-500">Всего товаров</div>
+              <div className="text-2xl font-bold text-[#1E293B] dark:text-white">{summary.totalProducts}</div>
+              <div className="text-xs text-[#64748B] dark:text-gray-400">Всего товаров</div>
             </div>
           </div>
         </div>
       )}
 
       {/* Поиск и фильтры */}
-      <div className="flex flex-col gap-4 border-b border-stroke px-7.5 py-4.5 dark:border-dark-3 sm:flex-row-reverse sm:items-center sm:justify-between sm:gap-x-4 sm:gap-y-0">
+      <div className="flex flex-col gap-4 border-b border-gray-200 dark:border-gray-700 px-6 py-5 sm:flex-row-reverse sm:items-center sm:justify-between sm:gap-x-4 sm:gap-y-0">
         <div className="flex items-center gap-4">
           <div className="relative z-20 w-full max-w-[414px]">
             <input
@@ -588,10 +588,10 @@ function SmartProductsTableContent() {
                 setGlobalFilter(e.target.value);
                 setCurrentPage(0);
               }}
-              className="w-full rounded-lg border border-stroke bg-transparent px-5 py-2.5 outline-none focus:border-primary dark:border-dark-3 dark:bg-dark-2 dark:focus:border-primary dark:text-white"
+              className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-transparent px-5 py-2.5 outline-none focus:border-[#1A6DFF] focus:ring-2 focus:ring-[#1A6DFF]/20 dark:text-white transition-all duration-300"
               placeholder="Поиск товаров..."
             />
-            <button className="absolute right-0 top-0 flex h-11.5 w-11.5 items-center justify-center rounded-r-md bg-primary text-white hover:bg-opacity-90 transition-colors duration-200">
+            <button className="absolute right-0 top-0 flex h-11.5 w-11.5 items-center justify-center rounded-r-md bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] text-white hover:scale-105 transition-all duration-200">
               <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor" className="size-4.5">
                 <path fillRule="evenodd" clipRule="evenodd" d="M8.625 2.0625C5.00063 2.0625 2.0625 5.00063 2.0625 8.625C2.0625 12.2494 5.00063 15.1875 8.625 15.1875C12.2494 15.1875 15.1875 12.2494 15.1875 8.625C15.1875 5.00063 12.2494 2.0625 8.625 2.0625ZM0.9375 8.625C0.9375 4.37931 4.37931 0.9375 8.625 0.9375C12.8707 0.9375 16.3125 4.37931 16.3125 8.625C16.3125 10.5454 15.6083 12.3013 14.4441 13.6487L16.8977 16.1023C17.1174 16.3219 17.1174 16.6781 16.8977 16.8977C16.6781 17.1174 16.3219 17.1174 16.1023 16.8977L13.6487 14.4441C12.3013 15.6083 10.5454 16.3125 8.625 16.3125C4.37931 16.3125 0.9375 12.8707 0.9375 8.625Z" />
               </svg>
@@ -601,7 +601,7 @@ function SmartProductsTableContent() {
           {/* Кнопка корзины */}
           <button
             onClick={openCartModal}
-            className="relative px-4 py-2.5 bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] text-white rounded-lg hover:opacity-90 transition-all duration-200 hover:shadow-md flex items-center gap-2"
+            className="relative px-4 py-2.5 bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] text-white rounded-lg hover:scale-105 transition-all duration-300 hover:shadow-md flex items-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m1.6 8L6 5H4m1 8v5a2 2 0 002 2h10a2 2 0 002-2v-5m-12 0h12" />
@@ -620,29 +620,29 @@ function SmartProductsTableContent() {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-t border-stroke dark:border-dark-3">
-              <th className="cursor-pointer px-4 py-4 text-left font-medium text-dark dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800" onClick={() => handleSort('name')}>
+            <tr className="border-t border-gray-200 dark:border-gray-700">
+              <th className="cursor-pointer px-4 py-4 text-left font-medium text-[#1E293B] dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200" onClick={() => handleSort('name')}>
                 Товар ↕️
               </th>
-              <th className="cursor-pointer px-4 py-4 text-left font-medium text-dark dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800" onClick={() => handleSort('stockStatus')}>
+              <th className="cursor-pointer px-4 py-4 text-left font-medium text-[#1E293B] dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200" onClick={() => handleSort('stockStatus')}>
                 Статус остатков ↕️
               </th>
-              <th className="cursor-pointer px-4 py-4 text-left font-medium text-dark dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800" onClick={() => handleSort('avgDailySales')}>
+              <th className="cursor-pointer px-4 py-4 text-left font-medium text-[#1E293B] dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200" onClick={() => handleSort('avgDailySales')}>
                 Продажи/день ↕️
               </th>
-              <th className="cursor-pointer px-4 py-4 text-left font-medium text-dark dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800" onClick={() => handleSort('recommendedOrderQuantity')}>
+              <th className="cursor-pointer px-4 py-4 text-left font-medium text-[#1E293B] dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200" onClick={() => handleSort('recommendedOrderQuantity')}>
                 К заказу ↕️
               </th>
-              <th className="cursor-pointer px-4 py-4 text-left font-medium text-dark dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800" onClick={() => handleSort('salesTrend')}>
+              <th className="cursor-pointer px-4 py-4 text-left font-medium text-[#1E293B] dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200" onClick={() => handleSort('salesTrend')}>
                 Тренд ↕️
               </th>
-              <th className="cursor-pointer px-4 py-4 text-left font-medium text-dark dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800" onClick={() => handleSort('profitMargin')} title="Реальная маржа с учетом всех расходов: доставка (350₽/шт) + общие расходы">
+              <th className="cursor-pointer px-4 py-4 text-left font-medium text-[#1E293B] dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200" onClick={() => handleSort('profitMargin')} title="Реальная маржа с учетом всех расходов: доставка (350₽/шт) + общие расходы">
                 Реальная маржа ↕️
               </th>
-              <th className="cursor-pointer px-4 py-4 text-left font-medium text-dark dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800" onClick={() => handleSort('abcClass')}>
+              <th className="cursor-pointer px-4 py-4 text-left font-medium text-[#1E293B] dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200" onClick={() => handleSort('abcClass')}>
                 ABC/XYZ ↕️
               </th>
-              <th className="px-4 py-4 text-left font-medium text-dark dark:text-white w-28">
+              <th className="px-4 py-4 text-left font-medium text-[#1E293B] dark:text-white w-28">
                 Действия
               </th>
             </tr>
@@ -650,16 +650,16 @@ function SmartProductsTableContent() {
           <tbody>
             {paginatedProducts.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-12 text-center font-medium text-dark-5 dark:text-dark-6">
+                <td colSpan={8} className="py-12 text-center font-medium text-[#64748B] dark:text-gray-400">
                   {globalFilter ? 'Товары не найдены по запросу' : 'Товары не найдены'}
                 </td>
               </tr>
             ) : (
               paginatedProducts.map((product) => (
-                <tr key={product.id} className="border-t border-stroke hover:bg-gray-50 dark:border-dark-3 dark:hover:bg-gray-800 transition-colors">
+                <tr key={product.id} className="border-t border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700/50 transition-colors duration-200">
                   <td className="px-4 py-4">
                     <div>
-                      <div className="font-medium text-dark dark:text-white mb-2">{product.name}</div>
+                      <div className="font-medium text-[#1E293B] dark:text-white mb-2">{product.name}</div>
                       
                       {/* Цены с возможностью редактирования */}
                       <div className="space-y-1.5">
@@ -754,38 +754,38 @@ function SmartProductsTableContent() {
                     <StockStatusBadge status={product.stockStatus} daysUntilZero={product.daysUntilZero} />
                   </td>
                   <td className="px-4 py-4">
-                    <div className="font-medium text-dark dark:text-white">{product.avgDailySales} шт</div>
-                    <div className="text-xs text-gray-500">≈ {(product.avgDailySales * 30).toFixed(0)} в месяц</div>
+                    <div className="font-medium text-[#1E293B] dark:text-white">{product.avgDailySales} шт</div>
+                    <div className="text-xs text-[#64748B] dark:text-gray-400">≈ {(product.avgDailySales * 30).toFixed(0)} в месяц</div>
                   </td>
                   <td className="px-4 py-4">
                     {product.recommendedOrderQuantity > 0 ? (
                       <div>
                         <div className="font-bold text-blue-600 dark:text-blue-400">{product.recommendedOrderQuantity} шт</div>
-                        <div className="text-xs text-gray-500">Оптимум: {product.optimalStockLevel}</div>
+                        <div className="text-xs text-[#64748B] dark:text-gray-400">Оптимум: {product.optimalStockLevel}</div>
                       </div>
                     ) : (
-                      <span className="text-gray-500">Достаточно</span>
+                      <span className="text-[#64748B] dark:text-gray-400">Достаточно</span>
                     )}
                   </td>
                   <td className="px-4 py-4">
                     <SalesTrendBadge trend={product.salesTrend} />
-                    <div className="text-xs text-gray-500 mt-1">Вариативность: {product.salesVariability}</div>
+                    <div className="text-xs text-[#64748B] dark:text-gray-400 mt-1">Вариативность: {product.salesVariability}</div>
                   </td>
                   <td className="px-4 py-4">
-                    <div className="font-medium text-dark dark:text-white" title={`Реальная маржа с учетом всех расходов:\n• Доставка: ${product.deliveryCostPerUnit}₽/шт\n• Общие расходы: ${product.allocatedExpensesPerUnit}₽/шт\n• Без расходов: ${product.profitMarginBasic}%\n• Прибыль с единицы: ${product.profitPerUnit}₽`}>
+                    <div className="font-medium text-[#1E293B] dark:text-white" title={`Реальная маржа с учетом всех расходов:\n• Доставка: ${product.deliveryCostPerUnit}₽/шт\n• Общие расходы: ${product.allocatedExpensesPerUnit}₽/шт\n• Без расходов: ${product.profitMarginBasic}%\n• Прибыль с единицы: ${product.profitPerUnit}₽`}>
                       {product.profitMargin}%
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-[#64748B] dark:text-gray-400">
                       <span title={`Прибыль с единицы: ${product.profitPerUnit}₽`}>
                         💰 {product.profitPerUnit}₽/шт
                       </span>
                     </div>
-                    <div className="text-xs text-gray-400">
+                    <div className="text-xs text-[#64748B] dark:text-gray-400">
                       <span title={`Доставка: ${product.deliveryCostPerUnit}₽ + Общие: ${product.allocatedExpensesPerUnit}₽`}>
                         📦 {product.deliveryCostPerUnit}₽ + 📊 {product.allocatedExpensesPerUnit}₽
                       </span>
                     </div>
-                    <div className="text-xs text-gray-400">
+                    <div className="text-xs text-[#64748B] dark:text-gray-400">
                       ROI: {product.roi}%
                     </div>
                   </td>
@@ -809,10 +809,10 @@ function SmartProductsTableContent() {
       </div>
 
       {/* Пагинация */}
-      <div className="flex flex-col gap-4 px-7.5 py-7 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
+      <div className="flex flex-col gap-4 px-6 py-6 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
         <div className="flex items-center">
           <button
-            className="flex items-center justify-center rounded-[3px] p-[7px] hover:bg-primary hover:text-white disabled:pointer-events-none disabled:opacity-50 transition-colors duration-200 text-dark-5 dark:text-dark-6"
+            className="flex items-center justify-center rounded-lg p-2 hover:bg-gradient-to-r hover:from-[#1A6DFF] hover:to-[#00C5FF] hover:text-white disabled:pointer-events-none disabled:opacity-50 transition-all duration-300 text-[#64748B] dark:text-gray-400 hover:scale-105"
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 0}
           >
@@ -825,10 +825,10 @@ function SmartProductsTableContent() {
             <button
               key={pageIndex}
               onClick={() => handlePageChange(pageIndex)}
-              className={`mx-1 flex items-center justify-center rounded-[3px] p-1.5 px-[15px] font-medium transition-colors duration-200 hover:bg-primary hover:text-white ${
+              className={`mx-1 flex items-center justify-center rounded-lg p-2 px-4 font-medium transition-all duration-300 hover:scale-105 ${
                 currentPage === pageIndex
-                  ? "bg-primary text-white"
-                  : "text-dark-5 dark:text-dark-6"
+                  ? "bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] text-white"
+                  : "text-[#64748B] dark:text-gray-400 hover:bg-gradient-to-r hover:from-[#1A6DFF] hover:to-[#00C5FF] hover:text-white"
               }`}
             >
               {pageIndex + 1}
@@ -836,7 +836,7 @@ function SmartProductsTableContent() {
           ))}
 
           <button
-            className="flex items-center justify-center rounded-[3px] p-[7px] hover:bg-primary hover:text-white disabled:pointer-events-none disabled:opacity-50 transition-colors duration-200 text-dark-5 dark:text-dark-6"
+            className="flex items-center justify-center rounded-lg p-2 hover:bg-gradient-to-r hover:from-[#1A6DFF] hover:to-[#00C5FF] hover:text-white disabled:pointer-events-none disabled:opacity-50 transition-all duration-300 text-[#64748B] dark:text-gray-400 hover:scale-105"
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage >= totalPages - 1}
           >
@@ -846,7 +846,7 @@ function SmartProductsTableContent() {
           </button>
         </div>
 
-        <p className="font-medium text-dark dark:text-white">
+        <p className="font-medium text-[#1E293B] dark:text-white">
           Показано {Math.min(startIndex + 1, sortedProducts.length)} - {Math.min(startIndex + pageSize, sortedProducts.length)} из{" "}
           {sortedProducts.length} записей
           {globalFilter && ` (отфильтровано из ${products.length})`}
@@ -870,10 +870,10 @@ function SmartProductsTableContent() {
 export function SmartProductsTable() {
   return (
     <Suspense fallback={
-      <section className="data-table-common rounded-[10px] bg-white shadow-1 dark:bg-gray-dark dark:shadow-card">
+      <section className="bg-container rounded-xl border border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-center py-16">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          <span className="ml-3 text-dark dark:text-white">Загрузка умной аналитики...</span>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1A6DFF]"></div>
+          <span className="ml-3 text-[#1E293B] dark:text-white">Загрузка умной аналитики...</span>
         </div>
       </section>
     }>

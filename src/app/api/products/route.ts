@@ -146,7 +146,7 @@ export async function GET(request: NextRequest) {
         // Конвертируем Decimal поля в числа
         price: product.price ? Number(product.price.toString()) : null,
         prime_cost: primePrice,
-        avgPurchasePriceRub: avgPurchasePrice,
+        avgpurchasepricerub: avgPurchasePrice,
         avgPurchasePriceTry,
         inTransitQuantity: 0, // Пока без агрегаций
         old_price: product.old_price ? Number(product.old_price.toString()) : null,

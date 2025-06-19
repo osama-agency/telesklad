@@ -16,7 +16,7 @@ interface ReceivePurchaseRequest {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession();
@@ -24,6 +24,7 @@ export async function POST(
       return NextResponse.json({ error: 'Не авторизован' }, { status: 401 });
     }
 
+    const params = await context.params;
     const purchaseId = parseInt(params.id);
     if (isNaN(purchaseId)) {
       return NextResponse.json({ error: 'Неверный ID закупки' }, { status: 400 });
