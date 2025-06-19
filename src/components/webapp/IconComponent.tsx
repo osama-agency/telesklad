@@ -24,6 +24,7 @@ export function IconComponent({ name, size = 24, className = "" }: IconProps) {
     search: <Search size={size} className={className} />,
     catalog: <Grid3X3 size={size} className={className} />,
     unfavorite: <Heart size={size} className={className} />,
+    favorite: <Heart size={size} className={`${className} filled`} fill="currentColor" />,
     profile: <User size={size} className={className} />,
     support: <HelpCircle size={size} className={className} />,
     "cart-empty": <ShoppingCart size={size} className={className} />,

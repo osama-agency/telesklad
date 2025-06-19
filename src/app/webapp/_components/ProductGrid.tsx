@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { IconComponent } from "@/components/webapp/IconComponent";
 import { AddToCartButton } from "./AddToCartButton";
+import { FavoriteButton } from "./FavoriteButton";
 
 interface Product {
   id: number;
@@ -51,9 +52,7 @@ function ProductCard({ product, onAddToCart }: ProductCardProps) {
       <div className={`product-wrapper ${!hasStock ? 'out-of-stock' : ''}`}>
         {/* Кнопка избранного - как в Rails */}
         <div className="absolute right-3 top-3 z-10">
-          <button className="fav-btn">
-            <IconComponent name="unfavorite" size={20} />
-          </button>
+          <FavoriteButton productId={product.id} />
         </div>
 
         {/* Индикатор "нет в наличии" */}
