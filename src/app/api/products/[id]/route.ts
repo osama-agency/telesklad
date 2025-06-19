@@ -26,7 +26,24 @@ export async function GET(
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
-    return NextResponse.json(product);
+    // Сериализуем BigInt поля
+    const serializedProduct = {
+      ...product,
+      id: Number(product.id),
+      price: product.price ? Number(product.price) : null,
+      prime_cost: product.prime_cost ? Number(product.prime_cost) : null,
+      old_price: product.old_price ? Number(product.old_price) : null,
+      stock_quantity: Number(product.stock_quantity),
+      package_quantity: product.package_quantity ? Number(product.package_quantity) : null,
+      quantity_in_transit: product.quantity_in_transit ? Number(product.quantity_in_transit) : null,
+      avgpurchasepricerub: product.avgpurchasepricerub ? Number(product.avgpurchasepricerub) : null,
+      avgpurchasepricetry: product.avgpurchasepricetry ? Number(product.avgpurchasepricetry) : null,
+      created_at: product.created_at?.toISOString(),
+      updated_at: product.updated_at?.toISOString(),
+      deleted_at: product.deleted_at?.toISOString() || null,
+    };
+
+    return NextResponse.json(serializedProduct);
   } catch (error) {
     console.error('Error fetching product:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -68,7 +85,24 @@ export async function PUT(
       }
     });
 
-    return NextResponse.json(product);
+    // Сериализуем BigInt поля
+    const serializedProduct = {
+      ...product,
+      id: Number(product.id),
+      price: product.price ? Number(product.price) : null,
+      prime_cost: product.prime_cost ? Number(product.prime_cost) : null,
+      old_price: product.old_price ? Number(product.old_price) : null,
+      stock_quantity: Number(product.stock_quantity),
+      package_quantity: product.package_quantity ? Number(product.package_quantity) : null,
+      quantity_in_transit: product.quantity_in_transit ? Number(product.quantity_in_transit) : null,
+      avgpurchasepricerub: product.avgpurchasepricerub ? Number(product.avgpurchasepricerub) : null,
+      avgpurchasepricetry: product.avgpurchasepricetry ? Number(product.avgpurchasepricetry) : null,
+      created_at: product.created_at?.toISOString(),
+      updated_at: product.updated_at?.toISOString(),
+      deleted_at: product.deleted_at?.toISOString() || null,
+    };
+
+    return NextResponse.json(serializedProduct);
   } catch (error) {
     console.error('Error updating product:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

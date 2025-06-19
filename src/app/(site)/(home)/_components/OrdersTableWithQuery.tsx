@@ -222,7 +222,7 @@ export function OrdersTable() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-screen-xl xl:max-w-[90vw] 2xl:max-w-[95vw] p-4 md:p-6 2xl:p-10 bg-main min-h-screen">
+      <div className="bg-container rounded-xl p-6 border border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-center py-16">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1A6DFF]"></div>
           <span className="ml-3 text-[#1E293B] dark:text-white">Загрузка заказов...</span>
@@ -233,7 +233,7 @@ export function OrdersTable() {
 
   if (error) {
     return (
-      <div className="mx-auto max-w-screen-xl xl:max-w-[90vw] 2xl:max-w-[95vw] p-4 md:p-6 2xl:p-10 bg-main min-h-screen">
+      <div className="bg-container rounded-xl p-6 border border-gray-200 dark:border-gray-700">
         <div className="flex flex-col items-center justify-center py-16">
           <div className="text-red-500 mb-4">Ошибка: {error.message}</div>
           <button
@@ -248,7 +248,7 @@ export function OrdersTable() {
   }
 
   return (
-    <div className="mx-auto max-w-screen-xl xl:max-w-[90vw] 2xl:max-w-[95vw] p-4 md:p-6 2xl:p-10 bg-main min-h-screen">
+    <div className="space-y-8">
       {/* Статистика */}
       {stats && (
         <div className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">

@@ -8,6 +8,7 @@ import { queryKeys } from '@/lib/api';
 import { PurchaseCartModal } from "./PurchaseCartModal";
 import { EditablePriceTRY } from "./EditablePriceTRY";
 import { EditableField } from "@/components/ui/EditableField";
+import { EditProductModal } from "@/components/Modals/EditProductModal";
 import toast from 'react-hot-toast';
 
 interface ProductAnalytics {
@@ -159,6 +160,7 @@ interface ProductCartActionsProps {
   onAddToCart: (product: ProductAnalytics, quantity: number) => void;
   onUpdateQuantity: (id: number, quantity: number) => void;
   onRemoveFromCart: (id: number) => void;
+  onEditProduct: (product: ProductAnalytics) => void;
 }
 
 function ProductCartActions({ 
@@ -166,7 +168,8 @@ function ProductCartActions({
   cartItems, 
   onAddToCart, 
   onUpdateQuantity, 
-  onRemoveFromCart 
+  onRemoveFromCart,
+  onEditProduct 
 }: ProductCartActionsProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [showQuantitySelector, setShowQuantitySelector] = useState(false);
@@ -275,6 +278,17 @@ function ProductCartActions({
   if (recommendedQty > 0) {
     return (
       <div className="flex gap-1">
+        {/* Кнопка редактирования */}
+        <button
+          onClick={() => onEditProduct(product)}
+          className="w-7 h-7 flex items-center justify-center bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+          title="Редактировать товар"
+        >
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+        </button>
+        
         {/* Быстрое добавление рекомендуемого количества */}
         <button
           onClick={() => handleQuickAdd(recommendedQty)}
@@ -293,33 +307,35 @@ function ProductCartActions({
             </>
           )}
         </button>
-        
-        {/* Кнопка выбора количества */}
-        <button
-          onClick={() => setShowQuantitySelector(true)}
-          className="w-7 h-7 flex items-center justify-center bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-          title="Выбрать количество"
-        >
-          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
       </div>
     );
   }
 
   // Для товаров без рекомендации к заказу
   return (
-    <button
-      onClick={() => setShowQuantitySelector(true)}
-      className="w-full px-2 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center justify-center gap-1"
-      title="Товар в достатке, но можно добавить в корзину"
-    >
-      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-      </svg>
-      <span>Добавить</span>
-    </button>
+    <div className="flex gap-1">
+      {/* Кнопка редактирования */}
+      <button
+        onClick={() => onEditProduct(product)}
+        className="w-7 h-7 flex items-center justify-center bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+        title="Редактировать товар"
+      >
+        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+        </svg>
+      </button>
+      
+      <button
+        onClick={() => setShowQuantitySelector(true)}
+        className="flex-1 px-2 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center justify-center gap-1"
+        title="Товар в достатке, но можно добавить в корзину"
+      >
+        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        </svg>
+        <span>Добавить</span>
+      </button>
+    </div>
   );
 }
 
@@ -334,6 +350,28 @@ function SmartProductsTableContent() {
   // Состояние корзины
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  
+  // Состояние модального окна редактирования товара
+  const [isEditProductModalOpen, setIsEditProductModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<{
+    id: number;
+    name: string | null;
+    description: string | null;
+    price: number | null;
+    stock_quantity: number;
+    ancestry: string | null;
+    weight: string | null;
+    dosage_form: string | null;
+    package_quantity: number | null;
+    main_ingredient: string | null;
+    brand: string | null;
+    old_price: number | null;
+    prime_cost: number | null;
+    is_visible: boolean | null;
+    avgpurchasepricerub: number | null;
+    avgpurchasepricetry: number | null;
+    quantity_in_transit: number | null;
+  } | null>(null);
 
   const { dateRange } = useDateRange();
 
@@ -520,6 +558,67 @@ function SmartProductsTableContent() {
       toast.error('Ошибка при обновлении себестоимости');
       throw error;
     }
+  };
+
+  // Функция открытия модального окна редактирования
+  const handleEditProduct = async (product: ProductAnalytics) => {
+    try {
+      console.log('handleEditProduct: Starting with product:', product);
+      
+      // Загружаем полные данные товара из API
+      const response = await fetch(`/api/products/${product.id}`);
+      console.log('handleEditProduct: API response status:', response.status);
+      
+      if (!response.ok) {
+        throw new Error('Ошибка при загрузке данных товара');
+      }
+      
+      const fullProduct = await response.json();
+      console.log('handleEditProduct: Full product from API:', fullProduct);
+      
+      // Преобразуем данные в нужный формат
+      const productForEdit = {
+        id: fullProduct.id,
+        name: fullProduct.name || product.name,
+        description: fullProduct.description || null,
+        price: fullProduct.price || product.avgSalePrice,
+        stock_quantity: fullProduct.stock_quantity || product.currentStock,
+        ancestry: fullProduct.ancestry || null,
+        weight: fullProduct.weight || null,
+        dosage_form: fullProduct.dosage_form || null,
+        package_quantity: fullProduct.package_quantity || null,
+        main_ingredient: fullProduct.main_ingredient || null,
+        brand: fullProduct.brand || product.brand,
+        old_price: fullProduct.old_price || product.oldPrice || null,
+        prime_cost: fullProduct.prime_cost || product.prime_cost,
+        is_visible: fullProduct.is_visible !== undefined ? fullProduct.is_visible : true,
+        avgpurchasepricerub: fullProduct.avgpurchasepricerub || product.avgPurchasePrice,
+        avgpurchasepricetry: fullProduct.avgpurchasepricetry || product.avgpurchasepricetry,
+        quantity_in_transit: fullProduct.quantity_in_transit || product.inTransitQuantity,
+      };
+      
+      console.log('handleEditProduct: Product for edit:', productForEdit);
+      
+      setEditingProduct(productForEdit);
+      setIsEditProductModalOpen(true);
+    } catch (error) {
+      console.error('Error loading product data:', error);
+      toast.error('Ошибка при загрузке данных товара');
+    }
+  };
+
+  // Функция закрытия модального окна редактирования
+  const handleCloseEditModal = () => {
+    setEditingProduct(null);
+    setIsEditProductModalOpen(false);
+  };
+
+  // Функция сохранения изменений товара
+  const handleSaveProduct = (updatedProduct: any) => {
+    // Обновляем данные в кэше
+    queryClient.invalidateQueries({ queryKey: ['products-analytics'] });
+    setEditingProduct(null);
+    setIsEditProductModalOpen(false);
   };
 
   if (loading) {
@@ -799,6 +898,7 @@ function SmartProductsTableContent() {
                       onAddToCart={addToCart}
                       onUpdateQuantity={updateCartQuantity}
                       onRemoveFromCart={removeFromCart}
+                      onEditProduct={handleEditProduct}
                     />
                   </td>
                 </tr>
@@ -862,6 +962,14 @@ function SmartProductsTableContent() {
         onUpdateCostPrice={updateCartCostPrice}
         onRemoveItem={removeFromCart}
         onCreatePurchase={createPurchase}
+      />
+
+      {/* Модальное окно редактирования товара */}
+      <EditProductModal
+        isOpen={isEditProductModalOpen}
+        onClose={handleCloseEditModal}
+        product={editingProduct}
+        onSave={handleSaveProduct}
       />
     </section>
   );

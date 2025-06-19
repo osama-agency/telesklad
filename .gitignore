@@ -38,3 +38,6 @@ next-env.d.ts
 
 .vercel
 strattera/
+
+# old webapp
+old webapp/

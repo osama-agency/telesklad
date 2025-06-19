@@ -136,20 +136,24 @@ export function ExpensesTable() {
 
   return (
     <div className="space-y-6">
-      {/* Header Section */}
+      {/* Stats Cards */}
       <motion.div 
-        initial={{ opacity: 0, y: -20 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
       >
-        <div>
-          <h2 className="text-2xl font-bold text-[#1E293B] dark:text-white">
-            Расходы
-          </h2>
-          <p className="mt-1 text-sm text-[#64748B] dark:text-gray-400">
-            Управление расходами компании
-          </p>
-        </div>
+        <ExpenseStats 
+          totalAmount={stats.totalAmount}
+          totalCount={stats.totalCount}
+        />
+      </motion.div>
+
+      {/* Add Expense Button */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="flex justify-end"
+      >
         <button
           disabled={isLoading}
           className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] px-5 py-2.5 text-sm font-medium text-white transition-all duration-300 hover:scale-105 disabled:opacity-50"
@@ -159,18 +163,6 @@ export function ExpensesTable() {
           </svg>
           Новый расход
         </button>
-      </motion.div>
-
-      {/* Stats Cards */}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-      >
-        <ExpenseStats 
-          totalAmount={stats.totalAmount}
-          totalCount={stats.totalCount}
-        />
       </motion.div>
 
       {/* Expense Table */}

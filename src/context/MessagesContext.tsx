@@ -220,19 +220,23 @@ export function MessagesProvider({ children }: { children: React.ReactNode }) {
     });
 
     try {
-      const response = await fetch('/api/messages', {
+      // Отправляем сообщение через Telegram API
+      const response = await fetch('/api/telegram/send-message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text,
           tg_id: userId,
-          is_incoming: false,
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to send message');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send message');
+      }
       
-      const newMessage: Message = await response.json();
+      const result = await response.json();
+      const newMessage: Message = result.message;
       
       // Заменяем временное сообщение на реальное
       dispatch({ 
@@ -244,10 +248,20 @@ export function MessagesProvider({ children }: { children: React.ReactNode }) {
         } 
       });
 
+      // Показываем уведомление об успешной отправке
+      if ((window as any).addMessageNotification) {
+        (window as any).addMessageNotification({
+          message: 'Сообщение отправлено в Telegram',
+          type: 'success',
+          duration: 2000
+        });
+      }
+
       // Перезагружаем список пользователей для синхронизации с сервером
       setTimeout(() => fetchUsers(), 1000);
       
     } catch (error) {
+      console.error('Error sending message:', error);
       dispatch({ 
         type: 'UPDATE_MESSAGE', 
         payload: { 
@@ -256,6 +270,16 @@ export function MessagesProvider({ children }: { children: React.ReactNode }) {
           updates: { status: 'failed' } 
         } 
       });
+      
+      // Показываем уведомление об ошибке
+      if ((window as any).addMessageNotification) {
+        (window as any).addMessageNotification({
+          message: error instanceof Error ? error.message : 'Ошибка отправки сообщения',
+          type: 'error',
+          duration: 4000
+        });
+      }
+      
       throw error;
     }
   }, [fetchUsers]);
@@ -299,6 +323,78 @@ export function MessagesProvider({ children }: { children: React.ReactNode }) {
     }, 30000); // Обновляем каждые 30 секунд
 
     return () => clearInterval(interval);
+  }, [fetchUsers]);
+
+  // Polling для получения новых сообщений в реальном времени
+  useEffect(() => {
+    let lastCheckTime = new Date().toISOString();
+    
+    const pollForNewMessages = async () => {
+      try {
+        const response = await fetch(`/api/messages/latest?since=${encodeURIComponent(lastCheckTime)}`);
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data.messages && data.messages.length > 0) {
+            // Группируем сообщения по пользователям
+            const messagesByUser: Record<string, any[]> = {};
+            
+            data.messages.forEach((message: any) => {
+              const userId = message.tg_id;
+              if (userId) {
+                if (!messagesByUser[userId]) {
+                  messagesByUser[userId] = [];
+                }
+                messagesByUser[userId].push(message);
+              }
+            });
+            
+            // Добавляем новые сообщения в состояние
+            Object.entries(messagesByUser).forEach(([userId, userMessages]) => {
+              userMessages.forEach(message => {
+                dispatch({ type: 'ADD_MESSAGE', payload: { userId, message } });
+                
+                // Показываем уведомление только для входящих сообщений
+                if (message.is_incoming && (window as any).addMessageNotification) {
+                  // Находим пользователя для отображения имени
+                  const user = state.users.find(u => u.tg_id === userId);
+                  const userName = user?.first_name || user?.username || `Пользователь ${userId}`;
+                  
+                  (window as any).addMessageNotification({
+                    message: `Новое сообщение от ${userName}: ${message.text?.substring(0, 50)}${message.text && message.text.length > 50 ? '...' : ''}`,
+                    type: 'info',
+                    duration: 5000
+                  });
+                }
+              });
+              
+              // Обновляем время последнего сообщения
+              const lastMessage = userMessages[userMessages.length - 1];
+              dispatch({
+                type: 'UPDATE_USER_LAST_MESSAGE',
+                payload: {
+                  userId,
+                  lastMessageAt: lastMessage.created_at,
+                  messageCount: 0
+                }
+              });
+            });
+            
+            // Обновляем список пользователей
+            fetchUsers();
+          }
+          
+          lastCheckTime = data.timestamp;
+        }
+      } catch (error) {
+        console.error('Error polling for new messages:', error);
+      }
+    };
+
+    // Запускаем polling каждые 5 секунд
+    const pollingInterval = setInterval(pollForNewMessages, 5000);
+
+    return () => clearInterval(pollingInterval);
   }, [fetchUsers]);
 
   const contextValue: MessagesContextType = {
