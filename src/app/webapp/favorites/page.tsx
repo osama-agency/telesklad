@@ -188,14 +188,17 @@ export default function FavoritesPage() {
           ))}
         </div>
       ) : (
-        // Пустое состояние - точно как в Rails
-        <div className="no-items-wrapper">
-          <div className="w-full">
-            <div className="flex justify-center text-gray-no-active w-full mb-1">
-              <IconComponent name="no-favorite" size={40} />
+        // Пустое состояние - красивое центрированное
+        <div className="empty-state">
+          <div className="empty-state-content">
+            <div className="empty-state-icon">
+              <IconComponent name="no-favorite" size={64} />
             </div>
-            <div className="no-items-title">Нет избранных товаров</div>
-            <Link href="/webapp" className="webapp-btn webapp-btn-secondary webapp-btn-big">
+            <div className="empty-state-title">Нет избранных товаров</div>
+            <div className="empty-state-subtitle">
+              Добавляйте товары в избранное, чтобы не потерять их
+            </div>
+            <Link href="/webapp" className="empty-state-button">
               Вернуться в каталог
             </Link>
           </div>

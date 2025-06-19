@@ -102,13 +102,16 @@ export default function CartPage() {
     return (
       <>
         <h1>Корзина</h1>
-        <div className="no-items-wrapper">
-          <div className="w-full">
-            <div className="flex justify-center text-gray-no-active w-full mb-1">
-              <IconComponent name="cart-empty" size={40} />
+        <div className="empty-state">
+          <div className="empty-state-content">
+            <div className="empty-state-icon">
+              <IconComponent name="cart-empty" size={64} />
             </div>
-            <div className="no-items-title">Корзина пуста</div>
-            <Link href="/webapp" className="webapp-btn webapp-btn-big">
+            <div className="empty-state-title">Корзина пуста</div>
+            <div className="empty-state-subtitle">
+              Добавьте товары в корзину для оформления заказа
+            </div>
+            <Link href="/webapp" className="empty-state-button">
               Вернуться в каталог
             </Link>
           </div>
