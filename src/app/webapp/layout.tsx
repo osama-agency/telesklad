@@ -29,33 +29,27 @@ export default function WebappLayout({ children }: PropsWithChildren) {
 
       {/* Fixed bottom navigation - точно как в Rails */}
       <nav className="fixed-menu">
-        <div className="container-adaptive">
-          <ul>
-            <li>
-              <Link href="/webapp" className="active">
-                <IconComponent name="catalog" size={24} />
-                Каталог
-              </Link>
-            </li>
-            <li>
-              <Link href="/webapp/favorites">
-                <IconComponent name="unfavorite" size={24} />
-                Избранное
-              </Link>
-            </li>
-            <li>
-              <Link href="/webapp/profile">
-                <IconComponent name="profile" size={24} />
-                Профиль
-              </Link>
-            </li>
-            <li>
-              <Link href="/webapp/support">
-                <IconComponent name="support" size={24} />
-                Поддержка
-              </Link>
-            </li>
-          </ul>
+        <div className="menu-grid">
+          <Link href="/webapp" className="menu-item active">
+            <IconComponent name="catalog" size={20} />
+            <span className="menu-text">Каталог</span>
+          </Link>
+          <Link href="/webapp/favorites" className="menu-item">
+            <IconComponent name="unfavorite" size={20} />
+            <span className="menu-text">Избранное</span>
+          </Link>
+          <Link href="/webapp/cart" className="menu-item">
+            <IconComponent name="cart-empty" size={20} />
+            <span className="menu-text">Корзина</span>
+          </Link>
+          <Link href="/webapp/profile" className="menu-item">
+            <IconComponent name="profile" size={20} />
+            <span className="menu-text">Профиль</span>
+          </Link>
+          <Link href="/webapp/support" className="menu-item">
+            <IconComponent name="support" size={20} />
+            <span className="menu-text">Поддержка</span>
+          </Link>
         </div>
       </nav>
     </div>

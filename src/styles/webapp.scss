@@ -1470,4 +1470,195 @@
   &.visible {
     animation: cart-slide-up 0.3s ease-out;
   }
+}
+
+/* Profile Page Styles - Based on Rails Project */
+.profile-avatar {
+  color: white;
+  background-color: #48C928;
+}
+
+.bonus-block {
+  border-radius: 20px;
+  background-color: white;
+  box-shadow: 0px 4px 16px 0px #3D44531A;
+  box-shadow: 0px 0px 8px 0px #3D44530D;
+  margin-bottom: 20px;
+
+  .bonus-balance {
+    font-size: 24px;
+    font-weight: 600;
+    color: #3D4453;
+  }
+
+  .account-tier {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: #F9FAFB;
+    }
+  }
+
+  .bonus-block-footer {
+    background-color: #48C928;
+    padding: 20px;
+    color: white;
+    border-radius: 0 0 20px 20px;
+  }
+}
+
+.modal-account-tier {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+
+  .modal-wrapper {
+    background: white;
+    border-radius: 20px;
+    padding: 24px;
+    max-width: 400px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .modal-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+
+    .close {
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      transition: background-color 0.2s;
+
+      &:hover {
+        background-color: #F3F4F6;
+      }
+    }
+  }
+
+  .modal-body {
+    .title {
+      font-weight: 600;
+      color: #3D4453;
+    }
+
+    .desc {
+      color: #6B7280;
+      font-size: 14px;
+    }
+  }
+}
+
+.profile-form {
+  .input-container {
+    margin-bottom: 12px;
+    position: relative;
+
+    label {
+      font-weight: 500;
+      color: #374151;
+      font-size: 14px;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .input-str {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #D1D5DB;
+      border-radius: 12px;
+      font-size: 16px;
+      background-color: white;
+      transition: border-color 0.2s, box-shadow 0.2s;
+
+      &:focus {
+        outline: none;
+        border-color: #48C928;
+        box-shadow: 0 0 0 3px rgba(72, 201, 40, 0.1);
+      }
+
+      &:required:invalid {
+        border-color: #EF4444;
+      }
+    }
+  }
+
+  .line-user {
+    height: 1px;
+    background-color: #E5E7EB;
+    margin: 24px 0;
+  }
+
+  h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1F2937;
+    margin-bottom: 16px;
+  }
+}
+
+/* Main block styles for profile menu */
+.main-block {
+  background-color: white;
+  border-radius: 20px;
+  box-shadow: 0px 4px 16px 0px #3D44531A;
+  box-shadow: 0px 0px 8px 0px #3D44530D;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+/* Button styles - Rails exact copy */
+.btn {
+  border-radius: 16px;
+  padding: 16px 20px;
+  min-height: 48px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  font-family: inherit;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+  
+  &:active {
+    transform: scale(0.95);
+    transition-duration: 0.1s;
+  }
+}
+
+.btn-big {
+  padding: 18px 24px;
+  border-radius: 20px;
+  font-size: 16px;
+}
+
+.btn-secondary {
+  background: rgba(72, 201, 40, 0.15);
+  color: #48C928;
+  border: 2px solid rgba(72, 201, 40, 0.3);
+  
+  &:hover {
+    background: rgba(72, 201, 40, 0.25);
+    border-color: rgba(72, 201, 40, 0.5);
+  }
 } 

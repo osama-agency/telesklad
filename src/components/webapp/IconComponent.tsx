@@ -10,7 +10,10 @@ import {
   ImageIcon,
   X,
   Trash2,
-  ChevronRight
+  ChevronRight,
+  Info,
+  Clock,
+  Settings
 } from "lucide-react";
 
 interface IconProps {
@@ -33,7 +36,12 @@ export function IconComponent({ name, size = 24, className = "" }: IconProps) {
     close: <X size={size} className={className} />,
     trash: <Trash2 size={size} className={className} />,
     cart: <ShoppingCart size={size} className={className} />,
-    "arrow-right": <ChevronRight size={size} className={className} />
+    "arrow-right": <ChevronRight size={size} className={className} />,
+    info: <Info size={size} className={className} />,
+    right: <ChevronRight size={size} className={className} />,
+    clock: <Clock size={size} className={className} />,
+    cart2: <ShoppingCart size={size} className={className} />,
+    admin: <Settings size={size} className={className} />
   };
 
   const iconComponent = icons[name];
