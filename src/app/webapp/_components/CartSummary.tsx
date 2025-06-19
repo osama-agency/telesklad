@@ -22,19 +22,45 @@ export function CartSummary({ isVisible, onHide }: CartSummaryProps) {
   const [totalPrice, setTotalPrice] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
 
-  // Симуляция загрузки корзины (в реальном проекте здесь будет API)
+  // Загрузка корзины и отслеживание изменений
   useEffect(() => {
-    if (isVisible) {
-      // Временно используем localStorage для симуляции корзины
+    const loadCart = () => {
       const storedCart = localStorage.getItem('webapp_cart');
       if (storedCart) {
         const items: CartItem[] = JSON.parse(storedCart);
         setCartItems(items);
         setTotalPrice(items.reduce((sum, item) => sum + (item.product_price * item.quantity), 0));
         setTotalCount(items.reduce((sum, item) => sum + item.quantity, 0));
+      } else {
+        setCartItems([]);
+        setTotalPrice(0);
+        setTotalCount(0);
       }
-    }
-  }, [isVisible]);
+    };
+
+    // Загружаем при монтировании
+    loadCart();
+
+    // Слушаем изменения localStorage
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'webapp_cart') {
+        loadCart();
+      }
+    };
+
+    // Слушаем кастомное событие для изменений корзины
+    const handleCartUpdate = () => {
+      loadCart();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('cartUpdated', handleCartUpdate);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('cartUpdated', handleCartUpdate);
+    };
+  }, []);
 
   // Обработчик клика на плашку (переход в корзину)
   const handleCartClick = () => {

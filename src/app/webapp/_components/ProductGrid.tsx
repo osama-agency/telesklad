@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { IconComponent } from "@/components/webapp/IconComponent";
+import { AddToCartButton } from "./AddToCartButton";
 
 interface Product {
   id: number;
@@ -37,34 +38,12 @@ interface ProductCardProps {
 function ProductCard({ product, onAddToCart }: ProductCardProps) {
   const hasStock = product.stock_quantity > 0;
 
-  // Функция добавления товара в корзину
-  const handleAddToCart = () => {
-    // Получаем текущую корзину из localStorage
-    const existingCart = localStorage.getItem('webapp_cart');
-    const cartItems = existingCart ? JSON.parse(existingCart) : [];
-    
-    // Проверяем, есть ли уже этот товар в корзине
-    const existingItemIndex = cartItems.findIndex((item: any) => item.product_id === product.id);
-    
-    if (existingItemIndex >= 0) {
-      // Увеличиваем количество
-      cartItems[existingItemIndex].quantity += 1;
-    } else {
-      // Добавляем новый товар
-      cartItems.push({
-        id: Date.now(), // временный ID
-        product_id: product.id,
-        product_name: product.name,
-        product_price: product.price,
-        quantity: 1
-      });
+  // Обработчик изменения количества в корзине
+  const handleCartChange = (quantity: number) => {
+    if (quantity > 0) {
+      // Показываем плашку корзины при добавлении
+      onAddToCart?.();
     }
-    
-    // Сохраняем в localStorage
-    localStorage.setItem('webapp_cart', JSON.stringify(cartItems));
-    
-    // Показываем плашку
-    onAddToCart?.();
   };
 
   return (
@@ -133,10 +112,14 @@ function ProductCard({ product, onAddToCart }: ProductCardProps) {
               ) : (
                 <div className="price-without-old">{Math.floor(product.price)}₽</div>
               )}
-              {/* Кнопка добавления в корзину */}
-              <button className="webapp-btn" onClick={handleAddToCart}>
-                В корзину
-              </button>
+              {/* Современная кнопка добавления в корзину 2025 */}
+              <AddToCartButton
+                productId={product.id}
+                productName={product.name}
+                productPrice={product.price}
+                maxQuantity={product.stock_quantity}
+                onCartChange={handleCartChange}
+              />
             </>
           ) : (
             <>
