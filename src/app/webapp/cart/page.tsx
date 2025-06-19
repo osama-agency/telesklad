@@ -123,24 +123,24 @@ export default function CartPage() {
       <h1>Корзина</h1>
       
       <div className="main-block mb-5">
-        <div className="cart-items" id="cart_items">
-          {/* Заголовок корзины */}
-          <div className="flex justify-between items-center mb-3">
-            <div className="font-semibold">
-              Товаров: {totalQuantity}
-            </div>
-            <button
-              className="btn-clear-cart"
-              onClick={clearCart}
-            >
-              <div className="flex items-center gap-1 active:text-red-600">
-                Очистить корзину
-                <IconComponent name="trash" size={16} />
-              </div>
-            </button>
+        {/* Заголовок корзины - как в Rails */}
+        <div className="flex justify-between items-center mb-3">
+          <div className="font-semibold">
+            Товаров: {totalQuantity}
           </div>
+          <button
+            className="btn-clear-cart"
+            onClick={clearCart}
+          >
+            <div className="flex items-center gap-1 active:text-red-600">
+              Очистить корзину
+              <IconComponent name="trash" size={16} />
+            </div>
+          </button>
+        </div>
 
-          {/* Список товаров */}
+        {/* Список товаров в контейнере cart-items */}
+        <div className="cart-items" id="cart_items">
           {cartItems.map(item => (
             <CartItemComponent
               key={item.product_id}

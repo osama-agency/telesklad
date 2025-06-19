@@ -114,12 +114,10 @@ export function CartItemComponent({ item, onUpdateQuantity }: CartItemProps) {
             onTouchEnd={handleLongPressEnd}
             disabled={isUpdating}
           >
-            <svg width="12" height="2" viewBox="0 0 12 2" fill="currentColor">
-              <rect width="12" height="2" rx="1"/>
-            </svg>
+            <div className="minus-ico"></div>
           </button>
 
-          {/* Количество и общая стоимость */}
+          {/* Количество и общая стоимость - Rails формат */}
           <div className="cart-quantity-info">
             <div className="cart-quantity">
               {item.quantity} шт
@@ -139,10 +137,7 @@ export function CartItemComponent({ item, onUpdateQuantity }: CartItemProps) {
             onTouchEnd={handleLongPressEnd}
             disabled={isUpdating}
           >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-              <rect x="5" y="0" width="2" height="12" rx="1"/>
-              <rect x="0" y="5" width="12" height="2" rx="1"/>
-            </svg>
+            <div className="plus-ico"></div>
           </button>
         </div>
       </div>

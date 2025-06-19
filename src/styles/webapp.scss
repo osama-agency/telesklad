@@ -1042,24 +1042,20 @@
   }
 }
 
-/* Cart Page Styles */
+/* Cart Page Styles - Based on Rails Project */
 .cart-item {
-  padding: clamp(12px, 3vw, 16px);
-  background: white;
-  border-radius: clamp(12px, 3vw, 16px);
-  margin-bottom: clamp(12px, 3vw, 16px);
-  box-shadow: 0px 2px 8px rgba(61, 68, 83, 0.1);
+  /* Убираем фон и отступы, как в оригинале */
+  margin-bottom: clamp(8px, 2vw, 12px);
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
   transition: all 0.2s ease;
-  
-  &:hover {
-    box-shadow: 0px 4px 15px rgba(61, 68, 83, 0.15);
-  }
 }
 
 .cart-item-image {
   width: 72px;
   height: 72px;
-  background: #f8f8f8;
+  background: #F0F0F0; /* Как в оригинале Rails */
   border-radius: clamp(8px, 2vw, 12px);
   overflow: hidden;
   display: flex;
@@ -1105,48 +1101,55 @@
 }
 
 .cart-item-price {
-  font-size: clamp(12px, 3vw, 13px);
-  color: #777777;
   font-weight: 500;
+  font-size: 12px; /* Фиксированный размер как в Rails */
+  line-height: 16px; /* Как в Rails */
+  color: #777777;
 }
 
-/* Cart Quantity Controls */
+/* Cart Quantity Controls - Rails Style */
 .cart-quantity-controls {
   display: flex;
   align-items: center;
-  background: #F0F0F0;
+  background: #F0F0F0; /* Точно как в Rails */
   border-radius: clamp(8px, 2vw, 12px);
-  padding: clamp(4px, 1vw, 6px);
-  gap: clamp(8px, 2vw, 12px);
+  padding: 0; /* Убираем padding */
+  gap: 0; /* Убираем gap */
   min-width: 120px;
+  overflow: hidden; /* Для правильного отображения border-radius */
 }
 
+/* Buy Button - Rails Style */
 .cart-qty-btn {
+  background: transparent;
+  border: none;
+  padding: 17px 4px; /* Как в Rails */
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: clamp(32px, 8vw, 36px);
-  height: clamp(32px, 8vw, 36px);
-  border: none;
-  border-radius: clamp(6px, 1.5vw, 8px);
-  background: #48C928;
-  color: white;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  
-  &:hover:not(.disabled) {
-    background: #3AA120;
-    transform: scale(1.05);
-  }
+  transition: all 0.5s; /* Как в Rails */
   
   &:active:not(.disabled) {
-    transform: scale(0.95);
-    transition-duration: 0.1s;
+    .plus-ico {
+      transform: scale(1.2);
+    }
+    
+    .minus-ico {
+      transform: scale(0.8);
+    }
+  }
+  
+  &:hover:not(.disabled) {
+    .plus-ico, .minus-ico, .plus-ico::after {
+      background-color: #48C928; /* Зеленый при hover */
+    }
   }
   
   &.long-pressing {
-    background: #2E8B1C;
-    animation: pulse-press 0.15s ease-in-out infinite alternate;
+    .plus-ico, .minus-ico, .plus-ico::after {
+      background-color: #3AA120;
+    }
   }
   
   &.updating {
@@ -1155,43 +1158,53 @@
   }
   
   &.disabled {
-    background: #E0E0E0;
-    color: #999;
     cursor: not-allowed;
-    
-    &:hover {
-      transform: none;
-    }
+    opacity: 0.5;
   }
   
-  svg {
-    transition: all 0.2s ease;
+  /* Rails-style plus and minus icons */
+  .plus-ico, .minus-ico {
+    margin: 0 4px; /* Как в Rails */
+    width: 12px;
+    height: 2px;
+    background-color: #3D4453; /* Дефолтный цвет */
+    border-radius: 2px;
+    transition: all 0.5s; /* Как в Rails */
   }
   
-  &:hover:not(.disabled) svg {
-    transform: scale(1.1);
+  .plus-ico::after {
+    content: '';
+    display: block;
+    width: 12px;
+    height: 2px;
+    background-color: #3D4453;
+    border-radius: 2px;
+    transform: rotate(90deg);
+    transition: all 0.5s;
   }
 }
 
+/* Rails-style quantity and price display */
 .cart-quantity-info {
   text-align: center;
   flex: 1;
   min-width: 50px;
+  padding: 0 8px; /* Небольшие отступы */
 }
 
 .cart-quantity {
   font-weight: 600;
-  font-size: clamp(12px, 3vw, 14px);
-  line-height: 1.2;
+  font-size: 12px; /* Фиксированный размер как в Rails */
+  line-height: 16px; /* Как в Rails */
   color: #3D4453;
-  margin-bottom: 2px;
+  margin-bottom: 0;
 }
 
 .cart-item-total {
   font-weight: 500;
-  font-size: clamp(10px, 2.5vw, 12px);
-  line-height: 1.2;
-  color: #48C928;
+  font-size: 10px; /* Как в Rails */
+  line-height: 12px; /* Как в Rails */
+  color: #777777; /* Серый цвет как в Rails */
 }
 
 /* Cart Summary Info */
@@ -1233,13 +1246,8 @@
   100% { transform: rotate(360deg); }
 }
 
-/* Адаптивность для корзины */
+/* Адаптивность для корзины - Rails Style */
 @media (max-width: 640px) {
-  .cart-item {
-    padding: 12px;
-    margin-bottom: 12px;
-  }
-  
   .cart-item-image {
     width: 60px;
     height: 60px;
@@ -1247,25 +1255,24 @@
   
   .cart-quantity-controls {
     min-width: 100px;
-    gap: 6px;
   }
   
   .cart-qty-btn {
-    width: 28px;
-    height: 28px;
+    padding: 12px 3px; /* Уменьшенные отступы */
     
-    svg {
+    .plus-ico, .minus-ico {
       width: 10px;
-      height: 10px;
+      height: 1.5px;
+    }
+    
+    .plus-ico::after {
+      width: 10px;
+      height: 1.5px;
     }
   }
 }
 
 @media (max-width: 374px) {
-  .cart-item {
-    padding: 10px;
-  }
-  
   .cart-item-image {
     width: 50px;
     height: 50px;
@@ -1273,16 +1280,20 @@
   
   .cart-quantity-controls {
     min-width: 90px;
-    gap: 4px;
   }
   
   .cart-qty-btn {
-    width: 24px;
-    height: 24px;
+    padding: 10px 2px; /* Ещё более компактно */
     
-    svg {
+    .plus-ico, .minus-ico {
       width: 8px;
-      height: 8px;
+      height: 1px;
+      margin: 0 2px;
+    }
+    
+    .plus-ico::after {
+      width: 8px;
+      height: 1px;
     }
   }
 }
