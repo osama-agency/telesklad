@@ -18,14 +18,13 @@ interface Product {
 
 interface ProductGridProps {
   products: Product[];
-  onAddToCart?: () => void;
 }
 
-export function ProductGrid({ products, onAddToCart }: ProductGridProps) {
+export function ProductGrid({ products }: ProductGridProps) {
   return (
     <div className="product-grid" id="products">
       {products.map((product) => (
-        <ProductCard key={product.id} product={product} onAddToCart={onAddToCart} />
+        <ProductCard key={product.id} product={product} />
       ))}
     </div>
   );
@@ -33,19 +32,10 @@ export function ProductGrid({ products, onAddToCart }: ProductGridProps) {
 
 interface ProductCardProps {
   product: Product;
-  onAddToCart?: () => void;
 }
 
-function ProductCard({ product, onAddToCart }: ProductCardProps) {
+function ProductCard({ product }: ProductCardProps) {
   const hasStock = product.stock_quantity > 0;
-
-  // Обработчик изменения количества в корзине
-  const handleCartChange = (quantity: number) => {
-    if (quantity > 0) {
-      // Показываем плашку корзины при добавлении
-      onAddToCart?.();
-    }
-  };
 
   return (
     <div className="product-card">
@@ -117,7 +107,6 @@ function ProductCard({ product, onAddToCart }: ProductCardProps) {
                 productName={product.name}
                 productPrice={product.price}
                 maxQuantity={product.stock_quantity}
-                onCartChange={handleCartChange}
               />
             </>
           ) : (

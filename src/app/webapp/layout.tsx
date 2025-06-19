@@ -2,6 +2,7 @@ import { type PropsWithChildren } from "react";
 import Link from "next/link";
 import "@/styles/webapp.scss";
 import { IconComponent } from "@/components/webapp/IconComponent";
+import { CartSummary } from "./_components/CartSummary";
 
 export default function WebappLayout({ children }: PropsWithChildren) {
   return (
@@ -27,6 +28,9 @@ export default function WebappLayout({ children }: PropsWithChildren) {
         {children}
       </main>
 
+      {/* Cart Summary - глобально для всех страниц */}
+      <CartSummary />
+
       {/* Fixed bottom navigation - точно как в Rails */}
       <nav className="fixed-menu">
         <div className="menu-grid">
@@ -37,10 +41,6 @@ export default function WebappLayout({ children }: PropsWithChildren) {
           <Link href="/webapp/favorites" className="menu-item">
             <IconComponent name="unfavorite" size={20} />
             <span className="menu-text">Избранное</span>
-          </Link>
-          <Link href="/webapp/cart" className="menu-item">
-            <IconComponent name="cart-empty" size={20} />
-            <span className="menu-text">Корзина</span>
           </Link>
           <Link href="/webapp/profile" className="menu-item">
             <IconComponent name="profile" size={20} />

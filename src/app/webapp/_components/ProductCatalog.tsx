@@ -21,11 +21,7 @@ interface Category {
   children?: Category[];
 }
 
-interface ProductCatalogProps {
-  onAddToCart?: () => void;
-}
-
-export function ProductCatalog({ onAddToCart }: ProductCatalogProps) {
+export function ProductCatalog() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
@@ -108,7 +104,7 @@ export function ProductCatalog({ onAddToCart }: ProductCatalogProps) {
       {loading ? (
         <ProductGridSkeleton count={8} />
       ) : products.length > 0 ? (
-        <ProductGrid products={products} onAddToCart={onAddToCart} />
+        <ProductGrid products={products} />
       ) : (
         <div className="no-items-wrapper">
           <div className="w-full">

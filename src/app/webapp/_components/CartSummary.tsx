@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { IconComponent } from "@/components/webapp/IconComponent";
 
 interface CartItem {
@@ -12,15 +13,11 @@ interface CartItem {
   quantity: number;
 }
 
-interface CartSummaryProps {
-  isVisible: boolean;
-  onHide: () => void;
-}
-
-export function CartSummary({ isVisible, onHide }: CartSummaryProps) {
+export function CartSummary() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [totalPrice, setTotalPrice] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
+  const pathname = usePathname();
 
   // Загрузка корзины и отслеживание изменений
   useEffect(() => {
@@ -62,18 +59,16 @@ export function CartSummary({ isVisible, onHide }: CartSummaryProps) {
     };
   }, []);
 
-  // Обработчик клика на плашку (переход в корзину)
-  const handleCartClick = () => {
-    onHide(); // Скрываем плашку при переходе в корзину
-  };
+  // Проверяем, нужно ли показывать плашку
+  const shouldShow = cartItems.length > 0 && pathname !== '/webapp/cart';
 
-  if (!isVisible || cartItems.length === 0) {
+  if (!shouldShow) {
     return null;
   }
 
   return (
-    <div className={`cart-summary ${isVisible ? 'visible' : ''}`}>
-      <Link href="/webapp/cart" className="cart-summary-link" onClick={handleCartClick}>
+    <div className="cart-summary visible">
+      <Link href="/webapp/cart" className="cart-summary-link">
         <div className="container mx-auto px-5">
           <div className="py-3 flex justify-between items-center">
             <div className="flex justify-center gap-3">

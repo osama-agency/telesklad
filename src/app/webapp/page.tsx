@@ -1,21 +1,9 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect } from "react";
 import { ProductCatalog } from "./_components/ProductCatalog";
-import { CartSummary } from "./_components/CartSummary";
 
 export default function WebappHomePage() {
-  const [showCartSummary, setShowCartSummary] = useState(false);
-
-  // Функция для показа плашки корзины
-  const handleAddToCart = () => {
-    setShowCartSummary(true);
-  };
-
-  // Функция для скрытия плашки корзины
-  const handleHideCartSummary = () => {
-    setShowCartSummary(false);
-  };
 
   // Set document title for Telegram Web App
   useEffect(() => {
@@ -49,14 +37,8 @@ export default function WebappHomePage() {
           </div>
         </div>
       }>
-        <ProductCatalog onAddToCart={handleAddToCart} />
+        <ProductCatalog />
       </Suspense>
-
-      {/* Cart Summary Notification */}
-      <CartSummary 
-        isVisible={showCartSummary} 
-        onHide={handleHideCartSummary} 
-      />
     </>
   );
 } 
