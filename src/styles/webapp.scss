@@ -1648,6 +1648,135 @@
   }
 }
 
+/* Action Cards Styles */
+.action-cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.action-card-link {
+  text-decoration: none;
+  display: block;
+  
+  &:hover .action-card {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+  }
+  
+  &:active .action-card {
+    transform: translateY(0);
+  }
+}
+
+.action-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  border: 1px solid #f0f0f0;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    border-color: #e0e0e0;
+  }
+  
+  .action-card-content {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    gap: 16px;
+  }
+  
+  .action-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    color: #3D4453;
+    flex-shrink: 0;
+  }
+  
+  .action-card-text {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .action-card-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #3D4453;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .action-card-description {
+    font-size: 14px;
+    color: #6b7280;
+    line-height: 1.4;
+  }
+  
+  .action-card-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid;
+    min-width: 24px;
+    height: 20px;
+  }
+  
+  .action-card-arrow {
+    color: #9ca3af;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+  }
+  
+  .action-card-footer {
+    padding: 12px 20px;
+    background: #f8f9fb;
+    border-top: 1px solid #f0f0f0;
+    
+    .action-card-footer-text {
+      font-size: 12px;
+      color: #6b7280;
+      font-weight: 500;
+    }
+  }
+  
+  &:hover .action-card-arrow {
+    transform: translateX(2px);
+  }
+}
+
+.action-card-admin {
+  background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%);
+  border-color: #fecaca;
+  
+  .action-card-icon {
+    background: #fee2e2;
+    color: #dc2626;
+  }
+  
+  .action-card-title {
+    color: #dc2626;
+  }
+  
+  &:hover {
+    border-color: #f87171;
+    box-shadow: 0 8px 25px rgba(220, 38, 38, 0.1);
+  }
+}
+
 /* Empty State Styles */
 .empty-state {
   display: flex;

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { IconComponent } from '@/components/webapp/IconComponent';
 import BonusBlock from '../_components/BonusBlock';
 import ProfileForm from '../_components/ProfileForm';
+import ActionCards from '../_components/ActionCards';
 
 interface AccountTier {
   id: number;
@@ -170,43 +171,7 @@ const ProfilePage: React.FC = () => {
       />
 
       {/* Меню действий */}
-      <div className="main-block mb-5">
-        <Link 
-          href="/webapp/subscriptions" 
-          className="btn btn-big btn-secondary flex justify-between mb-2 items-center"
-        >
-          <div className="flex justify-center gap-2 items-center">
-            <IconComponent name="clock" />
-            <span>Товары в ожидании</span>
-          </div>
-          <IconComponent name="right" />
-        </Link>
-        
-        <Link 
-          href="/webapp/orders" 
-          className="btn btn-big btn-secondary flex justify-between items-center"
-        >
-          <div className="flex justify-center gap-2 items-center">
-            <IconComponent name="cart2" />
-            <span>История заказов</span>
-          </div>
-          <IconComponent name="right" />
-        </Link>
-        
-        {isAdminOrManagerOrModerator(user.role) && (
-          <a 
-            href="/admin" 
-            className="btn btn-big btn-secondary flex justify-between items-center mt-2 !bg-red-100/70 hover:!bg-red-300/50 !text-red-500"
-            data-turbo="false"
-          >
-            <div className="flex justify-center gap-2 items-center">
-              <IconComponent name="admin" />
-              <span>Админка</span>
-            </div>
-            <IconComponent name="right" />
-          </a>
-        )}
-      </div>
+      <ActionCards isAdmin={isAdminOrManagerOrModerator(user.role)} />
 
       {/* Форма редактирования профиля */}
       <ProfileForm 
