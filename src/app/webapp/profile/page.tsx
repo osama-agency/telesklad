@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { IconComponent } from '@/components/webapp/IconComponent';
 import BonusBlock from '../_components/BonusBlock';
-import ProfileForm from '../_components/ProfileForm';
 import ActionCards from '../_components/ActionCards';
 
 interface AccountTier {
@@ -76,39 +75,7 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  const handleSaveProfile = async (userData: Partial<User>) => {
-    try {
-      const response = await fetch('/api/webapp/profile', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
 
-      const data = await response.json();
-
-      if (data.success) {
-        // Обновляем данные профиля
-        if (profileData) {
-          setProfileData({
-            ...profileData,
-            user: { ...profileData.user, ...userData }
-          });
-        }
-        
-        // Показываем уведомление об успехе
-        const event = new CustomEvent('webapp:notification', {
-          detail: { message: 'Профиль успешно обновлен', type: 'success' }
-        });
-        window.dispatchEvent(event);
-      } else {
-        throw new Error(data.error || 'Ошибка обновления профиля');
-      }
-    } catch (error: any) {
-      throw error; // Пробрасываем ошибку в форму
-    }
-  };
 
   const isAdminOrManagerOrModerator = (role: number) => {
     return role >= 1; // 1: manager, 2: moderator, 3: admin
@@ -116,7 +83,7 @@ const ProfilePage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="webapp-container">
+      <div className="webapp-container profile-page">
         <div className="text-center py-8">
           <div className="text-gray-600">Загрузка профиля...</div>
         </div>
@@ -126,7 +93,7 @@ const ProfilePage: React.FC = () => {
 
   if (error || !profileData) {
     return (
-      <div className="webapp-container">
+      <div className="webapp-container profile-page">
         <div className="text-center py-8">
           <div className="text-red-600 mb-4">{error}</div>
           <button 
@@ -143,9 +110,9 @@ const ProfilePage: React.FC = () => {
   const { user, account_tiers, remaining_to_next_tier, next_tier } = profileData;
 
   return (
-    <div className="webapp-container">
+    <div className="webapp-container profile-page">
       {/* Заголовок профиля */}
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex items-center gap-3 mb-3">
         <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center profile-avatar">
           {user.photo_url ? (
             <img 
@@ -171,13 +138,7 @@ const ProfilePage: React.FC = () => {
       />
 
       {/* Меню действий */}
-      <ActionCards isAdmin={isAdminOrManagerOrModerator(user.role)} />
-
-      {/* Форма редактирования профиля */}
-      <ProfileForm 
-        user={user}
-        onSave={handleSaveProfile}
-      />
+      <ActionCards isAdmin={isAdminOrManagerOrModerator(user.role)} user={user} />
     </div>
   );
 };
