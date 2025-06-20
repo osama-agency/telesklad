@@ -10,10 +10,26 @@ interface FAQItem {
   answer: string;
 }
 
+interface SupportContacts {
+  telegram: string;
+  telegram_url: string;
+  working_hours: string;
+  response_time: string;
+}
+
+interface SupportApiResponse {
+  success: boolean;
+  faq_items: FAQItem[];
+  support_contacts: SupportContacts;
+  error?: string;
+}
+
 export default function SupportPage() {
   const [faqItems, setFaqItems] = useState<FAQItem[]>([]);
+  const [supportContacts, setSupportContacts] = useState<SupportContacts | null>(null);
   const [openItems, setOpenItems] = useState<Set<number>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Set document title for Telegram Web App
@@ -28,59 +44,21 @@ export default function SupportPage() {
       tg.setBackgroundColor('#f9f9f9');
     }
 
-    // Загрузка FAQ данных
+    // Загрузка FAQ данных из API
     const loadFAQ = async () => {
       try {
-        // Имитируем загрузку данных
-        await new Promise(resolve => setTimeout(resolve, 800));
+        const response = await fetch('/api/webapp/support');
+        const data: SupportApiResponse = await response.json();
         
-        // Мок данные FAQ - типичные вопросы для интернет-магазина
-        const mockFAQ: FAQItem[] = [
-          {
-            id: 1,
-            question: "Как оформить заказ?",
-            answer: "Добавьте товары в корзину, перейдите в корзину, заполните данные для доставки и подтвердите заказ. Мы свяжемся с вами для уточнения деталей."
-          },
-          {
-            id: 2,
-            question: "Какие способы оплаты доступны?",
-            answer: "Мы принимаем оплату наличными при получении, банковскими картами, через Сбербанк Онлайн, ЮMoney и другие популярные платежные системы."
-          },
-          {
-            id: 3,
-            question: "Сколько стоит доставка?",
-            answer: "Стоимость доставки зависит от региона и веса заказа. По Москве в пределах МКАД доставка составляет 300₽. При заказе от 3000₽ - доставка бесплатная."
-          },
-          {
-            id: 4,
-            question: "Как долго ждать доставку?",
-            answer: "Обычно доставка занимает 1-3 рабочих дня по Москве и Московской области, 3-7 дней по регионам России. Точные сроки уточняются при оформлении заказа."
-          },
-          {
-            id: 5,
-            question: "Можно ли вернуть товар?",
-            answer: "Да, вы можете вернуть товар в течение 14 дней с момента получения, если товар не подошел или имеет дефекты. Товар должен быть в оригинальной упаковке."
-          },
-          {
-            id: 6,
-            question: "Как отследить заказ?",
-            answer: "После отправки заказа вы получите номер для отслеживания. Также можно посмотреть статус заказа в разделе 'История заказов' в вашем профиле."
-          },
-          {
-            id: 7,
-            question: "Что делать если товара нет в наличии?",
-            answer: "Вы можете подписаться на уведомления о поступлении товара. Как только товар появится в наличии, мы пришлем вам уведомление."
-          },
-          {
-            id: 8,
-            question: "Как связаться с поддержкой?",
-            answer: "Вы можете написать нам в Telegram, позвонить по телефону или отправить сообщение через форму обратной связи. Мы отвечаем в течение 15 минут в рабочее время."
-          }
-        ];
-        
-        setFaqItems(mockFAQ);
+        if (data.success) {
+          setFaqItems(data.faq_items);
+          setSupportContacts(data.support_contacts);
+        } else {
+          setError(data.error || 'Ошибка загрузки данных');
+        }
       } catch (error) {
         console.error('Error loading FAQ:', error);
+        setError('Не удалось загрузить данные. Попробуйте позже.');
       } finally {
         setIsLoading(false);
       }
@@ -101,9 +79,6 @@ export default function SupportPage() {
     });
   };
 
-  // Telegram support link - в реальном приложении это будет из настроек
-  const telegramSupportLink = "https://t.me/your_support_bot";
-
   if (isLoading) {
     return (
       <div className="webapp-container support-page">
@@ -117,6 +92,25 @@ export default function SupportPage() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="webapp-container support-page">
+        <h1>Поддержка</h1>
+        <div className="main-block">
+          <div className="text-center text-red-600">
+            <p>{error}</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="webapp-btn-secondary mt-4"
+            >
+              Попробовать снова
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="webapp-container support-page">
       <h1>Поддержка</h1>
@@ -124,7 +118,7 @@ export default function SupportPage() {
       {/* Кнопка связи с поддержкой */}
       <div className="mb-6">
         <a 
-          href={telegramSupportLink}
+          href={supportContacts?.telegram_url || "https://t.me/your_support_bot"}
           target="_blank"
           rel="noopener noreferrer"
           className="webapp-btn-secondary webapp-btn-big block text-center"
@@ -134,61 +128,78 @@ export default function SupportPage() {
       </div>
 
       {/* Заголовок FAQ */}
-      <h3 className="mb-4">Часто задаваемые вопросы</h3>
+      {faqItems.length > 0 && (
+        <h3 className="mb-4">Часто задаваемые вопросы</h3>
+      )}
 
       {/* FAQ список */}
-      <div className="faq-container">
-        {faqItems.map((item) => (
-          <div key={item.id} className="main-block mb-2">
-            <div className="faq-question">
-              <div 
-                className="faq-question-header"
-                onClick={() => toggleFAQ(item.id)}
-              >
-                <div className="faq-question-text">
-                  {item.question}
-                </div>
-                <button 
-                  className={`faq-toggle-icon ${openItems.has(item.id) ? 'open' : ''}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleFAQ(item.id);
-                  }}
+      {faqItems.length > 0 ? (
+        <div className="faq-container">
+          {faqItems.map((item) => (
+            <div key={item.id} className="main-block mb-2">
+              <div className="faq-question">
+                <div 
+                  className="faq-question-header"
+                  onClick={() => toggleFAQ(item.id)}
                 >
-                  <IconComponent name="down" size={16} />
-                </button>
-              </div>
-              
-              <div className={`faq-answer ${openItems.has(item.id) ? 'open' : ''}`}>
-                <div className="faq-answer-content">
-                  {item.answer}
+                  <div className="faq-question-text">
+                    {item.question}
+                  </div>
+                  <button 
+                    className={`faq-toggle-icon ${openItems.has(item.id) ? 'open' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFAQ(item.id);
+                    }}
+                  >
+                    <IconComponent name="down" size={16} />
+                  </button>
+                </div>
+                
+                <div className={`faq-answer ${openItems.has(item.id) ? 'open' : ''}`}>
+                  <div className="faq-answer-content">
+                    {item.answer}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Дополнительная информация */}
-      <div className="main-block mt-6">
-        <div className="support-contacts">
-          <h4 className="mb-3 font-semibold">Контакты поддержки</h4>
-          <div className="support-contact-item">
-            <div className="support-contact-label">Telegram:</div>
-            <a href={telegramSupportLink} className="support-contact-value" target="_blank" rel="noopener noreferrer">
-              @your_support_bot
-            </a>
-          </div>
-          <div className="support-contact-item">
-            <div className="support-contact-label">Время работы:</div>
-            <div className="support-contact-value">Пн-Пт 9:00-18:00 МСК</div>
-          </div>
-          <div className="support-contact-item">
-            <div className="support-contact-label">Время ответа:</div>
-            <div className="support-contact-value">В течение 15 минут</div>
+          ))}
+        </div>
+      ) : (
+        <div className="main-block">
+          <div className="text-center text-gray-500">
+            <p>FAQ пока не добавлены</p>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Дополнительная информация */}
+      {supportContacts && (
+        <div className="main-block mt-6">
+          <div className="support-contacts">
+            <h4 className="mb-3 font-semibold">Контакты поддержки</h4>
+            <div className="support-contact-item">
+              <div className="support-contact-label">Telegram:</div>
+              <a 
+                href={supportContacts.telegram_url} 
+                className="support-contact-value" 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                {supportContacts.telegram}
+              </a>
+            </div>
+            <div className="support-contact-item">
+              <div className="support-contact-label">Время работы:</div>
+              <div className="support-contact-value">{supportContacts.working_hours}</div>
+            </div>
+            <div className="support-contact-item">
+              <div className="support-contact-label">Время ответа:</div>
+              <div className="support-contact-value">{supportContacts.response_time}</div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

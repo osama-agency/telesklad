@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 interface FAQItem {
   id: number;
@@ -8,64 +11,44 @@ interface FAQItem {
 
 export async function GET(request: NextRequest) {
   try {
-    // В реальном приложении здесь будет запрос к базе данных
-    // const faqItems = await prisma.supportEntry.findMany({
-    //   orderBy: { question: 'asc' }
-    // });
-
-    // Пока используем мок данные
-    const faqItems: FAQItem[] = [
-      {
-        id: 1,
-        question: "Как оформить заказ?",
-        answer: "Добавьте товары в корзину, перейдите в корзину, заполните данные для доставки и подтвердите заказ. Мы свяжемся с вами для уточнения деталей."
-      },
-      {
-        id: 2,
-        question: "Какие способы оплаты доступны?",
-        answer: "Мы принимаем оплату наличными при получении, банковскими картами, через Сбербанк Онлайн, ЮMoney и другие популярные платежные системы."
-      },
-      {
-        id: 3,
-        question: "Сколько стоит доставка?",
-        answer: "Стоимость доставки зависит от региона и веса заказа. По Москве в пределах МКАД доставка составляет 300₽. При заказе от 3000₽ - доставка бесплатная."
-      },
-      {
-        id: 4,
-        question: "Как долго ждать доставку?",
-        answer: "Обычно доставка занимает 1-3 рабочих дня по Москве и Московской области, 3-7 дней по регионам России. Точные сроки уточняются при оформлении заказа."
-      },
-      {
-        id: 5,
-        question: "Можно ли вернуть товар?",
-        answer: "Да, вы можете вернуть товар в течение 14 дней с момента получения, если товар не подошел или имеет дефекты. Товар должен быть в оригинальной упаковке."
-      },
-      {
-        id: 6,
-        question: "Как отследить заказ?",
-        answer: "После отправки заказа вы получите номер для отслеживания. Также можно посмотреть статус заказа в разделе 'История заказов' в вашем профиле."
-      },
-      {
-        id: 7,
-        question: "Что делать если товара нет в наличии?",
-        answer: "Вы можете подписаться на уведомления о поступлении товара. Как только товар появится в наличии, мы пришлем вам уведомление."
-      },
-      {
-        id: 8,
-        question: "Как связаться с поддержкой?",
-        answer: "Вы можете написать нам в Telegram, позвонить по телефону или отправить сообщение через форму обратной связи. Мы отвечаем в течение 15 минут в рабочее время."
+    // Загружаем FAQ из базы данных
+    const supportEntries = await prisma.support_entries.findMany({
+      orderBy: {
+        question: 'asc'
       }
-    ];
+    });
+
+    // Преобразуем в нужный формат
+    const faqItems: FAQItem[] = supportEntries.map(entry => ({
+      id: Number(entry.id),
+      question: entry.question || '',
+      answer: entry.answer || ''
+    }));
+
+    // Получаем настройки поддержки из таблицы settings
+    const supportSettings = await prisma.settings.findMany({
+      where: {
+        variable: {
+          in: ['tg_support', 'support_working_hours', 'support_response_time']
+        }
+      }
+    });
+
+    // Создаем объект настроек
+    const settingsMap = supportSettings.reduce((acc, setting) => {
+      acc[setting.variable || ''] = setting.value || '';
+      return acc;
+    }, {} as Record<string, string>);
 
     // Возвращаем данные FAQ
     return NextResponse.json({
       success: true,
       faq_items: faqItems,
       support_contacts: {
-        telegram: "@your_support_bot",
-        telegram_url: "https://t.me/your_support_bot",
-        working_hours: "Пн-Пт 9:00-18:00 МСК",
-        response_time: "В течение 15 минут"
+        telegram: settingsMap.tg_support || "@your_support_bot",
+        telegram_url: settingsMap.tg_support ? `https://t.me/${settingsMap.tg_support.replace('@', '')}` : "https://t.me/your_support_bot",
+        working_hours: settingsMap.support_working_hours || "Пн-Пт 9:00-18:00 МСК",
+        response_time: settingsMap.support_response_time || "В течение 15 минут"
       }
     });
 
@@ -75,5 +58,7 @@ export async function GET(request: NextRequest) {
       { success: false, error: 'Ошибка загрузки данных поддержки' },
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 } 
