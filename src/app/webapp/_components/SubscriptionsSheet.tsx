@@ -9,11 +9,10 @@ interface Product {
   id: number;
   name: string;
   price: number | null;
-  image_url: string | null;
-  category_id: number;
-  category: {
-    name: string;
-  } | null;
+  old_price: number | null;
+  quantity: number;
+  available: boolean;
+  image_url?: string;
 }
 
 interface Subscription {
@@ -163,14 +162,15 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
                 <div className="subscription-info">
                   <div className="product-name">{subscription.product.name}</div>
                   
-                  {subscription.product.category && (
-                    <div className="product-category">
-                      {subscription.product.category.name}
-                    </div>
-                  )}
-                  
                   <div className="product-price">
                     {formatPrice(subscription.product.price)}
+                  </div>
+                  
+                  <div className="product-availability">
+                    {subscription.product.available ? 
+                      `В наличии: ${subscription.product.quantity} шт.` : 
+                      'Нет в наличии'
+                    }
                   </div>
                   
                   <div className="subscription-date">
@@ -336,15 +336,15 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
           line-height: 1.3;
         }
 
-        .product-category {
-          font-size: 12px;
-          color: #6B7280;
-          margin-bottom: 4px;
-        }
-
         .product-price {
           font-weight: 600;
           color: #48C928;
+          margin-bottom: 4px;
+        }
+
+        .product-availability {
+          font-size: 12px;
+          color: #6B7280;
           margin-bottom: 4px;
         }
 

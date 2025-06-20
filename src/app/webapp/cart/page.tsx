@@ -52,15 +52,36 @@ export default function CartPage() {
   const [appliedBonus, setAppliedBonus] = useState(0);
   const [isOrderLoading, setIsOrderLoading] = useState(false);
 
-  // Загрузка корзины
-  const loadCart = () => {
+  // Загрузка корзины с изображениями
+  const loadCart = async () => {
     const storedCart = localStorage.getItem('webapp_cart');
     if (storedCart) {
       const items: CartItem[] = JSON.parse(storedCart);
-      // console.log('CartPage: Loading cart items:', items);
+      
+      // Загружаем изображения через API
+      try {
+        const response = await fetch('/api/webapp/cart', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ cart_items: items })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setCartItems(data.cart_items);
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Error loading cart images:', error);
+      }
+      
+      // Fallback: используем данные из localStorage без изображений
       setCartItems(items);
     } else {
-      // console.log('CartPage: Cart is empty');
       setCartItems([]);
     }
   };
@@ -97,7 +118,7 @@ export default function CartPage() {
 
   useEffect(() => {
     const initializePage = async () => {
-      loadCart();
+      await loadCart();
       await loadUserProfile();
       setIsLoading(false);
     };
@@ -105,13 +126,13 @@ export default function CartPage() {
     initializePage();
 
     // Слушаем изменения корзины
-    const handleCartUpdate = () => {
-      loadCart();
+    const handleCartUpdate = async () => {
+      await loadCart();
     };
 
     // Слушаем фокус на странице для обновления данных
-    const handlePageFocus = () => {
-      loadCart();
+    const handlePageFocus = async () => {
+      await loadCart();
     };
 
     window.addEventListener('cartUpdated', handleCartUpdate);
@@ -126,7 +147,7 @@ export default function CartPage() {
   }, []);
 
   // Обновление количества товара
-  const updateQuantity = (productId: number, direction: 'up' | 'down') => {
+  const updateQuantity = async (productId: number, direction: 'up' | 'down') => {
     const updatedItems = cartItems.map(item => {
       if (item.product_id === productId) {
         const newQuantity = direction === 'up' 
@@ -138,8 +159,19 @@ export default function CartPage() {
       return item;
     }).filter(item => item.quantity > 0); // Удаляем товары с количеством 0
 
+    // Обновляем localStorage без изображений (для быстроты)
+    const itemsForStorage = updatedItems.map(item => ({
+      id: item.id,
+      product_id: item.product_id,
+      product_name: item.product_name,
+      product_price: item.product_price,
+      quantity: item.quantity
+    }));
+
+    localStorage.setItem('webapp_cart', JSON.stringify(itemsForStorage));
+    
+    // Обновляем состояние с изображениями
     setCartItems(updatedItems);
-    localStorage.setItem('webapp_cart', JSON.stringify(updatedItems));
     window.dispatchEvent(new Event('cartUpdated'));
   };
 
@@ -147,6 +179,7 @@ export default function CartPage() {
   const clearCart = () => {
     setCartItems([]);
     localStorage.removeItem('webapp_cart');
+    localStorage.removeItem('webapp_cart_enriched');
     window.dispatchEvent(new Event('cartUpdated'));
   };
 

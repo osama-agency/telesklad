@@ -15,7 +15,9 @@ import {
   ChevronDown,
   Info,
   Clock,
-  Settings
+  Settings,
+  Check,
+  Star
 } from "lucide-react";
 
 interface IconProps {
@@ -45,7 +47,9 @@ export function IconComponent({ name, size = 24, className = "" }: IconProps) {
     down: <ChevronDown size={size} className={className} />,
     clock: <Clock size={size} className={className} />,
     cart2: <ShoppingCart size={size} className={className} />,
-    admin: <Settings size={size} className={className} />
+    admin: <Settings size={size} className={className} />,
+    checked: <Check size={size} className={className} />,
+    star: <Star size={size} className={className} fill="currentColor" />
   };
 
   const iconComponent = icons[name];

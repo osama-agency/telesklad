@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { S3Service } from '@/lib/services/s3';
 
 const prisma = new PrismaClient();
 
@@ -28,22 +29,56 @@ export async function GET(request: NextRequest) {
       }
     });
 
+    // Получаем изображения для всех продуктов в подписках
+    const productIds = subscriptions
+      .map(sub => Number(sub.product_id))
+      .filter(id => id !== null);
+
+    let imageMapping: { [key: number]: string } = {};
+
+    if (productIds.length > 0) {
+      const attachments = await prisma.active_storage_attachments.findMany({
+        where: {
+          record_type: 'Product',
+          record_id: {
+            in: productIds
+          },
+          name: 'image'
+        },
+        include: {
+          active_storage_blobs: true
+        }
+      });
+
+      // Создаем маппинг product_id -> blob_key
+      attachments.forEach(attachment => {
+        if (attachment.active_storage_blobs?.key) {
+          imageMapping[Number(attachment.record_id)] = attachment.active_storage_blobs.key;
+        }
+      });
+    }
+
     // Преобразуем результат для фронтенда
-    const result = subscriptions.map(sub => ({
-      id: Number(sub.id),
-      product_id: Number(sub.product_id),
-      user_id: Number(sub.user_id),
-      created_at: sub.created_at,
-      updated_at: sub.updated_at,
-      product: sub.products ? {
-        id: Number(sub.products.id),
-        name: sub.products.name,
-        price: sub.products.price,
-        old_price: sub.products.old_price ? Number(sub.products.old_price) : null,
-        quantity: sub.products.stock_quantity,
-        available: sub.products.stock_quantity > 0
-      } : null
-    }));
+    const result = subscriptions.map(sub => {
+      const blobKey = imageMapping[Number(sub.product_id)];
+      
+      return {
+        id: Number(sub.id),
+        product_id: Number(sub.product_id),
+        user_id: Number(sub.user_id),
+        created_at: sub.created_at,
+        updated_at: sub.updated_at,
+        product: sub.products ? {
+          id: Number(sub.products.id),
+          name: sub.products.name,
+          price: sub.products.price,
+          old_price: sub.products.old_price ? Number(sub.products.old_price) : null,
+          quantity: sub.products.stock_quantity,
+          available: sub.products.stock_quantity > 0,
+          image_url: blobKey ? S3Service.getImageUrl(blobKey) : undefined
+        } : null
+      };
+    });
 
     console.log(`Found ${result.length} subscriptions`);
 

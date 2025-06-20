@@ -10,8 +10,9 @@ interface Product {
   name: string;
   price: number;
   old_price?: number;
-  stock_quantity: number;
-  ancestry?: string;
+  quantity: number;
+  available: boolean;
+  image_url?: string;
 }
 
 interface Subscription {
@@ -76,7 +77,7 @@ export default function SubscriptionsPage() {
 
   // Функция для определения статуса товара
   const getProductStatus = (product: Product) => {
-    if (product.stock_quantity > 0) {
+    if (product.available && product.quantity > 0) {
       return { status: 'available', text: 'В наличии', color: 'text-green-600' };
     } else {
       return { status: 'waiting', text: 'Ожидаем поступления', color: 'text-orange-600' };
@@ -123,10 +124,20 @@ export default function SubscriptionsPage() {
             return (
               <div key={subscription.id} className="main-block">
                 <div className="flex items-start gap-4">
-                  {/* Product Image Placeholder */}
-                                     <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 text-green-600">
-                     <IconComponent name="no-image" size={24} />
-                   </div>
+                  {/* Product Image */}
+                  <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {product.image_url ? (
+                      <img 
+                        src={product.image_url} 
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="text-green-600">
+                        <IconComponent name="no-image" size={24} />
+                      </div>
+                    )}
+                  </div>
 
                   {/* Product Info */}
                   <div className="flex-1 min-w-0">
