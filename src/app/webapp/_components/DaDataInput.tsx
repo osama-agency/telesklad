@@ -127,8 +127,14 @@ const DaDataInput: React.FC<DaDataInputProps> = ({
     }
   };
 
+  // Обработчик клика мыши по подсказке
+  const handleSuggestionMouseDown = (e: React.MouseEvent) => {
+    // Предотвращаем onBlur при клике на подсказку
+    e.preventDefault();
+  };
+
   return (
-    <div className="address-wrapper relative">
+    <div className="address-wrapper" style={{ position: 'relative', zIndex: 1 }}>
       <input
         ref={inputRef}
         type="text"
@@ -145,24 +151,76 @@ const DaDataInput: React.FC<DaDataInputProps> = ({
       />
       
       {showSuggestions && (suggestions.length > 0 || isLoading) && (
-        <div className="suggestions-wrapper">
-          <div ref={suggestionsRef} className="suggestions scrollable">
+        <div 
+          className="suggestions-wrapper"
+          style={{ 
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            zIndex: 9999,
+            backgroundColor: 'white',
+            border: '1px solid #e0e0e0',
+            borderTop: 'none',
+            borderRadius: '0 0 8px 8px',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+            maxHeight: '200px',
+            overflow: 'hidden'
+          }}
+        >
+          <div 
+            ref={suggestionsRef} 
+            className="suggestions scrollable"
+            style={{
+              maxHeight: '200px',
+              overflowY: 'auto',
+              backgroundColor: 'white'
+            }}
+          >
             {isLoading && (
-              <div className="suggestion-item">
-                Поиск подсказок...
+              <div 
+                className="suggestion-item"
+                style={{ 
+                  padding: '8px 12px',
+                  color: '#48C928',
+                  fontStyle: 'italic'
+                }}
+              >
+                🔍 Поиск подсказок...
               </div>
             )}
             
             {!isLoading && suggestions.length > 0 && (
               <>
-                <div className="suggestion-item">
+                <div 
+                  className="suggestion-item"
+                  style={{ 
+                    padding: '8px 12px',
+                    backgroundColor: '#f8f9fa',
+                    color: '#6c757d',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'default'
+                  }}
+                >
                   Выберите один из вариантов...
                 </div>
                 {suggestions.map((suggestion, index) => (
                   <div
                     key={index}
                     className={`suggestion-item ${selectedIndex === index ? 'selected' : ''}`}
+                    style={{
+                      padding: '8px 12px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      color: '#3D4453',
+                      borderBottom: index < suggestions.length - 1 ? '1px solid #e0e0e0' : 'none',
+                      backgroundColor: selectedIndex === index ? 'rgba(72, 201, 40, 0.1)' : 'white',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseDown={handleSuggestionMouseDown}
                     onClick={() => handleSuggestionClick(suggestion)}
+                    onMouseEnter={() => setSelectedIndex(index)}
                   >
                     {suggestion.value}
                   </div>
@@ -170,8 +228,15 @@ const DaDataInput: React.FC<DaDataInputProps> = ({
               </>
             )}
             
-            {!isLoading && suggestions.length === 0 && (
-              <div className="suggestion-item">
+            {!isLoading && suggestions.length === 0 && value.trim().length >= 2 && (
+              <div 
+                className="suggestion-item"
+                style={{ 
+                  padding: '8px 12px',
+                  color: '#6c757d',
+                  fontStyle: 'italic'
+                }}
+              >
                 Подсказки не найдены
               </div>
             )}
@@ -182,4 +247,4 @@ const DaDataInput: React.FC<DaDataInputProps> = ({
   );
 };
 
-export default DaDataInput; 
+export default DaDataInput;

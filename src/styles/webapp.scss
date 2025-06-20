@@ -3246,3 +3246,57 @@
     }
   }
 }
+
+/* ===============================================
+   DADATA SUGGESTIONS FIX - Higher z-index
+   =============================================== */
+
+/* Исправление для правильного отображения подсказок */
+.address-wrapper {
+  .suggestions-wrapper {
+    z-index: 9999 !important;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-top: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    
+    .suggestions {
+      background: white;
+      
+      .suggestion-item {
+        background: white;
+        
+        &:hover, &.selected {
+          background-color: rgba(72, 201, 40, 0.1);
+        }
+      }
+    }
+  }
+}
+
+/* Убеждаемся что input-container не обрезает подсказки */
+.input-container {
+  overflow: visible !important;
+  
+  .address-wrapper {
+    overflow: visible !important;
+  }
+}
+
+/* Дополнительная стилизация для лучшей видимости */
+.suggestion-item {
+  &:first-child {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #6c757d;
+    
+    &:hover {
+      background: #f8f9fa !important;
+      color: #6c757d !important;
+      padding-left: 0 !important;
+    }
+  }
+}
