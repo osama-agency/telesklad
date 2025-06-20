@@ -2,10 +2,10 @@
 
 import { 
   Search, 
-  Grid3X3, 
+  LayoutGrid, 
   Heart, 
-  User, 
-  HelpCircle, 
+  UserRound, 
+  Headset, 
   ShoppingCart,
   ImageIcon,
   X,
@@ -29,11 +29,11 @@ interface IconProps {
 export function IconComponent({ name, size = 24, className = "" }: IconProps) {
   const icons: Record<string, JSX.Element> = {
     search: <Search size={size} className={className} />,
-    catalog: <Grid3X3 size={size} className={className} />,
+    catalog: <LayoutGrid size={size} className={className} />,
     unfavorite: <Heart size={size} className={className} />,
     favorite: <Heart size={size} className={`${className} filled`} fill="currentColor" />,
-    profile: <User size={size} className={className} />,
-    support: <HelpCircle size={size} className={className} />,
+    profile: <UserRound size={size} className={className} />,
+    support: <Headset size={size} className={className} />,
     "cart-empty": <ShoppingCart size={size} className={className} />,
     "no-image": <ImageIcon size={size} className={className} />,
     "no-favorite": <Heart size={size} className={className} />,
