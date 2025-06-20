@@ -112,7 +112,7 @@ const ProfilePage: React.FC = () => {
   return (
     <div className="webapp-container profile-page">
       {/* Заголовок профиля */}
-      <div className="flex items-center gap-3 mb-3">
+      <div className="flex items-center gap-3 mb-2">
         <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center profile-avatar">
           {user.photo_url ? (
             <img 

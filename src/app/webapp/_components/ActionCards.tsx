@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { IconComponent } from '@/components/webapp/IconComponent';
+import DeliveryDataSheet from './DeliveryDataSheet';
 
 interface ActionCardItem {
   id: string;
@@ -36,6 +37,32 @@ interface ActionCardsProps {
 }
 
 const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user }) => {
+  const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState(false);
+
+  const handleSaveDeliveryData = async (data: any) => {
+    try {
+      // Здесь будет запрос к API для сохранения данных доставки
+      console.log('Saving delivery data:', data);
+      
+      // Например:
+      // const response = await fetch('/api/webapp/profile/delivery', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(data)
+      // });
+      
+      // Пока просто имитируем успешное сохранение
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // В реальном приложении здесь будет обновление данных пользователя
+      // setUser(updatedUser); или перезагрузка профиля
+      
+    } catch (error) {
+      console.error('Error saving delivery data:', error);
+      throw error;
+    }
+  };
+
   // Форматируем данные пользователя для отображения
   const formatUserData = () => {
     const lastName = user.middle_name || ''; // middle_name это фамилия в схеме БД
@@ -201,6 +228,20 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user }) => {
       </div>
     );
 
+    // Специальная обработка для карточки доставки
+    if (item.id === 'delivery-data') {
+      return (
+        <div 
+          key={item.id}
+          onClick={() => setIsDeliveryModalOpen(true)}
+          className="action-card-link"
+          style={{ cursor: 'pointer' }}
+        >
+          <CardContent />
+        </div>
+      );
+    }
+
     if (item.external) {
       return (
         <a 
@@ -222,9 +263,19 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user }) => {
   };
 
   return (
-    <div className="action-cards-container">
-      {actionItems.map(renderActionCard)}
-    </div>
+    <>
+      <div className="action-cards-container">
+        {actionItems.map(renderActionCard)}
+      </div>
+
+      {/* Модальное окно данных доставки */}
+      <DeliveryDataSheet
+        isOpen={isDeliveryModalOpen}
+        onClose={() => setIsDeliveryModalOpen(false)}
+        user={user}
+        onSave={handleSaveDeliveryData}
+      />
+    </>
   );
 };
 
