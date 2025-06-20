@@ -7,19 +7,50 @@ import SkeletonLoading from '../_components/SkeletonLoading';
 
 interface Order {
   id: number;
-  order_number: string;
-  created_at: string;
   total_amount: number;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  status: 'unpaid' | 'paid' | 'shipped' | 'delivered' | 'cancelled';
+  status_label: string;
+  created_at: string;
+  paid_at?: string;
+  shipped_at?: string;
+  tracking_number?: string;
+  has_delivery: boolean;
+  bonus: number;
+  msg_id?: number;
+  bank_card?: {
+    id: number;
+    name: string;
+    number: string;
+  };
+  items: Array<{
+    id: number;
+    product_id: number;
+    product_name: string;
+    quantity: number;
+    price: number;
+    total: number;
+  }>;
   items_count: number;
-  delivery_address?: string;
+  total_items: number;
 }
 
 interface OrderStats {
   total_orders: number;
-  total_spent: number;
-  pending_orders: number;
+  unpaid_orders: number;
+  paid_orders: number;
+  shipped_orders: number;
   delivered_orders: number;
+  cancelled_orders: number;
+  total_amount: number;
+  total_bonus_earned: number;
+}
+
+interface OrdersApiResponse {
+  success: boolean;
+  orders: Order[];
+  stats: OrderStats;
+  count: number;
+  error?: string;
 }
 
 const OrdersPage: React.FC = () => {
@@ -27,6 +58,7 @@ const OrdersPage: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [stats, setStats] = useState<OrderStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Сбрасываем состояние навигации в родительском компоненте
@@ -49,64 +81,24 @@ const OrdersPage: React.FC = () => {
       tg.setBackgroundColor('#f9f9f9');
     }
 
-    // Загрузка данных заказов
+    // Загрузка данных заказов из API
     const loadOrders = async () => {
       try {
-        // Имитируем загрузку данных
-        await new Promise(resolve => setTimeout(resolve, 1200));
+        setIsLoading(true);
+        setError(null);
+
+        const response = await fetch('/api/webapp/orders');
+        const data: OrdersApiResponse = await response.json();
         
-        // Мок данные статистики
-        const mockStats: OrderStats = {
-          total_orders: 12,
-          total_spent: 145670,
-          pending_orders: 2,
-          delivered_orders: 9
-        };
-        
-        // Мок данные заказов
-        const mockOrders: Order[] = [
-          {
-            id: 1,
-            order_number: "ORD-2024-001",
-            created_at: "2024-01-20T14:45:00Z",
-            status: 'delivered',
-            total_amount: 45990,
-            items_count: 2,
-            delivery_address: "г. Москва, ул. Тверская, д. 1"
-          },
-          {
-            id: 2,
-            order_number: "ORD-2024-002",
-            created_at: "2024-01-18T14:45:00Z",
-            status: 'shipped',
-            total_amount: 23450,
-            items_count: 1,
-            delivery_address: "г. Москва, ул. Арбат, д. 5"
-          },
-          {
-            id: 3,
-            order_number: "ORD-2024-003",
-            created_at: "2024-01-15T14:45:00Z",
-            status: 'processing',
-            total_amount: 76230,
-            items_count: 3,
-            delivery_address: "г. Москва, пр-т Мира, д. 10"
-          },
-          {
-            id: 4,
-            order_number: "ORD-2024-004",
-            created_at: "2024-01-10T14:45:00Z",
-            status: 'delivered',
-            total_amount: 12990,
-            items_count: 1,
-            delivery_address: "г. Москва, ул. Большая Никитская, д. 15"
-          }
-        ];
-        
-        setStats(mockStats);
-        setOrders(mockOrders);
+        if (data.success) {
+          setOrders(data.orders);
+          setStats(data.stats);
+        } else {
+          setError(data.error || 'Ошибка загрузки заказов');
+        }
       } catch (error) {
         console.error('Error loading orders:', error);
+        setError('Не удалось загрузить историю заказов. Попробуйте позже.');
       } finally {
         setIsLoading(false);
       }
@@ -140,16 +132,16 @@ const OrdersPage: React.FC = () => {
 
   const getStatusInfo = (status: Order['status']) => {
     switch (status) {
-      case 'pending':
+      case 'unpaid':
         return {
-          label: 'Ожидает подтверждения',
+          label: 'Не оплачен',
           color: '#D97706',
           bgColor: '#FEF3C7',
           icon: 'clock'
         };
-      case 'processing':
+      case 'paid':
         return {
-          label: 'В обработке',
+          label: 'Оплачен',
           color: '#2563EB',
           bgColor: '#DBEAFE',
           icon: 'info'
@@ -200,6 +192,30 @@ const OrdersPage: React.FC = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="webapp-container">
+        <div className="header-with-back">
+          <button onClick={handleBack} className="back-btn">
+            <IconComponent name="left" size={20} />
+          </button>
+          <h1>История заказов</h1>
+        </div>
+        <div className="main-block">
+          <div className="text-center text-red-600">
+            <p>{error}</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="webapp-btn-secondary mt-4"
+            >
+              Попробовать снова
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (orders.length === 0) {
     return (
       <div className="webapp-container">
@@ -236,18 +252,20 @@ const OrdersPage: React.FC = () => {
         <h1>История заказов</h1>
       </div>
 
-      <div className="orders-stats fade-in">
-        <div className="stat-item">
-          <span className="stat-value">{orders.length}</span>
-          <span className="stat-label">Всего заказов</span>
+      {stats && (
+        <div className="orders-stats fade-in">
+          <div className="stat-item">
+            <span className="stat-value">{stats.total_orders}</span>
+            <span className="stat-label">Всего заказов</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-value">
+              {formatPrice(stats.total_amount)}
+            </span>
+            <span className="stat-label">Общая сумма</span>
+          </div>
         </div>
-        <div className="stat-item">
-          <span className="stat-value">
-            {formatPrice(orders.reduce((sum, order) => sum + order.total_amount, 0))}
-          </span>
-          <span className="stat-label">Общая сумма</span>
-        </div>
-      </div>
+      )}
 
       <div className="orders-list fade-in">
         {orders.map(order => {
@@ -258,7 +276,7 @@ const OrdersPage: React.FC = () => {
               <div className="order-header">
                 <div className="order-number">
                   <span className="order-label">Заказ</span>
-                  <span className="order-value">{order.order_number}</span>
+                  <span className="order-value">#{order.id}</span>
                 </div>
                 <div className="order-date">
                   {formatDate(order.created_at)}
@@ -270,14 +288,14 @@ const OrdersPage: React.FC = () => {
                   <div className="order-amount">
                     <span className="amount-value">{formatPrice(order.total_amount)}</span>
                     <span className="items-count">
-                      {order.items_count} {order.items_count === 1 ? 'товар' : 'товара'}
+                      {order.total_items} {order.total_items === 1 ? 'товар' : 'товара'}
                     </span>
                   </div>
                   
-                  {order.delivery_address && (
+                  {order.tracking_number && (
                     <div className="delivery-address">
                       <IconComponent name="right" size={12} />
-                      <span>{order.delivery_address}</span>
+                      <span>Трек: {order.tracking_number}</span>
                     </div>
                   )}
                 </div>

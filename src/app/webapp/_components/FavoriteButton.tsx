@@ -80,7 +80,7 @@ export function FavoriteButton({ productId, className = "" }: FavoriteButtonProp
         }
       } else {
         // Удаляем из избранного
-        const response = await fetch(`/api/webapp/favorites/${productId}`, {
+        const response = await fetch(`/api/webapp/favorites?product_id=${productId}`, {
           method: 'DELETE',
         });
 

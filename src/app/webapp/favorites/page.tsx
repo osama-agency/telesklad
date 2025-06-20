@@ -13,39 +13,38 @@ interface Product {
   old_price?: number;
   stock_quantity: number;
   image_url?: string;
-  ancestry?: string;
+  favorited_at?: string;
+}
+
+interface FavoritesApiResponse {
+  success: boolean;
+  favorites: Product[];
+  count: number;
+  error?: string;
 }
 
 export default function FavoritesPage() {
   const [favoriteProducts, setFavoriteProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Загрузка избранных товаров
+  // Загрузка избранных товаров из API
   const loadFavoriteProducts = async () => {
     try {
-      // Получаем список избранных товаров из localStorage
-      const favoriteIds = JSON.parse(localStorage.getItem('webapp_favorites') || '[]');
-      
-      if (favoriteIds.length === 0) {
-        setFavoriteProducts([]);
-        setIsLoading(false);
-        return;
-      }
+      setIsLoading(true);
+      setError(null);
 
-      // Загружаем данные о товарах
-      const response = await fetch('/api/webapp/products');
-      if (response.ok) {
-        const data = await response.json();
-        
-        // Фильтруем только избранные товары
-        const favorites = data.products.filter((product: Product) => 
-          favoriteIds.includes(product.id)
-        );
-        
-        setFavoriteProducts(favorites);
+      const response = await fetch('/api/webapp/favorites');
+      const data: FavoritesApiResponse = await response.json();
+      
+      if (data.success) {
+        setFavoriteProducts(data.favorites);
+      } else {
+        setError(data.error || 'Ошибка загрузки избранного');
       }
     } catch (error) {
       console.error('Error loading favorite products:', error);
+      setError('Не удалось загрузить избранное. Попробуйте позже.');
     } finally {
       setIsLoading(false);
     }
@@ -81,16 +80,38 @@ export default function FavoritesPage() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-[50vh]">
-        <div className="loading-spinner">
-          <div className="spinner"></div>
+      <div className="webapp-container favorites-page">
+        <h1>Избранное</h1>
+        <div className="flex justify-center items-center min-h-[50vh]">
+          <div className="loading-spinner">
+            <div className="spinner"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="webapp-container favorites-page">
+        <h1>Избранное</h1>
+        <div className="main-block">
+          <div className="text-center text-red-600">
+            <p>{error}</p>
+            <button 
+              onClick={loadFavoriteProducts} 
+              className="webapp-btn-secondary mt-4"
+            >
+              Попробовать снова
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <>
+    <div className="webapp-container favorites-page">
       <h1>Избранное</h1>
       
       {favoriteProducts.length > 0 ? (
@@ -204,6 +225,6 @@ export default function FavoritesPage() {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 } 

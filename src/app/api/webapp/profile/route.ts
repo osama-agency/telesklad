@@ -1,70 +1,97 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 
-// Временная структура пользователя для демонстрации
-// В реальном проекте данные будут из базы данных
-const mockUser = {
-  id: 1,
-  email: "user@example.com",
-  tg_id: 123456789,
-  username: "testuser",
-  first_name: "Иван",
-  first_name_raw: "Ivan",
-  last_name: "Николаевич", 
-  last_name_raw: "Smith",
-  middle_name: "Иванов",
-  phone_number: "+7 (999) 123-45-67",
-  photo_url: null,
-  address: "Москва",
-  street: "Красная площадь",
-  home: "1",
-  apartment: "10",
-  build: "А",
-  postal_code: 101000,
-  bonus_balance: 1250,
-  order_count: 5,
-  account_tier: {
-    id: 2,
-    title: "Серебряный",
-    order_threshold: 5,
-    bonus_percentage: 7,
-    order_min_amount: 1000
-  },
-  role: 0, // 0: user, 1: manager, 2: moderator, 3: admin
-  is_blocked: false,
-  started: true
-};
+const prisma = new PrismaClient();
 
-// Уровни лояльности для демонстрации
-const mockAccountTiers = [
-  { id: 1, title: "Бронзовый", order_threshold: 1, bonus_percentage: 5, order_min_amount: 500 },
-  { id: 2, title: "Серебряный", order_threshold: 5, bonus_percentage: 7, order_min_amount: 1000 },
-  { id: 3, title: "Золотой", order_threshold: 15, bonus_percentage: 10, order_min_amount: 2000 },
-  { id: 4, title: "Платиновый", order_threshold: 30, bonus_percentage: 15, order_min_amount: 5000 }
-];
+// Временный пользователь для демонстрации
+// В реальном проекте ID будет из сессии/токена
+const DEMO_USER_ID = 1;
 
 // GET /api/webapp/profile - получить данные профиля
 export async function GET(request: NextRequest) {
   try {
-    // В реальном проекте здесь будет получение данных пользователя из БД
-    // const session = await getServerSession(authOptions);
-    // const user = await prisma.user.findUnique({
-    //   where: { id: session.user.id },
-    //   include: { account_tier: true }
-    // });
+    // Получаем данные пользователя из базы данных
+    const user = await prisma.users.findUnique({
+      where: { id: DEMO_USER_ID },
+      include: {
+        account_tiers: true
+      }
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'Пользователь не найден' },
+        { status: 404 }
+      );
+    }
+
+    // Получаем все уровни лояльности
+    const accountTiers = await prisma.account_tiers.findMany({
+      orderBy: { order_threshold: 'asc' }
+    });
 
     // Вычисляем remaining_to_next_tier как в Rails
-    const currentTier = mockUser.account_tier;
-    const nextTier = mockAccountTiers.find(tier => tier.order_threshold > currentTier.order_threshold);
+    const currentTier = user.account_tiers;
+    const nextTier = accountTiers.find(tier => 
+      currentTier ? tier.order_threshold > currentTier.order_threshold : tier.order_threshold > 0
+    );
     const remainingToNextTier = nextTier 
-      ? Math.max(nextTier.order_threshold - mockUser.order_count, 0)
+      ? Math.max(nextTier.order_threshold - user.order_count, 0)
       : null; // Максимальный уровень достигнут
+
+    // Преобразуем данные в нужный формат
+    const userData = {
+      id: Number(user.id),
+      email: user.email,
+      tg_id: Number(user.tg_id),
+      username: user.username,
+      first_name: user.first_name,
+      first_name_raw: user.first_name_raw,
+      last_name: user.last_name,
+      last_name_raw: user.last_name_raw,
+      middle_name: user.middle_name,
+      phone_number: user.phone_number,
+      photo_url: user.photo_url,
+      address: user.address,
+      street: user.street,
+      home: user.home,
+      apartment: user.apartment,
+      build: user.build,
+      postal_code: user.postal_code,
+      bonus_balance: user.bonus_balance,
+      order_count: user.order_count,
+      account_tier: currentTier ? {
+        id: Number(currentTier.id),
+        title: currentTier.title,
+        order_threshold: currentTier.order_threshold,
+        bonus_percentage: currentTier.bonus_percentage,
+        order_min_amount: currentTier.order_min_amount
+      } : null,
+      role: user.role,
+      is_blocked: user.is_blocked,
+      started: user.started
+    };
+
+    const transformedTiers = accountTiers.map(tier => ({
+      id: Number(tier.id),
+      title: tier.title,
+      order_threshold: tier.order_threshold,
+      bonus_percentage: tier.bonus_percentage,
+      order_min_amount: tier.order_min_amount
+    }));
 
     return NextResponse.json({
       success: true,
-      user: mockUser,
-      account_tiers: mockAccountTiers,
+      user: userData,
+      account_tiers: transformedTiers,
       remaining_to_next_tier: remainingToNextTier,
-      next_tier: nextTier
+      next_tier: nextTier ? {
+        id: Number(nextTier.id),
+        title: nextTier.title,
+        order_threshold: nextTier.order_threshold,
+        bonus_percentage: nextTier.bonus_percentage,
+        order_min_amount: nextTier.order_min_amount
+      } : null
     });
 
   } catch (error) {
@@ -73,6 +100,8 @@ export async function GET(request: NextRequest) {
       { success: false, error: 'Ошибка загрузки профиля' },
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }
 
@@ -96,16 +125,59 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // В реальном проекте здесь будет обновление в БД
-    // await prisma.user.update({
-    //   where: { id: currentUser.id },
-    //   data: userData
-    // });
+    // Обновляем данные пользователя в базе данных
+    const updatedUser = await prisma.users.update({
+      where: { id: DEMO_USER_ID },
+      data: {
+        first_name: userData.first_name,
+        last_name: userData.last_name,
+        middle_name: userData.middle_name,
+        phone_number: userData.phone_number,
+        email: userData.email,
+        address: userData.address,
+        street: userData.street,
+        home: userData.home,
+        apartment: userData.apartment,
+        build: userData.build,
+        postal_code: userData.postal_code ? parseInt(userData.postal_code) : null,
+        updated_at: new Date()
+      },
+      include: {
+        account_tiers: true
+      }
+    });
+
+    // Преобразуем обновленные данные
+    const responseData = {
+      id: Number(updatedUser.id),
+      email: updatedUser.email,
+      tg_id: Number(updatedUser.tg_id),
+      username: updatedUser.username,
+      first_name: updatedUser.first_name,
+      first_name_raw: updatedUser.first_name_raw,
+      last_name: updatedUser.last_name,
+      last_name_raw: updatedUser.last_name_raw,
+      middle_name: updatedUser.middle_name,
+      phone_number: updatedUser.phone_number,
+      photo_url: updatedUser.photo_url,
+      address: updatedUser.address,
+      street: updatedUser.street,
+      home: updatedUser.home,
+      apartment: updatedUser.apartment,
+      build: updatedUser.build,
+      postal_code: updatedUser.postal_code,
+      bonus_balance: updatedUser.bonus_balance,
+      order_count: updatedUser.order_count,
+      account_tier: updatedUser.account_tiers,
+      role: updatedUser.role,
+      is_blocked: updatedUser.is_blocked,
+      started: updatedUser.started
+    };
 
     return NextResponse.json({
       success: true,
       message: 'Профиль успешно обновлен',
-      user: { ...mockUser, ...userData }
+      user: responseData
     });
 
   } catch (error) {
@@ -114,5 +186,7 @@ export async function PUT(request: NextRequest) {
       { success: false, error: 'Ошибка обновления профиля' },
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 } 
