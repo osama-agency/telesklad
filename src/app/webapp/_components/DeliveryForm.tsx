@@ -18,6 +18,20 @@ interface DeliveryData {
   phone_number: string;
 }
 
+// Значения по умолчанию для предотвращения null values
+const defaultDeliveryData: DeliveryData = {
+  address: '',
+  street: '',
+  home: '',
+  apartment: '',
+  build: '',
+  postal_code: 0,
+  first_name: '',
+  last_name: '',
+  middle_name: '',
+  phone_number: ''
+};
+
 interface DeliveryFormProps {
   initialData?: Partial<DeliveryData>;
   onDataChange?: (data: DeliveryData) => void;
@@ -29,7 +43,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
   onDataChange,
   showPersonalInfo = true 
 }) => {
-  // Используем хук автосохранения
+  // Используем хук автосохранения с безопасными значениями по умолчанию
   const {
     formData,
     updateField,
@@ -39,10 +53,71 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
     saveStatus
   } = useFormPersistence<DeliveryData>({
     key: 'webapp_delivery_data',
-    initialData,
+    initialData: { ...defaultDeliveryData, ...initialData },
     debounceMs: 300,
     onDataChange
   });
+
+  // Безопасные значения для предотвращения null/undefined
+  const safeFormData = {
+    ...defaultDeliveryData,
+    ...formData
+  };
+
+  // Функция для получения точного индекса по полному адресу
+  const fetchPostalCodeForFullAddress = async (city: string, street: string, house: string) => {
+    if (!city || !street || !house) return null;
+    
+    try {
+      // Сначала пробуем полный адрес
+      const fullAddress = `${city}, ${street}, ${house}`;
+      
+      let response = await fetch('/api/webapp/dadata/address', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: fullAddress,
+          count: 1
+        })
+      });
+      
+      // Если полный адрес не работает, пробуем улицу с домом
+      if (!response.ok) {
+        const streetWithHouse = `${street}, ${house}`;
+        
+        response = await fetch('/api/webapp/dadata/address', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: streetWithHouse,
+            count: 1,
+            locations: [{ city: city }]
+          })
+        });
+      }
+      
+      if (!response.ok) {
+        return null;
+      }
+      
+      const data = await response.json();
+      if (data.suggestions && data.suggestions.length > 0) {
+        const suggestion = data.suggestions[0];
+        const postalCode = suggestion.data?.postal_code || suggestion.data?.index || suggestion.data?.zip_code;
+        
+        if (postalCode && postalCode !== '000000' && postalCode !== '') {
+          const numericCode = parseInt(String(postalCode).replace(/\D/g, '')) || 0;
+          if (numericCode >= 100000 && numericCode <= 999999) {
+            return numericCode;
+          }
+        }
+      }
+    } catch (error) {
+      // Тихо обрабатываем ошибки
+    }
+    
+    return null;
+  };
 
   // Проверка обязательных полей
   const requiredFields: (keyof DeliveryData)[] = [
@@ -57,6 +132,24 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
     if (cleaned.length <= 7) return `+7 (${cleaned.slice(1, 4)}) ${cleaned.slice(4)}`;
     if (cleaned.length <= 9) return `+7 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
     return `+7 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7, 9)}-${cleaned.slice(9, 11)}`;
+  };
+
+  // Обработчик изменения номера дома - автоматически обновляем индекс
+  const handleHouseChange = async (newHouse: string) => {
+    updateField('home', newHouse);
+    
+    // Если есть город, улица и дом - пытаемся получить точный индекс
+    if (safeFormData.address && safeFormData.street && newHouse.trim()) {
+      const postalCode = await fetchPostalCodeForFullAddress(
+        safeFormData.address,
+        safeFormData.street,
+        newHouse.trim()
+      );
+      
+      if (postalCode && postalCode !== safeFormData.postal_code) {
+        updateField('postal_code', postalCode);
+      }
+    }
   };
 
   // Показываем индикатор загрузки пока данные не загружены
@@ -93,7 +186,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
               <DaDataInput
                 type="fio"
                 fioType="surname"
-                value={formData.middle_name}
+                value={safeFormData.middle_name || ''}
                 onChange={(value: string) => updateField('middle_name', value)}
                 placeholder="Введите фамилию"
                 id="delivery_middle_name"
@@ -106,7 +199,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
               <DaDataInput
                 type="fio"
                 fioType="name"
-                value={formData.first_name}
+                value={safeFormData.first_name || ''}
                 onChange={(value: string) => updateField('first_name', value)}
                 placeholder="Введите имя"
                 id="delivery_first_name"
@@ -119,7 +212,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
               <input
                 type="text"
                 id="delivery_last_name"
-                value={formData.last_name}
+                value={safeFormData.last_name || ''}
                 onChange={(e) => updateField('last_name', e.target.value)}
                 className="input-str"
                 required
@@ -134,7 +227,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
               <input
                 type="tel"
                 id="delivery_phone_number"
-                value={formData.phone_number}
+                value={safeFormData.phone_number || ''}
                 onChange={(e) => {
                   const formatted = formatPhoneNumber(e.target.value);
                   updateField('phone_number', formatted);
@@ -155,12 +248,21 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
           <DaDataInput
             type="address"
             addressType="city"
-            value={formData.address}
+            value={safeFormData.address || ''}
             onChange={(value, data) => {
               const updates: Partial<DeliveryData> = { address: value };
-              // Автозаполнение индекса если доступен
-              if (data?.postal_code) {
-                updates.postal_code = parseInt(data.postal_code) || 0;
+              
+              // Автозаполнение индекса из данных города
+              if (data) {
+                // Проверяем все возможные поля с индексом
+                const postalCode = data.postal_code || data.index || data.zip_code;
+                
+                if (postalCode && postalCode !== '000000' && postalCode !== '') {
+                  const numericCode = parseInt(String(postalCode).replace(/\D/g, '')) || 0;
+                  if (numericCode >= 100000 && numericCode <= 999999) {
+                    updates.postal_code = numericCode;
+                  }
+                }
               }
               updateFields(updates);
             }}
@@ -175,18 +277,57 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
           <DaDataInput
             type="address"
             addressType="street"
-            cityContext={formData.address}
-            value={formData.street}
-            onChange={(value, data) => {
+            cityContext={safeFormData.address}
+            value={safeFormData.street || ''}
+            onChange={async (value, data) => {
               const updates: Partial<DeliveryData> = { street: value };
+              
               // Автозаполнение полей адреса если доступны
               if (data) {
-                if (data.house) updates.home = data.house;
-                if (data.flat) updates.apartment = data.flat;
-                if (data.block || data.stead) updates.build = data.block || data.stead;
-                if (data.postal_code) updates.postal_code = parseInt(data.postal_code) || 0;
+                // Автозаполнение дома
+                if (data.house) {
+                  updates.home = String(data.house);
+                }
+                
+                // Автозаполнение квартиры
+                if (data.flat) {
+                  updates.apartment = String(data.flat);
+                }
+                
+                // Автозаполнение корпуса
+                if (data.block || data.stead) {
+                  updates.build = String(data.block || data.stead);
+                }
+                
+                // Индекс из улицы - используем только если он более точный чем текущий
+                const postalCode = data.postal_code || data.index || data.zip_code;
+                
+                if (postalCode && postalCode !== '000000' && postalCode !== '') {
+                  const numericCode = parseInt(String(postalCode).replace(/\D/g, '')) || 0;
+                  if (numericCode >= 100000 && numericCode <= 999999) {
+                    // Обновляем индекс только если он отличается от текущего
+                    if (numericCode !== safeFormData.postal_code) {
+                      updates.postal_code = numericCode;
+                    }
+                  }
+                }
               }
+              
               updateFields(updates);
+              
+              // Если после выбора улицы у нас есть дом - пытаемся получить точный индекс
+              const finalHouse = updates.home || safeFormData.home;
+              if (safeFormData.address && value && finalHouse) {
+                const precisePostalCode = await fetchPostalCodeForFullAddress(
+                  safeFormData.address,
+                  value,
+                  finalHouse
+                );
+                
+                if (precisePostalCode && precisePostalCode !== (updates.postal_code || safeFormData.postal_code)) {
+                  updateField('postal_code', precisePostalCode);
+                }
+              }
             }}
             placeholder="Введите улицу"
             id="delivery_street"
@@ -201,8 +342,8 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
               <input
                 type="text"
                 id="delivery_home"
-                value={formData.home}
-                onChange={(e) => updateField('home', e.target.value)}
+                value={safeFormData.home || ''}
+                onChange={(e) => handleHouseChange(e.target.value)}
                 className="input-str"
                 required
                 placeholder="Номер дома"
@@ -215,7 +356,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
               <input
                 type="text"
                 id="delivery_apartment"
-                value={formData.apartment}
+                value={safeFormData.apartment || ''}
                 onChange={(e) => updateField('apartment', e.target.value)}
                 className="input-str"
                 placeholder="Номер квартиры"
@@ -231,7 +372,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
               <input
                 type="text"
                 id="delivery_build"
-                value={formData.build}
+                value={safeFormData.build || ''}
                 onChange={(e) => updateField('build', e.target.value)}
                 className="input-str"
                 placeholder="Корпус/строение"
@@ -244,7 +385,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
               <input
                 type="number"
                 id="delivery_postal_code"
-                value={formData.postal_code || ''}
+                value={safeFormData.postal_code > 0 ? safeFormData.postal_code : ''}
                 onChange={(e) => updateField('postal_code', parseInt(e.target.value) || 0)}
                 className="input-str"
                 required
@@ -253,6 +394,11 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
                 max="999999"
                 autoComplete="postal-code"
               />
+              {(!safeFormData.postal_code || safeFormData.postal_code === 0) && (
+                <div className="text-xs text-gray-500 mt-1">
+                  💡 Индекс определится автоматически при вводе полного адреса
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -1180,10 +1180,17 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: clamp(8px, 2vw, 12px);
+  transition: all 0.3s ease;
+  transform-origin: center;
   
   .flex.items-center.gap-4 {
     /* Левая часть: изображение и информация */
     flex: 1;
+  }
+  
+  /* Анимация удаления товара */
+  &.removing {
+    animation: removeItem 0.3s ease-out forwards;
   }
 }
 
@@ -1280,6 +1287,29 @@
     opacity: 0.5;
   }
   
+  /* Режим удаления товара */
+  &.delete-mode {
+    background: rgba(239, 68, 68, 0.1);
+    
+    &:hover {
+      background: rgba(239, 68, 68, 0.2);
+      
+      svg {
+        color: #ef4444;
+      }
+    }
+    
+    &:active {
+      background: rgba(239, 68, 68, 0.3);
+      transform: scale(0.95);
+    }
+    
+    svg {
+      color: #dc2626;
+      transition: color 0.2s ease;
+    }
+  }
+  
   .plus-ico, .minus-ico {
     margin: 0 4px;
     width: 12px;
@@ -1357,51 +1387,7 @@
 .delivery-form {
   margin-bottom: clamp(20px, 5vw, 24px);
   
-  .input-container {
-    margin-bottom: 12px;
-    position: relative;
-
-    label {
-      font-weight: 500;
-      font-size: 12px;
-      line-height: 16px;
-      margin-bottom: 4px;
-      display: block;
-      color: #3D4453;
-    }
-
-    .input-str, input {
-      border-radius: 12px;
-      background-color: #F0F0F0;
-      border: 1px solid #F0F0F0;
-      color: #3D4453;
-      padding: 14px 16px;
-      width: 100%;
-      font-family: inherit;
-      font-size: clamp(14px, 3.5vw, 16px);
-      transition: all 0.3s ease;
-
-      &:focus {
-        outline: none;
-        background-color: white;
-        border: 1px solid #48C928;
-      }
-      
-      &::placeholder {
-        color: #777777;
-      }
-    }
-    
-    input[type="number"] {
-      -moz-appearance: textfield;
-      
-      &::-webkit-outer-spin-button,
-      &::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-      }
-    }
-  }
+  /* Старые стили заменены унифицированными ниже */
   
   .line-user {
     background-color: #F0F0F0;
@@ -1752,38 +1738,7 @@
 }
 
 .profile-form {
-  .input-container {
-    margin-bottom: 12px;
-    position: relative;
-
-    label {
-      font-weight: 500;
-      color: #374151;
-      font-size: 14px;
-      display: block;
-      margin-bottom: 6px;
-    }
-
-    .input-str {
-      width: 100%;
-      padding: 12px 16px;
-      border: 1px solid #D1D5DB;
-      border-radius: 12px;
-      font-size: 16px;
-      background-color: white;
-      transition: border-color 0.2s, box-shadow 0.2s;
-
-      &:focus {
-        outline: none;
-        border-color: #48C928;
-        box-shadow: 0 0 0 3px rgba(72, 201, 40, 0.1);
-      }
-
-      &:required:invalid {
-        border-color: #EF4444;
-      }
-    }
-  }
+  /* Используем унифицированные стили input полей */
 
   .line-user {
     height: 1px;
@@ -2555,35 +2510,59 @@
 
 /* Bonus Selector - Корзина */
 .bonus-block-cart {
-  background: linear-gradient(135deg, #f8fff8 0%, #ffffff 100%);
-  border: 1px solid rgba(72, 201, 40, 0.15);
+  /* Glassmorphism эффект */
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 
+    0 8px 32px 0 rgba(72, 201, 40, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.1);
   position: relative;
   overflow: hidden;
+  border-radius: 16px;
   
-  /* Декоративный элемент сверху */
+  /* Анимированный градиентный фон */
   &::before {
     content: '';
     position: absolute;
     top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #48C928 0%, #3AA120 100%);
+    left: -100%;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(72, 201, 40, 0.03) 25%,
+      rgba(72, 201, 40, 0.06) 50%,
+      rgba(72, 201, 40, 0.03) 75%,
+      transparent 100%
+    );
+    animation: shimmer 3s ease-in-out infinite;
+    pointer-events: none;
   }
+  
+
 
   h3 {
-    color: #3D4453;
-    font-weight: 600;
+    color: #2d3748;
+    font-weight: 700;
     font-size: 16px;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+    position: relative;
+    z-index: 2;
     
-    /* Иконка бонуса */
+    /* Анимированная иконка бонуса */
     &::before {
-      content: '💰';
-      font-size: 18px;
+      content: '💎';
+      font-size: 20px;
+      filter: drop-shadow(0 2px 4px rgba(72, 201, 40, 0.3));
+      animation: float 2s ease-in-out infinite;
     }
   }
 
@@ -2591,20 +2570,29 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    color: #777777;
-    margin-bottom: 12px;
+    color: #4a5568;
+    margin-bottom: 16px;
     font-weight: 600;
     font-size: 13px;
     line-height: 16px;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(5px);
+    border-radius: 12px;
+    padding: 8px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    position: relative;
+    z-index: 2;
     
     div:first-child {
       color: #48C928;
       font-weight: 700;
+      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
     }
     
     div:last-child {
-      color: #3D4453;
+      color: #2d3748;
       font-weight: 700;
+      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
     }
   }
 
@@ -2613,86 +2601,137 @@
     cursor: pointer;
     -webkit-appearance: none;
     appearance: none;
-    height: 8px;
-    border-radius: 4px;
-    background: linear-gradient(to right, #48C928 0%, #48C928 var(--progress, 30%), #e5e5e5 var(--progress, 30%), #e5e5e5 100%);
+    height: 10px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     outline: none;
-    transition: all 0.3s ease;
-    margin: 8px 0;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    margin: 12px 0;
+    position: relative;
+    z-index: 2;
+    box-shadow: 
+      inset 0 2px 4px rgba(0, 0, 0, 0.05),
+      0 2px 8px rgba(72, 201, 40, 0.1);
 
     &:hover {
+      transform: translateY(-2px);
+      box-shadow: 
+        inset 0 2px 4px rgba(0, 0, 0, 0.05),
+        0 8px 25px rgba(72, 201, 40, 0.2),
+        0 4px 12px rgba(72, 201, 40, 0.15);
+      background: rgba(255, 255, 255, 0.4);
+    }
+
+    &:active {
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(72, 201, 40, 0.2);
     }
 
     /* WebKit стили для ползунка */
     &::-webkit-slider-thumb {
       -webkit-appearance: none;
       appearance: none;
-      width: 24px;
-      height: 24px;
+      width: 28px;
+      height: 28px;
       border-radius: 50%;
       background: linear-gradient(135deg, #48C928 0%, #3AA120 100%);
       cursor: pointer;
-      box-shadow: 0 4px 12px rgba(72, 201, 40, 0.4), 0 0 0 4px rgba(72, 201, 40, 0.1);
-      transition: all 0.2s ease;
-      border: 2px solid white;
+      border: 3px solid rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      box-shadow: 
+        0 8px 20px rgba(72, 201, 40, 0.3),
+        0 4px 12px rgba(72, 201, 40, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3),
+        0 0 0 8px rgba(72, 201, 40, 0.08);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
 
       &:hover {
-        transform: scale(1.15);
-        box-shadow: 0 6px 16px rgba(72, 201, 40, 0.5), 0 0 0 6px rgba(72, 201, 40, 0.15);
+        transform: scale(1.2);
+        box-shadow: 
+          0 12px 28px rgba(72, 201, 40, 0.4),
+          0 6px 16px rgba(72, 201, 40, 0.25),
+          inset 0 1px 0 rgba(255, 255, 255, 0.4),
+          0 0 0 12px rgba(72, 201, 40, 0.12);
+        border-color: rgba(255, 255, 255, 1);
       }
 
       &:active {
-        transform: scale(0.95);
+        transform: scale(1.05);
+        box-shadow: 
+          0 6px 16px rgba(72, 201, 40, 0.35),
+          0 3px 8px rgba(72, 201, 40, 0.2),
+          inset 0 1px 0 rgba(255, 255, 255, 0.3),
+          0 0 0 6px rgba(72, 201, 40, 0.1);
       }
     }
 
     /* Firefox стили для ползунка */
     &::-moz-range-thumb {
-      width: 24px;
-      height: 24px;
+      width: 28px;
+      height: 28px;
       border-radius: 50%;
       background: linear-gradient(135deg, #48C928 0%, #3AA120 100%);
       cursor: pointer;
-      border: 2px solid white;
-      box-shadow: 0 4px 12px rgba(72, 201, 40, 0.4);
-      transition: all 0.2s ease;
+      border: 3px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 
+        0 8px 20px rgba(72, 201, 40, 0.3),
+        0 4px 12px rgba(72, 201, 40, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
       &:hover {
-        transform: scale(1.15);
-        box-shadow: 0 6px 16px rgba(72, 201, 40, 0.5);
+        transform: scale(1.2);
+        box-shadow: 
+          0 12px 28px rgba(72, 201, 40, 0.4),
+          0 6px 16px rgba(72, 201, 40, 0.25),
+          inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        border-color: rgba(255, 255, 255, 1);
       }
     }
 
     /* Firefox дорожка */
     &::-moz-range-track {
-      height: 8px;
-      border-radius: 4px;
-      background: #e5e5e5;
+      height: 10px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.3);
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
     }
   }
 
   /* Информация о списании */
   .mt-3 {
-    background: rgba(72, 201, 40, 0.05);
-    border-radius: 12px;
-    padding: 12px 16px;
-    border: 1px solid rgba(72, 201, 40, 0.1);
-    margin-top: 16px !important;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 16px;
+    padding: 16px 20px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    margin-top: 20px !important;
+    box-shadow: 
+      0 4px 16px rgba(72, 201, 40, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    position: relative;
+    z-index: 2;
+    animation: slideUp 0.3s ease-out;
     
     .text-sm {
       font-size: 14px;
-      color: #3D4453;
-      font-weight: 500;
+      color: #2d3748;
+      font-weight: 600;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 10px;
+      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
       
       &::before {
-        content: '✨';
-        font-size: 16px;
+        content: '💸';
+        font-size: 18px;
+        filter: drop-shadow(0 2px 4px rgba(72, 201, 40, 0.3));
+        animation: pulse 1.5s ease-in-out infinite;
       }
     }
     
@@ -2701,73 +2740,168 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      font-weight: 700;
-      font-size: 16px;
+      font-weight: 800;
+      font-size: 17px;
+      filter: drop-shadow(0 1px 2px rgba(255, 255, 255, 0.8));
     }
   }
 
   /* Подпись снизу */
   .mt-2 {
-    margin-top: 12px !important;
-    padding-top: 12px;
-    border-top: 1px solid rgba(72, 201, 40, 0.1);
+    margin-top: 16px !important;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+    z-index: 2;
     
     .text-xs {
       font-size: 12px;
-      color: #777777;
+      color: #4a5568;
       text-align: center;
-      font-weight: 500;
+      font-weight: 600;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 4px;
+      gap: 6px;
+      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+      background: rgba(255, 255, 255, 0.3);
+      backdrop-filter: blur(5px);
+      border-radius: 10px;
+      padding: 6px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
       
       &::before {
-        content: 'ℹ️';
-        font-size: 12px;
+        content: '💡';
+        font-size: 14px;
+        filter: drop-shadow(0 1px 2px rgba(72, 201, 40, 0.3));
       }
     }
   }
 
   /* Отключенное состояние */
   &.opacity-50 {
-    background: #f5f5f5;
-    border-color: #e0e0e0;
+    background: rgba(248, 250, 252, 0.4);
+    backdrop-filter: blur(5px);
+    border-color: rgba(203, 213, 225, 0.3);
+    box-shadow: 
+      0 4px 16px rgba(0, 0, 0, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
     
     &::before {
-      background: #cccccc;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(203, 213, 225, 0.1) 25%,
+        rgba(203, 213, 225, 0.2) 50%,
+        rgba(203, 213, 225, 0.1) 75%,
+        transparent 100%
+      );
     }
     
+
+    
     h3 {
-      color: #999999;
+      color: #64748b;
+      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
       
       &::before {
         content: '🔒';
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+        animation: none;
+      }
+    }
+    
+    .bonus-ranges {
+      background: rgba(248, 250, 252, 0.6);
+      border-color: rgba(203, 213, 225, 0.2);
+      
+      div:first-child,
+      div:last-child {
+        color: #94a3b8;
+        text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
       }
     }
     
     .bonus-range {
-      background: #e0e0e0;
+      background: rgba(248, 250, 252, 0.4);
+      border-color: rgba(203, 213, 225, 0.2);
       cursor: not-allowed;
+      box-shadow: 
+        inset 0 2px 4px rgba(0, 0, 0, 0.03),
+        0 1px 4px rgba(0, 0, 0, 0.05);
+      
+      &:hover {
+        transform: none;
+        background: rgba(248, 250, 252, 0.4);
+        box-shadow: 
+          inset 0 2px 4px rgba(0, 0, 0, 0.03),
+          0 1px 4px rgba(0, 0, 0, 0.05);
+      }
       
       &::-webkit-slider-thumb {
-        background: #cccccc;
+        background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
+        border-color: rgba(255, 255, 255, 0.8);
         cursor: not-allowed;
+        box-shadow: 
+          0 4px 12px rgba(0, 0, 0, 0.1),
+          0 2px 6px rgba(0, 0, 0, 0.05),
+          inset 0 1px 0 rgba(255, 255, 255, 0.2);
         
         &:hover {
           transform: none;
-          box-shadow: none;
+          box-shadow: 
+            0 4px 12px rgba(0, 0, 0, 0.1),
+            0 2px 6px rgba(0, 0, 0, 0.05),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
         }
+      }
+      
+      &::-moz-range-thumb {
+        background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
+        border-color: rgba(255, 255, 255, 0.8);
+        cursor: not-allowed;
+        box-shadow: 
+          0 4px 12px rgba(0, 0, 0, 0.1),
+          0 2px 6px rgba(0, 0, 0, 0.05),
+          inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        
+        &:hover {
+          transform: none;
+          box-shadow: 
+            0 4px 12px rgba(0, 0, 0, 0.1),
+            0 2px 6px rgba(0, 0, 0, 0.05),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+      }
+      
+      &::-moz-range-track {
+        background: rgba(248, 250, 252, 0.4);
+        border-color: rgba(203, 213, 225, 0.2);
       }
     }
     
     p {
-      color: #999999;
-      background: rgba(0, 0, 0, 0.02);
-      border-color: #e0e0e0;
+      color: #64748b;
+      background: rgba(248, 250, 252, 0.6);
+      backdrop-filter: blur(5px);
+      border-color: rgba(203, 213, 225, 0.2);
+      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
       
       &::before {
         content: '⚠️';
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+      }
+    }
+    
+    .mt-2 .text-xs {
+      color: #64748b;
+      background: rgba(248, 250, 252, 0.5);
+      border-color: rgba(203, 213, 225, 0.2);
+      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
+      
+      &::before {
+        content: '💡';
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
       }
     }
   }
@@ -2907,51 +3041,75 @@
   }
 
   .bonus-block-cart {
+    border-radius: 14px;
+    
     h3 {
       font-size: 15px;
-      margin-bottom: 14px;
+      margin-bottom: 18px;
       
       &::before {
-        font-size: 17px;
+        font-size: 18px;
       }
     }
     
     .bonus-ranges {
       font-size: 12px;
-      margin-bottom: 10px;
+      margin-bottom: 14px;
+      padding: 7px 10px;
+      border-radius: 10px;
     }
     
     .bonus-range {
-      height: 7px;
+      height: 8px;
+      margin: 10px 0;
       
       &::-webkit-slider-thumb {
-        width: 22px;
-        height: 22px;
+        width: 24px;
+        height: 24px;
       }
 
       &::-moz-range-thumb {
-        width: 22px;
-        height: 22px;
+        width: 24px;
+        height: 24px;
       }
       
       &::-moz-range-track {
-        height: 7px;
+        height: 8px;
       }
     }
     
     .mt-3 {
-      padding: 11px 14px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      margin-top: 18px !important;
       
       .text-sm {
         font-size: 13px;
+        gap: 8px;
         
         &::before {
-          font-size: 15px;
+          font-size: 16px;
         }
       }
       
       .font-semibold {
         font-size: 15px;
+      }
+    }
+    
+    .mt-2 {
+      margin-top: 14px !important;
+      padding-top: 14px;
+      
+      .text-xs {
+        font-size: 11px;
+        padding: 5px 10px;
+        border-radius: 8px;
+        gap: 5px;
+        
+        &::before {
+          font-size: 13px;
+        }
       }
     }
   }
@@ -3297,6 +3455,950 @@
       background: #f8f9fa !important;
       color: #6c757d !important;
       padding-left: 0 !important;
+    }
+  }
+}
+
+/* ===============================================
+   УНИФИЦИРОВАННАЯ СИСТЕМА СТИЛЕЙ WEBAPP
+   =============================================== */
+
+/* Очищаем старые стили и используем унифицированные ниже */
+.webapp-container,
+.container-adaptive,
+.main-block,
+.delivery-form {
+  overflow: visible !important;
+}
+
+/* Специальное исправление для main-block который содержит форму доставки */
+.main-block:has(.delivery-form),
+.main-block:has(.address-wrapper) {
+  overflow: visible !important;
+  position: relative;
+  z-index: 1;
+}
+
+/* Увеличиваем z-index для всех выпадающих списков DaData */
+.address-wrapper {
+  position: relative !important;
+  z-index: 10 !important;
+  
+  .suggestions-wrapper {
+    position: absolute !important;
+    z-index: 99999 !important;
+    top: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    background: white !important;
+    border: 1px solid #e0e0e0 !important;
+    border-top: none !important;
+    border-radius: 0 0 8px 8px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+    max-height: 250px !important;
+    overflow: visible !important;
+    
+    /* Анимация появления */
+    animation: dropdown-appear 0.2s ease-out !important;
+    
+    .suggestions {
+      background: white !important;
+      max-height: 250px !important;
+      overflow-y: auto !important;
+      
+      .suggestion-item {
+        background: white !important;
+        border-bottom: 1px solid #f0f0f0 !important;
+        padding: 12px 16px !important;
+        cursor: pointer !important;
+        font-size: 14px !important;
+        color: #3D4453 !important;
+        transition: all 0.15s ease !important;
+        
+        &:last-child {
+          border-bottom: none !important;
+        }
+        
+        &:hover {
+          background-color: rgba(72, 201, 40, 0.08) !important;
+          color: #3D4453 !important;
+        }
+        
+        &.selected {
+          background-color: rgba(72, 201, 40, 0.12) !important;
+          color: #3D4453 !important;
+        }
+        
+        /* Первый элемент - заголовок */
+        &:first-child {
+          background: #f8f9fa !important;
+          font-weight: 600 !important;
+          color: #6c757d !important;
+          cursor: default !important;
+          
+          &:hover {
+            background: #f8f9fa !important;
+            color: #6c757d !important;
+          }
+        }
+      }
+    }
+  }
+}
+
+/* Анимация появления выпадающего списка */
+@keyframes dropdown-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Унифицированные стили для всех input полей включая DaData */
+.address-wrapper .input-str {
+  border-radius: 12px !important;
+  background-color: #F0F0F0 !important;
+  border: 1px solid #F0F0F0 !important;
+  color: #3D4453 !important;
+  padding: 14px 16px !important;
+  width: 100% !important;
+  font-family: inherit !important;
+  font-size: clamp(14px, 3.5vw, 16px) !important;
+  transition: all 0.3s ease !important;
+  
+  &:focus {
+    outline: none !important;
+    background-color: white !important;
+    border: 1px solid #48C928 !important;
+    box-shadow: none !important;
+  }
+  
+  &::placeholder {
+    color: #777777 !important;
+  }
+}
+
+/* Убираем overflow у layout элементов */
+html, body, #__next {
+  overflow-y: auto !important;
+}
+
+/* Исправляем возможные конфликты z-index */
+.fixed-menu {
+  z-index: 1000 !important;
+}
+
+.cart-summary {
+  z-index: 20 !important;
+}
+
+.address-wrapper .suggestions-wrapper {
+  z-index: 99999 !important;
+}
+
+/* Убеждаемся что подсказки видны поверх всех элементов */
+.suggestions-wrapper {
+  position: fixed !important;
+  z-index: 999999 !important;
+  
+  /* Получаем позицию от родительского input */
+  &[data-input-position] {
+    position: absolute !important;
+  }
+}
+
+/* Дополнительная стилизация для лучшей видимости */
+.suggestion-item {
+  &:first-child {
+    background: #f8f9fa !important;
+    font-weight: 600 !important;
+    color: #6c757d !important;
+    
+    &:hover {
+      background: #f8f9fa !important;
+      color: #6c757d !important;
+    }
+  }
+}
+
+/* Мобильная адаптивность для выпадающих списков */
+@media (max-width: 640px) {
+  .address-wrapper .suggestions-wrapper {
+    max-height: 200px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+    
+    .suggestions {
+      max-height: 200px !important;
+      
+      .suggestion-item {
+        padding: 14px 16px !important;
+        font-size: 14px !important;
+      }
+    }
+  }
+}
+
+@media (max-width: 374px) {
+  .address-wrapper .suggestions-wrapper {
+    max-height: 180px !important;
+    
+    .suggestions {
+      max-height: 180px !important;
+      
+      .suggestion-item {
+        padding: 12px 14px !important;
+        font-size: 13px !important;
+      }
+    }
+  }
+}
+
+/* Дополнительные стили для Fixed позиционирования выпадающих списков */
+.suggestions-wrapper-fixed {
+  position: fixed !important;
+  z-index: 999999 !important;
+  background: white !important;
+  border: 1px solid #e0e0e0 !important;
+  border-top: none !important;
+  border-radius: 0 0 8px 8px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+  overflow: visible !important;
+  animation: dropdown-appear 0.2s ease-out !important;
+  
+  .suggestions {
+    background: white !important;
+    overflow-y: auto !important;
+    
+    .suggestion-item {
+      background: white !important;
+      border-bottom: 1px solid #f0f0f0 !important;
+      cursor: pointer !important;
+      color: #3D4453 !important;
+      transition: all 0.15s ease !important;
+      
+      &:last-child {
+        border-bottom: none !important;
+      }
+      
+      &:hover {
+        background-color: rgba(72, 201, 40, 0.08) !important;
+        color: #3D4453 !important;
+      }
+      
+      &.selected {
+        background-color: rgba(72, 201, 40, 0.12) !important;
+        color: #3D4453 !important;
+      }
+      
+      /* Первый элемент - заголовок */
+      &:first-child {
+        background: #f8f9fa !important;
+        font-weight: 600 !important;
+        color: #6c757d !important;
+        cursor: default !important;
+        
+        &:hover {
+          background: #f8f9fa !important;
+          color: #6c757d !important;
+        }
+      }
+    }
+  }
+}
+
+/* Мобильная адаптивность для Fixed позиционирования */
+@media (max-width: 640px) {
+  .suggestions-wrapper-fixed {
+    max-height: 200px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+    
+    .suggestions {
+      max-height: 200px !important;
+    }
+  }
+}
+
+@media (max-width: 374px) {
+  .suggestions-wrapper-fixed {
+    max-height: 180px !important;
+    
+    .suggestions {
+      max-height: 180px !important;
+    }
+  }
+}
+
+/* Новые стили для DaData с улучшенной изоляцией */
+.address-wrapper-new {
+  position: relative !important;
+  z-index: 100 !important;
+  overflow: visible !important;
+}
+
+.suggestions-wrapper-new {
+  position: absolute !important;
+  top: 100% !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 999999 !important;
+  background: white !important;
+  border: 1px solid #e0e0e0 !important;
+  border-top: none !important;
+  border-radius: 0 0 8px 8px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+  overflow: visible !important;
+  animation: dropdown-appear 0.2s ease-out !important;
+  
+  .suggestions {
+    background: white !important;
+    overflow-y: auto !important;
+    max-height: 250px !important;
+    
+    .suggestion-item {
+      background: white !important;
+      border-bottom: 1px solid #f0f0f0 !important;
+      cursor: pointer !important;
+      color: #3D4453 !important;
+      transition: all 0.15s ease !important;
+      
+      &:last-child {
+        border-bottom: none !important;
+      }
+      
+      &:hover {
+        background-color: rgba(72, 201, 40, 0.08) !important;
+        color: #3D4453 !important;
+      }
+      
+      &.selected {
+        background-color: rgba(72, 201, 40, 0.12) !important;
+        color: #3D4453 !important;
+      }
+      
+      /* Первый элемент - заголовок */
+      &:first-child {
+        background: #f8f9fa !important;
+        font-weight: 600 !important;
+        color: #6c757d !important;
+        cursor: default !important;
+        
+        &:hover {
+          background: #f8f9fa !important;
+          color: #6c757d !important;
+        }
+      }
+    }
+  }
+}
+
+/* Принудительно убираем overflow у родительских контейнеров для новой версии */
+.input-container:has(.address-wrapper-new),
+.main-block:has(.address-wrapper-new),
+.delivery-form:has(.address-wrapper-new) {
+  overflow: visible !important;
+  position: relative !important;
+}
+
+/* ===============================================
+   PORTAL DADATA SUGGESTIONS - Финальное решение
+   =============================================== */
+
+/* Стили для портальных выпадающих списков */
+.suggestions-portal {
+  position: absolute !important;
+  z-index: 999999 !important;
+  background: white !important;
+  border: 1px solid #F0F0F0 !important;
+  border-top: none !important;
+  border-radius: 0 0 12px 12px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+  overflow: hidden !important;
+  animation: dropdown-appear 0.2s ease-out !important;
+  
+  .suggestions {
+    background: white !important;
+    overflow-y: auto !important;
+    max-height: 250px !important;
+    
+    /* Кастомный скроллбар */
+    &::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: #f0f0f0;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: #d0d0d0;
+      border-radius: 4px;
+      
+      &:hover {
+        background: #b0b0b0;
+      }
+    }
+    
+    .suggestion-item {
+      background: white !important;
+      border-bottom: 1px solid #f0f0f0 !important;
+      cursor: pointer !important;
+      color: #3D4453 !important;
+      transition: all 0.15s ease !important;
+      padding: 12px 16px !important;
+      font-size: 14px !important;
+      
+      &:last-child {
+        border-bottom: none !important;
+      }
+      
+      &:hover {
+        background-color: rgba(72, 201, 40, 0.08) !important;
+        color: #3D4453 !important;
+      }
+      
+      &.selected {
+        background-color: rgba(72, 201, 40, 0.12) !important;
+        color: #3D4453 !important;
+      }
+      
+      /* Первый элемент - заголовок */
+      &:first-child {
+        background: #f8f9fa !important;
+        font-weight: 600 !important;
+        color: #6c757d !important;
+        cursor: default !important;
+        font-size: 12px !important;
+        
+        &:hover {
+          background: #f8f9fa !important;
+          color: #6c757d !important;
+        }
+      }
+    }
+  }
+}
+
+/* Убираем overflow у всех возможных родителей */
+body {
+  overflow-x: visible !important;
+}
+
+.webapp-container {
+  overflow: visible !important;
+}
+
+.container-adaptive {
+  overflow: visible !important;
+}
+
+.main-block {
+  overflow: visible !important;
+}
+
+.delivery-form {
+  overflow: visible !important;
+}
+
+.input-container {
+  overflow: visible !important;
+}
+
+/* Унифицированные стили для ВСЕХ input полей в webapp */
+.webapp-container .input-str,
+.webapp-container input[type="text"],
+.webapp-container input[type="tel"],
+.webapp-container input[type="number"],
+.webapp-container input[type="email"] {
+  border-radius: 12px !important;
+  background-color: #F0F0F0 !important;
+  border: 1px solid #F0F0F0 !important;
+  color: #3D4453 !important;
+  padding: 14px 16px !important;
+  width: 100% !important;
+  font-family: inherit !important;
+  font-size: clamp(14px, 3.5vw, 16px) !important;
+  transition: all 0.3s ease !important;
+  
+  &:focus {
+    outline: none !important;
+    background-color: white !important;
+    border: 1px solid #48C928 !important;
+    box-shadow: none !important;
+  }
+  
+  &::placeholder {
+    color: #777777 !important;
+  }
+}
+
+/* Дублирующиеся стили удалены - используем унифицированные выше */
+
+/* ===============================================
+   УНИФИЦИРОВАННЫЕ СТИЛИ INPUT ПОЛЕЙ ДЛЯ WEBAPP
+   =============================================== */
+
+/* Базовые стили для всех input полей */
+.webapp-container {
+  .input-container {
+    margin-bottom: 12px;
+    position: relative;
+
+    label {
+      font-weight: 500;
+      font-size: 12px;
+      line-height: 16px;
+      margin-bottom: 4px;
+      display: block;
+      color: #3D4453;
+    }
+
+    /* Унифицированные стили для ВСЕХ input полей */
+    .input-str,
+    input[type="text"],
+    input[type="tel"],
+    input[type="number"],
+    input[type="email"],
+    input[type="password"] {
+      border-radius: 12px !important;
+      background-color: #F0F0F0 !important;
+      border: 1px solid #F0F0F0 !important;
+      color: #3D4453 !important;
+      padding: 14px 16px !important;
+      width: 100% !important;
+      font-family: inherit !important;
+      font-size: clamp(14px, 3.5vw, 16px) !important;
+      transition: all 0.3s ease !important;
+      box-sizing: border-box !important;
+
+      &:focus {
+        outline: none !important;
+        background-color: white !important;
+        border: 1px solid #48C928 !important;
+        box-shadow: none !important;
+      }
+      
+      &::placeholder {
+        color: #777777 !important;
+      }
+    }
+    
+    /* Убираем стрелки у number input */
+    input[type="number"] {
+      -moz-appearance: textfield;
+      
+      &::-webkit-outer-spin-button,
+      &::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+    }
+  }
+}
+
+/* Специальные стили для DaData input полей */
+.address-wrapper {
+  position: relative !important;
+  z-index: 100 !important;
+  overflow: visible !important;
+  
+  .input-str {
+    border-radius: 12px !important;
+    background-color: #F0F0F0 !important;
+    border: 1px solid #F0F0F0 !important;
+    color: #3D4453 !important;
+    padding: 14px 16px !important;
+    width: 100% !important;
+    font-family: inherit !important;
+    font-size: clamp(14px, 3.5vw, 16px) !important;
+    transition: all 0.3s ease !important;
+    
+    &:focus {
+      outline: none !important;
+      background-color: white !important;
+      border: 1px solid #48C928 !important;
+      box-shadow: none !important;
+    }
+    
+    &::placeholder {
+      color: #777777 !important;
+    }
+  }
+}
+
+/* Стили для портальных выпадающих списков DaData */
+.suggestions-portal {
+  position: absolute !important;
+  z-index: 999999 !important;
+  background: white !important;
+  border: 1px solid #F0F0F0 !important;
+  border-top: none !important;
+  border-radius: 0 0 12px 12px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+  overflow: hidden !important;
+  animation: dropdown-appear 0.2s ease-out !important;
+  
+  .suggestions {
+    background: white !important;
+    overflow-y: auto !important;
+    max-height: 250px !important;
+    
+    /* Кастомный скроллбар */
+    &::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: #f0f0f0;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: #d0d0d0;
+      border-radius: 4px;
+      
+      &:hover {
+        background: #b0b0b0;
+      }
+    }
+    
+    .suggestion-item {
+      background: white !important;
+      border-bottom: 1px solid #f0f0f0 !important;
+      cursor: pointer !important;
+      color: #3D4453 !important;
+      transition: all 0.15s ease !important;
+      padding: 12px 16px !important;
+      font-size: 14px !important;
+      
+      &:last-child {
+        border-bottom: none !important;
+      }
+      
+      &:hover {
+        background-color: rgba(72, 201, 40, 0.08) !important;
+        color: #3D4453 !important;
+      }
+      
+      &.selected {
+        background-color: rgba(72, 201, 40, 0.12) !important;
+        color: #3D4453 !important;
+      }
+      
+      /* Первый элемент - заголовок */
+      &:first-child {
+        background: #f8f9fa !important;
+        font-weight: 600 !important;
+        color: #6c757d !important;
+        cursor: default !important;
+        font-size: 12px !important;
+        
+        &:hover {
+          background: #f8f9fa !important;
+          color: #6c757d !important;
+        }
+      }
+    }
+  }
+}
+
+/* Анимация появления выпадающего списка */
+@keyframes dropdown-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Убираем overflow у всех родительских контейнеров */
+body,
+.webapp-container,
+.container-adaptive,
+.main-block,
+.delivery-form,
+.input-container {
+  overflow: visible !important;
+}
+
+/* Мобильная адаптивность для портальных списков */
+@media (max-width: 640px) {
+  .suggestions-portal {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+    
+    .suggestions {
+      max-height: 200px !important;
+      
+      .suggestion-item {
+        padding: 14px 16px !important;
+        font-size: 14px !important;
+      }
+    }
+  }
+}
+
+@media (max-width: 374px) {
+  .suggestions-portal {
+    .suggestions {
+      max-height: 180px !important;
+      
+      .suggestion-item {
+        padding: 12px 14px !important;
+        font-size: 13px !important;
+      }
+    }
+  }
+}
+
+/* ===============================================
+   АНИМАЦИИ ДЛЯ GLASSMORPHISM ЭФФЕКТОВ
+   =============================================== */
+
+/* Анимация мерцания фона */
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  50% {
+    left: 100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+
+
+/* Анимация плавания иконки */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+/* Анимация пульсации */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+/* Анимация появления снизу */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Анимация удаления товара из корзины */
+@keyframes removeItem {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateX(0);
+    max-height: 100px;
+    margin-bottom: clamp(8px, 2vw, 12px);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.9) translateX(-10px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.8) translateX(-20px);
+    max-height: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
+
+/* Стили для DeliveryDataSheet */
+.delivery-data-sheet {
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+  }
+
+  .loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #48C928;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .error-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+    color: #DC2626;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 14px;
+  }
+
+  .form-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .form-section {
+    background: #F9FAFB;
+    border-radius: 12px;
+    padding: 16px;
+  }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 16px;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group:last-child {
+    margin-bottom: 0;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 6px;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #D1D5DB;
+    border-radius: 8px;
+    font-size: 16px;
+    background: white;
+    transition: border-color 0.2s;
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: #48C928;
+    box-shadow: 0 0 0 3px rgba(72, 201, 40, 0.1);
+  }
+
+  .form-input.error {
+    border-color: #EF4444;
+  }
+
+  .error-text {
+    display: block;
+    color: #EF4444;
+    font-size: 12px;
+    margin-top: 4px;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #F3F4F6;
+  }
+
+  .btn-secondary {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1px solid #D1D5DB;
+    background: white;
+    color: #374151;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    background: #F9FAFB;
+    border-color: #9CA3AF;
+  }
+
+  .btn-primary {
+    flex: 1;
+    padding: 12px 16px;
+    border: none;
+    background: #48C928;
+    color: white;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: #3AA120;
+  }
+
+  .btn-primary:disabled,
+  .btn-secondary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  /* Адаптивность */
+  @media (max-width: 640px) {
+    .form-row {
+      grid-template-columns: 1fr;
+    }
+    
+    .form-section {
+      padding: 12px;
+    }
+    
+    .form-actions {
+      flex-direction: column;
     }
   }
 }

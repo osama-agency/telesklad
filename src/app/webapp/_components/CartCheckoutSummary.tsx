@@ -46,17 +46,47 @@ export default function CartCheckoutSummary({ onTotalChange, onBonusChange }: Ca
   useEffect(() => {
     loadCart();
     fetchLoyaltyData();
+
+    // Слушаем изменения корзины
+    const handleCartUpdate = () => {
+      // console.log('CartCheckoutSummary: Cart update event received');
+      // Небольшая задержка чтобы убедиться что localStorage обновился
+      setTimeout(() => {
+        loadCart();
+      }, 50);
+    };
+
+    // Слушаем фокус на странице для обновления данных
+    const handlePageFocus = () => {
+      loadCart();
+    };
+
+    window.addEventListener('cartUpdated', handleCartUpdate);
+    window.addEventListener('focus', handlePageFocus);
+    window.addEventListener('visibilitychange', handlePageFocus);
+    
+    return () => {
+      window.removeEventListener('cartUpdated', handleCartUpdate);
+      window.removeEventListener('focus', handlePageFocus);
+      window.removeEventListener('visibilitychange', handlePageFocus);
+    };
   }, []);
 
   const loadCart = () => {
     const storedCart = localStorage.getItem('webapp_cart');
     if (storedCart) {
       const items: CartItem[] = JSON.parse(storedCart);
+      // console.log('CartCheckoutSummary: Loading cart items:', items);
       setCartItems(items);
       
       // Автоматически добавляем доставку если в корзине 1 товар с количеством 1
       const needsDelivery = items.length === 1 && items[0].quantity === 1;
       setUseDelivery(needsDelivery);
+    } else {
+      // Если корзина пуста, сбрасываем состояние
+      // console.log('CartCheckoutSummary: Cart is empty');
+      setCartItems([]);
+      setUseDelivery(false);
     }
   };
 
@@ -79,6 +109,14 @@ export default function CartCheckoutSummary({ onTotalChange, onBonusChange }: Ca
   const itemsTotal = cartItems.reduce((sum, item) => sum + (item.product_price * item.quantity), 0);
   const deliveryFee = useDelivery ? (loyaltyData?.settings.delivery_price || 500) : 0;
   const finalTotal = itemsTotal + deliveryFee - appliedBonus;
+  
+  // console.log('CartCheckoutSummary calculations:', {
+  //   cartItems: cartItems.length,
+  //   itemsTotal,
+  //   deliveryFee,
+  //   appliedBonus,
+  //   finalTotal
+  // });
 
   // Расчет будущего кэшбека
   const futureBonus = loyaltyData?.user.current_tier?.bonus_percentage 
@@ -99,6 +137,13 @@ export default function CartCheckoutSummary({ onTotalChange, onBonusChange }: Ca
   useEffect(() => {
     onBonusChange(appliedBonus);
   }, [appliedBonus, onBonusChange]);
+
+  // Сбрасываем примененные бонусы если корзина изменилась и они больше не применимы
+  useEffect(() => {
+    if (appliedBonus > 0 && (itemsTotal < bonusThreshold || appliedBonus > itemsTotal)) {
+      setAppliedBonus(0);
+    }
+  }, [itemsTotal, appliedBonus, bonusThreshold]);
 
   const handleBonusChange = (amount: number) => {
     setAppliedBonus(amount);

@@ -64,6 +64,17 @@ const ProfilePage: React.FC = () => {
 
   useEffect(() => {
     loadProfileData();
+
+    // Слушаем событие обновления профиля
+    const handleProfileUpdate = () => {
+      loadProfileData();
+    };
+
+    window.addEventListener('profileUpdated', handleProfileUpdate);
+
+    return () => {
+      window.removeEventListener('profileUpdated', handleProfileUpdate);
+    };
   }, []);
 
   const loadProfileData = async () => {

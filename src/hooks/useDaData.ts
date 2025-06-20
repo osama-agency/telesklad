@@ -75,7 +75,14 @@ export function useDaDataAddress(options: UseDaDataOptions = {}): UseDaDataRetur
         });
 
         if (!response.ok) {
-          throw new Error('Ошибка получения подсказок');
+          let errorData: any = { error: 'Unknown error' };
+          try {
+            errorData = await response.json();
+          } catch (e) {
+            // Игнорируем ошибку парсинга JSON
+          }
+          console.error('DaData API error:', response.status, errorData);
+          throw new Error(errorData.error || 'Ошибка получения подсказок');
         }
 
         const data: DaDataResponse = await response.json();
@@ -83,7 +90,8 @@ export function useDaDataAddress(options: UseDaDataOptions = {}): UseDaDataRetur
         
       } catch (err: any) {
         if (err.name !== 'AbortError') {
-          setError('Ошибка получения подсказок адреса');
+          console.error('DaData error:', err);
+          setError(err.message || 'Ошибка получения подсказок адреса');
           setSuggestions([]);
         }
       } finally {
@@ -161,7 +169,14 @@ export function useDaDataFIO(options: UseDaDataOptions = {}): UseDaDataReturn {
         });
 
         if (!response.ok) {
-          throw new Error('Ошибка получения подсказок');
+          let errorData: any = { error: 'Unknown error' };
+          try {
+            errorData = await response.json();
+          } catch (e) {
+            // Игнорируем ошибку парсинга JSON
+          }
+          console.error('DaData API error:', response.status, errorData);
+          throw new Error(errorData.error || 'Ошибка получения подсказок');
         }
 
         const data: DaDataResponse = await response.json();

@@ -6,9 +6,9 @@ export async function POST(request: Request) {
       return Response.json({ suggestions: [] });
     }
 
-    const dadataToken = process.env.DADATA_API_KEY;
+    const dadataToken = process.env.DADATA_TOKEN || process.env.DADATA_API_KEY;
     if (!dadataToken) {
-      console.error('DADATA_API_KEY not configured');
+      console.error('DADATA_TOKEN not configured');
       return Response.json({ error: 'Service unavailable' }, { status: 503 });
     }
 

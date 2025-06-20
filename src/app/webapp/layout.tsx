@@ -30,7 +30,7 @@ export default function WebappLayout({ children }: PropsWithChildren) {
           background-color: #f9f9f9 !important;
           margin: 0;
           padding: 0;
-          overflow-x: hidden;
+          overflow-y: auto;
         }
         
         #__next {

@@ -57,8 +57,10 @@ export default function CartPage() {
     const storedCart = localStorage.getItem('webapp_cart');
     if (storedCart) {
       const items: CartItem[] = JSON.parse(storedCart);
+      // console.log('CartPage: Loading cart items:', items);
       setCartItems(items);
     } else {
+      // console.log('CartPage: Cart is empty');
       setCartItems([]);
     }
   };
@@ -107,9 +109,19 @@ export default function CartPage() {
       loadCart();
     };
 
+    // Слушаем фокус на странице для обновления данных
+    const handlePageFocus = () => {
+      loadCart();
+    };
+
     window.addEventListener('cartUpdated', handleCartUpdate);
+    window.addEventListener('focus', handlePageFocus);
+    window.addEventListener('visibilitychange', handlePageFocus);
+    
     return () => {
       window.removeEventListener('cartUpdated', handleCartUpdate);
+      window.removeEventListener('focus', handlePageFocus);
+      window.removeEventListener('visibilitychange', handlePageFocus);
     };
   }, []);
 

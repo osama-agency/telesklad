@@ -60,23 +60,12 @@ export function useFormPersistence<T extends Record<string, any>>({
       setIsLoaded(true);
       isInitialLoadRef.current = false;
     }
-  }, [key, initialData]);
+  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Синхронизация с initialData (когда загружается профиль пользователя)
+  // Автоматическое сохранение при изменении данных
   useEffect(() => {
-    if (isLoaded && initialData && !isInitialLoadRef.current) {
-      const hasInitialData = Object.values(initialData).some(value => 
-        value !== null && value !== undefined && value !== '' && value !== 0
-      );
-      
-      if (hasInitialData) {
-        setFormData(prev => ({ ...prev, ...initialData }));
-      }
-    }
-  }, [initialData, isLoaded]);
+    if (!isLoaded || isInitialLoadRef.current) return;
 
-  // Debounced сохранение в localStorage
-  const saveToStorage = useCallback((data: T) => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
@@ -85,7 +74,7 @@ export function useFormPersistence<T extends Record<string, any>>({
 
     debounceTimerRef.current = setTimeout(() => {
       try {
-        localStorage.setItem(key, JSON.stringify(data));
+        localStorage.setItem(key, JSON.stringify(formData));
         setSaveStatus('saved');
         
         // Убираем индикатор "saved" через 1 секунду
@@ -95,21 +84,14 @@ export function useFormPersistence<T extends Record<string, any>>({
         setSaveStatus('idle');
       }
     }, debounceMs);
-  }, [key, debounceMs]);
+  }, [formData, isLoaded, key, debounceMs]);
 
   // Уведомление родительского компонента об изменениях
   useEffect(() => {
     if (isLoaded && onDataChange && !isInitialLoadRef.current) {
       onDataChange(formData);
     }
-  }, [formData, onDataChange, isLoaded]);
-
-  // Автоматическое сохранение при изменении данных
-  useEffect(() => {
-    if (isLoaded && !isInitialLoadRef.current) {
-      saveToStorage(formData);
-    }
-  }, [formData, saveToStorage, isLoaded]);
+  }, [formData, isLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Функция для обновления отдельного поля
   const updateField = useCallback(<K extends keyof T>(field: K, value: T[K]) => {
@@ -132,7 +114,7 @@ export function useFormPersistence<T extends Record<string, any>>({
     setFormData(initialData as T);
     localStorage.removeItem(key);
     setSaveStatus('idle');
-  }, [key, initialData]);
+  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Функция для проверки валидности формы
   const isValid = useCallback((requiredFields: (keyof T)[]) => {

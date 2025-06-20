@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { IconComponent } from '@/components/webapp/IconComponent';
 import DeliveryDataSheet from './DeliveryDataSheet';
 import LoadingSpinner from './LoadingSpinner';
+import SubscriptionsSheet from './SubscriptionsSheet';
 
 interface ActionCardItem {
   id: string;
@@ -43,37 +44,48 @@ interface ActionCardsProps {
 const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsCount, ordersCount }) => {
   const router = useRouter();
   const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState(false);
+  const [isSubscriptionsModalOpen, setIsSubscriptionsModalOpen] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [navigatingTo, setNavigatingTo] = useState<string>('');
 
+  // Слушаем события обновления подписок
+  useEffect(() => {
+    const handleSubscriptionsUpdate = () => {
+      // Перезагружаем страницу профиля для обновления счетчика
+      window.location.reload();
+    };
+
+    window.addEventListener('subscriptionsUpdated', handleSubscriptionsUpdate);
+
+    return () => {
+      window.removeEventListener('subscriptionsUpdated', handleSubscriptionsUpdate);
+    };
+  }, []);
+
   const handleSaveDeliveryData = async (data: any) => {
     try {
-      // Здесь будет запрос к API для сохранения данных доставки
-      console.log('Saving delivery data:', data);
+      // Данные уже сохранены в DeliveryDataSheet через API
+      console.log('Delivery data saved:', data);
       
-      // Например:
-      // const response = await fetch('/api/webapp/profile/delivery', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(data)
-      // });
-      
-      // Пока просто имитируем успешное сохранение
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // В реальном приложении здесь будет обновление данных пользователя
-      // setUser(updatedUser); или перезагрузка профиля
+      // Принудительно обновляем профиль на странице
+      window.location.reload();
       
     } catch (error) {
-      console.error('Error saving delivery data:', error);
+      console.error('Error handling delivery data save:', error);
       throw error;
     }
   };
 
   // Обработчик навигации с preloader'ом
   const handleNavigation = async (href: string, id: string) => {
-    // Для карточек подписок и заказов показываем preloader
-    if (id === 'subscriptions' || id === 'orders') {
+    // Для карточки подписок открываем модальное окно
+    if (id === 'subscriptions') {
+      setIsSubscriptionsModalOpen(true);
+      return;
+    }
+    
+    // Для карточки заказов показываем preloader
+    if (id === 'orders') {
       setIsNavigating(true);
       setNavigatingTo(id);
       
@@ -319,6 +331,12 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
         onClose={() => setIsDeliveryModalOpen(false)}
         user={user}
         onSave={handleSaveDeliveryData}
+      />
+
+      {/* Модальное окно подписок */}
+      <SubscriptionsSheet
+        isOpen={isSubscriptionsModalOpen}
+        onClose={() => setIsSubscriptionsModalOpen(false)}
       />
     </>
   );

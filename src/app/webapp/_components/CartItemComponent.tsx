@@ -19,6 +19,7 @@ interface CartItemProps {
 
 export function CartItemComponent({ item, onUpdateQuantity }: CartItemProps) {
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
 
   // Haptic feedback
   const triggerHaptic = (type: 'light' | 'medium' = 'light') => {
@@ -34,13 +35,26 @@ export function CartItemComponent({ item, onUpdateQuantity }: CartItemProps) {
   // Обработчик изменения количества с haptic feedback
   const handleQuantityChange = async (direction: 'up' | 'down') => {
     setIsUpdating(true);
-    triggerHaptic('light');
     
-    // Небольшая задержка для визуального feedback
-    setTimeout(() => {
-      onUpdateQuantity(item.product_id, direction);
-      setIsUpdating(false);
-    }, 100);
+    // Если уменьшаем количество до 0 - показываем анимацию удаления
+    if (direction === 'down' && item.quantity === 1) {
+      setIsRemoving(true);
+      triggerHaptic('medium'); // Более сильная вибрация при удалении
+      
+      // Задержка для анимации удаления
+      setTimeout(() => {
+        onUpdateQuantity(item.product_id, direction);
+        setIsUpdating(false);
+      }, 200);
+    } else {
+      triggerHaptic('light');
+      
+      // Небольшая задержка для визуального feedback
+      setTimeout(() => {
+        onUpdateQuantity(item.product_id, direction);
+        setIsUpdating(false);
+      }, 100);
+    }
   };
 
   // Long press обработчики
@@ -48,6 +62,11 @@ export function CartItemComponent({ item, onUpdateQuantity }: CartItemProps) {
   const [isLongPressing, setIsLongPressing] = useState(false);
 
   const handleLongPressStart = (direction: 'up' | 'down') => {
+    // Для режима удаления не используем long press
+    if (direction === 'down' && item.quantity === 1) {
+      return;
+    }
+    
     setIsLongPressing(true);
     const timer = setInterval(() => {
       triggerHaptic('light');
@@ -67,7 +86,7 @@ export function CartItemComponent({ item, onUpdateQuantity }: CartItemProps) {
   const totalItemPrice = item.product_price * item.quantity;
 
   return (
-    <div className="cart-item">
+    <div className={`cart-item ${isRemoving ? 'removing' : ''}`}>
       {/* Левая часть: изображение и информация о товаре */}
       <div className="flex items-center gap-4">
         {/* Изображение товара - точно как в Rails */}
@@ -101,16 +120,21 @@ export function CartItemComponent({ item, onUpdateQuantity }: CartItemProps) {
       {/* Правая часть: управление количеством - точно как в Rails */}
       <div className="cart-quantity-controls">
         <button
-          className={`buy-btn ${item.quantity <= 1 ? 'disabled' : ''}`}
+          className={`buy-btn ${item.quantity === 1 ? 'delete-mode' : ''}`}
           onClick={() => handleQuantityChange('down')}
           onMouseDown={() => handleLongPressStart('down')}
           onMouseUp={handleLongPressEnd}
           onMouseLeave={handleLongPressEnd}
           onTouchStart={() => handleLongPressStart('down')}
           onTouchEnd={handleLongPressEnd}
-          disabled={isUpdating || item.quantity <= 1}
+          disabled={isUpdating}
+          title={item.quantity === 1 ? 'Удалить товар' : 'Уменьшить количество'}
         >
-          <div className="minus-ico"></div>
+          {item.quantity === 1 ? (
+            <IconComponent name="trash" size={16} />
+          ) : (
+            <div className="minus-ico"></div>
+          )}
         </button>
 
         {/* Количество и общая стоимость - точный Rails формат */}
