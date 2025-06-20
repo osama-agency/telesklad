@@ -20,47 +20,68 @@ const SubscriptionsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadSubscriptions();
-  }, []);
+    // Сбрасываем состояние навигации в родительском компоненте
+    const resetNavigationState = () => {
+      // Этот эффект сработает когда страница загрузится
+      // ActionCards компонент будет размонтирован и состояние загрузки сбросится
+    };
+    
+    resetNavigationState();
+    
+    // Set document title for Telegram Web App
+    document.title = "Товары в ожидании";
+    
+    // Telegram Web App initialization
+    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
+      const tg = window.Telegram.WebApp;
+      tg.ready();
+      tg.expand();
+      tg.setHeaderColor('#FFFFFF');
+      tg.setBackgroundColor('#f9f9f9');
+    }
 
-  const loadSubscriptions = async () => {
-    try {
-      setIsLoading(true);
-      // Здесь будет запрос к API для получения товаров в ожидании
-      // Пока используем мок данные
-      setTimeout(() => {
-        setProducts([
+    // Загрузка данных подписок
+    const loadSubscriptions = async () => {
+      try {
+        // Имитируем загрузку данных
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Мок данные
+        const mockSubscriptions: Product[] = [
           {
             id: 1,
-            title: 'Смартфон Samsung Galaxy A54',
-            price: 25990,
-            old_price: 29990,
+            title: "iPhone 15 Pro Max 256GB",
+            price: 120000,
+            old_price: 130000,
             image_url: undefined,
             is_available: false
           },
           {
             id: 2,
-            title: 'Наушники Apple AirPods Pro 2',
-            price: 19990,
+            title: "MacBook Air M3 13''",
+            price: 95000,
             image_url: undefined,
             is_available: false
           },
           {
             id: 3,
-            title: 'Планшет iPad Air 10.9"',
-            price: 54990,
-            old_price: 59990,
+            title: "AirPods Pro 2",
+            price: 24990,
             image_url: undefined,
             is_available: true
           }
-        ]);
+        ];
+        
+        setProducts(mockSubscriptions);
+      } catch (error) {
+        console.error('Error loading subscriptions:', error);
+      } finally {
         setIsLoading(false);
-      }, 1000);
-    } catch (error) {
-      console.error('Error loading subscriptions:', error);
-      setIsLoading(false);
-    }
-  };
+      }
+    };
+
+    loadSubscriptions();
+  }, []);
 
   const handleBack = () => {
     router.back();
@@ -389,8 +410,6 @@ const SubscriptionsPage: React.FC = () => {
         .btn-unsubscribe:active {
           transform: scale(0.95);
         }
-
-
 
         .empty-state {
           display: flex;

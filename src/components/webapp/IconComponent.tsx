@@ -12,6 +12,7 @@ import {
   Trash2,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
   Info,
   Clock,
   Settings
@@ -41,6 +42,7 @@ export function IconComponent({ name, size = 24, className = "" }: IconProps) {
     info: <Info size={size} className={className} />,
     right: <ChevronRight size={size} className={className} />,
     left: <ChevronLeft size={size} className={className} />,
+    down: <ChevronDown size={size} className={className} />,
     clock: <Clock size={size} className={className} />,
     cart2: <ShoppingCart size={size} className={className} />,
     admin: <Settings size={size} className={className} />

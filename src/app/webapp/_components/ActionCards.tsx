@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { IconComponent } from '@/components/webapp/IconComponent';
 import DeliveryDataSheet from './DeliveryDataSheet';
 
@@ -37,7 +38,10 @@ interface ActionCardsProps {
 }
 
 const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user }) => {
+  const router = useRouter();
   const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [navigatingTo, setNavigatingTo] = useState<string>('');
 
   const handleSaveDeliveryData = async (data: any) => {
     try {
@@ -60,6 +64,22 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user }) => {
     } catch (error) {
       console.error('Error saving delivery data:', error);
       throw error;
+    }
+  };
+
+  // Обработчик навигации с preloader'ом
+  const handleNavigation = async (href: string, id: string) => {
+    // Для карточек подписок и заказов показываем preloader
+    if (id === 'subscriptions' || id === 'orders') {
+      setIsNavigating(true);
+      setNavigatingTo(id);
+      
+      // Небольшая задержка для визуального эффекта
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      router.push(href);
+    } else {
+      router.push(href);
     }
   };
 
@@ -255,12 +275,38 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user }) => {
       );
     }
 
+    // Для карточек с navigation preloader'ом
+    if (item.id === 'subscriptions' || item.id === 'orders') {
+      return (
+        <div 
+          key={item.id}
+          onClick={() => handleNavigation(item.href, item.id)}
+          className="action-card-link"
+          style={{ cursor: 'pointer' }}
+        >
+          <CardContent />
+        </div>
+      );
+    }
+
+    // Обычная навигация для остальных карточек
     return (
       <Link key={item.id} href={item.href} className="action-card-link">
         <CardContent />
       </Link>
     );
   };
+
+  // Показываем preloader если идет навигация
+  if (isNavigating) {
+    return (
+      <div className="flex justify-center items-center min-h-[40vh]">
+        <div className="loading-spinner">
+          <div className="spinner"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
