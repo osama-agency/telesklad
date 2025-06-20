@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { get, post, patch, queryKeys } from '@/lib/api';
+import { useState, useEffect, useCallback } from 'react';
+import { get, post, patch } from '@/lib/api';
 import toast from 'react-hot-toast';
 
 // Типы для продуктовой аналитики
@@ -88,159 +88,172 @@ export interface SimpleProduct {
   avgpurchasepricerub?: number;
 }
 
+interface UseProductsAnalyticsResult {
+  data: AnalyticsResponse | null;
+  isLoading: boolean;
+  error: string | null;
+  refetch: () => void;
+}
+
 // Хук для получения аналитики товаров
-export function useProductsAnalytics(period?: number) {
-  return useQuery({
-    queryKey: queryKeys.productsAnalytics(period),
-    queryFn: () => get<{ success: boolean; data: AnalyticsResponse }>(`/products/analytics${period ? `?period=${period}` : ''}`),
-    select: (data) => data.data, // Извлекаем только данные из success/data обертки
-    staleTime: 2 * 60 * 1000, // 2 минуты для аналитики
-    gcTime: 5 * 60 * 1000, // 5 минут в кэше
-  });
+export function useProductsAnalytics(period?: number): UseProductsAnalyticsResult {
+  const [data, setData] = useState<AnalyticsResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchAnalytics = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await get<{ success: boolean; data: AnalyticsResponse }>(`/products/analytics${period ? `?period=${period}` : ''}`);
+      setData(response.data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [period]);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
+
+  return {
+    data,
+    isLoading,
+    error,
+    refetch: fetchAnalytics,
+  };
+}
+
+interface UseSimpleProductsResult {
+  data: SimpleProduct[] | null;
+  isLoading: boolean;
+  error: string | null;
 }
 
 // Хук для получения простого списка товаров
-export function useSimpleProducts() {
-  return useQuery({
-    queryKey: queryKeys.productsSimple,
-    queryFn: () => get<{ success: boolean; data: { products: SimpleProduct[] } }>('/products/simple'),
-    select: (data) => data.data.products,
-    staleTime: 10 * 60 * 1000, // 10 минут для справочника товаров
-    gcTime: 30 * 60 * 1000, // 30 минут в кэше
-  });
+export function useSimpleProducts(): UseSimpleProductsResult {
+  const [data, setData] = useState<SimpleProduct[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const response = await get<{ success: boolean; data: { products: SimpleProduct[] } }>('/products/simple');
+        setData(response.data.products);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  return { data, isLoading, error };
+}
+
+interface UseMutationResult<T, V> {
+  mutate: (variables: V) => Promise<T>;
+  isLoading: boolean;
+  error: string | null;
 }
 
 // Хук для создания закупки из корзины
-export function useCreatePurchase() {
-  const queryClient = useQueryClient();
+export function useCreatePurchase(): UseMutationResult<void, {
+  items: CartItem[];
+  totalTRY: number;
+  totalRUB: number;
+  supplierName?: string;
+  notes?: string;
+}> {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  return useMutation({
-    mutationFn: (data: {
-      items: CartItem[];
-      totalTRY: number;
-      totalRUB: number;
-      supplierName?: string;
-      notes?: string;
-    }) => post('/purchases/create', data),
-    onSuccess: () => {
-      // Инвалидируем кэш закупок
-      queryClient.invalidateQueries({ queryKey: queryKeys.purchases });
-      // Обновляем аналитику товаров
-      queryClient.invalidateQueries({ queryKey: queryKeys.productsAnalytics() });
-    },
-  });
+  const mutate = useCallback(async (data: {
+    items: CartItem[];
+    totalTRY: number;
+    totalRUB: number;
+    supplierName?: string;
+    notes?: string;
+  }): Promise<void> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      await post('/purchases/create', data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, isLoading, error };
+}
+
+interface UseExchangeRateResult {
+  data: { rate: number; rateWithBuffer: number } | null;
+  isLoading: boolean;
+  error: string | null;
 }
 
 // Хук для получения курса валют
-export function useExchangeRate(currency: string = 'TRY') {
-  return useQuery({
-    queryKey: queryKeys.rateLatest(currency),
-    queryFn: () => get<{ success: boolean; data: { rate: number; rateWithBuffer: number } }>(`/rates/latest?currency=${currency}`),
-    select: (data) => data.data,
-    staleTime: 60 * 60 * 1000, // 1 час
-    gcTime: 2 * 60 * 60 * 1000, // 2 часа в кэше
-  });
+export function useExchangeRate(currency: string = 'TRY'): UseExchangeRateResult {
+  const [data, setData] = useState<{ rate: number; rateWithBuffer: number } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchRate = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const response = await get<{ success: boolean; data: { rate: number; rateWithBuffer: number } }>(`/rates/latest?currency=${currency}`);
+        setData(response.data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRate();
+  }, [currency]);
+
+  return { data, isLoading, error };
 }
 
 // Хук для обновления товара (остатки, цены)
-export function useUpdateProduct() {
-  const queryClient = useQueryClient();
+export function useUpdateProduct(): UseMutationResult<void, {
+  id: number;
+  data: Partial<Pick<ProductAnalytics, 'currentStock' | 'avgSalePrice' | 'oldPrice'>> & Record<string, any>;
+  period?: number;
+}> {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  type UpdateProductArgs = {
+  const mutate = useCallback(async ({ id, data }: {
     id: number;
     data: Partial<Pick<ProductAnalytics, 'currentStock' | 'avgSalePrice' | 'oldPrice'>> & Record<string, any>;
     period?: number;
-  };
+  }): Promise<void> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      await patch(`/products/${id}/update`, data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-  const updateProductMutation = useMutation<
-    any, // server response type
-    Error,
-    UpdateProductArgs,
-    { previousData?: AnalyticsResponse | ProductAnalytics[] | undefined }
-  >({
-    mutationFn: async ({ id, data }: UpdateProductArgs): Promise<any> => patch(`/products/${id}/update`, data),
-    onMutate: async ({ id, data, period }: UpdateProductArgs) => {
-      const queryKey = queryKeys.productsAnalytics(period);
-      await queryClient.cancelQueries({ queryKey });
-      const previousData = queryClient.getQueryData<AnalyticsResponse>(queryKey);
-
-      queryClient.setQueryData(queryKey, (old: AnalyticsResponse | undefined) => {
-        if (!old || !Array.isArray(old.products)) return old;
-        // Обновляем products
-        let newProducts = old.products.map((product: ProductAnalytics) =>
-          product.id === id ? { ...product, ...data } : product
-        );
-        // Обновляем summary
-        let criticalStock = newProducts.filter(p => p.stockStatus === 'critical').length;
-        let lowStock = newProducts.filter(p => p.stockStatus === 'low').length;
-        let normalStock = newProducts.filter(p => p.stockStatus === 'normal').length;
-        let excessStock = newProducts.filter(p => p.stockStatus === 'excess').length;
-        let needsReorder = newProducts.filter(p => p.recommendedOrderQuantity > 0).length;
-        let inTransitTotal = newProducts.reduce((sum, p) => sum + (p.inTransitQuantity || 0), 0);
-        let avgProfitMargin = newProducts.length > 0 ? Math.round(newProducts.reduce((sum, p) => sum + (p.profitMargin || 0), 0) / newProducts.length) : 0;
-        return {
-          ...old,
-          products: newProducts,
-          summary: {
-            ...old.summary,
-            criticalStock,
-            lowStock,
-            normalStock,
-            excessStock,
-            needsReorder,
-            inTransitTotal,
-            avgProfitMargin,
-          },
-        };
-      });
-
-      return { previousData };
-    },
-    onError: (err: Error, variables: UpdateProductArgs, context: { previousData?: AnalyticsResponse | ProductAnalytics[] | undefined } | undefined) => {
-      if (context?.previousData) {
-        const queryKey = queryKeys.productsAnalytics(variables.period);
-        queryClient.setQueryData(queryKey, context.previousData);
-      }
-      toast.error('Ошибка при обновлении товара: ' + err.message);
-    },
-    onSuccess: (data, variables) => {
-      // Если сервер вернул обновленный товар, подменяем его в кэше
-      if (data && data.data && data.data.id) {
-        const queryKey = queryKeys.productsAnalytics(variables.period);
-        queryClient.setQueryData(queryKey, (old: AnalyticsResponse | undefined) => {
-          if (!old || !Array.isArray(old.products)) return old;
-          let newProducts = old.products.map((product: ProductAnalytics) =>
-            product.id === data.data.id ? { ...product, ...data.data } : product
-          );
-          // Пересчитываем summary
-          let criticalStock = newProducts.filter(p => p.stockStatus === 'critical').length;
-          let lowStock = newProducts.filter(p => p.stockStatus === 'low').length;
-          let normalStock = newProducts.filter(p => p.stockStatus === 'normal').length;
-          let excessStock = newProducts.filter(p => p.stockStatus === 'excess').length;
-          let needsReorder = newProducts.filter(p => p.recommendedOrderQuantity > 0).length;
-          let inTransitTotal = newProducts.reduce((sum, p) => sum + (p.inTransitQuantity || 0), 0);
-          let avgProfitMargin = newProducts.length > 0 ? Math.round(newProducts.reduce((sum, p) => sum + (p.profitMargin || 0), 0) / newProducts.length) : 0;
-          return {
-            ...old,
-            products: newProducts,
-            summary: {
-              ...old.summary,
-              criticalStock,
-              lowStock,
-              normalStock,
-              excessStock,
-              needsReorder,
-              inTransitTotal,
-              avgProfitMargin,
-            },
-          };
-        });
-      }
-    },
-    onSettled: (data, error, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.productsAnalytics(variables.period) });
-    },
-  });
-
-  return updateProductMutation;
+  return { mutate, isLoading, error };
 } 

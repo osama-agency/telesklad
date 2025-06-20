@@ -3,8 +3,6 @@
 import { useState, useEffect, Suspense } from "react";
 import { useDateRange } from "@/context/DateRangeContext";
 import { useProductsAnalytics, useExchangeRate, useUpdateProduct, useCreatePurchase } from "@/hooks/useProductsAnalytics";
-import { useQueryClient } from '@tanstack/react-query';
-import { queryKeys } from '@/lib/api';
 import { PurchaseCartModal } from "./PurchaseCartModal";
 import { EditablePriceTRY } from "./EditablePriceTRY";
 import { EditableField } from "@/components/ui/EditableField";
@@ -385,7 +383,6 @@ function SmartProductsTableContent() {
   const { data: exchangeRateData } = useExchangeRate('TRY');
   const updateProductMutation = useUpdateProduct();
   const createPurchaseMutation = useCreatePurchase();
-  const queryClient = useQueryClient();
 
   const products = analyticsData?.products || [];
   const summary = analyticsData?.summary;
@@ -482,7 +479,7 @@ function SmartProductsTableContent() {
         // costPriceTRY уже содержит правильное значение из prime_cost
       }));
 
-      const result = await createPurchaseMutation.mutateAsync({
+      await createPurchaseMutation.mutate({
         items: itemsWithTRY,
         totalTRY,
         totalRUB,
@@ -493,10 +490,7 @@ function SmartProductsTableContent() {
       // Очищаем корзину после успешного создания
       setCartItems([]);
       
-      toast.success(`Закупка успешно создана! ID: ${(result as any)?.data?.id || 'неизвестен'}`);
-
-      // Инвалидируем кэш закупок
-      queryClient.invalidateQueries({ queryKey: queryKeys.purchases });
+      toast.success('Закупка успешно создана!');
     } catch (error) {
       console.error('Ошибка создания закупки:', error);
       toast.error(error instanceof Error ? error.message : 'Ошибка при создании закупки');

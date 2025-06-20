@@ -34,6 +34,8 @@ export default function ProductDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [showReviewForm, setShowReviewForm] = useState(false)
   const [reviewsKey, setReviewsKey] = useState(0)
+  const [isNotificationEnabled, setIsNotificationEnabled] = useState(false)
+  const [isNotificationLoading, setIsNotificationLoading] = useState(false)
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -51,8 +53,24 @@ export default function ProductDetailPage() {
       }
     }
 
+    const checkSubscriptionStatus = async () => {
+      try {
+        const response = await fetch('/api/webapp/subscriptions')
+        if (response.ok) {
+          const data = await response.json()
+          // API возвращает объект { success: true, subscriptions: [...] }
+          const subscriptions = data.subscriptions || []
+          const isSubscribed = subscriptions.some((sub: any) => sub.product_id === parseInt(productId))
+          setIsNotificationEnabled(isSubscribed)
+        }
+      } catch (err) {
+        console.error('Failed to check subscription status:', err)
+      }
+    }
+
     if (productId) {
       fetchProduct()
+      checkSubscriptionStatus()
     }
   }, [productId])
 
@@ -68,6 +86,71 @@ export default function ProductDetailPage() {
   const handleReviewCancel = () => {
     setShowReviewForm(false)
   }
+
+  // Haptic feedback (только для мобильных устройств)
+  const triggerHaptic = (type: 'light' | 'medium' | 'heavy' = 'medium') => {
+    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+      const patterns = {
+        light: [10],
+        medium: [20],
+        heavy: [30]
+      };
+      navigator.vibrate(patterns[type]);
+    }
+  };
+
+  // Обработка нажатия на кнопку уведомления
+  const handleNotificationToggle = async () => {
+    if (isNotificationLoading || !product) return;
+
+    setIsNotificationLoading(true);
+    triggerHaptic('medium');
+    
+    try {
+      if (isNotificationEnabled) {
+        // Отключаем уведомление
+        const response = await fetch(`/api/webapp/subscriptions?product_id=${product.id}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          setIsNotificationEnabled(false);
+          console.log(`Unsubscribed from product ${product.id}`);
+          triggerHaptic('light'); // Легкая вибрация при успехе
+        } else {
+          const error = await response.json();
+          console.error('Failed to unsubscribe:', error);
+          triggerHaptic('heavy'); // Вибрация при ошибке
+        }
+      } else {
+        // Включаем уведомление
+        const response = await fetch('/api/webapp/subscriptions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            product_id: product.id
+          })
+        });
+
+        if (response.ok) {
+          setIsNotificationEnabled(true);
+          console.log(`Subscribed to product ${product.id}`);
+          triggerHaptic('light'); // Легкая вибрация при успехе
+        } else {
+          const error = await response.json();
+          console.error('Failed to subscribe:', error);
+          triggerHaptic('heavy'); // Вибрация при ошибке
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling notification:', error);
+      triggerHaptic('heavy'); // Вибрация при ошибке
+    } finally {
+      setIsNotificationLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -199,8 +282,18 @@ export default function ProductDetailPage() {
             imageUrl={product.image_url}
           />
         ) : (
-          <button className="btn btn-disable">
-            Уведомить о поступлении
+          <button 
+            className={`btn btn-disable ${isNotificationEnabled ? 'notification-enabled' : ''} ${isNotificationLoading ? 'loading' : ''}`}
+            onClick={handleNotificationToggle}
+            disabled={isNotificationLoading}
+          >
+            {isNotificationLoading ? (
+              <span>Загрузка...</span>
+            ) : isNotificationEnabled ? (
+              <>🔔 Уведомление включено</>
+            ) : (
+              <>🔔 Уведомить о поступлении</>
+            )}
           </button>
         )}
       </div>

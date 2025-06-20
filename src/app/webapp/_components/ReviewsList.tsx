@@ -121,21 +121,216 @@ export function ReviewsList({ productId, onReviewCreate }: ReviewsListProps) {
     return (
       <div className="card-block">
         <div className="title-card">Отзывы</div>
-        <div className="text-center py-8 text-gray-500">
-          <div className="mb-4">
-            <IconComponent name="star" size={48} className="text-gray-300" />
+        
+        {/* Современная заглушка для пустого состояния */}
+        <div className="empty-reviews-state">
+          {/* Градиентный фон */}
+          <div className="empty-reviews-background">
+            <div className="gradient-circle gradient-circle-1"></div>
+            <div className="gradient-circle gradient-circle-2"></div>
+            <div className="gradient-circle gradient-circle-3"></div>
           </div>
-          <p className="font-medium mb-2">Пока нет отзывов на этот товар</p>
-          <p className="text-sm">Будьте первым, кто оставит отзыв!</p>
-        </div>
-        <div className="text-center">
+          
+          {/* Иконка */}
+          <div className="empty-reviews-icon">
+            <div className="star-container">
+              <IconComponent name="star" size={32} />
+              <IconComponent name="star" size={28} />
+              <IconComponent name="star" size={24} />
+            </div>
+          </div>
+          
+          {/* Текст */}
+          <div className="empty-reviews-content">
+            <h3 className="empty-reviews-title">Пока нет отзывов</h3>
+            <p className="empty-reviews-description">
+              Станьте первым, кто поделится впечатлениями о товаре. 
+              Ваш отзыв поможет другим покупателям!
+            </p>
+          </div>
+          
+          {/* Кнопка */}
           <button 
-            className="btn-new-review"
+            className="empty-reviews-button"
             onClick={onReviewCreate}
           >
-            Оставить отзыв
+            <span className="button-icon">✨</span>
+            Написать первый отзыв
           </button>
         </div>
+
+        <style jsx>{`
+          .empty-reviews-state {
+            position: relative;
+            text-align: center;
+            padding: 48px 24px;
+            overflow: hidden;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            margin: 16px 0;
+          }
+
+          .empty-reviews-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+          }
+
+          .gradient-circle {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.1;
+            animation: float 6s ease-in-out infinite;
+          }
+
+          .gradient-circle-1 {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #48C928, #3AA120);
+            top: -60px;
+            right: -60px;
+            animation-delay: 0s;
+          }
+
+          .gradient-circle-2 {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            bottom: -40px;
+            left: -40px;
+            animation-delay: 2s;
+          }
+
+          .gradient-circle-3 {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #FF6B6B, #FF8E8E);
+            top: 20px;
+            left: 20px;
+            animation-delay: 4s;
+          }
+
+          .empty-reviews-icon {
+            position: relative;
+            z-index: 1;
+            margin-bottom: 24px;
+          }
+
+          .star-container {
+            position: relative;
+            display: inline-block;
+            padding: 20px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(72, 201, 40, 0.1);
+          }
+
+          .star-container :global(.icon) {
+            color: #FFD700;
+            filter: drop-shadow(0 2px 4px rgba(255, 215, 0, 0.3));
+          }
+
+          .star-container :global(.icon):nth-child(1) {
+            margin-right: 4px;
+            animation: sparkle 2s ease-in-out infinite;
+          }
+
+          .star-container :global(.icon):nth-child(2) {
+            margin-right: 4px;
+            animation: sparkle 2s ease-in-out infinite 0.3s;
+          }
+
+          .star-container :global(.icon):nth-child(3) {
+            animation: sparkle 2s ease-in-out infinite 0.6s;
+          }
+
+          .empty-reviews-content {
+            position: relative;
+            z-index: 1;
+            margin-bottom: 32px;
+          }
+
+          .empty-reviews-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 12px;
+            letter-spacing: -0.025em;
+          }
+
+          .empty-reviews-description {
+            font-size: 15px;
+            color: #64748b;
+            line-height: 1.6;
+            max-width: 320px;
+            margin: 0 auto;
+          }
+
+          .empty-reviews-button {
+            position: relative;
+            z-index: 1;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #48C928 0%, #3AA120 100%);
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+            padding: 16px 32px;
+            border-radius: 16px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(72, 201, 40, 0.3);
+          }
+
+          .empty-reviews-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(72, 201, 40, 0.4);
+          }
+
+          .empty-reviews-button:active {
+            transform: translateY(0px);
+          }
+
+          .button-icon {
+            font-size: 18px;
+            animation: pulse 2s ease-in-out infinite;
+          }
+
+          @keyframes float {
+            0%, 100% {
+              transform: translateY(0px) rotate(0deg);
+            }
+            50% {
+              transform: translateY(-20px) rotate(180deg);
+            }
+          }
+
+          @keyframes sparkle {
+            0%, 100% {
+              transform: scale(1) rotate(0deg);
+              opacity: 1;
+            }
+            50% {
+              transform: scale(1.2) rotate(72deg);
+              opacity: 0.8;
+            }
+          }
+
+          @keyframes pulse {
+            0%, 100% {
+              transform: scale(1);
+            }
+            50% {
+              transform: scale(1.1);
+            }
+          }
+        `}</style>
       </div>
     )
   }

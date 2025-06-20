@@ -12,7 +12,7 @@ export async function GET(
 
     if (!productId) {
       return NextResponse.json(
-        { error: 'Invalid product ID' },
+        { error: 'Неверный ID товара' },
         { status: 400 }
       );
     }
@@ -104,7 +104,7 @@ export async function GET(
   } catch (error) {
     console.error('Error fetching reviews:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch reviews', details: error instanceof Error ? error.message : String(error) },
+      { error: 'Не удалось загрузить отзывы', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
@@ -120,7 +120,7 @@ export async function POST(
 
     if (!productId) {
       return NextResponse.json(
-        { error: 'Invalid product ID' },
+        { error: 'Неверный ID товара' },
         { status: 400 }
       );
     }
@@ -131,21 +131,21 @@ export async function POST(
     // Валидация
     if (!content || content.length < 5 || content.length > 1000) {
       return NextResponse.json(
-        { error: 'Content must be between 5 and 1000 characters' },
+        { error: 'Отзыв должен содержать от 5 до 1000 символов' },
         { status: 400 }
       );
     }
 
     if (!rating || rating < 1 || rating > 5) {
       return NextResponse.json(
-        { error: 'Rating must be between 1 and 5' },
+        { error: 'Рейтинг должен быть от 1 до 5' },
         { status: 400 }
       );
     }
 
     if (!tg_id) {
       return NextResponse.json(
-        { error: 'User not authenticated' },
+        { error: 'Пользователь не авторизован' },
         { status: 401 }
       );
     }
@@ -157,7 +157,7 @@ export async function POST(
 
     if (!user) {
       return NextResponse.json(
-        { error: 'User not found' },
+        { error: 'Пользователь не найден' },
         { status: 404 }
       );
     }
@@ -180,7 +180,7 @@ export async function POST(
 
     if (!userOrder) {
       return NextResponse.json(
-        { error: 'You can only review products you have purchased' },
+        { error: 'Отзыв можно оставить только на товар, который вы приобрели' },
         { status: 403 }
       );
     }
@@ -195,7 +195,7 @@ export async function POST(
 
     if (existingReview) {
       return NextResponse.json(
-        { error: 'You have already reviewed this product' },
+        { error: 'Вы уже оставили отзыв на этот товар' },
         { status: 409 }
       );
     }
@@ -216,14 +216,14 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      message: 'Review submitted successfully and is pending moderation',
+      message: 'Отзыв успешно отправлен и ожидает модерации',
       review_id: review.id
     });
 
   } catch (error) {
     console.error('Error creating review:', error);
     return NextResponse.json(
-      { error: 'Failed to create review', details: error instanceof Error ? error.message : String(error) },
+      { error: 'Не удалось создать отзыв', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

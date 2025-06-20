@@ -28,7 +28,7 @@ And voila! You're now ready to start developing. **Happy coding**!
 
 ### Version 1.2.1 - Fix peer dependency issue - [Mar 19, 2025]
 - Fixed peer dependency issue with React 19
-- Migrated from `react-table` to `@tanstack/react-table`
+- Removed TanStack React Query and React Table dependencies
 - Fixed reference error in `top-countries/map.tsx` component
 
 ### Version 1.2.0 - Major Upgrade and UI Improvements - [Jan 27, 2025]

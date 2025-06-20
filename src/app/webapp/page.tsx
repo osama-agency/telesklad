@@ -21,9 +21,6 @@ export default function WebappHomePage() {
 
   return (
     <>
-      {/* Page Title - точно как в Rails */}
-      <h1>Каталог</h1>
-
       {/* Product Catalog */}
       <Suspense fallback={
         <div className="no-items-wrapper">

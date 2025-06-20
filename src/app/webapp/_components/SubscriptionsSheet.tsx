@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Sheet from '@/components/ui/sheet';
 import { IconComponent } from '@/components/webapp/IconComponent';
 import LoadingSpinner from './LoadingSpinner';
+import toast from 'react-hot-toast';
 
 interface Product {
   id: number;
@@ -35,6 +36,8 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deletingItems, setDeletingItems] = useState<Set<number>>(new Set());
+  const [animatingOut, setAnimatingOut] = useState<Set<number>>(new Set());
 
   // Загружаем подписки при открытии модального окна
   useEffect(() => {
@@ -64,7 +67,25 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
     }
   };
 
+  // Haptic feedback (только для мобильных устройств)
+  const triggerHaptic = (type: 'light' | 'medium' | 'heavy' = 'medium') => {
+    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+      const patterns = {
+        light: [10],
+        medium: [20],
+        heavy: [30]
+      };
+      navigator.vibrate(patterns[type]);
+    }
+  };
+
   const handleUnsubscribe = async (subscriptionId: number) => {
+    // Haptic feedback
+    triggerHaptic('light');
+    
+    // Показываем анимацию удаления
+    setDeletingItems(prev => new Set([...prev, subscriptionId]));
+    
     try {
       const response = await fetch(`/api/webapp/subscriptions/${subscriptionId}`, {
         method: 'DELETE'
@@ -73,19 +94,64 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
       const data = await response.json();
 
       if (data.success) {
-        // Обновляем список подписок
-        setSubscriptions(prev => prev.filter(sub => sub.id !== subscriptionId));
+        // Запускаем анимацию исчезновения
+        setAnimatingOut(prev => new Set([...prev, subscriptionId]));
         
-        // Уведомляем другие компоненты об обновлении
-        window.dispatchEvent(new Event('subscriptionsUpdated'));
+        // Haptic feedback для успеха
+        triggerHaptic('medium');
+        
+        // Через 300ms убираем элемент из списка
+        setTimeout(() => {
+          setSubscriptions(prev => prev.filter(sub => sub.id !== subscriptionId));
+          setDeletingItems(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(subscriptionId);
+            return newSet;
+          });
+          setAnimatingOut(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(subscriptionId);
+            return newSet;
+          });
+          
+          // Уведомляем другие компоненты об обновлении (без перезагрузки)
+          window.dispatchEvent(new CustomEvent('subscriptionsUpdated', {
+            detail: { subscriptionId, action: 'deleted' }
+          }));
+        }, 300);
+        
       } else {
-        alert(data.error || 'Ошибка при отписке');
+        // Убираем состояние удаления при ошибке
+        setDeletingItems(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(subscriptionId);
+          return newSet;
+        });
+        
+        // Haptic feedback для ошибки
+        triggerHaptic('heavy');
+        
+        // Показываем тост вместо alert
+        toast.error(data.error || 'Ошибка при отписке');
       }
     } catch (error) {
       console.error('Unsubscribe error:', error);
-      alert('Ошибка при отписке');
+      
+      // Убираем состояние удаления при ошибке
+      setDeletingItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(subscriptionId);
+        return newSet;
+      });
+      
+      // Haptic feedback для ошибки
+      triggerHaptic('heavy');
+      
+      toast.error('Ошибка при отписке');
     }
   };
+
+
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -144,7 +210,12 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
 
           <div className="subscriptions-items">
             {subscriptions.map((subscription) => (
-              <div key={subscription.id} className="subscription-item">
+              <div 
+                key={subscription.id} 
+                className={`subscription-item ${
+                  animatingOut.has(subscription.id) ? 'animate-out' : ''
+                } ${deletingItems.has(subscription.id) ? 'deleting' : ''}`}
+              >
                 <div className="subscription-image">
                   {subscription.product.image_url ? (
                     <img 
@@ -181,10 +252,15 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
                 <div className="subscription-actions">
                   <button
                     onClick={() => handleUnsubscribe(subscription.id)}
-                    className="unsubscribe-btn"
-                    title="Отписаться"
+                    className={`unsubscribe-btn ${deletingItems.has(subscription.id) ? 'loading' : ''}`}
+                    disabled={deletingItems.has(subscription.id)}
+                    title={deletingItems.has(subscription.id) ? 'Удаление...' : 'Отписаться'}
                   >
-                    <IconComponent name="close" size={16} />
+                    {deletingItems.has(subscription.id) ? (
+                      <div className="spinner" />
+                    ) : (
+                      <IconComponent name="close" size={16} />
+                    )}
                   </button>
                 </div>
               </div>
@@ -298,6 +374,26 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
           background: #F9FAFB;
           border-radius: 12px;
           border: 1px solid #F3F4F6;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          transform: translateX(0);
+          opacity: 1;
+          max-height: 200px;
+          overflow: hidden;
+        }
+
+        .subscription-item.deleting {
+          pointer-events: none;
+          opacity: 0.6;
+          background: #FEF2F2;
+          border-color: #FECACA;
+        }
+
+        .subscription-item.animate-out {
+          transform: translateX(100%);
+          opacity: 0;
+          max-height: 0;
+          padding: 0 16px;
+          margin-bottom: -16px;
         }
 
         .subscription-image {
@@ -370,16 +466,55 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
           border-radius: 6px;
           color: #DC2626;
           cursor: pointer;
-          transition: all 0.2s;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          position: relative;
+          overflow: hidden;
         }
 
-        .unsubscribe-btn:hover {
+        .unsubscribe-btn:hover:not(:disabled) {
           background: #FEE2E2;
           border-color: #FCA5A5;
+          transform: scale(1.05);
         }
 
-        .unsubscribe-btn:active {
+        .unsubscribe-btn:active:not(:disabled) {
           transform: scale(0.95);
+        }
+
+        .unsubscribe-btn:disabled {
+          cursor: not-allowed;
+          opacity: 0.7;
+        }
+
+        .unsubscribe-btn.loading {
+          background: #FEF2F2;
+          border-color: #FECACA;
+          animation: pulse 1.5s infinite;
+        }
+
+        .spinner {
+          width: 16px;
+          height: 16px;
+          border: 2px solid #FECACA;
+          border-top: 2px solid #DC2626;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+          0%, 100% { 
+            background: #FEF2F2;
+            border-color: #FECACA;
+          }
+          50% { 
+            background: #FEE2E2;
+            border-color: #FCA5A5;
+          }
         }
 
         /* Адаптивность */

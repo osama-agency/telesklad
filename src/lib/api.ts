@@ -65,31 +65,4 @@ export const patch = <T>(endpoint: string, data: any) =>
 export const del = <T>(endpoint: string) =>
   apiRequest<T>(endpoint, {
     method: 'DELETE',
-  });
-
-// Query keys для кэширования
-export const queryKeys = {
-  // Products
-  products: ['products'] as const,
-  productsAnalytics: (period?: number) => ['products', 'analytics', period] as const,
-  productsSimple: ['products', 'simple'] as const,
-
-  // Orders
-  orders: ['orders'] as const,
-  ordersList: (params?: any) => ['orders', 'list', params] as const,
-  order: (id: number) => ['orders', id] as const,
-
-  // Purchases
-  purchases: ['purchases'] as const,
-  purchasesList: (params?: any) => ['purchases', 'list', params] as const,
-  purchase: (id: number) => ['purchases', id] as const,
-
-  // Expenses
-  expenses: ['expenses'] as const,
-  expensesList: (params?: any) => ['expenses', 'list', params] as const,
-  expense: (id: number) => ['expenses', id] as const,
-
-  // Exchange rates
-  rates: ['rates'] as const,
-  rateLatest: (currency: string) => ['rates', 'latest', currency] as const,
-} as const; 
+  }); 

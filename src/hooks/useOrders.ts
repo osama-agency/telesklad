@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useDateRange } from '@/context/DateRangeContext';
 import { Order, OrderFilters, SyncResult } from '@/types/order';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { get, post, put, del, queryKeys, PaginatedResponse } from '@/lib/api';
+import { get, post, put, del, PaginatedResponse } from '@/lib/api';
 // ВРЕМЕННО ОТКЛЮЧЕНА АВТОРИЗАЦИЯ
 // import { useSession } from 'next-auth/react';
 
@@ -120,8 +119,25 @@ export interface OrdersApiResponse {
   stats: OrdersStats;
 }
 
+interface UseOrdersQueryResult {
+  data: OrdersApiResponse | null;
+  isLoading: boolean;
+  error: string | null;
+  refetch: () => void;
+}
+
+interface UseMutationResult<T, V> {
+  mutate: (variables: V) => Promise<T>;
+  isLoading: boolean;
+  error: string | null;
+}
+
 // Основной хук для получения заказов
-export function useOrdersQuery(params: OrdersParams = {}) {
+export function useOrdersQuery(params: OrdersParams = {}): UseOrdersQueryResult {
+  const [data, setData] = useState<OrdersApiResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const {
     page = 1,
     limit = 25,
@@ -138,13 +154,15 @@ export function useOrdersQuery(params: OrdersParams = {}) {
     search,
     status,
     customerCity,
-        sortBy,
+    sortBy,
     sortOrder
   };
 
-  return useQuery({
-    queryKey: queryKeys.ordersList(queryParams),
-    queryFn: () => {
+  const fetchOrders = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
       const searchParams = new URLSearchParams();
       Object.entries(queryParams).forEach(([key, value]) => {
         if (value !== undefined && value !== '') {
@@ -152,80 +170,143 @@ export function useOrdersQuery(params: OrdersParams = {}) {
         }
       });
       
-      return get<OrdersApiResponse>(`/orders?${searchParams.toString()}`);
-    },
-    staleTime: 30 * 1000, // 30 секунд для заказов (часто обновляемые данные)
-    gcTime: 2 * 60 * 1000, // 2 минуты в кэше
-  });
+      const result = await get<OrdersApiResponse>(`/orders?${searchParams.toString()}`);
+      setData(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [JSON.stringify(queryParams)]);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
+  return {
+    data,
+    isLoading,
+    error,
+    refetch: fetchOrders,
+  };
+}
+
+interface UseOrderQueryResult {
+  data: OrderEntity | null;
+  isLoading: boolean;
+  error: string | null;
 }
 
 // Получение одного заказа
-export function useOrderQuery(id: number) {
-  return useQuery({
-    queryKey: queryKeys.order(id),
-    queryFn: () => get<OrderEntity>(`/orders/${id}`),
-    enabled: !!id,
-    staleTime: 60 * 1000, // 1 минута
-  });
+export function useOrderQuery(id: number): UseOrderQueryResult {
+  const [data, setData] = useState<OrderEntity | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchOrder = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const result = await get<OrderEntity>(`/orders/${id}`);
+        setData(result);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOrder();
+  }, [id]);
+
+  return { data, isLoading, error };
 }
 
 // Мутация для создания заказа
-export function useCreateOrder() {
-  const queryClient = useQueryClient();
+export function useCreateOrder(): UseMutationResult<OrderEntity, Partial<OrderEntity>> {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  return useMutation({
-    mutationFn: (orderData: Partial<OrderEntity>) => post<OrderEntity>('/orders', orderData),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.orders });
-    },
-  });
+  const mutate = useCallback(async (orderData: Partial<OrderEntity>) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await post<OrderEntity>('/orders', orderData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, isLoading, error };
 }
 
 // Мутация для обновления заказа
-export function useUpdateOrder() {
-  const queryClient = useQueryClient();
+export function useUpdateOrder(): UseMutationResult<OrderEntity, { id: number; data: Partial<OrderEntity> }> {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<OrderEntity> }) => 
-      put<OrderEntity>(`/orders/${id}`, data),
-    onSuccess: (data, variables) => {
-      // Обновляем кэш конкретного заказа
-      queryClient.setQueryData(queryKeys.order(variables.id), data);
-      // Перезагружаем список заказов
-      queryClient.invalidateQueries({ queryKey: queryKeys.orders });
-    },
-  });
+  const mutate = useCallback(async ({ id, data }: { id: number; data: Partial<OrderEntity> }) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await put<OrderEntity>(`/orders/${id}`, data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, isLoading, error };
 }
 
 // Мутация для удаления заказа
-export function useDeleteOrder() {
-  const queryClient = useQueryClient();
+export function useDeleteOrder(): UseMutationResult<void, number> {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  return useMutation({
-    mutationFn: (id: number) => del(`/orders/${id}`),
-    onSuccess: (_, id) => {
-      // Удаляем из кэша конкретный заказ
-      queryClient.removeQueries({ queryKey: queryKeys.order(id) });
-      // Перезагружаем список заказов
-      queryClient.invalidateQueries({ queryKey: queryKeys.orders });
-    },
-  });
+  const mutate = useCallback(async (id: number): Promise<void> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      await del(`/orders/${id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, isLoading, error };
 }
 
 // Хук для обновления статуса заказа
-export function useUpdateOrderStatus() {
-  const queryClient = useQueryClient();
+export function useUpdateOrderStatus(): UseMutationResult<OrderEntity, { id: number; status: number }> {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  return useMutation({
-    mutationFn: ({ id, status }: { id: number; status: number }) => 
-      put<OrderEntity>(`/orders/${id}/status`, { status }),
-    onSuccess: (data, variables) => {
-      // Обновляем кэш конкретного заказа
-      queryClient.setQueryData(queryKeys.order(variables.id), data);
-      // Перезагружаем список заказов
-      queryClient.invalidateQueries({ queryKey: queryKeys.orders });
-    },
-  });
+  const mutate = useCallback(async ({ id, status }: { id: number; status: number }) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await put<OrderEntity>(`/orders/${id}/status`, { status });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, isLoading, error };
 }
 
 // Утилиты для работы со статусами
@@ -428,14 +509,36 @@ export function useOrders(options: UseOrdersOptions = {}) {
   };
 }
 
+interface UseCitiesResult {
+  data: { cities: { value: string; label: string; count: number }[] } | null;
+  isLoading: boolean;
+  error: string | null;
+}
+
 // Хук для получения городов
-export function useCities() {
-  return useQuery({
-    queryKey: ['cities'],
-    queryFn: () => get<{ cities: { value: string; label: string; count: number }[] }>('/orders/cities'),
-    staleTime: 5 * 60 * 1000, // 5 минут
-    gcTime: 10 * 60 * 1000, // 10 минут
-  });
+export function useCities(): UseCitiesResult {
+  const [data, setData] = useState<{ cities: { value: string; label: string; count: number }[] } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchCities = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const result = await get<{ cities: { value: string; label: string; count: number }[] }>('/orders/cities');
+        setData(result);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCities();
+  }, []);
+
+  return { data, isLoading, error };
 }
 
 // Маппинг числовых статусов в строковые

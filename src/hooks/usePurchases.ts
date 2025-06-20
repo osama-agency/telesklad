@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { get, post, put, del, queryKeys } from '@/lib/api';
+import { useState, useEffect, useCallback } from 'react';
+import { get, post, put, del } from '@/lib/api';
 
 // Типы для закупок
 export interface Purchase {
@@ -35,17 +35,30 @@ export interface PurchasesParams {
   productId?: number;
 }
 
+interface UsePurchasesResult {
+  data: Purchase[] | null;
+  isLoading: boolean;
+  error: string | null;
+  refetch: () => void;
+}
+
 // Основной хук для получения закупок
-export function usePurchases(params: PurchasesParams = {}) {
+export function usePurchases(params: PurchasesParams = {}): UsePurchasesResult {
+  const [data, setData] = useState<Purchase[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const queryParams = {
     ...params,
     page: params.page || 1,
     limit: params.limit || 10,
   };
 
-  return useQuery({
-    queryKey: queryKeys.purchasesList(queryParams),
-    queryFn: async () => {
+  const fetchPurchases = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
       const searchParams = new URLSearchParams();
       Object.entries(queryParams).forEach(([key, value]) => {
         if (value !== undefined && value !== '') {
@@ -56,163 +69,238 @@ export function usePurchases(params: PurchasesParams = {}) {
       const endpoint = `/purchases?${searchParams.toString()}`;
       console.log('🔍 usePurchases: Making request to:', endpoint);
       
-      try {
-        const result = await get<any>(endpoint);
-        console.log('✅ usePurchases: Received data:', result);
-        
-        // Проверяем новую структуру API с пагинацией
-        if (result && result.purchases) {
-          // Новая структура с пагинацией
-          return result.purchases as Purchase[];
-        } else if (Array.isArray(result)) {
-          // Старая структура - просто массив
-          return result as Purchase[];
-        } else {
-          console.warn('⚠️ Unexpected API response structure:', result);
-          return [];
-        }
-      } catch (error) {
-        console.error('❌ usePurchases: Error:', error);
-        throw error;
+      const result = await get<any>(endpoint);
+      console.log('✅ usePurchases: Received data:', result);
+      
+      // Проверяем новую структуру API с пагинацией
+      if (result && result.purchases) {
+        // Новая структура с пагинацией
+        setData(result.purchases as Purchase[]);
+      } else if (Array.isArray(result)) {
+        // Старая структура - просто массив
+        setData(result as Purchase[]);
+      } else {
+        console.warn('⚠️ Unexpected API response structure:', result);
+        setData([]);
       }
-    },
-    staleTime: 60 * 1000, // 1 минута
-    gcTime: 5 * 60 * 1000, // 5 минут в кэше
-  });
+    } catch (err) {
+      console.error('❌ usePurchases: Error:', err);
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [JSON.stringify(queryParams)]);
+
+  useEffect(() => {
+    fetchPurchases();
+  }, [fetchPurchases]);
+
+  return {
+    data,
+    isLoading,
+    error,
+    refetch: fetchPurchases,
+  };
+}
+
+interface UsePurchaseResult {
+  data: Purchase | null;
+  isLoading: boolean;
+  error: string | null;
 }
 
 // Получение одной закупки
-export function usePurchase(id: number) {
-  return useQuery({
-    queryKey: queryKeys.purchase(id),
-    queryFn: () => get<Purchase>(`/purchases/${id}`),
-    enabled: !!id,
-    staleTime: 60 * 1000, // 1 минута
-  });
+export function usePurchase(id: number): UsePurchaseResult {
+  const [data, setData] = useState<Purchase | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchPurchase = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const result = await get<Purchase>(`/purchases/${id}`);
+        setData(result);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPurchase();
+  }, [id]);
+
+  return { data, isLoading, error };
+}
+
+interface UseMutationResult<T, V> {
+  mutate: (variables: V) => Promise<T>;
+  isLoading: boolean;
+  error: string | null;
 }
 
 // Мутация для создания закупки
-export function useCreatePurchase() {
-  const queryClient = useQueryClient();
+export function useCreatePurchase(): UseMutationResult<Purchase, Partial<Purchase>> {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  return useMutation({
-    mutationFn: (purchaseData: Partial<Purchase>) => post<Purchase>('/purchases', purchaseData),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.purchases });
-      // Также обновляем аналитику товаров
-      queryClient.invalidateQueries({ queryKey: queryKeys.productsAnalytics() });
-    },
-  });
+  const mutate = useCallback(async (purchaseData: Partial<Purchase>) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await post<Purchase>('/purchases', purchaseData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, isLoading, error };
 }
 
 // Мутация для обновления закупки
-export function useUpdatePurchase() {
-  const queryClient = useQueryClient();
+export function useUpdatePurchase(): UseMutationResult<Purchase, { id: number; data: Partial<Purchase> }> {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<Purchase> }) => 
-      put<Purchase>(`/purchases/${id}`, data),
-    onSuccess: (data, variables) => {
-      // Обновляем кэш конкретной закупки
-      queryClient.setQueryData(queryKeys.purchase(variables.id), data);
-      // Перезагружаем список закупок
-      queryClient.invalidateQueries({ queryKey: queryKeys.purchases });
-      // Обновляем аналитику товаров
-      queryClient.invalidateQueries({ queryKey: queryKeys.productsAnalytics() });
-    },
-  });
+  const mutate = useCallback(async ({ id, data }: { id: number; data: Partial<Purchase> }) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await put<Purchase>(`/purchases/${id}`, data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, isLoading, error };
 }
 
 // Мутация для удаления закупки
-export function useDeletePurchase() {
-  const queryClient = useQueryClient();
+export function useDeletePurchase(): UseMutationResult<void, number> {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  return useMutation({
-    mutationFn: (id: number) => del(`/purchases/${id}`),
-    onSuccess: (_, id) => {
-      // Удаляем из кэша конкретную закупку
-      queryClient.removeQueries({ queryKey: queryKeys.purchase(id) });
-      // Перезагружаем список закупок
-      queryClient.invalidateQueries({ queryKey: queryKeys.purchases });
-      // Обновляем аналитику товаров
-      queryClient.invalidateQueries({ queryKey: queryKeys.productsAnalytics() });
-    },
-  });
+  const mutate = useCallback(async (id: number): Promise<void> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      await del(`/purchases/${id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, isLoading, error };
 }
 
 // Мутация для обновления статуса закупки
-export function useUpdatePurchaseStatus() {
-  const queryClient = useQueryClient();
+export function useUpdatePurchaseStatus(): UseMutationResult<Purchase, { id: number; status: Purchase['status'] }> {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  return useMutation({
-    mutationFn: ({ id, status }: { id: number; status: Purchase['status'] }) => 
-      put<Purchase>(`/purchases/${id}/status`, { status }),
-    onSuccess: (data, variables) => {
-      // Обновляем кэш конкретной закупки
-      queryClient.setQueryData(queryKeys.purchase(variables.id), data);
-      // Перезагружаем список закупок
-      queryClient.invalidateQueries({ queryKey: queryKeys.purchases });
-      // Обновляем аналитику товаров
-      queryClient.invalidateQueries({ queryKey: queryKeys.productsAnalytics() });
-    },
-  });
+  const mutate = useCallback(async ({ id, status }: { id: number; status: Purchase['status'] }) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await put<Purchase>(`/purchases/${id}/status`, { status });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, isLoading, error };
 }
 
 // Мутация для отправки закупки в Telegram
-export function useSendPurchaseToTelegram() {
-  const queryClient = useQueryClient();
+export function useSendPurchaseToTelegram(): UseMutationResult<void, number> {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  return useMutation({
-    mutationFn: (id: number) => post(`/purchases/${id}/send-telegram`, {}),
-    onSuccess: (_, id) => {
-      // Обновляем статус закупки на "ordered"
-      queryClient.invalidateQueries({ queryKey: queryKeys.purchase(id) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.purchases });
-    },
-  });
+  const mutate = useCallback(async (id: number): Promise<void> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      await post(`/purchases/${id}/send-telegram`, {});
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, isLoading, error };
 }
 
 // Мутация для оприходования закупки
-export function useReceivePurchase() {
-  const queryClient = useQueryClient();
+export function useReceivePurchase(): UseMutationResult<void, { 
+  id: number; 
+  data: {
+    items: Array<{
+      id: number;
+      receivedQuantity: number;
+    }>;
+    logisticsExpense?: number;
+    receivedAt: string;
+    notes?: string;
+  };
+}> {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  return useMutation({
-    mutationFn: ({ id, data }: { 
-      id: number; 
-      data: {
-        items: Array<{
-          id: number;
-          receivedQuantity: number;
-        }>;
-        logisticsExpense?: number;
-        receivedAt: string;
-        notes?: string;
-      };
-    }) => post(`/purchases/${id}/receive`, data),
-    onSuccess: (_, variables) => {
-      // Обновляем кэш конкретной закупки
-      queryClient.invalidateQueries({ queryKey: queryKeys.purchase(variables.id) });
-      // Перезагружаем список закупок
-      queryClient.invalidateQueries({ queryKey: queryKeys.purchases });
-      // Обновляем аналитику товаров
-      queryClient.invalidateQueries({ queryKey: queryKeys.productsAnalytics() });
-      // Обновляем расходы
-      queryClient.invalidateQueries({ queryKey: queryKeys.expenses });
-    },
-  });
+  const mutate = useCallback(async ({ id, data }: { 
+    id: number; 
+    data: {
+      items: Array<{
+        id: number;
+        receivedQuantity: number;
+      }>;
+      logisticsExpense?: number;
+      receivedAt: string;
+      notes?: string;
+    };
+  }): Promise<void> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      await post(`/purchases/${id}/receive`, data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, isLoading, error };
 }
 
-// Утилиты для работы со статусами
-export const PURCHASE_STATUSES = {
-  draft: '🗒️ Черновик',
-  sent: '📤 Отправлено',
-  awaiting_payment: '💳 Ожидает оплату',
-  paid: '💰 Оплачено',
-  in_transit: '🚚 В пути',
-  received: '✅ Получено',
-  cancelled: '❌ Отменено',
-} as const;
-
 export function getPurchaseStatusLabel(status: Purchase['status']): string {
-  return PURCHASE_STATUSES[status] || status;
+  const statusLabels: Record<Purchase['status'], string> = {
+    'draft': 'Черновик',
+    'sent': 'Отправлена',
+    'awaiting_payment': 'Ожидает оплаты',
+    'paid': 'Оплачена',
+    'in_transit': 'В пути',
+    'received': 'Получена',
+    'cancelled': 'Отменена',
+  };
+  
+  return statusLabels[status] || status;
 } 

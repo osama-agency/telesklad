@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { get, post, put, del, queryKeys } from '@/lib/api';
+import { useState, useEffect, useCallback } from 'react';
+import { get, post, put, del } from '@/lib/api';
 
 // Типы для расходов
 export interface Expense {
@@ -28,17 +28,30 @@ export interface ExpensesStats {
   monthlyTotals: Record<string, number>;
 }
 
+interface UseExpensesResult {
+  data: Expense[] | null;
+  isLoading: boolean;
+  error: string | null;
+  refetch: () => void;
+}
+
 // Основной хук для получения расходов
-export function useExpenses(params: ExpensesParams = {}) {
+export function useExpenses(params: ExpensesParams = {}): UseExpensesResult {
+  const [data, setData] = useState<Expense[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const queryParams = {
     ...params,
     page: params.page || 1,
     limit: params.limit || 25,
   };
 
-  return useQuery({
-    queryKey: queryKeys.expensesList(queryParams),
-    queryFn: () => {
+  const fetchExpenses = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
       const searchParams = new URLSearchParams();
       Object.entries(queryParams).forEach(([key, value]) => {
         if (value !== undefined && value !== '') {
@@ -46,113 +59,221 @@ export function useExpenses(params: ExpensesParams = {}) {
         }
       });
       
-      return get<Expense[]>(`/expenses?${searchParams.toString()}`);
-    },
-    staleTime: 2 * 60 * 1000, // 2 минуты
-    gcTime: 10 * 60 * 1000, // 10 минут в кэше
-  });
+      const result = await get<Expense[]>(`/expenses?${searchParams.toString()}`);
+      setData(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [JSON.stringify(queryParams)]);
+
+  useEffect(() => {
+    fetchExpenses();
+  }, [fetchExpenses]);
+
+  return {
+    data,
+    isLoading,
+    error,
+    refetch: fetchExpenses,
+  };
+}
+
+interface UseExpenseResult {
+  data: Expense | null;
+  isLoading: boolean;
+  error: string | null;
 }
 
 // Получение одного расхода
-export function useExpense(id: number) {
-  return useQuery({
-    queryKey: queryKeys.expense(id),
-    queryFn: () => get<Expense>(`/expenses/${id}`),
-    enabled: !!id,
-    staleTime: 5 * 60 * 1000, // 5 минут
-  });
+export function useExpense(id: number): UseExpenseResult {
+  const [data, setData] = useState<Expense | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchExpense = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const result = await get<Expense>(`/expenses/${id}`);
+        setData(result);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchExpense();
+  }, [id]);
+
+  return { data, isLoading, error };
+}
+
+interface UseExpensesStatsResult {
+  data: ExpensesStats | null;
+  isLoading: boolean;
+  error: string | null;
 }
 
 // Получение статистики расходов
-export function useExpensesStats(params: ExpensesParams = {}) {
-  return useQuery({
-    queryKey: [...queryKeys.expenses, 'stats', params],
-    queryFn: () => {
-      const searchParams = new URLSearchParams();
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== '') {
-          searchParams.append(key, String(value));
-        }
-      });
-      
-      return get<ExpensesStats>(`/expenses/stats?${searchParams.toString()}`);
-    },
-    staleTime: 5 * 60 * 1000, // 5 минут
-    gcTime: 15 * 60 * 1000, // 15 минут в кэше
-  });
+export function useExpensesStats(params: ExpensesParams = {}): UseExpensesStatsResult {
+  const [data, setData] = useState<ExpensesStats | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const searchParams = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+          if (value !== undefined && value !== '') {
+            searchParams.append(key, String(value));
+          }
+        });
+        
+        const result = await get<ExpensesStats>(`/expenses/stats?${searchParams.toString()}`);
+        setData(result);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, [JSON.stringify(params)]);
+
+  return { data, isLoading, error };
+}
+
+interface UseMutationResult<T, V> {
+  mutate: (variables: V) => Promise<T>;
+  isLoading: boolean;
+  error: string | null;
 }
 
 // Мутация для создания расхода
-export function useCreateExpense() {
-  const queryClient = useQueryClient();
+export function useCreateExpense(): UseMutationResult<Expense, Omit<Expense, 'id' | 'createdAt' | 'updatedAt'>> {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  return useMutation({
-    mutationFn: (expenseData: Omit<Expense, 'id' | 'createdAt' | 'updatedAt'>) => 
-      post<Expense>('/expenses', expenseData),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.expenses });
-    },
-  });
+  const mutate = useCallback(async (expenseData: Omit<Expense, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await post<Expense>('/expenses', expenseData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, isLoading, error };
 }
 
 // Мутация для обновления расхода
-export function useUpdateExpense() {
-  const queryClient = useQueryClient();
+export function useUpdateExpense(): UseMutationResult<Expense, { id: number; data: Omit<Expense, 'id' | 'createdAt' | 'updatedAt'> }> {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  return useMutation({
-    mutationFn: ({ id, data }: { 
-      id: number; 
-      data: Omit<Expense, 'id' | 'createdAt' | 'updatedAt'> 
-    }) => put<Expense>(`/expenses/${id}`, data),
-    onSuccess: (data, variables) => {
-      // Обновляем кэш конкретного расхода
-      queryClient.setQueryData(queryKeys.expense(variables.id), data);
-      // Перезагружаем список расходов
-      queryClient.invalidateQueries({ queryKey: queryKeys.expenses });
-    },
-  });
+  const mutate = useCallback(async ({ id, data }: { id: number; data: Omit<Expense, 'id' | 'createdAt' | 'updatedAt'> }) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      return await put<Expense>(`/expenses/${id}`, data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, isLoading, error };
 }
 
 // Мутация для удаления расхода
-export function useDeleteExpense() {
-  const queryClient = useQueryClient();
+export function useDeleteExpense(): UseMutationResult<void, number> {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  return useMutation({
-    mutationFn: (id: number) => del(`/expenses/${id}`),
-    onSuccess: (_, id) => {
-      // Удаляем из кэша конкретный расход
-      queryClient.removeQueries({ queryKey: queryKeys.expense(id) });
-      // Перезагружаем список расходов
-      queryClient.invalidateQueries({ queryKey: queryKeys.expenses });
-    },
-  });
+  const mutate = useCallback(async (id: number): Promise<void> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      await del(`/expenses/${id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, isLoading, error };
 }
 
 // Мутация для массового удаления расходов
-export function useBulkDeleteExpenses() {
-  const queryClient = useQueryClient();
+export function useBulkDeleteExpenses(): UseMutationResult<void, number[]> {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  return useMutation({
-    mutationFn: (ids: number[]) => post('/expenses/bulk-delete', { ids }),
-    onSuccess: (_, ids) => {
-      // Удаляем из кэша конкретные расходы
-      ids.forEach(id => {
-        queryClient.removeQueries({ queryKey: queryKeys.expense(id) });
-      });
-      // Перезагружаем список расходов
-      queryClient.invalidateQueries({ queryKey: queryKeys.expenses });
-    },
-  });
+  const mutate = useCallback(async (ids: number[]): Promise<void> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      await post('/expenses/bulk-delete', { ids });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, isLoading, error };
+}
+
+interface UseExpenseCategoriesResult {
+  data: string[] | null;
+  isLoading: boolean;
+  error: string | null;
 }
 
 // Хук для получения категорий расходов
-export function useExpenseCategories() {
-  return useQuery({
-    queryKey: [...queryKeys.expenses, 'categories'],
-    queryFn: () => get<string[]>('/expenses/categories'),
-    staleTime: 30 * 60 * 1000, // 30 минут для справочника категорий
-    gcTime: 60 * 60 * 1000, // 1 час в кэше
-  });
+export function useExpenseCategories(): UseExpenseCategoriesResult {
+  const [data, setData] = useState<string[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const result = await get<string[]>('/expenses/categories');
+        setData(result);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  return { data, isLoading, error };
 }
 
 // Утилиты для форматирования

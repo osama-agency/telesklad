@@ -7,6 +7,7 @@ import { IconComponent } from '@/components/webapp/IconComponent';
 import DeliveryDataSheet from './DeliveryDataSheet';
 import LoadingSpinner from './LoadingSpinner';
 import SubscriptionsSheet from './SubscriptionsSheet';
+import toast from 'react-hot-toast';
 
 interface ActionCardItem {
   id: string;
@@ -49,10 +50,22 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
   const [navigatingTo, setNavigatingTo] = useState<string>('');
 
   // Слушаем события обновления подписок
+  const [currentSubscriptionsCount, setCurrentSubscriptionsCount] = useState(subscriptionsCount);
+
   useEffect(() => {
-    const handleSubscriptionsUpdate = () => {
-      // Перезагружаем страницу профиля для обновления счетчика
-      window.location.reload();
+    const handleSubscriptionsUpdate = (event: any) => {
+      // Плавно обновляем счетчик без перезагрузки страницы
+      if (event.detail?.action === 'deleted') {
+        setCurrentSubscriptionsCount(prev => Math.max(0, (prev || 0) - 1));
+        
+        // Haptic feedback для успешного удаления
+        if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+          navigator.vibrate([20, 100, 20]);
+        }
+        
+        // Показываем тост об успешном удалении
+        toast.success('Товар удален из ожидания');
+      }
     };
 
     window.addEventListener('subscriptionsUpdated', handleSubscriptionsUpdate);
@@ -61,6 +74,10 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
       window.removeEventListener('subscriptionsUpdated', handleSubscriptionsUpdate);
     };
   }, []);
+
+  useEffect(() => {
+    setCurrentSubscriptionsCount(subscriptionsCount);
+  }, [subscriptionsCount]);
 
   const handleSaveDeliveryData = async (data: any) => {
     try {
@@ -171,10 +188,10 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
       description: 'Отслеживайте поступление товаров',
       icon: 'clock',
       href: '/webapp/subscriptions',
-      badge: subscriptionsCount && subscriptionsCount > 0 ? {
-        count: subscriptionsCount,
-        text: subscriptionsCount === 1 ? 'товар' : 
-              subscriptionsCount < 5 ? 'товара' : 'товаров',
+      badge: currentSubscriptionsCount && currentSubscriptionsCount > 0 ? {
+        count: currentSubscriptionsCount,
+        text: currentSubscriptionsCount === 1 ? 'товар' : 
+              currentSubscriptionsCount < 5 ? 'товара' : 'товаров',
         type: 'info'
       } : undefined
     },
