@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/libs/prismaDb';
+import { S3Service } from '@/lib/services/s3';
 
 export async function GET(request: NextRequest) {
   try {
@@ -50,6 +51,7 @@ export async function GET(request: NextRequest) {
     const expectedAncestry = parent.ancestry ? `${parent.ancestry}/${productId}` : `${productId}`;
     console.log('Looking for children with ancestry:', expectedAncestry);
 
+    // Get products with their images from ActiveStorage
     const products = await prisma.products.findMany({
       where: {
         ancestry: expectedAncestry,
@@ -72,17 +74,41 @@ export async function GET(request: NextRequest) {
 
     console.log('Found products count:', products.length);
 
-    // Transform the data to match the expected format
-    const transformedProducts = products.map((product: any) => ({
-      id: Number(product.id), // Convert BigInt to Number
-      name: product.name,
-      price: Number(product.price || 0),
-      old_price: product.old_price ? Number(product.old_price) : undefined,
-      stock_quantity: Number(product.stock_quantity),
-      image_url: undefined, // TODO: Implement image URL generation
-    }));
+    // Get images for all products in one query
+    const productIds = products.map(p => Number(p.id));
+    const attachments = await prisma.active_storage_attachments.findMany({
+      where: {
+        record_type: 'Product',
+        record_id: { in: productIds },
+        name: 'image'
+      },
+      include: {
+        active_storage_blobs: true
+      }
+    });
 
-    console.log('Returning products:', transformedProducts.length);
+    // Create a map of product_id -> blob_key
+    const imageMap = new Map<number, string>();
+    attachments.forEach(attachment => {
+      imageMap.set(Number(attachment.record_id), attachment.active_storage_blobs.key);
+    });
+
+    // Transform the data to match the expected format
+    const transformedProducts = products.map((product: any) => {
+      const productId = Number(product.id);
+      const blobKey = imageMap.get(productId);
+      
+      return {
+        id: productId,
+        name: product.name,
+        price: Number(product.price || 0),
+        old_price: product.old_price ? Number(product.old_price) : undefined,
+        stock_quantity: Number(product.stock_quantity),
+        image_url: blobKey ? S3Service.getImageUrl(blobKey) : undefined,
+      };
+    });
+
+    console.log('Returning products with images:', transformedProducts.length);
     return NextResponse.json(transformedProducts);
 
   } catch (error) {

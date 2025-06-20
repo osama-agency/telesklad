@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useState } from "react";
 import { IconComponent } from "@/components/webapp/IconComponent";
 import { AddToCartButton } from "./AddToCartButton";
@@ -49,6 +48,8 @@ function ProductCard({ product, isSubscribed = false, onSubscriptionChange }: Pr
   const [isNotificationEnabled, setIsNotificationEnabled] = useState(isSubscribed);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
 
   // Haptic feedback (только для мобильных устройств)
   const triggerHaptic = (type: 'light' | 'medium' | 'heavy' = 'medium') => {
@@ -137,26 +138,41 @@ function ProductCard({ product, isSubscribed = false, onSubscriptionChange }: Pr
           </div>
         )}
 
-        {/* Product Image - точно как в Rails */}
+        {/* Product Image - улучшенная версия */}
         <div className="product-img">
           <Link href={`/webapp/products/${product.id}`} title={product.name}>
-            <div className="relative">
-              <div className="flex justify-center space-y-8 animate-pulse md:space-y-0 md:space-x-8 rtl:space-x-reverse md:flex md:items-center">
-                <div className="flex items-center justify-center w-full h-48">
+            <div className="relative w-full h-full" style={{ height: '172px' }}>
+              {product.image_url && !imageError ? (
+                <>
+                  {imageLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                      <div className="animate-pulse">
+                        <IconComponent name="no-image" size={40} />
+                      </div>
+                    </div>
+                  )}
+                  <img
+                    src={product.image_url}
+                    alt={product.name}
+                    className={`transition-opacity duration-300 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
+                    loading="lazy"
+                    onLoad={() => {
+                      setImageLoading(false);
+                    }}
+                    onError={() => {
+                      setImageError(true);
+                      setImageLoading(false);
+                    }}
+                  />
+                </>
+              ) : (
+                <div className="flex items-center justify-center w-full h-full bg-gray-100">
                   <IconComponent name="no-image" size={40} />
-                </div>
-              </div>
-              {product.image_url && (
-                <div className="absolute left-0 top-0 block w-full h-full">
-                  <div className="flex justify-center items-center h-full">
-                    <Image
-                      src={product.image_url}
-                      alt={product.name}
-                      width={196}
-                      height={196}
-                      loading="lazy"
-                    />
-                  </div>
+                  {imageError && (
+                    <div className="absolute bottom-1 right-1 text-xs text-red-500">
+                      Error
+                    </div>
+                  )}
                 </div>
               )}
             </div>

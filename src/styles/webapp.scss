@@ -295,6 +295,24 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  
+  /* Стили для изображений */
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    border-radius: 8px;
+    transition: opacity 0.3s ease;
+  }
+  
+  /* Стили для ссылки внутри */
+  a {
+    display: block;
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
 }
 
 .product-wrapper .product-title {
