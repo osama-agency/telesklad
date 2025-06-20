@@ -30,6 +30,7 @@ interface Order {
     quantity: number;
     price: number;
     total: number;
+    image_url?: string;
   }>;
   items_count: number;
   total_items: number;
@@ -314,6 +315,21 @@ const OrdersPage: React.FC = () => {
                     <div className="items-list">
                       {order.items.map((item, index) => (
                         <div key={index} className="order-item-row">
+                          {/* Изображение товара */}
+                          <div className="item-image">
+                            {item.image_url ? (
+                              <img
+                                src={item.image_url}
+                                alt={item.product_name}
+                                className="product-image"
+                              />
+                            ) : (
+                              <div className="no-image-placeholder">
+                                <IconComponent name="no-image" size={16} />
+                              </div>
+                            )}
+                          </div>
+                          
                           <div className="item-info">
                             <span className="item-name">{item.product_name}</span>
                             <span className="item-quantity">×{item.quantity}</span>
@@ -562,6 +578,30 @@ const OrdersPage: React.FC = () => {
           justify-content: space-between;
           align-items: center;
           padding: 6px 0;
+        }
+
+        .item-image {
+          width: 40px;
+          height: 40px;
+          border-radius: 8px;
+          overflow: hidden;
+          margin-right: 12px;
+        }
+
+        .product-image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .no-image-placeholder {
+          width: 100%;
+          height: 100%;
+          background-color: #F3F4F6;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #9CA3AF;
         }
 
         .item-info {

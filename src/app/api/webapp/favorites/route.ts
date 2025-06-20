@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { S3Service } from '@/lib/services/s3';
 
 const prisma = new PrismaClient();
 
@@ -30,15 +31,40 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // Преобразуем данные в нужный формат
-    const favoriteProducts = favorites.map(favorite => ({
-      id: Number(favorite.products.id),
-      name: favorite.products.name,
-      price: Number(favorite.products.price || 0),
-      old_price: favorite.products.old_price ? Number(favorite.products.old_price) : undefined,
-      stock_quantity: Number(favorite.products.stock_quantity),
-      favorited_at: favorite.created_at
-    }));
+    // Получаем изображения для всех избранных товаров
+    const productIds = favorites.map(f => Number(f.products.id));
+    const attachments = await prisma.active_storage_attachments.findMany({
+      where: {
+        record_type: 'Product',
+        record_id: { in: productIds },
+        name: 'image'
+      },
+      include: {
+        active_storage_blobs: true
+      }
+    });
+
+    // Создаём карту product_id -> blob_key
+    const imageMap = new Map<number, string>();
+    attachments.forEach(attachment => {
+      imageMap.set(Number(attachment.record_id), attachment.active_storage_blobs.key);
+    });
+
+    // Преобразуем данные в нужный формат с изображениями
+    const favoriteProducts = favorites.map(favorite => {
+      const productId = Number(favorite.products.id);
+      const blobKey = imageMap.get(productId);
+      
+      return {
+        id: productId,
+        name: favorite.products.name,
+        price: Number(favorite.products.price || 0),
+        old_price: favorite.products.old_price ? Number(favorite.products.old_price) : undefined,
+        stock_quantity: Number(favorite.products.stock_quantity),
+        image_url: blobKey ? S3Service.getImageUrl(blobKey) : undefined,
+        favorited_at: favorite.created_at
+      };
+    });
 
     return NextResponse.json({
       success: true,

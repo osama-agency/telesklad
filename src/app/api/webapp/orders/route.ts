@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import LoyaltyService from '@/lib/services/loyaltyService';
+import { S3Service } from '@/lib/services/s3';
 
 const prisma = new PrismaClient();
 
@@ -204,6 +205,32 @@ export async function GET(request: NextRequest) {
       }
     });
 
+    // Получаем все уникальные product_id из всех заказов
+    const allProductIds = new Set<number>();
+    orders.forEach(order => {
+      order.order_items.forEach(item => {
+        allProductIds.add(Number(item.products.id));
+      });
+    });
+
+    // Получаем изображения для всех товаров
+    const attachments = await prisma.active_storage_attachments.findMany({
+      where: {
+        record_type: 'Product',
+        record_id: { in: Array.from(allProductIds) },
+        name: 'image'
+      },
+      include: {
+        active_storage_blobs: true
+      }
+    });
+
+    // Создаём карту product_id -> blob_key
+    const imageMap = new Map<number, string>();
+    attachments.forEach(attachment => {
+      imageMap.set(Number(attachment.record_id), attachment.active_storage_blobs.key);
+    });
+
     // Преобразуем заказы в нужный формат
     const transformedOrders = orders.map(order => {
       const statusKey = ORDER_STATUSES[order.status as keyof typeof ORDER_STATUSES] || 'unpaid';
@@ -225,14 +252,20 @@ export async function GET(request: NextRequest) {
           name: order.bank_cards.name,
           number: order.bank_cards.number
         } : null,
-        items: order.order_items.map(item => ({
-          id: Number(item.id),
-          product_id: Number(item.products.id),
-          product_name: item.products.name,
-          quantity: item.quantity,
-          price: Number(item.price),
-          total: Number(item.price) * item.quantity
-        })),
+        items: order.order_items.map(item => {
+          const productId = Number(item.products.id);
+          const blobKey = imageMap.get(productId);
+          
+          return {
+            id: Number(item.id),
+            product_id: productId,
+            product_name: item.products.name,
+            quantity: item.quantity,
+            price: Number(item.price),
+            total: Number(item.price) * item.quantity,
+            image_url: blobKey ? S3Service.getImageUrl(blobKey) : undefined
+          };
+        }),
         items_count: order.order_items.length,
         total_items: order.order_items.reduce((sum, item) => sum + item.quantity, 0)
       };
