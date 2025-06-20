@@ -1,9 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import DaDataInput from './DaDataInput';
-import SaveStatusIndicator from './SaveStatusIndicator';
-import useFormPersistence from '../../../hooks/useFormPersistence';
 
 interface DeliveryData {
   address: string;
@@ -29,26 +27,78 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
   onDataChange,
   showPersonalInfo = true 
 }) => {
-  // Используем хук автосохранения
-  const {
-    formData,
-    updateField,
-    updateFields,
-    isValid,
-    isLoaded,
-    saveStatus
-  } = useFormPersistence<DeliveryData>({
-    key: 'webapp_delivery_data',
-    initialData,
-    debounceMs: 300,
-    onDataChange
+  const [formData, setFormData] = useState<DeliveryData>({
+    address: initialData?.address || '',
+    street: initialData?.street || '',
+    home: initialData?.home || '',
+    apartment: initialData?.apartment || '',
+    build: initialData?.build || '',
+    postal_code: initialData?.postal_code || 0,
+    first_name: initialData?.first_name || '',
+    last_name: initialData?.last_name || '',
+    middle_name: initialData?.middle_name || '',
+    phone_number: initialData?.phone_number || ''
   });
 
-  // Проверка обязательных полей
-  const requiredFields: (keyof DeliveryData)[] = [
-    'address', 'street', 'home', 'first_name', 'phone_number'
-  ];
-  const isFormValid = isValid(requiredFields);
+  // Обновляем форму при изменении initialData (когда загружается профиль)
+  useEffect(() => {
+    if (initialData && Object.keys(initialData).length > 0) {
+      setFormData(prev => ({
+        address: initialData.address || prev.address,
+        street: initialData.street || prev.street,
+        home: initialData.home || prev.home,
+        apartment: initialData.apartment || prev.apartment,
+        build: initialData.build || prev.build,
+        postal_code: initialData.postal_code || prev.postal_code,
+        first_name: initialData.first_name || prev.first_name,
+        last_name: initialData.last_name || prev.last_name,
+        middle_name: initialData.middle_name || prev.middle_name,
+        phone_number: initialData.phone_number || prev.phone_number
+      }));
+    }
+  }, [
+    initialData?.address,
+    initialData?.street,
+    initialData?.home,
+    initialData?.apartment,
+    initialData?.build,
+    initialData?.postal_code,
+    initialData?.first_name,
+    initialData?.last_name,
+    initialData?.middle_name,
+    initialData?.phone_number
+  ]);
+
+  // Уведомляем родительский компонент об изменениях (только при изменении данных формы)
+  useEffect(() => {
+    if (onDataChange && (
+      formData.address ||
+      formData.street ||
+      formData.home ||
+      formData.first_name ||
+      formData.phone_number
+    )) {
+      onDataChange(formData);
+    }
+  }, [
+    formData.address,
+    formData.street,
+    formData.home,
+    formData.apartment,
+    formData.build,
+    formData.postal_code,
+    formData.first_name,
+    formData.last_name,
+    formData.middle_name,
+    formData.phone_number
+  ]);
+
+  const handleInputChange = (field: keyof DeliveryData, value: string | number) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
   const formatPhoneNumber = (value: string) => {
     const cleaned = value.replace(/\D/g, '');
@@ -59,42 +109,20 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
     return `+7 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7, 9)}-${cleaned.slice(9, 11)}`;
   };
 
-  // Показываем индикатор загрузки пока данные не загружены
-  if (!isLoaded) {
-    return (
-      <div className="delivery-form">
-        <div className="main-block mb-5">
-          <h3 className="text-lg font-semibold mb-4">Данные для доставки</h3>
-          <div className="delivery-form-skeleton">
-            <div className="skeleton-line short"></div>
-            <div className="skeleton-line input"></div>
-            <div className="skeleton-line short"></div>
-            <div className="skeleton-line input"></div>
-            <div className="skeleton-line short"></div>
-            <div className="skeleton-line input"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="delivery-form">
       <div className="main-block mb-5">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">Данные для доставки</h3>
-          <SaveStatusIndicator status={saveStatus} />
-        </div>
+        <h3 className="text-lg font-semibold mb-4">Данные для доставки</h3>
 
         {showPersonalInfo && (
           <>
             <div className="input-container">
-              <label htmlFor="delivery_middle_name" className="required">Фамилия</label>
+              <label htmlFor="delivery_middle_name">Фамилия</label>
               <DaDataInput
                 type="fio"
                 fioType="surname"
                 value={formData.middle_name}
-                onChange={(value: string) => updateField('middle_name', value)}
+                onChange={(value: string) => handleInputChange('middle_name', value)}
                 placeholder="Введите фамилию"
                 id="delivery_middle_name"
                 required
@@ -102,12 +130,12 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
             </div>
 
             <div className="input-container">
-              <label htmlFor="delivery_first_name" className="required">Имя</label>
+              <label htmlFor="delivery_first_name">Имя</label>
               <DaDataInput
                 type="fio"
                 fioType="name"
                 value={formData.first_name}
-                onChange={(value: string) => updateField('first_name', value)}
+                onChange={(value: string) => handleInputChange('first_name', value)}
                 placeholder="Введите имя"
                 id="delivery_first_name"
                 required
@@ -115,12 +143,12 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
             </div>
 
             <div className="input-container">
-              <label htmlFor="delivery_last_name" className="required">Отчество</label>
+              <label htmlFor="delivery_last_name">Отчество</label>
               <input
                 type="text"
                 id="delivery_last_name"
                 value={formData.last_name}
-                onChange={(e) => updateField('last_name', e.target.value)}
+                onChange={(e) => handleInputChange('last_name', e.target.value)}
                 className="input-str"
                 required
                 minLength={2}
@@ -130,14 +158,14 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
             </div>
 
             <div className="input-container">
-              <label htmlFor="delivery_phone_number" className="required">Номер телефона</label>
+              <label htmlFor="delivery_phone_number">Номер телефона</label>
               <input
                 type="tel"
                 id="delivery_phone_number"
                 value={formData.phone_number}
                 onChange={(e) => {
                   const formatted = formatPhoneNumber(e.target.value);
-                  updateField('phone_number', formatted);
+                  handleInputChange('phone_number', formatted);
                 }}
                 className="input-str"
                 required
@@ -151,18 +179,17 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
         )}
 
         <div className="input-container">
-          <label htmlFor="delivery_address" className="required">Город</label>
+          <label htmlFor="delivery_address">Город</label>
           <DaDataInput
             type="address"
             addressType="city"
             value={formData.address}
             onChange={(value, data) => {
-              const updates: Partial<DeliveryData> = { address: value };
+              handleInputChange('address', value);
               // Автозаполнение индекса если доступен
               if (data?.postal_code) {
-                updates.postal_code = parseInt(data.postal_code) || 0;
+                handleInputChange('postal_code', parseInt(data.postal_code) || 0);
               }
-              updateFields(updates);
             }}
             placeholder="Введите город"
             id="delivery_address"
@@ -171,22 +198,21 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
         </div>
 
         <div className="input-container">
-          <label htmlFor="delivery_street" className="required">Улица</label>
+          <label htmlFor="delivery_street">Улица</label>
           <DaDataInput
             type="address"
             addressType="street"
             cityContext={formData.address}
             value={formData.street}
             onChange={(value, data) => {
-              const updates: Partial<DeliveryData> = { street: value };
+              handleInputChange('street', value);
               // Автозаполнение полей адреса если доступны
               if (data) {
-                if (data.house) updates.home = data.house;
-                if (data.flat) updates.apartment = data.flat;
-                if (data.block || data.stead) updates.build = data.block || data.stead;
-                if (data.postal_code) updates.postal_code = parseInt(data.postal_code) || 0;
+                if (data.house) handleInputChange('home', data.house);
+                if (data.flat) handleInputChange('apartment', data.flat);
+                if (data.block || data.stead) handleInputChange('build', data.block || data.stead);
+                if (data.postal_code) handleInputChange('postal_code', parseInt(data.postal_code) || 0);
               }
-              updateFields(updates);
             }}
             placeholder="Введите улицу"
             id="delivery_street"
@@ -197,12 +223,12 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
         <div className="flex gap-4">
           <div className="w-1/2">
             <div className="input-container">
-              <label htmlFor="delivery_home" className="required">Дом</label>
+              <label htmlFor="delivery_home">Дом</label>
               <input
                 type="text"
                 id="delivery_home"
                 value={formData.home}
-                onChange={(e) => updateField('home', e.target.value)}
+                onChange={(e) => handleInputChange('home', e.target.value)}
                 className="input-str"
                 required
                 placeholder="Номер дома"
@@ -216,7 +242,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
                 type="text"
                 id="delivery_apartment"
                 value={formData.apartment}
-                onChange={(e) => updateField('apartment', e.target.value)}
+                onChange={(e) => handleInputChange('apartment', e.target.value)}
                 className="input-str"
                 placeholder="Номер квартиры"
               />
@@ -232,7 +258,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
                 type="text"
                 id="delivery_build"
                 value={formData.build}
-                onChange={(e) => updateField('build', e.target.value)}
+                onChange={(e) => handleInputChange('build', e.target.value)}
                 className="input-str"
                 placeholder="Корпус/строение"
               />
@@ -240,12 +266,12 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
           </div>
           <div className="w-1/2">
             <div className="input-container">
-              <label htmlFor="delivery_postal_code" className="required">Почтовый индекс</label>
+              <label htmlFor="delivery_postal_code">Почтовый индекс</label>
               <input
                 type="number"
                 id="delivery_postal_code"
                 value={formData.postal_code || ''}
-                onChange={(e) => updateField('postal_code', parseInt(e.target.value) || 0)}
+                onChange={(e) => handleInputChange('postal_code', parseInt(e.target.value) || 0)}
                 className="input-str"
                 required
                 placeholder="000000"
@@ -256,16 +282,9 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
             </div>
           </div>
         </div>
-
-        {/* Индикатор валидности формы */}
-        {!isFormValid && (
-          <div className="form-validation-warning">
-            <p>Заполните все обязательные поля для продолжения</p>
-          </div>
-        )}
       </div>
     </div>
   );
 };
 
-export default DeliveryForm;
+export default DeliveryForm; 

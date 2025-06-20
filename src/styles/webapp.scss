@@ -3057,3 +3057,192 @@
     }
   }
 } 
+/* ===============================================
+   FORM PERSISTENCE INDICATORS
+   =============================================== */
+
+/* Индикаторы статуса сохранения */
+.save-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  
+  &.saving {
+    color: #777777;
+  }
+  
+  &.saved {
+    color: #48C928;
+  }
+  
+  .spinner {
+    width: 12px;
+    height: 12px;
+    border: 1px solid #777777;
+    border-top: 1px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Индикатор валидности формы */
+.form-validation-warning {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background-color: #fefce8;
+  border: 1px solid #fef3c7;
+  border-radius: 8px;
+  
+  p {
+    font-size: 14px;
+    color: #92400e;
+    margin: 0;
+    
+    &::before {
+      content: '⚠️';
+      margin-right: 8px;
+    }
+  }
+}
+
+/* Улучшенные стили для полей формы с состояниями */
+.input-container {
+  position: relative;
+  
+  .input-str {
+    transition: all 0.2s ease;
+    
+    &:focus {
+      border-color: #48C928;
+      box-shadow: 0 0 0 3px rgba(72, 201, 40, 0.1);
+    }
+    
+    &.error {
+      border-color: #ef4444;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
+    
+    &.success {
+      border-color: #48C928;
+    }
+  }
+  
+  label {
+    font-weight: 500;
+    color: #3D4453;
+    margin-bottom: 6px;
+    display: block;
+    
+    &.required::after {
+      content: ' *';
+      color: #ef4444;
+    }
+  }
+}
+
+/* Анимация появления элементов формы */
+.delivery-form {
+  .input-container {
+    animation: fade-in-up 0.3s ease-out;
+    animation-fill-mode: both;
+    
+    &:nth-child(1) { animation-delay: 0.05s; }
+    &:nth-child(2) { animation-delay: 0.1s; }
+    &:nth-child(3) { animation-delay: 0.15s; }
+    &:nth-child(4) { animation-delay: 0.2s; }
+    &:nth-child(5) { animation-delay: 0.25s; }
+    &:nth-child(6) { animation-delay: 0.3s; }
+    &:nth-child(7) { animation-delay: 0.35s; }
+    &:nth-child(8) { animation-delay: 0.4s; }
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Загрузочный плейсхолдер для формы */
+.delivery-form-skeleton {
+  .skeleton-line {
+    height: 16px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    
+    &.short {
+      width: 25%;
+    }
+    
+    &.input {
+      height: 40px;
+      margin-bottom: 16px;
+    }
+  }
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Адаптивность для индикаторов */
+@media (max-width: 640px) {
+  .save-status {
+    font-size: 11px;
+    
+    .spinner {
+      width: 10px;
+      height: 10px;
+    }
+  }
+  
+  .form-validation-warning {
+    margin-top: 12px;
+    padding: 10px 12px;
+    
+    p {
+      font-size: 13px;
+    }
+  }
+}
+
+@media (max-width: 374px) {
+  .save-status {
+    font-size: 10px;
+    gap: 3px;
+    
+    .spinner {
+      width: 8px;
+      height: 8px;
+    }
+  }
+  
+  .form-validation-warning {
+    margin-top: 10px;
+    padding: 8px 10px;
+    
+    p {
+      font-size: 12px;
+    }
+  }
+}

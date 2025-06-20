@@ -30,24 +30,11 @@ interface DeliveryData {
   phone_number: string;
 }
 
-interface UserProfile {
-  address?: string;
-  street?: string;
-  home?: string;
-  apartment?: string;
-  build?: string;
-  postal_code?: number;
-  first_name?: string;
-  last_name?: string;
-  middle_name?: string;
-  phone_number?: string;
-}
-
 export default function CartPage() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deliveryData, setDeliveryData] = useState<DeliveryData | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const [finalTotal, setFinalTotal] = useState(0);
   const [appliedBonus, setAppliedBonus] = useState(0);
   const [isOrderLoading, setIsOrderLoading] = useState(false);
@@ -61,32 +48,37 @@ export default function CartPage() {
     } else {
       setCartItems([]);
     }
+    setIsLoading(false);
   };
 
   // Загрузка профиля пользователя для предзаполнения данных доставки
   const loadUserProfile = async () => {
     try {
       const response = await fetch('/api/webapp/profile');
+      const data = await response.json();
       
-      if (response.ok) {
-        const data = await response.json();
+      if (data.success && data.user) {
+        setUserProfile(data.user);
         
-        if (data.success && data.user) {
-          const profile: UserProfile = {
-            address: data.user.address,
-            street: data.user.street,
-            home: data.user.home,
-            apartment: data.user.apartment,
-            build: data.user.build,
-            postal_code: data.user.postal_code,
-            first_name: data.user.first_name,
-            last_name: data.user.last_name,
-            middle_name: data.user.middle_name,
-            phone_number: data.user.phone_number
-          };
-          
-          setUserProfile(profile);
+        // Предзаполняем данные доставки ТОЛЬКО если у пользователя есть данные в профиле
+        const hasDeliveryData = data.user.address || data.user.street || data.user.home || 
+                               data.user.first_name || data.user.phone_number;
+        
+        if (hasDeliveryData) {
+          setDeliveryData({
+            address: data.user.address || '',
+            street: data.user.street || '',
+            home: data.user.home || '',
+            apartment: data.user.apartment || '',
+            build: data.user.build || '',
+            postal_code: data.user.postal_code || 0,
+            first_name: data.user.first_name || '',
+            last_name: data.user.last_name || '',
+            middle_name: data.user.middle_name || '',
+            phone_number: data.user.phone_number || ''
+          });
         }
+        // Если данных нет - оставляем deliveryData как null (пустая форма)
       }
     } catch (error) {
       console.error('Error loading user profile:', error);
@@ -96,8 +88,24 @@ export default function CartPage() {
   useEffect(() => {
     const initializePage = async () => {
       loadCart();
-      await loadUserProfile();
-      setIsLoading(false);
+      await loadUserProfile(); // Сначала загружаем профиль
+      
+      // Загружаем сохранённые данные доставки ТОЛЬКО если профиль не содержит данных
+      // Это нужно для случаев, когда пользователь уже вводил данные в этой сессии
+      const savedDeliveryData = localStorage.getItem('webapp_delivery_data');
+      if (savedDeliveryData && !deliveryData) {
+        try {
+          const parsed = JSON.parse(savedDeliveryData);
+          // Проверяем, что сохранённые данные не пустые
+          const hasData = parsed.address || parsed.street || parsed.home || 
+                         parsed.first_name || parsed.phone_number;
+          if (hasData) {
+            setDeliveryData(parsed);
+          }
+        } catch (error) {
+          console.error('Error parsing saved delivery data:', error);
+        }
+      }
     };
 
     initializePage();
@@ -111,7 +119,7 @@ export default function CartPage() {
     return () => {
       window.removeEventListener('cartUpdated', handleCartUpdate);
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Обновление количества товара
   const updateQuantity = (productId: number, direction: 'up' | 'down') => {
@@ -138,9 +146,11 @@ export default function CartPage() {
     window.dispatchEvent(new Event('cartUpdated'));
   };
 
-  // Обработчик изменения данных доставки (вызывается автоматически из DeliveryForm)
+  // Обработчик изменения данных доставки
   const handleDeliveryDataChange = useCallback((data: DeliveryData) => {
     setDeliveryData(data);
+    // Сохраняем данные доставки в localStorage для сохранения между сессиями
+    localStorage.setItem('webapp_delivery_data', JSON.stringify(data));
   }, []);
 
   // Обработчик оформления заказа
@@ -169,7 +179,7 @@ export default function CartPage() {
       const result = await response.json();
 
       if (result.success) {
-        // Очищаем корзину и сохраненные данные доставки после успешного оформления
+        // Очищаем корзину после успешного оформления
         clearCart();
         localStorage.removeItem('webapp_delivery_data');
         
@@ -280,9 +290,9 @@ export default function CartPage() {
         </div>
       </div>
 
-      {/* Форма данных для доставки с автосохранением */}
+      {/* Форма данных для доставки */}
       <DeliveryForm
-        initialData={userProfile || undefined}
+        initialData={deliveryData || undefined}
         onDataChange={handleDeliveryDataChange}
         showPersonalInfo={true}
       />
@@ -319,4 +329,4 @@ export default function CartPage() {
       </div>
     </>
   );
-}
+} 
