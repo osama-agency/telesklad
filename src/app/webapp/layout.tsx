@@ -1,12 +1,45 @@
+"use client";
+
 import { type PropsWithChildren } from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import "@/styles/webapp.scss";
 import { IconComponent } from "@/components/webapp/IconComponent";
 import { CartSummary } from "./_components/CartSummary";
+import { BottomNavigation } from "./_components/BottomNavigation";
 
 export default function WebappLayout({ children }: PropsWithChildren) {
+  const pathname = usePathname();
+  
+  // Определяем класс страницы на основе пути
+  const getPageClass = () => {
+    if (pathname === "/webapp") return "catalog-page";
+    if (pathname.startsWith("/webapp/favorites")) return "favorites-page";
+    if (pathname.startsWith("/webapp/cart")) return "cart-page";
+    if (pathname.startsWith("/webapp/profile")) return "profile-page";
+    return "";
+  };
+
   return (
-    <div className="webapp-container">
+    <>
+      {/* Стили для устранения пустого пространства */}
+      <style jsx global>{`
+        html, body {
+          height: auto !important;
+          min-height: 0 !important;
+          background-color: #f9f9f9 !important;
+          margin: 0;
+          padding: 0;
+          overflow-x: hidden;
+        }
+        
+        #__next {
+          height: auto !important;
+          min-height: 0 !important;
+        }
+      `}</style>
+      
+      <div className={`webapp-container ${getPageClass()}`}>
       {/* Header точно как в Rails */}
       <header className="webapp-header">
         <div className="container-adaptive py-3">
@@ -31,27 +64,9 @@ export default function WebappLayout({ children }: PropsWithChildren) {
       {/* Cart Summary - глобально для всех страниц */}
       <CartSummary />
 
-      {/* Fixed bottom navigation - точно как в Rails */}
-      <nav className="fixed-menu">
-        <div className="menu-grid">
-          <Link href="/webapp" className="menu-item active">
-            <IconComponent name="catalog" size={20} />
-            <span className="menu-text">Каталог</span>
-          </Link>
-          <Link href="/webapp/favorites" className="menu-item">
-            <IconComponent name="unfavorite" size={20} />
-            <span className="menu-text">Избранное</span>
-          </Link>
-          <Link href="/webapp/profile" className="menu-item">
-            <IconComponent name="profile" size={20} />
-            <span className="menu-text">Профиль</span>
-          </Link>
-          <Link href="/webapp/support" className="menu-item">
-            <IconComponent name="support" size={20} />
-            <span className="menu-text">Поддержка</span>
-          </Link>
+        {/* Fixed bottom navigation - динамическое с активной страницей */}
+        <BottomNavigation />
         </div>
-      </nav>
-    </div>
+    </>
   );
 } 

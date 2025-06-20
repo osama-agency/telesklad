@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { IconComponent } from '@/components/webapp/IconComponent';
 import DeliveryDataSheet from './DeliveryDataSheet';
+import LoadingSpinner from './LoadingSpinner';
 
 interface ActionCardItem {
   id: string;
@@ -35,9 +36,11 @@ interface User {
 interface ActionCardsProps {
   isAdmin: boolean;
   user: User;
+  subscriptionsCount?: number;
+  ordersCount?: number;
 }
 
-const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user }) => {
+const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsCount, ordersCount }) => {
   const router = useRouter();
   const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
@@ -156,11 +159,12 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user }) => {
       description: 'Отслеживайте поступление товаров',
       icon: 'clock',
       href: '/webapp/subscriptions',
-      badge: {
-        count: 3,
-        text: 'товара',
+      badge: subscriptionsCount && subscriptionsCount > 0 ? {
+        count: subscriptionsCount,
+        text: subscriptionsCount === 1 ? 'товар' : 
+              subscriptionsCount < 5 ? 'товара' : 'товаров',
         type: 'info'
-      }
+      } : undefined
     },
     {
       id: 'orders',
@@ -168,11 +172,12 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user }) => {
       description: 'Ваши покупки и доставки',
       icon: 'cart2',
       href: '/webapp/orders',
-      badge: {
-        count: 12,
-        text: 'заказов',
+      badge: ordersCount && ordersCount > 0 ? {
+        count: ordersCount,
+        text: ordersCount === 1 ? 'заказ' : 
+              ordersCount < 5 ? 'заказа' : 'заказов',
         type: 'success'
-      }
+      } : undefined
     }
   ];
 
@@ -299,20 +304,14 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user }) => {
 
   // Показываем preloader если идет навигация
   if (isNavigating) {
-    return (
-      <div className="flex justify-center items-center min-h-[40vh]">
-        <div className="loading-spinner">
-          <div className="spinner"></div>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner variant="page" size="lg" />;
   }
 
   return (
     <>
-      <div className="action-cards-container">
-        {actionItems.map(renderActionCard)}
-      </div>
+    <div className="action-cards-container">
+      {actionItems.map(renderActionCard)}
+    </div>
 
       {/* Модальное окно данных доставки */}
       <DeliveryDataSheet

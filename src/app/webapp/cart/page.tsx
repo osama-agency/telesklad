@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { CartItemComponent } from "../_components/CartItemComponent";
 import { IconComponent } from "@/components/webapp/IconComponent";
+import LoadingSpinner from "../_components/LoadingSpinner";
+import DeliveryForm from "../_components/DeliveryForm";
+import CartCheckoutSummary from "../_components/CartCheckoutSummary";
 
 interface CartItem {
   id: number;
@@ -14,9 +17,27 @@ interface CartItem {
   image_url?: string;
 }
 
+interface DeliveryData {
+  address: string;
+  street: string;
+  home: string;
+  apartment: string;
+  build: string;
+  postal_code: number;
+  first_name: string;
+  last_name: string;
+  middle_name: string;
+  phone_number: string;
+}
+
 export default function CartPage() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [deliveryData, setDeliveryData] = useState<DeliveryData | null>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [finalTotal, setFinalTotal] = useState(0);
+  const [appliedBonus, setAppliedBonus] = useState(0);
+  const [isOrderLoading, setIsOrderLoading] = useState(false);
 
   // Загрузка корзины
   const loadCart = () => {
@@ -30,8 +51,64 @@ export default function CartPage() {
     setIsLoading(false);
   };
 
+  // Загрузка профиля пользователя для предзаполнения данных доставки
+  const loadUserProfile = async () => {
+    try {
+      const response = await fetch('/api/webapp/profile');
+      const data = await response.json();
+      
+      if (data.success && data.user) {
+        setUserProfile(data.user);
+        
+        // Предзаполняем данные доставки ТОЛЬКО если у пользователя есть данные в профиле
+        const hasDeliveryData = data.user.address || data.user.street || data.user.home || 
+                               data.user.first_name || data.user.phone_number;
+        
+        if (hasDeliveryData) {
+          setDeliveryData({
+            address: data.user.address || '',
+            street: data.user.street || '',
+            home: data.user.home || '',
+            apartment: data.user.apartment || '',
+            build: data.user.build || '',
+            postal_code: data.user.postal_code || 0,
+            first_name: data.user.first_name || '',
+            last_name: data.user.last_name || '',
+            middle_name: data.user.middle_name || '',
+            phone_number: data.user.phone_number || ''
+          });
+        }
+        // Если данных нет - оставляем deliveryData как null (пустая форма)
+      }
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+    }
+  };
+
   useEffect(() => {
-    loadCart();
+    const initializePage = async () => {
+      loadCart();
+      await loadUserProfile(); // Сначала загружаем профиль
+      
+      // Загружаем сохранённые данные доставки ТОЛЬКО если профиль не содержит данных
+      // Это нужно для случаев, когда пользователь уже вводил данные в этой сессии
+      const savedDeliveryData = localStorage.getItem('webapp_delivery_data');
+      if (savedDeliveryData && !deliveryData) {
+        try {
+          const parsed = JSON.parse(savedDeliveryData);
+          // Проверяем, что сохранённые данные не пустые
+          const hasData = parsed.address || parsed.street || parsed.home || 
+                         parsed.first_name || parsed.phone_number;
+          if (hasData) {
+            setDeliveryData(parsed);
+          }
+        } catch (error) {
+          console.error('Error parsing saved delivery data:', error);
+        }
+      }
+    };
+
+    initializePage();
 
     // Слушаем изменения корзины
     const handleCartUpdate = () => {
@@ -42,7 +119,7 @@ export default function CartPage() {
     return () => {
       window.removeEventListener('cartUpdated', handleCartUpdate);
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Обновление количества товара
   const updateQuantity = (productId: number, direction: 'up' | 'down') => {
@@ -69,9 +146,69 @@ export default function CartPage() {
     window.dispatchEvent(new Event('cartUpdated'));
   };
 
+  // Обработчик изменения данных доставки
+  const handleDeliveryDataChange = useCallback((data: DeliveryData) => {
+    setDeliveryData(data);
+    // Сохраняем данные доставки в localStorage для сохранения между сессиями
+    localStorage.setItem('webapp_delivery_data', JSON.stringify(data));
+  }, []);
+
+  // Обработчик оформления заказа
+  const handlePlaceOrder = async () => {
+    if (!deliveryData || isOrderLoading) return;
+
+    setIsOrderLoading(true);
+    
+    try {
+      // Создаем заказ с примененными бонусами
+      const orderData = {
+        delivery_data: deliveryData,
+        cart_items: cartItems,
+        bonus: appliedBonus,
+        total: finalTotal
+      };
+
+      const response = await fetch('/api/webapp/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData)
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Очищаем корзину после успешного оформления
+        clearCart();
+        localStorage.removeItem('webapp_delivery_data');
+        
+        // Показываем уведомление об успешном оформлении
+        alert('Заказ успешно оформлен!');
+        
+        // Перенаправляем на страницу заказов
+        window.location.href = '/webapp/orders';
+      } else {
+        alert(result.error || 'Ошибка при оформлении заказа');
+      }
+    } catch (error) {
+      console.error('Order creation error:', error);
+      alert('Ошибка при оформлении заказа');
+    } finally {
+      setIsOrderLoading(false);
+    }
+  };
+
   // Подсчёт общих значений
   const totalQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = cartItems.reduce((sum, item) => sum + (item.product_price * item.quantity), 0);
+
+  // Проверка заполненности формы доставки
+  const isDeliveryFormValid = deliveryData && 
+    deliveryData.address && 
+    deliveryData.street && 
+    deliveryData.home && 
+    deliveryData.first_name && 
+    deliveryData.phone_number;
 
   // Set document title for Telegram Web App
   useEffect(() => {
@@ -89,10 +226,9 @@ export default function CartPage() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-[50vh]">
-        <div className="loading-spinner">
-          <div className="spinner"></div>
-        </div>
+      <div className="webapp-container cart-page">
+        <h1>Корзина</h1>
+        <LoadingSpinner variant="page" size="lg" />
       </div>
     );
   }
@@ -154,17 +290,34 @@ export default function CartPage() {
         </div>
       </div>
 
-      {/* Итоговая информация и кнопка оформления */}
-      <div className="main-block cart-summary-info">
-        <div className="flex justify-between items-center mb-4">
-          <span className="text-lg font-semibold">Итого:</span>
-          <span className="text-xl font-bold text-green-600">
-            {Math.floor(totalPrice)} ₽
-          </span>
-        </div>
-        
-        <button className="webapp-btn webapp-btn-big w-full">
-          Оформить заказ
+      {/* Форма данных для доставки */}
+      <DeliveryForm
+        initialData={deliveryData || undefined}
+        onDataChange={handleDeliveryDataChange}
+        showPersonalInfo={true}
+      />
+
+      {/* Система лояльности и итоговая информация */}
+      <CartCheckoutSummary
+        onTotalChange={setFinalTotal}
+        onBonusChange={setAppliedBonus}
+      />
+
+      {/* Кнопка оформления заказа */}
+      <div className="main-block">
+        <button 
+          className="webapp-btn webapp-btn-big w-full"
+          disabled={!isDeliveryFormValid || isOrderLoading}
+          onClick={handlePlaceOrder}
+        >
+          {isOrderLoading ? (
+            <span className="flex items-center justify-center gap-2">
+              <LoadingSpinner variant="default" size="sm" />
+              Оформляем заказ...
+            </span>
+          ) : (
+            'Оформить заказ'
+          )}
         </button>
         
         <Link 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { IconComponent } from "@/components/webapp/IconComponent";
+import LoadingSpinner from "../_components/LoadingSpinner";
 
 interface FAQItem {
   id: number;
@@ -83,11 +84,7 @@ export default function SupportPage() {
     return (
       <div className="webapp-container support-page">
         <h1>Поддержка</h1>
-        <div className="flex justify-center items-center min-h-[40vh]">
-          <div className="loading-spinner">
-            <div className="spinner"></div>
-          </div>
-        </div>
+        <LoadingSpinner variant="page" size="lg" />
       </div>
     );
   }

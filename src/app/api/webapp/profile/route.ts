@@ -3,41 +3,250 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// Временный пользователь для демонстрации
-// В реальном проекте ID будет из сессии/токена
-const DEMO_USER_ID = 1;
+// Фиксированный тестовый пользователь
+const TEST_USER_ID = 9999;
 
-// GET /api/webapp/profile - получить данные профиля
-export async function GET(request: NextRequest) {
+// Функция для создания тестовых заказов
+async function createTestOrders(userId: number) {
   try {
-    // Получаем данные пользователя из базы данных
-    const user = await prisma.users.findUnique({
-      where: { id: DEMO_USER_ID },
+    // Получаем несколько товаров для заказов
+    const products = await prisma.products.findMany({
+      where: {
+        deleted_at: null,
+        price: { not: null }
+      },
+      take: 6,
+      orderBy: { id: 'asc' }
+    });
+
+    if (products.length === 0) {
+      console.log('No products found for test orders');
+      return;
+    }
+
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    // Заказ 1: Доставлен (самый старый)
+    const order1 = await prisma.orders.create({
+      data: {
+        user_id: userId,
+        total_amount: Number(products[0].price) * 2 + Number(products[1].price),
+        status: 3, // delivered
+        created_at: oneMonthAgo,
+        updated_at: oneMonthAgo,
+        paid_at: oneMonthAgo,
+        shipped_at: new Date(oneMonthAgo.getTime() + 2 * 24 * 60 * 60 * 1000),
+        tracking_number: 'TRK001',
+        has_delivery: true,
+        bonus: 50
+      }
+    });
+
+    // Товары для заказа 1
+    await prisma.order_items.createMany({
+      data: [
+        {
+          order_id: order1.id,
+          product_id: products[0].id,
+          quantity: 2,
+          price: products[0].price,
+          name: products[0].name,
+          created_at: oneMonthAgo,
+          updated_at: oneMonthAgo
+        },
+        {
+          order_id: order1.id,
+          product_id: products[1].id,
+          quantity: 1,
+          price: products[1].price,
+          name: products[1].name,
+          created_at: oneMonthAgo,
+          updated_at: oneMonthAgo
+        }
+      ]
+    });
+
+    // Заказ 2: Отправлен
+    const order2 = await prisma.orders.create({
+      data: {
+        user_id: userId,
+        total_amount: Number(products[2].price) + Number(products[3].price) * 3,
+        status: 2, // shipped
+        created_at: twoWeeksAgo,
+        updated_at: twoWeeksAgo,
+        paid_at: twoWeeksAgo,
+        shipped_at: new Date(twoWeeksAgo.getTime() + 1 * 24 * 60 * 60 * 1000),
+        tracking_number: 'TRK002',
+        has_delivery: true,
+        bonus: 75
+      }
+    });
+
+    // Товары для заказа 2
+    await prisma.order_items.createMany({
+      data: [
+        {
+          order_id: order2.id,
+          product_id: products[2].id,
+          quantity: 1,
+          price: products[2].price,
+          name: products[2].name,
+          created_at: twoWeeksAgo,
+          updated_at: twoWeeksAgo
+        },
+        {
+          order_id: order2.id,
+          product_id: products[3].id,
+          quantity: 3,
+          price: products[3].price,
+          name: products[3].name,
+          created_at: twoWeeksAgo,
+          updated_at: twoWeeksAgo
+        }
+      ]
+    });
+
+    // Заказ 3: Оплачен (недавний)
+    const order3 = await prisma.orders.create({
+      data: {
+        user_id: userId,
+        total_amount: Number(products[4].price) * 1 + Number(products[5].price) * 2,
+        status: 1, // paid
+        created_at: oneWeekAgo,
+        updated_at: oneWeekAgo,
+        paid_at: oneWeekAgo,
+        has_delivery: true,
+        bonus: 30
+      }
+    });
+
+    // Товары для заказа 3
+    await prisma.order_items.createMany({
+      data: [
+        {
+          order_id: order3.id,
+          product_id: products[4].id,
+          quantity: 1,
+          price: products[4].price,
+          name: products[4].name,
+          created_at: oneWeekAgo,
+          updated_at: oneWeekAgo
+        },
+        {
+          order_id: order3.id,
+          product_id: products[5].id,
+          quantity: 2,
+          price: products[5].price,
+          name: products[5].name,
+          created_at: oneWeekAgo,
+          updated_at: oneWeekAgo
+        }
+      ]
+    });
+
+    console.log('Test orders created successfully');
+  } catch (error) {
+    console.error('Error creating test orders:', error);
+  }
+}
+
+// Функция для создания или получения тестового пользователя
+async function ensureTestUser() {
+  try {
+    // Проверяем, есть ли тестовый пользователь
+    let user = await prisma.users.findUnique({
+      where: { id: TEST_USER_ID },
       include: {
         account_tiers: true
       }
     });
 
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Пользователь не найден' },
-        { status: 404 }
-      );
+    if (user) {
+      return user;
     }
+
+    // Создаем тестового пользователя с фиксированным ID
+    const defaultTier = await prisma.account_tiers.findFirst({
+      orderBy: { order_threshold: 'asc' }
+    });
+
+    console.log(`Creating test user with ID ${TEST_USER_ID}`);
+
+    const newUser = await prisma.users.create({
+      data: {
+        id: TEST_USER_ID,
+        email: 'test@webapp.local',
+        encrypted_password: '',
+        tg_id: BigInt(999999999),
+        username: 'test_user',
+        first_name: 'Тест',
+        first_name_raw: 'Тест',
+        last_name: 'Пользователь', // это отчество в схеме
+        last_name_raw: 'Пользователь',
+        middle_name: 'Тестович', // это фамилия в схеме
+        phone_number: '+7 (999) 999-99-99',
+        address: 'Тестовый город',
+        street: 'ул. Тестовая',
+        home: '999',
+        apartment: '999',
+        postal_code: 999999,
+        bonus_balance: 1000,
+  order_count: 5,
+        account_tier_id: defaultTier?.id || null,
+        role: 0,
+        is_blocked: false,
+        started: true,
+        created_at: new Date(),
+        updated_at: new Date()
+      },
+      include: {
+        account_tiers: true
+      }
+    });
+
+    // Создаем тестовые заказы
+    await createTestOrders(TEST_USER_ID);
+
+    console.log(`Test user created: ${newUser.first_name} ${newUser.middle_name}`);
+    return newUser;
+
+  } catch (error) {
+    console.error('Error ensuring test user:', error);
+    throw error;
+  }
+}
+
+// GET /api/webapp/profile - получить данные профиля
+export async function GET(request: NextRequest) {
+  try {
+    console.log(`Getting profile for test user ${TEST_USER_ID}`);
+
+    // Получаем или создаем тестового пользователя
+    const user = await ensureTestUser();
+
+    // Подсчитываем реальное количество заказов из базы
+    const ordersCount = await prisma.orders.count({
+      where: { 
+        user_id: TEST_USER_ID
+      }
+    });
 
     // Получаем все уровни лояльности
     const accountTiers = await prisma.account_tiers.findMany({
       orderBy: { order_threshold: 'asc' }
     });
 
-    // Вычисляем remaining_to_next_tier как в Rails
+    // Вычисляем remaining_to_next_tier используя реальное количество заказов
     const currentTier = user.account_tiers;
     const nextTier = accountTiers.find(tier => 
       currentTier ? tier.order_threshold > currentTier.order_threshold : tier.order_threshold > 0
     );
     const remainingToNextTier = nextTier 
-      ? Math.max(nextTier.order_threshold - user.order_count, 0)
-      : null; // Максимальный уровень достигнут
+      ? Math.max(nextTier.order_threshold - ordersCount, 0)
+      : null;
 
     // Преобразуем данные в нужный формат
     const userData = {
@@ -59,7 +268,7 @@ export async function GET(request: NextRequest) {
       build: user.build,
       postal_code: user.postal_code,
       bonus_balance: user.bonus_balance,
-      order_count: user.order_count,
+      order_count: ordersCount,
       account_tier: currentTier ? {
         id: Number(currentTier.id),
         title: currentTier.title,
@@ -79,6 +288,8 @@ export async function GET(request: NextRequest) {
       bonus_percentage: tier.bonus_percentage,
       order_min_amount: tier.order_min_amount
     }));
+
+    console.log(`Profile loaded: ${userData.first_name} ${userData.middle_name}`);
 
     return NextResponse.json({
       success: true,
@@ -100,8 +311,6 @@ export async function GET(request: NextRequest) {
       { success: false, error: 'Ошибка загрузки профиля' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -109,6 +318,9 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const userData = await request.json();
+
+    // Убеждаемся что тестовый пользователь существует
+    await ensureTestUser();
 
     // Валидация обязательных полей
     const requiredFields = ['middle_name', 'first_name', 'last_name', 'phone_number', 'email', 'address', 'street', 'home', 'postal_code'];
@@ -125,9 +337,9 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Обновляем данные пользователя в базе данных
+    // Обновляем данные пользователя
     const updatedUser = await prisma.users.update({
-      where: { id: DEMO_USER_ID },
+      where: { id: TEST_USER_ID },
       data: {
         first_name: userData.first_name,
         last_name: userData.last_name,
@@ -186,7 +398,5 @@ export async function PUT(request: NextRequest) {
       { success: false, error: 'Ошибка обновления профиля' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 } 

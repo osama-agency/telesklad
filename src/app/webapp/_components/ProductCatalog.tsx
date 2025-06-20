@@ -21,12 +21,35 @@ interface Category {
   children?: Category[];
 }
 
+interface Subscription {
+  id: number;
+  product_id: number;
+  product: Product;
+  created_at: string;
+  updated_at: string;
+}
+
 export function ProductCatalog() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Fetch subscriptions
+  const fetchSubscriptions = async () => {
+    try {
+      const response = await fetch('/api/webapp/subscriptions');
+      if (response.ok) {
+        const data = await response.json();
+        // API теперь возвращает объект с полем subscriptions
+        setSubscriptions(data.subscriptions || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch subscriptions:', err);
+    }
+  };
 
   // Fetch categories
   useEffect(() => {
@@ -45,35 +68,51 @@ export function ProductCatalog() {
     fetchCategories();
   }, []);
 
-  // Fetch products
+  // Fetch products and subscriptions
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchData = async () => {
       setLoading(true);
       setError(null);
       
       try {
-        const url = selectedCategory 
+        // Параллельно загружаем товары и подписки
+        const [productsResponse, subscriptionsResponse] = await Promise.all([
+          fetch(selectedCategory 
           ? `/api/webapp/products?category_id=${selectedCategory}`
-          : '/api/webapp/products';
-          
-        const response = await fetch(url);
+            : '/api/webapp/products'),
+          fetch('/api/webapp/subscriptions')
+        ]);
         
-        if (response.ok) {
-          const data = await response.json();
-          setProducts(data);
+        if (productsResponse.ok) {
+          const productsData = await productsResponse.json();
+          setProducts(productsData);
         } else {
           setError('Ошибка загрузки товаров');
         }
+
+        if (subscriptionsResponse.ok) {
+          const subscriptionsData = await subscriptionsResponse.json();
+          // API теперь возвращает объект с полем subscriptions
+          setSubscriptions(subscriptionsData.subscriptions || []);
+        }
       } catch (err) {
         setError('Ошибка соединения');
-        console.error('Failed to fetch products:', err);
+        console.error('Failed to fetch data:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProducts();
+    fetchData();
   }, [selectedCategory]);
+
+  // Обработчик изменения подписок
+  const handleSubscriptionChange = () => {
+    fetchSubscriptions();
+  };
+
+  // Получаем ID товаров, на которые подписан пользователь
+  const subscribedProductIds = subscriptions.map(sub => sub.product_id);
 
   if (error) {
     return (
@@ -104,7 +143,11 @@ export function ProductCatalog() {
       {loading ? (
         <ProductGridSkeleton count={8} />
       ) : products.length > 0 ? (
-        <ProductGrid products={products} />
+        <ProductGrid 
+          products={products}
+          subscribedProductIds={subscribedProductIds}
+          onSubscriptionChange={handleSubscriptionChange}
+        />
       ) : (
         <div className="no-items-wrapper">
           <div className="w-full">

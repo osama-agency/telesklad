@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { IconComponent } from '@/components/webapp/IconComponent';
 import BonusBlock from '../_components/BonusBlock';
 import ActionCards from '../_components/ActionCards';
+import LoadingSpinner from '../_components/LoadingSpinner';
 
 interface AccountTier {
   id: number;
@@ -47,25 +48,53 @@ interface ProfileData {
   next_tier: AccountTier | null;
 }
 
+interface Subscription {
+  id: number;
+  product_id: number;
+  product: any;
+  created_at: string;
+  updated_at: string;
+}
+
 const ProfilePage: React.FC = () => {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadProfile();
+    loadProfileData();
   }, []);
 
-  const loadProfile = async () => {
+  const loadProfileData = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/webapp/profile');
-      const data = await response.json();
+      
+      // Параллельно загружаем профиль и подписки
+      const [profileResponse, subscriptionsResponse] = await Promise.all([
+        fetch('/api/webapp/profile'),
+        fetch('/api/webapp/subscriptions')
+      ]);
 
-      if (data.success) {
-        setProfileData(data);
+      // Проверяем статус ответов перед парсингом JSON
+      if (!profileResponse.ok) {
+        const errorText = await profileResponse.text();
+        console.error('Profile API error:', profileResponse.status, errorText);
+        setError(`Ошибка загрузки профиля: ${profileResponse.status}`);
+        return;
+      }
+
+      const profileData = await profileResponse.json();
+      const subscriptionsData = subscriptionsResponse.ok 
+        ? await subscriptionsResponse.json()
+        : { subscriptions: [] };
+
+      if (profileData.success) {
+        setProfileData(profileData);
+        // API теперь возвращает объект с полем subscriptions
+        setSubscriptions(subscriptionsData.subscriptions || []);
       } else {
-        setError(data.error || 'Ошибка загрузки профиля');
+        setError(profileData.error || 'Ошибка загрузки профиля');
       }
     } catch (err) {
       setError('Ошибка загрузки профиля');
@@ -75,8 +104,6 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-
-
   const isAdminOrManagerOrModerator = (role: number) => {
     return role >= 1; // 1: manager, 2: moderator, 3: admin
   };
@@ -84,9 +111,7 @@ const ProfilePage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="webapp-container profile-page">
-        <div className="text-center py-8">
-          <div className="text-gray-600">Загрузка профиля...</div>
-        </div>
+        <LoadingSpinner variant="page" size="lg" />
       </div>
     );
   }
@@ -97,7 +122,7 @@ const ProfilePage: React.FC = () => {
         <div className="text-center py-8">
           <div className="text-red-600 mb-4">{error}</div>
           <button 
-            onClick={loadProfile}
+            onClick={loadProfileData}
             className="btn btn-secondary"
           >
             Попробовать снова
@@ -130,15 +155,15 @@ const ProfilePage: React.FC = () => {
       </div>
 
       {/* Блок бонусной программы */}
-      <BonusBlock
-        user={user}
-        accountTiers={account_tiers}
-        remainingToNextTier={remaining_to_next_tier}
-        nextTier={next_tier}
-      />
+      <BonusBlock />
 
       {/* Меню действий */}
-      <ActionCards isAdmin={isAdminOrManagerOrModerator(user.role)} user={user} />
+      <ActionCards 
+        isAdmin={isAdminOrManagerOrModerator(user.role)} 
+        user={user}
+        subscriptionsCount={subscriptions.length}
+        ordersCount={user.order_count}
+      />
     </div>
   );
 };

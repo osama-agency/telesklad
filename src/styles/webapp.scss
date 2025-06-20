@@ -48,32 +48,34 @@
   line-height: 1.5;
   color: #3D4453;
   background-color: #f9f9f9;
-  min-height: 100vh;
-  min-height: 100dvh; /* Dynamic viewport height */
+  
+  /* Убираем проблемные min-height */
+  min-height: 0;
+  height: auto;
   
   /* Safe Area Support для iPhone */
   padding-top: env(safe-area-inset-top);
   padding-left: max(env(safe-area-inset-left), 0);
   padding-right: max(env(safe-area-inset-right), 0);
-  padding-bottom: 140px; /* Отступ для фиксированного меню и корзины */
+  
+  /* Базовый отступ снизу только для нижнего меню */
+  padding-bottom: 80px; /* Фиксированное меню 60px + отступ 20px */
 }
 
-/* Убираем лишнюю высоту для страниц с коротким контентом */
-.webapp-container.profile-page {
-  min-height: auto;
-  padding-bottom: 62px; /* Точно по размеру меню (60px) + 2px буфер */
-  overflow: hidden; /* Предотвращаем скролл */
+/* Страницы с корзиной нужен больший отступ */
+.webapp-container.catalog-page,
+.webapp-container.favorites-page {
+  padding-bottom: 140px; /* Меню 60px + корзина 60px + отступ 20px */
 }
 
-.webapp-container.favorites-page,
+/* Страница корзины - только меню */
 .webapp-container.cart-page {
-  min-height: auto;
-  padding-bottom: 140px; /* Отступ для меню + корзина + небольшое пространство */
+  padding-bottom: 80px; /* Только меню 60px + отступ 20px */
 }
 
-/* Для каталога с товарами оставляем больший отступ */
-.webapp-container.catalog-page {
-  padding-bottom: 140px;
+/* Страница профиля - минимальный отступ */
+.webapp-container.profile-page {
+  padding-bottom: 80px; /* Только меню 60px + отступ 20px */
 }
 
 .webapp-container h1 {
@@ -212,7 +214,7 @@
   display: grid;
   gap: clamp(8px, 2vw, 16px);
   grid-template-columns: repeat(2, 1fr); /* 2 колонки на телефонах */
-  margin-bottom: 80px; /* Отступ для нового меню */
+  margin-bottom: 20px; /* Уменьшенный отступ */
   
   @media (min-width: 375px) {
     gap: clamp(12px, 2.5vw, 16px);
@@ -530,6 +532,66 @@
   color: #3AA120;
 }
 
+/* Стили для включенного уведомления */
+.webapp-btn-secondary.notification-enabled {
+  background: linear-gradient(135deg, #48C928 0%, #3AA120 100%);
+  color: white;
+  border: 2px solid #48C928;
+  font-weight: 600;
+  position: relative;
+  
+  /* Убираем loading state для уведомлений */
+  &.loading::after {
+    border-top-color: rgba(255, 255, 255, 0.8);
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+  
+  &:hover {
+    background: linear-gradient(135deg, #3AA120 0%, #2E8B1C 100%);
+    border-color: #3AA120;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(72, 201, 40, 0.3);
+  }
+  
+  &:active {
+    transform: scale(0.98) translateY(0);
+    transition-duration: 0.1s;
+  }
+  
+  /* Пульсирующая анимация для привлечения внимания */
+  &::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(135deg, #48C928 0%, #3AA120 100%);
+    border-radius: inherit;
+    z-index: -1;
+    opacity: 0;
+    animation: notification-pulse 2s infinite;
+  }
+}
+
+@keyframes notification-pulse {
+  0%, 100% { 
+    opacity: 0;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.3;
+    transform: scale(1.02);
+  }
+}
+
+/* Анимация при переключении состояния уведомления */
+.webapp-btn-secondary.animating {
+  transform: scale(0.95);
+  transition-duration: 0.1s;
+}
+
 .webapp-btn-disable {
   background-color: #7777771A;
   color: #777777;
@@ -611,19 +673,7 @@
 
 
 
-/* Корзина */
-.cart-items .price {
-  font-weight: 500;
-  font-size: 10px;
-  line-height: 12px;
-  color: #777777;
-}
-
-.cart-items .count {
-  font-weight: 600;
-  font-size: 12px;
-  line-height: 16px;
-}
+/* Удалены дублированные стили - теперь используем Rails стили выше */
 
 .btn-clear-cart {
   font-weight: 500;
@@ -635,10 +685,10 @@
   background: none;
   border: none;
   transition: color 0.3s;
-}
-
-.btn-clear-cart:hover {
-  color: #666;
+  
+  &:hover {
+    color: #666;
+  }
 }
 
 /* Утилиты */
@@ -724,6 +774,19 @@
 /* Keyframes для анимаций */
 @keyframes button-spin {
   to { transform: rotate(360deg); }
+}
+
+/* Simple Loading Spinner - 2025 */
+.simple-spinner {
+  border-radius: 50%;
+  border: 4px solid #f0f0f0;
+  border-top: 4px solid #48C928;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 @keyframes shimmer {
@@ -1044,26 +1107,102 @@
   }
 }
 
-/* Cart Page Styles - Based on Rails Project */
+/* Cart Page Styles - Exact Rails Project Copy */
+.cart-items {
+  /* Контейнер товаров корзины - точно как в Rails */
+  
+  .price {
+    font-weight: 500;
+    font-size: 10px;
+    line-height: 12px;
+    color: #777777;
+  }
+
+  .count {
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 16px;
+  }
+
+  .buy-btn {
+    padding: 17px 4px;
+    cursor: pointer;
+
+    &:active {
+      .plus-ico {
+        transform: scale(1.2);
+      }
+
+      .minus-ico {
+        transform: scale(0.8);
+      }
+    }
+
+    .plus-ico {
+      margin: 0 4px;
+    }
+
+    .minus-ico {
+      margin: 0 4px;
+    }
+
+    .plus-ico, .minus-ico, .plus-ico::after {
+      width: 12px;
+      height: 2px;
+      background-color: #3D4453;
+      border-radius: 2px;
+      transition: 0.5s all;
+    }
+
+    .plus-ico::after {
+      content: '';
+      display: block;
+      transform: rotate(90deg);
+    }
+
+    &:hover {
+      .plus-ico, .minus-ico, .plus-ico::after {
+        background-color: #48C928;
+      }
+    }
+  }
+
+  .cart-item-price {
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 16px;
+  }
+}
+
+/* Основной стиль элемента корзины - точно как в Rails */
 .cart-item {
-  /* Убираем фон и отступы, как в оригинале */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: clamp(8px, 2vw, 12px);
-  padding: 0;
-  background: transparent;
-  border-radius: 0;
-  transition: all 0.2s ease;
+  
+  .flex.items-center.gap-4 {
+    /* Левая часть: изображение и информация */
+    flex: 1;
+  }
 }
 
 .cart-item-image {
   width: 72px;
   height: 72px;
-  background: #F0F0F0; /* Как в оригинале Rails */
+  background: #F0F0F0;
   border-radius: clamp(8px, 2vw, 12px);
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  
+  img {
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+  }
 }
 
 .cart-item-placeholder {
@@ -1077,60 +1216,48 @@
 
 .cart-item-info {
   flex: 1;
-  min-width: 0; /* Для корректного обрезания текста */
-}
-
-.cart-item-name {
-  font-weight: 500;
-  font-size: clamp(14px, 3.5vw, 16px);
-  line-height: 1.4;
-  color: #3D4453;
-  text-decoration: none;
-  margin-bottom: clamp(4px, 1vw, 6px);
-  display: block;
-  transition: color 0.2s ease;
+  min-width: 0;
   
-  /* Обрезание длинного текста */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  
-  &:hover {
-    color: #48C928;
+  a {
+    font-weight: 500;
+    color: #3D4453;
+    text-decoration: none;
+    display: block;
+    margin-bottom: 4px;
+    transition: color 0.2s ease;
+    
+    &:hover {
+      color: #48C928;
+    }
   }
 }
 
 .cart-item-price {
   font-weight: 500;
-  font-size: 12px; /* Фиксированный размер как в Rails */
-  line-height: 16px; /* Как в Rails */
+  font-size: 12px;
+  line-height: 16px;
   color: #777777;
 }
 
-/* Cart Quantity Controls - Rails Style */
+/* Контролы количества - точная копия Rails стиля */
 .cart-quantity-controls {
   display: flex;
   align-items: center;
-  background: #F0F0F0; /* Точно как в Rails */
+  background: #F0F0F0;
   border-radius: clamp(8px, 2vw, 12px);
-  padding: 0; /* Убираем padding */
-  gap: 0; /* Убираем gap */
+  overflow: hidden;
   min-width: 120px;
-  overflow: hidden; /* Для правильного отображения border-radius */
 }
 
-/* Buy Button - Rails Style */
-.cart-qty-btn {
+.buy-btn {
   background: transparent;
   border: none;
-  padding: 17px 4px; /* Как в Rails */
+  padding: 17px 4px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.5s; /* Как в Rails */
+  transition: all 0.5s;
   
   &:active:not(.disabled) {
     .plus-ico {
@@ -1144,19 +1271,8 @@
   
   &:hover:not(.disabled) {
     .plus-ico, .minus-ico, .plus-ico::after {
-      background-color: #48C928; /* Зеленый при hover */
+      background-color: #48C928;
     }
-  }
-  
-  &.long-pressing {
-    .plus-ico, .minus-ico, .plus-ico::after {
-      background-color: #3AA120;
-    }
-  }
-  
-  &.updating {
-    opacity: 0.7;
-    pointer-events: none;
   }
   
   &.disabled {
@@ -1164,14 +1280,13 @@
     opacity: 0.5;
   }
   
-  /* Rails-style plus and minus icons */
   .plus-ico, .minus-ico {
-    margin: 0 4px; /* Как в Rails */
+    margin: 0 4px;
     width: 12px;
     height: 2px;
-    background-color: #3D4453; /* Дефолтный цвет */
+    background-color: #3D4453;
     border-radius: 2px;
-    transition: all 0.5s; /* Как в Rails */
+    transition: 0.5s all;
   }
   
   .plus-ico::after {
@@ -1182,31 +1297,31 @@
     background-color: #3D4453;
     border-radius: 2px;
     transform: rotate(90deg);
-    transition: all 0.5s;
+    transition: 0.5s all;
   }
 }
 
-/* Rails-style quantity and price display */
+/* Информация о количестве и цене - Rails стиль */
 .cart-quantity-info {
   text-align: center;
   flex: 1;
   min-width: 50px;
-  padding: 0 8px; /* Небольшие отступы */
+  padding: 0 8px;
 }
 
-.cart-quantity {
+.count {
   font-weight: 600;
-  font-size: 12px; /* Фиксированный размер как в Rails */
-  line-height: 16px; /* Как в Rails */
+  font-size: 12px;
+  line-height: 16px;
   color: #3D4453;
-  margin-bottom: 0;
 }
 
-.cart-item-total {
+.price {
   font-weight: 500;
-  font-size: 10px; /* Как в Rails */
-  line-height: 12px; /* Как в Rails */
-  color: #777777; /* Серый цвет как в Rails */
+  font-size: 10px;
+  line-height: 12px;
+  color: #777777;
+  margin-top: 0;
 }
 
 /* Cart Summary Info */
@@ -1224,28 +1339,76 @@
   .text-green-600 {
     color: #48C928;
   }
+  
+  button:disabled {
+    background-color: #cccccc;
+    color: #888888;
+    cursor: not-allowed;
+    
+    &:hover {
+      background-color: #cccccc;
+      transform: none;
+      box-shadow: none;
+    }
+  }
 }
 
-/* Loading Spinner */
-.loading-spinner {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: clamp(40px, 10vw, 60px);
-}
+/* Delivery Form Styles */
+.delivery-form {
+  margin-bottom: clamp(20px, 5vw, 24px);
+  
+  .input-container {
+    margin-bottom: 12px;
+    position: relative;
 
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(72, 201, 40, 0.2);
-  border-top: 3px solid #48C928;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
+    label {
+      font-weight: 500;
+      font-size: 12px;
+      line-height: 16px;
+      margin-bottom: 4px;
+      display: block;
+      color: #3D4453;
+    }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+    .input-str, input {
+      border-radius: 12px;
+      background-color: #F0F0F0;
+      border: 1px solid #F0F0F0;
+      color: #3D4453;
+      padding: 14px 16px;
+      width: 100%;
+      font-family: inherit;
+      font-size: clamp(14px, 3.5vw, 16px);
+      transition: all 0.3s ease;
+
+      &:focus {
+        outline: none;
+        background-color: white;
+        border: 1px solid #48C928;
+      }
+      
+      &::placeholder {
+        color: #777777;
+      }
+    }
+    
+    input[type="number"] {
+      -moz-appearance: textfield;
+      
+      &::-webkit-outer-spin-button,
+      &::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+    }
+  }
+  
+  .line-user {
+    background-color: #F0F0F0;
+    height: 1px;
+    width: 100%;
+    margin: 16px 0;
+  }
 }
 
 /* Адаптивность для корзины - Rails Style */
@@ -1253,14 +1416,19 @@
   .cart-item-image {
     width: 60px;
     height: 60px;
+    
+    img {
+      width: 60px;
+      height: 60px;
+    }
   }
   
   .cart-quantity-controls {
     min-width: 100px;
   }
   
-  .cart-qty-btn {
-    padding: 12px 3px; /* Уменьшенные отступы */
+  .buy-btn {
+    padding: 12px 3px;
     
     .plus-ico, .minus-ico {
       width: 10px;
@@ -1278,14 +1446,19 @@
   .cart-item-image {
     width: 50px;
     height: 50px;
+    
+    img {
+      width: 50px;
+      height: 50px;
+    }
   }
   
   .cart-quantity-controls {
     min-width: 90px;
   }
   
-  .cart-qty-btn {
-    padding: 10px 2px; /* Ещё более компактно */
+  .buy-btn {
+    padding: 10px 2px;
     
     .plus-ico, .minus-ico {
       width: 8px;
@@ -1390,6 +1563,13 @@
     margin: 0 -16px;
     padding-left: 16px;
   }
+}
+
+/* Price title стиль для итоговой стоимости */
+.price-title {
+  font-size: 14px;
+  color: #6B7280;
+  font-weight: 500;
 }
 
 /* Плашка корзины - точно как в Rails */
@@ -2193,5 +2373,687 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* DaData Suggestions Styles - Based on Rails Project */
+.address-wrapper {
+  position: relative;
+
+  .suggestions-wrapper {
+    display: block;
+    position: absolute;
+    background: #f6f6f6;
+    padding: 10px;
+    z-index: 100;
+    width: 100%;
+    border-radius: 8px;
+    box-shadow: 0px 4px 16px 0px #3D44531A;
+    margin-top: 4px;
+
+    .suggestions {
+      display: block;
+      max-height: 200px;
+      overflow-y: auto;
+      padding-right: 8px;
+      margin-right: -8px;
+
+      /* Custom scrollbar - как в Rails проекте */
+      &::-webkit-scrollbar {
+        width: 15px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: #f6f6f6;
+        border: none;
+        border-radius: 8px;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background-color: #48C928;
+        border-radius: 8px;
+        border: 4px solid #f6f6f6;
+      }
+
+      &::-webkit-scrollbar-thumb:hover {
+        background-color: #3AA120;
+      }
+
+      .suggestion-item {
+        padding: 8px 0;
+        cursor: pointer;
+        font-size: 14px;
+        color: #3D4453;
+        border-bottom: 1px solid #e0e0e0;
+        transition: all 0.2s ease;
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        &:hover, &.selected {
+          color: #48C928;
+          background-color: rgba(72, 201, 40, 0.05);
+          padding-left: 8px;
+          border-radius: 4px;
+        }
+
+        /* Первый элемент - заголовок */
+        &:first-child {
+          color: #808080;
+          cursor: default;
+          font-size: 12px;
+          font-weight: 500;
+
+          &:hover {
+            color: #808080;
+            background-color: transparent;
+            padding-left: 0;
+          }
+        }
+      }
+    }
+  }
+}
+
+/* Loading indicator для DaData */
+.suggestion-item.loading {
+  color: #48C928;
+  font-style: italic;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Адаптивность для DaData подсказок */
+@media (max-width: 640px) {
+  .suggestions-wrapper {
+    padding: 8px;
+    
+    .suggestions {
+      max-height: 150px;
+      
+      .suggestion-item {
+        font-size: 13px;
+        padding: 6px 0;
+        
+        &:first-child {
+          font-size: 11px;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 374px) {
+  .suggestions-wrapper {
+    padding: 6px;
+    
+    .suggestions {
+      max-height: 120px;
+      
+      .suggestion-item {
+        font-size: 12px;
+        padding: 5px 0;
+        
+        &:first-child {
+          font-size: 10px;
+        }
+      }
+    }
+  }
+}
+
+/* ===============================================
+   LOYALTY SYSTEM STYLES - Based on Rails Project
+   =============================================== */
+
+/* Bonus Block - Главная страница */
+.bonus-block {
+  border-radius: 20px;
+  background-color: white;
+  box-shadow: 0px 4px 16px 0px #3D44531A;
+  box-shadow: 0px 0px 8px 0px #3D44530D;
+  margin-bottom: 20px;
+  overflow: hidden;
+
+  .bonus-balance {
+    color: #48C928;
+    font-weight: 700;
+    font-size: 32px;
+    line-height: 32px;
+    margin-top: 8px;
+  }
+
+  .account-tier {
+    font-weight: 600;
+    color: #48C928;
+    cursor: pointer;
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    margin-top: 8px;
+
+    &:hover {
+      color: #3AA120;
+    }
+  }
+
+  .bonus-block-footer {
+    background-color: #48C928;
+    padding: 20px;
+    color: white;
+  }
+}
+
+/* Bonus Selector - Корзина */
+.bonus-block-cart {
+  background: linear-gradient(135deg, #f8fff8 0%, #ffffff 100%);
+  border: 1px solid rgba(72, 201, 40, 0.15);
+  position: relative;
+  overflow: hidden;
+  
+  /* Декоративный элемент сверху */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #48C928 0%, #3AA120 100%);
+  }
+
+  h3 {
+    color: #3D4453;
+    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    /* Иконка бонуса */
+    &::before {
+      content: '💰';
+      font-size: 18px;
+    }
+  }
+
+  .bonus-ranges {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #777777;
+    margin-bottom: 12px;
+    font-weight: 600;
+    font-size: 13px;
+    line-height: 16px;
+    
+    div:first-child {
+      color: #48C928;
+      font-weight: 700;
+    }
+    
+    div:last-child {
+      color: #3D4453;
+      font-weight: 700;
+    }
+  }
+
+  .bonus-range {
+    width: 100%;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(to right, #48C928 0%, #48C928 var(--progress, 30%), #e5e5e5 var(--progress, 30%), #e5e5e5 100%);
+    outline: none;
+    transition: all 0.3s ease;
+    margin: 8px 0;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(72, 201, 40, 0.2);
+    }
+
+    /* WebKit стили для ползунка */
+    &::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #48C928 0%, #3AA120 100%);
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(72, 201, 40, 0.4), 0 0 0 4px rgba(72, 201, 40, 0.1);
+      transition: all 0.2s ease;
+      border: 2px solid white;
+
+      &:hover {
+        transform: scale(1.15);
+        box-shadow: 0 6px 16px rgba(72, 201, 40, 0.5), 0 0 0 6px rgba(72, 201, 40, 0.15);
+      }
+
+      &:active {
+        transform: scale(0.95);
+      }
+    }
+
+    /* Firefox стили для ползунка */
+    &::-moz-range-thumb {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #48C928 0%, #3AA120 100%);
+      cursor: pointer;
+      border: 2px solid white;
+      box-shadow: 0 4px 12px rgba(72, 201, 40, 0.4);
+      transition: all 0.2s ease;
+
+      &:hover {
+        transform: scale(1.15);
+        box-shadow: 0 6px 16px rgba(72, 201, 40, 0.5);
+      }
+    }
+
+    /* Firefox дорожка */
+    &::-moz-range-track {
+      height: 8px;
+      border-radius: 4px;
+      background: #e5e5e5;
+    }
+  }
+
+  /* Информация о списании */
+  .mt-3 {
+    background: rgba(72, 201, 40, 0.05);
+    border-radius: 12px;
+    padding: 12px 16px;
+    border: 1px solid rgba(72, 201, 40, 0.1);
+    margin-top: 16px !important;
+    
+    .text-sm {
+      font-size: 14px;
+      color: #3D4453;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      
+      &::before {
+        content: '✨';
+        font-size: 16px;
+      }
+    }
+    
+    .font-semibold {
+      background: linear-gradient(135deg, #48C928 0%, #3AA120 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: 700;
+      font-size: 16px;
+    }
+  }
+
+  /* Подпись снизу */
+  .mt-2 {
+    margin-top: 12px !important;
+    padding-top: 12px;
+    border-top: 1px solid rgba(72, 201, 40, 0.1);
+    
+    .text-xs {
+      font-size: 12px;
+      color: #777777;
+      text-align: center;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      
+      &::before {
+        content: 'ℹ️';
+        font-size: 12px;
+      }
+    }
+  }
+
+  /* Отключенное состояние */
+  &.opacity-50 {
+    background: #f5f5f5;
+    border-color: #e0e0e0;
+    
+    &::before {
+      background: #cccccc;
+    }
+    
+    h3 {
+      color: #999999;
+      
+      &::before {
+        content: '🔒';
+      }
+    }
+    
+    .bonus-range {
+      background: #e0e0e0;
+      cursor: not-allowed;
+      
+      &::-webkit-slider-thumb {
+        background: #cccccc;
+        cursor: not-allowed;
+        
+        &:hover {
+          transform: none;
+          box-shadow: none;
+        }
+      }
+    }
+    
+    p {
+      color: #999999;
+      background: rgba(0, 0, 0, 0.02);
+      border-color: #e0e0e0;
+      
+      &::before {
+        content: '⚠️';
+      }
+    }
+  }
+}
+
+/* Future Bonus Display */
+.bonus-user-up {
+  font-size: 12px;
+  line-height: 16px;
+  text-align: center;
+
+  .price {
+    background-color: #48C928;
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 20px;
+    border-radius: 10px;
+    color: white;
+    padding: 1.5px 8px;
+    margin-left: 8px;
+  }
+}
+
+/* Modal Account Tier - Модальное окно уровней */
+.modal-account-tier {
+  position: fixed;
+  z-index: 100;
+  width: 100%;
+  left: 0;
+  top: 0;
+  background: #0000003d;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  padding: 0 40px;
+
+  &.open {
+    display: flex;
+  }
+
+  .modal-wrapper {
+    border-radius: 20px;
+    background-color: #F9F9F9;
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
+    max-height: 80vh;
+    overflow-y: auto;
+
+    .modal-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+
+      h3 {
+        font-weight: 600;
+        font-size: 18px;
+        color: #3D4453;
+        margin: 0;
+      }
+
+      .close {
+        cursor: pointer;
+        color: #777777;
+        transition: color 0.2s ease;
+
+        &:hover {
+          color: #48C928;
+        }
+      }
+    }
+
+    .modal-body {
+      background-color: white;
+      border-radius: 8px;
+      padding: 12px;
+      border: 1px solid #f0f0f0;
+      transition: all 0.2s ease;
+
+      .title {
+        font-weight: 600;
+        font-size: 16px;
+        line-height: 20px;
+        color: #3D4453;
+      }
+
+      .desc {
+        font-weight: 500;
+        font-size: 12px;
+        line-height: 16px;
+        color: #777777;
+        margin-top: 4px;
+      }
+
+      &.bg-green-50 {
+        background-color: #f0f9f0;
+        border-color: #48C928;
+      }
+    }
+  }
+}
+
+/* Price Title Helper */
+.price-title {
+  font-size: 12px;
+  margin-bottom: 12px;
+  color: #777777;
+}
+
+/* End Price Styling */
+.end-price {
+  font-size: 17px;
+  font-weight: 600;
+  color: #3D4453;
+}
+
+/* Green Text Color */
+.green {
+  color: #48C928;
+}
+
+/* Адаптивность для системы лояльности */
+@media (max-width: 640px) {
+  .bonus-block {
+    margin-bottom: 16px;
+
+    .bonus-balance {
+      font-size: 28px;
+      line-height: 28px;
+    }
+
+    .bonus-block-footer {
+      padding: 16px;
+    }
+  }
+
+  .bonus-block-cart {
+    h3 {
+      font-size: 15px;
+      margin-bottom: 14px;
+      
+      &::before {
+        font-size: 17px;
+      }
+    }
+    
+    .bonus-ranges {
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+    
+    .bonus-range {
+      height: 7px;
+      
+      &::-webkit-slider-thumb {
+        width: 22px;
+        height: 22px;
+      }
+
+      &::-moz-range-thumb {
+        width: 22px;
+        height: 22px;
+      }
+      
+      &::-moz-range-track {
+        height: 7px;
+      }
+    }
+    
+    .mt-3 {
+      padding: 11px 14px;
+      
+      .text-sm {
+        font-size: 13px;
+        
+        &::before {
+          font-size: 15px;
+        }
+      }
+      
+      .font-semibold {
+        font-size: 15px;
+      }
+    }
+  }
+
+  .modal-account-tier {
+    padding: 0 20px;
+
+    .modal-wrapper {
+      padding: 16px;
+      max-width: none;
+
+      .modal-title h3 {
+        font-size: 16px;
+      }
+
+      .modal-body {
+        padding: 10px;
+
+        .title {
+          font-size: 14px;
+        }
+
+        .desc {
+          font-size: 11px;
+        }
+      }
+    }
+  }
+
+  .bonus-user-up {
+    font-size: 11px;
+
+    .price {
+      font-size: 12px;
+      padding: 1px 6px;
+      margin-left: 6px;
+    }
+  }
+}
+
+@media (max-width: 374px) {
+  .bonus-block {
+    .bonus-balance {
+      font-size: 24px;
+      line-height: 24px;
+    }
+  }
+
+  .bonus-block-cart {
+    .bonus-ranges {
+      font-size: 11px;
+    }
+
+    .bonus-range {
+      height: 6px;
+      
+      &::-webkit-slider-thumb {
+        width: 20px;
+        height: 20px;
+      }
+
+      &::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+      }
+      
+      &::-moz-range-track {
+        height: 6px;
+      }
+    }
+    
+    h3 {
+      font-size: 14px;
+      margin-bottom: 12px;
+      
+      &::before {
+        font-size: 16px;
+      }
+    }
+    
+    .mt-3 {
+      padding: 10px 12px;
+      
+      .text-sm {
+        font-size: 13px;
+        
+        &::before {
+          font-size: 14px;
+        }
+      }
+      
+      .font-semibold {
+        font-size: 14px;
+      }
+    }
+    
+    .mt-2 .text-xs {
+      font-size: 11px;
+      
+      &::before {
+        font-size: 11px;
+      }
+    }
   }
 } 

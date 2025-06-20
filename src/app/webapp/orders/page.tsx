@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { IconComponent } from '@/components/webapp/IconComponent';
 import SkeletonLoading from '../_components/SkeletonLoading';
+import LoadingSpinner from '../_components/LoadingSpinner';
 
 interface Order {
   id: number;
@@ -187,7 +188,7 @@ const OrdersPage: React.FC = () => {
           <h1>История заказов</h1>
         </div>
         
-        <SkeletonLoading type="order" count={4} />
+        <LoadingSpinner variant="page" size="lg" />
       </div>
     );
   }
@@ -284,52 +285,92 @@ const OrdersPage: React.FC = () => {
               </div>
 
               <div className="order-content">
-                <div className="order-info">
+                <div className="order-summary">
                   <div className="order-amount">
                     <span className="amount-value">{formatPrice(order.total_amount)}</span>
                     <span className="items-count">
-                      {order.total_items} {order.total_items === 1 ? 'товар' : 'товара'}
+                      {order.total_items} {order.total_items === 1 ? 'товар' : order.total_items < 5 ? 'товара' : 'товаров'}
                     </span>
                   </div>
-                  
+
+                  <div className="order-status">
+                    <span 
+                      className="status-badge"
+                      style={{ 
+                        color: statusInfo.color,
+                        backgroundColor: statusInfo.bgColor
+                      }}
+                    >
+                      <IconComponent name={statusInfo.icon} size={12} />
+                      {statusInfo.label}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Список товаров */}
+                {order.items && order.items.length > 0 && (
+                  <div className="order-items">
+                    <div className="items-header">Товары в заказе:</div>
+                    <div className="items-list">
+                      {order.items.map((item, index) => (
+                        <div key={index} className="order-item-row">
+                          <div className="item-info">
+                            <span className="item-name">{item.product_name}</span>
+                            <span className="item-quantity">×{item.quantity}</span>
+                          </div>
+                          <span className="item-price">{formatPrice(item.total)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Дополнительная информация */}
+                <div className="order-details">
                   {order.tracking_number && (
-                    <div className="delivery-address">
-                      <IconComponent name="right" size={12} />
-                      <span>Трек: {order.tracking_number}</span>
+                    <div className="tracking-section">
+                      <div className="detail-row">
+                        <IconComponent name="right" size={14} />
+                        <span className="detail-label">Трек-номер:</span>
+                        <span className="detail-value">{order.tracking_number}</span>
+                      </div>
+                      <button 
+                        onClick={() => window.open(`https://track24.ru/tracking/${order.tracking_number}`, '_blank')}
+                        className="track-button"
+                      >
+                        <IconComponent name="right" size={16} />
+                        Отследить посылку
+                      </button>
+                    </div>
+                  )}
+                  
+                  {order.paid_at && (
+                    <div className="detail-row">
+                      <IconComponent name="info" size={14} />
+                      <span className="detail-label">Оплачен:</span>
+                      <span className="detail-value">{formatDate(order.paid_at)}</span>
+                    </div>
+                  )}
+                  
+                  {order.shipped_at && (
+                    <div className="detail-row">
+                      <IconComponent name="arrow-right" size={14} />
+                      <span className="detail-label">Отправлен:</span>
+                      <span className="detail-value">{formatDate(order.shipped_at)}</span>
+                    </div>
+                  )}
+                  
+                  {order.bonus > 0 && (
+                    <div className="detail-row bonus-row">
+                      <IconComponent name="star" size={14} />
+                      <span className="detail-label">Бонусы:</span>
+                      <span className="detail-value bonus-value">+{order.bonus}₽</span>
                     </div>
                   )}
                 </div>
-
-                <div className="order-status">
-                  <span 
-                    className="status-badge"
-                    style={{ 
-                      color: statusInfo.color,
-                      backgroundColor: statusInfo.bgColor
-                    }}
-                  >
-                    <IconComponent name={statusInfo.icon} size={12} />
-                    {statusInfo.label}
-                  </span>
-                </div>
               </div>
 
-              <div className="order-actions">
-                <button 
-                  onClick={() => router.push(`/webapp/orders/${order.id}`)}
-                  className="btn-details"
-                >
-                  Подробнее
-                </button>
-                {(order.status === 'delivered' || order.status === 'cancelled') && (
-                  <button 
-                    onClick={() => router.push(`/webapp/orders/${order.id}/reorder`)}
-                    className="btn-reorder"
-                  >
-                    Повторить заказ
-                  </button>
-                )}
-              </div>
+
             </div>
           );
         })}
@@ -461,20 +502,21 @@ const OrdersPage: React.FC = () => {
 
         .order-content {
           display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
+          flex-direction: column;
+          gap: 16px;
           margin-bottom: 16px;
         }
 
-        .order-info {
-          flex: 1;
+        .order-summary {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
         }
 
         .order-amount {
           display: flex;
           align-items: baseline;
           gap: 8px;
-          margin-bottom: 6px;
         }
 
         .amount-value {
@@ -489,18 +531,144 @@ const OrdersPage: React.FC = () => {
           font-weight: 500;
         }
 
-        .delivery-address {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 12px;
-          color: #6B7280;
-          margin-top: 4px;
-        }
-
         .order-status {
           flex-shrink: 0;
-          margin-left: 12px;
+        }
+
+        /* Список товаров */
+        .order-items {
+          background: #F9FAFB;
+          border-radius: 12px;
+          padding: 12px;
+        }
+
+        .items-header {
+          font-size: 12px;
+          font-weight: 600;
+          color: #374151;
+          margin-bottom: 8px;
+          text-transform: uppercase;
+          letter-spacing: 0.025em;
+        }
+
+        .items-list {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .order-item-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 6px 0;
+        }
+
+        .item-info {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex: 1;
+        }
+
+        .item-name {
+          font-size: 13px;
+          color: #374151;
+          font-weight: 500;
+          line-height: 1.3;
+        }
+
+        .item-quantity {
+          font-size: 11px;
+          color: #6B7280;
+          font-weight: 600;
+          background: #E5E7EB;
+          padding: 2px 6px;
+          border-radius: 6px;
+        }
+
+        .item-price {
+          font-size: 13px;
+          font-weight: 600;
+          color: #48C928;
+        }
+
+        /* Дополнительная информация */
+        .order-details {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .detail-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 4px 0;
+        }
+
+        .detail-label {
+          font-size: 12px;
+          color: #6B7280;
+          font-weight: 500;
+          min-width: 80px;
+        }
+
+        .detail-value {
+          font-size: 12px;
+          color: #374151;
+          font-weight: 500;
+        }
+
+        .bonus-row {
+          background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+          border-radius: 8px;
+          padding: 8px 12px;
+          margin: 4px 0;
+        }
+
+        .bonus-value {
+          color: #D97706;
+          font-weight: 700;
+        }
+
+        /* Трек-номер и отслеживание */
+        .tracking-section {
+          background: linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 100%);
+          border: 1px solid #BBF7D0;
+          border-radius: 12px;
+          padding: 12px;
+          margin: 8px 0;
+        }
+
+
+
+        .track-button {
+          width: 100%;
+          margin-top: 8px;
+          padding: 10px 16px;
+          background: linear-gradient(135deg, #48C928 0%, #3AA120 100%);
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          transition: all 0.2s ease;
+        }
+
+        .track-button:hover {
+          background: linear-gradient(135deg, #3AA120 0%, #2E8B1C 100%);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 15px rgba(72, 201, 40, 0.3);
+        }
+
+        .track-button:active {
+          transform: scale(0.98);
         }
 
         .status-badge {
@@ -515,44 +683,7 @@ const OrdersPage: React.FC = () => {
           letter-spacing: 0.025em;
         }
 
-        .order-actions {
-          display: flex;
-          gap: 8px;
-        }
 
-        .btn-details {
-          flex: 1;
-          padding: 10px 16px;
-          border: 1px solid #48C928;
-          background: white;
-          color: #48C928;
-          border-radius: 8px;
-          font-size: 12px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .btn-details:hover {
-          background: #F0FDF4;
-        }
-
-        .btn-reorder {
-          flex: 1;
-          padding: 10px 16px;
-          border: none;
-          background: #48C928;
-          color: white;
-          border-radius: 8px;
-          font-size: 12px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .btn-reorder:hover {
-          background: #3AA120;
-        }
 
         .empty-state {
           display: flex;
@@ -596,18 +727,51 @@ const OrdersPage: React.FC = () => {
             gap: 4px;
           }
           
-          .order-content {
+          .order-summary {
             flex-direction: column;
-            gap: 12px;
+            align-items: flex-start;
+            gap: 8px;
           }
           
-          .order-status {
-            margin-left: 0;
-            align-self: flex-start;
+          .order-items {
+            padding: 10px;
           }
           
-          .order-actions {
+          .order-item-row {
+            flex-wrap: wrap;
+            gap: 4px;
+          }
+          
+          .item-info {
             flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+          }
+          
+          .detail-row {
+            gap: 6px;
+          }
+          
+          .detail-label {
+            min-width: 70px;
+            font-size: 11px;
+          }
+          
+          .detail-value {
+            font-size: 11px;
+          }
+          
+          .tracking-section {
+            padding: 10px;
+            margin: 6px 0;
+          }
+          
+
+          
+          .track-button {
+            padding: 8px 12px;
+            font-size: 12px;
+            margin-top: 6px;
           }
         }
       `}</style>

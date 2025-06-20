@@ -68,78 +68,73 @@ export function CartItemComponent({ item, onUpdateQuantity }: CartItemProps) {
 
   return (
     <div className="cart-item">
-      <div className="flex justify-between items-center mb-2">
-        {/* Левая часть: изображение и информация о товаре */}
-        <div className="flex items-center gap-4">
-          {/* Изображение товара */}
-          <div className="cart-item-image">
-            {item.image_url ? (
-              <Image
-                src={item.image_url}
-                alt={item.product_name}
-                width={72}
-                height={72}
-                className="object-cover"
-              />
-            ) : (
-              <div className="cart-item-placeholder">
-                <IconComponent name="no-image" size={32} />
-              </div>
-            )}
-          </div>
-
-          {/* Информация о товаре */}
-          <div className="cart-item-info">
-            <Link 
-              href={`/webapp/products/${item.product_id}`}
-              className="cart-item-name"
-            >
-              {item.product_name}
-            </Link>
-            <div className="cart-item-price">
-              {Math.floor(item.product_price)}₽/шт
+      {/* Левая часть: изображение и информация о товаре */}
+      <div className="flex items-center gap-4">
+        {/* Изображение товара - точно как в Rails */}
+        <div className="cart-item-image">
+          {item.image_url ? (
+            <Image
+              src={item.image_url}
+              alt={item.product_name}
+              width={72}
+              height={72}
+              className="object-cover"
+            />
+          ) : (
+            <div className="cart-item-placeholder">
+              <IconComponent name="no-image" size={32} />
             </div>
+          )}
+        </div>
+
+        {/* Информация о товаре */}
+        <div className="cart-item-info">
+          <Link href={`/webapp/products/${item.product_id}`}>
+            {item.product_name}
+          </Link>
+          <div className="cart-item-price">
+            {Math.floor(item.product_price)}₽/шт
+          </div>
+        </div>
+      </div>
+
+      {/* Правая часть: управление количеством - точно как в Rails */}
+      <div className="cart-quantity-controls">
+        <button
+          className={`buy-btn ${item.quantity <= 1 ? 'disabled' : ''}`}
+          onClick={() => handleQuantityChange('down')}
+          onMouseDown={() => handleLongPressStart('down')}
+          onMouseUp={handleLongPressEnd}
+          onMouseLeave={handleLongPressEnd}
+          onTouchStart={() => handleLongPressStart('down')}
+          onTouchEnd={handleLongPressEnd}
+          disabled={isUpdating || item.quantity <= 1}
+        >
+          <div className="minus-ico"></div>
+        </button>
+
+        {/* Количество и общая стоимость - точный Rails формат */}
+        <div className="cart-quantity-info">
+          <div className="count">
+            {item.quantity} шт
+          </div>
+          <div className="price">
+            {Math.floor(totalItemPrice)}₽
           </div>
         </div>
 
-        {/* Правая часть: управление количеством */}
-        <div className="cart-quantity-controls">
-          <button
-            className={`cart-qty-btn minus ${item.quantity <= 1 ? 'disabled' : ''} ${isLongPressing ? 'long-pressing' : ''} ${isUpdating ? 'updating' : ''}`}
-            onClick={() => handleQuantityChange('down')}
-            onMouseDown={() => handleLongPressStart('down')}
-            onMouseUp={handleLongPressEnd}
-            onMouseLeave={handleLongPressEnd}
-            onTouchStart={() => handleLongPressStart('down')}
-            onTouchEnd={handleLongPressEnd}
-            disabled={isUpdating}
-          >
-            <div className="minus-ico"></div>
-          </button>
-
-          {/* Количество и общая стоимость - Rails формат */}
-          <div className="cart-quantity-info">
-            <div className="cart-quantity">
-              {item.quantity} шт
-            </div>
-            <div className="cart-item-total">
-              {Math.floor(totalItemPrice)}₽
-            </div>
-          </div>
-
-          <button
-            className={`cart-qty-btn plus ${isLongPressing ? 'long-pressing' : ''} ${isUpdating ? 'updating' : ''}`}
-            onClick={() => handleQuantityChange('up')}
-            onMouseDown={() => handleLongPressStart('up')}
-            onMouseUp={handleLongPressEnd}
-            onMouseLeave={handleLongPressEnd}
-            onTouchStart={() => handleLongPressStart('up')}
-            onTouchEnd={handleLongPressEnd}
-            disabled={isUpdating}
-          >
-            <div className="plus-ico"></div>
-          </button>
-        </div>
+        <button
+          className="buy-btn"
+          onClick={() => handleQuantityChange('up')}
+          onMouseDown={() => handleLongPressStart('up')}
+          onMouseUp={handleLongPressEnd}
+          onMouseLeave={handleLongPressEnd}
+          onTouchStart={() => handleLongPressStart('up')}
+          onTouchEnd={handleLongPressEnd}
+          disabled={isUpdating}
+        >
+          <div className="plus-ico"></div>
+        </button>
       </div>
     </div>
   );

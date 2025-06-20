@@ -3,9 +3,8 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// Временный пользователь для демонстрации
-// В реальном проекте ID будет из сессии/токена
-const DEMO_USER_ID = 1;
+// Тот же фиксированный тестовый пользователь как в profile и subscriptions
+const TEST_USER_ID = 9999;
 
 // GET /api/webapp/favorites - получить список избранных товаров
 export async function GET(request: NextRequest) {
@@ -13,7 +12,7 @@ export async function GET(request: NextRequest) {
     // Получаем избранные товары пользователя из базы данных
     const favorites = await prisma.favorites.findMany({
       where: {
-        user_id: DEMO_USER_ID
+        user_id: TEST_USER_ID
       },
       include: {
         products: {
@@ -88,7 +87,7 @@ export async function POST(request: NextRequest) {
     // Проверяем, не добавлен ли товар уже в избранное
     const existingFavorite = await prisma.favorites.findFirst({
       where: {
-        user_id: DEMO_USER_ID,
+        user_id: TEST_USER_ID,
         product_id: parseInt(product_id)
       }
     });
@@ -103,7 +102,7 @@ export async function POST(request: NextRequest) {
     // Добавляем товар в избранное
     const favorite = await prisma.favorites.create({
       data: {
-        user_id: DEMO_USER_ID,
+        user_id: TEST_USER_ID,
         product_id: parseInt(product_id),
         created_at: new Date(),
         updated_at: new Date()
@@ -144,7 +143,7 @@ export async function DELETE(request: NextRequest) {
     // Удаляем товар из избранного
     const deleted = await prisma.favorites.deleteMany({
       where: {
-        user_id: DEMO_USER_ID,
+        user_id: TEST_USER_ID,
         product_id: parseInt(product_id)
       }
     });

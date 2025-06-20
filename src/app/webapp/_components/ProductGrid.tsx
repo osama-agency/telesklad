@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useState } from "react";
 import { IconComponent } from "@/components/webapp/IconComponent";
 import { AddToCartButton } from "./AddToCartButton";
 import { FavoriteButton } from "./FavoriteButton";
@@ -18,13 +19,20 @@ interface Product {
 
 interface ProductGridProps {
   products: Product[];
+  subscribedProductIds?: number[]; // ID товаров, на которые подписан пользователь
+  onSubscriptionChange?: () => void; // Колбэк для обновления подписок
 }
 
-export function ProductGrid({ products }: ProductGridProps) {
+export function ProductGrid({ products, subscribedProductIds = [], onSubscriptionChange }: ProductGridProps) {
   return (
     <div className="product-grid" id="products">
       {products.map((product) => (
-        <ProductCard key={product.id} product={product} />
+        <ProductCard 
+          key={product.id} 
+          product={product}
+          isSubscribed={subscribedProductIds.includes(product.id)}
+          onSubscriptionChange={onSubscriptionChange}
+        />
       ))}
     </div>
   );
@@ -32,10 +40,83 @@ export function ProductGrid({ products }: ProductGridProps) {
 
 interface ProductCardProps {
   product: Product;
+  isSubscribed?: boolean;
+  onSubscriptionChange?: () => void;
 }
 
-function ProductCard({ product }: ProductCardProps) {
+function ProductCard({ product, isSubscribed = false, onSubscriptionChange }: ProductCardProps) {
   const hasStock = product.stock_quantity > 0;
+  const [isNotificationEnabled, setIsNotificationEnabled] = useState(isSubscribed);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Haptic feedback (только для мобильных устройств)
+  const triggerHaptic = (type: 'light' | 'medium' | 'heavy' = 'medium') => {
+    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+      const patterns = {
+        light: [10],
+        medium: [20],
+        heavy: [30]
+      };
+      navigator.vibrate(patterns[type]);
+    }
+  };
+
+  // Обработка нажатия на кнопку уведомления
+  const handleNotificationToggle = async () => {
+    if (isLoading) return;
+
+    setIsAnimating(true);
+    setIsLoading(true);
+    triggerHaptic('medium');
+    
+    try {
+      if (isNotificationEnabled) {
+        // Отключаем уведомление
+        const response = await fetch(`/api/webapp/subscriptions?product_id=${product.id}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          setIsNotificationEnabled(false);
+          console.log(`Unsubscribed from product ${product.id}`);
+          onSubscriptionChange?.(); // Уведомляем родительский компонент
+        } else {
+          const error = await response.json();
+          console.error('Failed to unsubscribe:', error);
+          triggerHaptic('heavy'); // Вибрация при ошибке
+        }
+      } else {
+        // Включаем уведомление
+        const response = await fetch('/api/webapp/subscriptions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            product_id: product.id
+          })
+        });
+
+        if (response.ok) {
+          setIsNotificationEnabled(true);
+          console.log(`Subscribed to product ${product.id}`);
+          onSubscriptionChange?.(); // Уведомляем родительский компонент
+        } else {
+          const error = await response.json();
+          console.error('Failed to subscribe:', error);
+          triggerHaptic('heavy'); // Вибрация при ошибке
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling notification:', error);
+      triggerHaptic('heavy'); // Вибрация при ошибке
+    } finally {
+      setIsLoading(false);
+      // Анимация завершается через 200ms
+      setTimeout(() => setIsAnimating(false), 200);
+    }
+  };
 
   return (
     <div className="product-card">
@@ -121,8 +202,12 @@ function ProductCard({ product }: ProductCardProps) {
                 <div className="price-unavailable-without-old">{Math.floor(product.price)}₽</div>
               )}
               <div className="title-has">Нет в наличии</div>
-              <button className="webapp-btn-secondary">
-                Уведомить о поступлении
+              <button 
+                className={`webapp-btn-secondary ${isNotificationEnabled ? 'notification-enabled' : ''} ${isAnimating ? 'animating' : ''} ${isLoading ? 'loading' : ''}`}
+                onClick={handleNotificationToggle}
+                disabled={isAnimating || isLoading}
+              >
+                {isNotificationEnabled ? '🔔 Уведомление включено' : 'Уведомить о поступлении'}
               </button>
             </>
           )}

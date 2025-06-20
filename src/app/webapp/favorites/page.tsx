@@ -5,6 +5,7 @@ import Link from "next/link";
 import { IconComponent } from "@/components/webapp/IconComponent";
 import { FavoriteButton } from "../_components/FavoriteButton";
 import { AddToCartButton } from "../_components/AddToCartButton";
+import LoadingSpinner from "../_components/LoadingSpinner";
 
 interface Product {
   id: number;
@@ -36,7 +37,7 @@ export default function FavoritesPage() {
 
       const response = await fetch('/api/webapp/favorites');
       const data: FavoritesApiResponse = await response.json();
-      
+        
       if (data.success) {
         setFavoriteProducts(data.favorites);
       } else {
@@ -82,11 +83,7 @@ export default function FavoritesPage() {
     return (
       <div className="webapp-container favorites-page">
         <h1>Избранное</h1>
-        <div className="flex justify-center items-center min-h-[50vh]">
-          <div className="loading-spinner">
-            <div className="spinner"></div>
-          </div>
-        </div>
+        <LoadingSpinner variant="page" size="lg" />
       </div>
     );
   }
