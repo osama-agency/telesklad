@@ -204,6 +204,7 @@ function ProductCard({ product, isSubscribed = false, onSubscriptionChange }: Pr
                 productName={product.name}
                 productPrice={product.price}
                 maxQuantity={product.stock_quantity}
+                imageUrl={product.image_url}
               />
             </>
           ) : (

@@ -7,6 +7,7 @@ interface AddToCartButtonProps {
   productName: string;
   productPrice: number;
   maxQuantity?: number;
+  imageUrl?: string;
   onCartChange?: (quantity: number) => void;
 }
 
@@ -15,6 +16,7 @@ export function AddToCartButton({
   productName, 
   productPrice, 
   maxQuantity = 99,
+  imageUrl,
   onCartChange 
 }: AddToCartButtonProps) {
   const [quantity, setQuantity] = useState(0);
@@ -62,7 +64,8 @@ export function AddToCartButton({
           product_id: productId,
           product_name: productName,
           product_price: productPrice,
-          quantity: newQuantity
+          quantity: newQuantity,
+          image_url: imageUrl
         });
       }
       
