@@ -150,6 +150,7 @@ export async function GET(request: NextRequest) {
         avgPurchasePriceTry,
         inTransitQuantity: 0, // Пока без агрегаций
         old_price: product.old_price ? Number(product.old_price.toString()) : null,
+        show_in_webapp: product.show_in_webapp || false,
       };
     });
 
@@ -173,6 +174,7 @@ export async function GET(request: NextRequest) {
 
 // POST - создание/обновление товара в локальной базе
 export async function POST(request: NextRequest) {
+  let productData: any = {};
   try {
     // ВРЕМЕННО ОТКЛЮЧЕНА АВТОРИЗАЦИЯ
     // const session = await getServerSession();
@@ -181,7 +183,7 @@ export async function POST(request: NextRequest) {
     //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     // }
 
-    const productData = await request.json();
+    productData = await request.json();
 
     const product = await (prisma as any).products.create({
       data: {
@@ -189,7 +191,7 @@ export async function POST(request: NextRequest) {
         description: productData.description,
         price: productData.price ? Number(productData.price) : null,
         prime_cost: productData.prime_cost ? Number(productData.prime_cost) : null,
-        stock_quantity: productData.stock_quantity,
+        stock_quantity: productData.stock_quantity || 0,
         ancestry: productData.ancestry,
         weight: productData.weight,
         dosage_form: productData.dosage_form,
@@ -198,6 +200,10 @@ export async function POST(request: NextRequest) {
         brand: productData.brand,
         old_price: productData.old_price ? Number(productData.old_price) : null,
         is_visible: productData.is_visible !== undefined ? productData.is_visible : true,
+        show_in_webapp: productData.show_in_webapp !== undefined ? productData.show_in_webapp : true,
+        image_url: productData.image_url,
+        created_at: new Date(),
+        updated_at: new Date(),
       }
     });
 
@@ -207,9 +213,79 @@ export async function POST(request: NextRequest) {
       id: product.id.toString(),
     };
 
-    return NextResponse.json(serializedProduct, { status: 201 });
+    return NextResponse.json({
+      success: true,
+      message: 'Product created successfully',
+      product: serializedProduct
+    }, { status: 201 });
   } catch (error) {
     console.error('Error creating product:', error);
+    console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('Product data:', productData);
+    return NextResponse.json(
+      { 
+        error: 'Internal Server Error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }, 
+      { status: 500 }
+    );
+  }
+}
+
+// PUT - обновление товара
+export async function PUT(request: NextRequest) {
+  try {
+    // ВРЕМЕННО ОТКЛЮЧЕНА АВТОРИЗАЦИЯ
+    // const session = await getServerSession();
+    // 
+    // if (!session?.user?.email) {
+    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // }
+
+    const productData = await request.json();
+    
+    if (!productData.id) {
+      return NextResponse.json(
+        { error: 'Product ID is required' }, 
+        { status: 400 }
+      );
+    }
+
+    const product = await (prisma as any).products.update({
+      where: { id: parseInt(productData.id) },
+      data: {
+        name: productData.name,
+        description: productData.description,
+        price: productData.price ? Number(productData.price) : null,
+        prime_cost: productData.prime_cost ? Number(productData.prime_cost) : null,
+        stock_quantity: productData.stock_quantity,
+        quantity_in_transit: productData.quantity_in_transit || 0,
+        ancestry: productData.ancestry,
+        weight: productData.weight,
+        dosage_form: productData.dosage_form,
+        package_quantity: productData.package_quantity,
+        main_ingredient: productData.main_ingredient,
+        brand: productData.brand,
+        old_price: productData.old_price ? Number(productData.old_price) : null,
+        is_visible: productData.is_visible !== undefined ? productData.is_visible : true,
+        show_in_webapp: productData.show_in_webapp !== undefined ? productData.show_in_webapp : true,
+        image_url: productData.image_url,
+        updated_at: new Date(),
+      }
+    });
+
+    // Преобразуем BigInt в строку для JSON сериализации
+    const serializedProduct = {
+      ...product,
+      id: product.id.toString(),
+      price: product.price ? Number(product.price.toString()) : null,
+      prime_cost: product.prime_cost ? Number(product.prime_cost.toString()) : null,
+      old_price: product.old_price ? Number(product.old_price.toString()) : null,
+    };
+
+    return NextResponse.json(serializedProduct);
+  } catch (error) {
+    console.error('Error updating product:', error);
     return NextResponse.json(
       { error: 'Internal Server Error' }, 
       { status: 500 }

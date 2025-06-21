@@ -96,7 +96,12 @@ interface UseProductsAnalyticsResult {
 }
 
 // Хук для получения аналитики товаров
-export function useProductsAnalytics(period?: number): UseProductsAnalyticsResult {
+export function useProductsAnalytics(
+  period?: number, 
+  showHidden?: boolean, 
+  categoryFilter?: string, 
+  webappVisibilityFilter?: string
+): UseProductsAnalyticsResult {
   const [data, setData] = useState<AnalyticsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -105,14 +110,83 @@ export function useProductsAnalytics(period?: number): UseProductsAnalyticsResul
     try {
       setIsLoading(true);
       setError(null);
-      const response = await get<{ success: boolean; data: AnalyticsResponse }>(`/products/analytics${period ? `?period=${period}` : ''}`);
-      setData(response.data);
+      
+      // Если нужно показать скрытые товары, используем обычный API товаров
+      if (showHidden) {
+        const response = await get<{ success: boolean; data: { products: any[], total: number } }>(`/products?showHidden=true`);
+        
+        // Преобразуем данные в формат аналитики
+        const analyticsData: AnalyticsResponse = {
+          products: response.data.products.map((product: any) => ({
+            id: product.id,
+            name: product.name,
+            brand: product.brand || 'Не указан',
+            currentStock: product.stock_quantity || 0,
+            inTransitQuantity: product.quantity_in_transit || 0,
+            totalAvailable: (product.stock_quantity || 0) + (product.quantity_in_transit || 0),
+            avgDailySales: 0,
+            daysUntilZero: 999,
+            stockStatus: 'excess' as const,
+            recommendedOrderQuantity: 0,
+            optimalStockLevel: 0,
+            avgPurchasePrice: Number(product.avgpurchasepricerub || product.prime_cost || 0),
+            avgpurchasepricetry: 0,
+            prime_cost: Number(product.prime_cost || 0),
+            avgSalePrice: Number(product.price || 0),
+            oldPrice: product.old_price ? Number(product.old_price) : undefined,
+            profitMargin: 0,
+            profitMarginBasic: 0,
+            deliveryCostPerUnit: 350,
+            allocatedExpensesPerUnit: 0,
+            profitPerUnit: 0,
+            totalRealProfit: 0,
+            roi: 0,
+            salesTrend: 'stable' as const,
+            salesVariability: 'stable' as const,
+            seasonalityFactor: 1,
+            abcClass: 'C' as const,
+            xyzClass: 'X' as const,
+            inventoryTurnover: 0,
+            avgInventoryValue: 0,
+            daysInInventory: 365,
+          })),
+          summary: {
+            totalProducts: response.data.products.length,
+            criticalStock: 0,
+            lowStock: 0,
+            normalStock: 0,
+            excessStock: response.data.products.length,
+            needsReorder: 0,
+            inTransitTotal: 0,
+            avgProfitMargin: 0,
+            totalExpensesAllocated: 0,
+            expensePerUnit: 0,
+          },
+          period: {
+            days: period || 30,
+            from: new Date().toISOString(),
+            to: new Date().toISOString(),
+          }
+        };
+        
+        setData(analyticsData);
+      } else {
+        const params = new URLSearchParams();
+        if (period) params.append('period', period.toString());
+        if (showHidden) params.append('showHidden', 'true');
+        if (categoryFilter && categoryFilter !== 'all') params.append('category', categoryFilter);
+        if (webappVisibilityFilter && webappVisibilityFilter !== 'all') params.append('webappVisibility', webappVisibilityFilter);
+        
+        const queryString = params.toString();
+        const response = await get<{ success: boolean; data: AnalyticsResponse }>(`/products/analytics${queryString ? `?${queryString}` : ''}`);
+        setData(response.data);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setIsLoading(false);
     }
-  }, [period]);
+  }, [period, showHidden, categoryFilter, webappVisibilityFilter]);
 
   useEffect(() => {
     fetchAnalytics();

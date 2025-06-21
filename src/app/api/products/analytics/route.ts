@@ -120,9 +120,12 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const period = parseInt(searchParams.get('period') || '30');
+    const showHidden = searchParams.get('showHidden') === 'true';
+    const categoryFilter = searchParams.get('category');
+    const webappVisibilityFilter = searchParams.get('webappVisibility');
     
-    // ✅ КЭШИРОВАНИЕ: Попытка получить данные из кэша
-    const cacheKey = `products-analytics-${period}`;
+    // ✅ КЭШИРОВАНИЕ: Попытка получить данные из кэша с учетом фильтров
+    const cacheKey = `products-analytics-${period}-hidden-${showHidden}-cat-${categoryFilter || 'all'}-webapp-${webappVisibilityFilter || 'all'}`;
     const cachedResult = analyticsCache.get(cacheKey);
     
     if (cachedResult) {
@@ -187,15 +190,26 @@ export async function GET(request: NextRequest) {
     const expensePerUnit = totalSoldItems > 0 ? totalExpenses / totalSoldItems : 0;
     console.log(`📊 Expense per unit: ${expensePerUnit.toFixed(2)}₽`);
 
-    // 4. Получаем товары для анализа
+    // 4. Получаем товары для анализа с учетом фильтров
+    const whereConditions: any = {
+      deleted_at: null,
+      ancestry: {
+        contains: '/'
+      }
+    };
+
+    // Фильтр по видимости в админке
+    if (!showHidden) {
+      whereConditions.is_visible = true;
+    }
+
+    // Фильтр по категории
+    if (categoryFilter && categoryFilter !== 'all') {
+      whereConditions.ancestry = categoryFilter;
+    }
+
     const products = await (prisma as any).products.findMany({
-      where: {
-        deleted_at: null,
-        is_visible: true,
-        ancestry: {
-          contains: '/'
-        }
-      },
+      where: whereConditions,
       select: {
         id: true,
         name: true,
@@ -205,7 +219,8 @@ export async function GET(request: NextRequest) {
         price: true,
         old_price: true,
         prime_cost: true,
-        avgpurchasepricerub: true
+        avgpurchasepricerub: true,
+        show_in_webapp: true // Добавляем поле для фильтрации по WebApp
       }
     });
 
@@ -424,26 +439,43 @@ export async function GET(request: NextRequest) {
         // ПОКАЗАТЕЛИ ОБОРАЧИВАЕМОСТИ
         inventoryTurnover: Number(inventoryTurnover.toFixed(2)),
         avgInventoryValue: Number(avgInventoryValue.toFixed(2)),
-        daysInInventory: Number(daysInInventory.toFixed(0))
+        daysInInventory: Number(daysInInventory.toFixed(0)),
+        
+        // ВИДИМОСТЬ В WEBAPP
+        show_in_webapp: product.show_in_webapp
       };
     });
 
     const analytics = await Promise.all(analyticsPromises);
     
+    // Применяем фильтр по видимости в WebApp
+    let filteredAnalytics = analytics;
+    if (webappVisibilityFilter && webappVisibilityFilter !== 'all') {
+      filteredAnalytics = analytics.filter((product: any) => {
+        const originalProduct = products.find((p: any) => p.id.toString() === product.id);
+        if (webappVisibilityFilter === 'visible') {
+          return originalProduct?.show_in_webapp === true;
+        } else if (webappVisibilityFilter === 'hidden') {
+          return originalProduct?.show_in_webapp === false;
+        }
+        return true;
+      });
+    }
+    
     // Сортируем по критичности (критические остатки сначала)
-    const sortedAnalytics = analytics.sort((a: any, b: any) => {
+    const sortedAnalytics = filteredAnalytics.sort((a: any, b: any) => {
       const statusOrder: { [key: string]: number } = { critical: 0, low: 1, normal: 2, excess: 3 };
       return statusOrder[a.stockStatus] - statusOrder[b.stockStatus];
     });
 
-    console.log(`📊 Analytics completed for ${analytics.length} products`);
+    console.log(`📊 Analytics completed for ${sortedAnalytics.length} products (${analytics.length} total, ${analytics.length - sortedAnalytics.length} filtered out)`);
 
-    // Вычисляем сводные данные
-    const totalInTransit = analytics.reduce((sum, p) => sum + (p.inTransitQuantity || 0), 0);
-    const avgProfitMargin = analytics.length > 0 
-      ? Math.round(analytics.reduce((sum, p) => sum + (p.profitMargin || 0), 0) / analytics.length) 
+    // Вычисляем сводные данные на основе отфильтрованных товаров
+    const totalInTransit = sortedAnalytics.reduce((sum: number, p: any) => sum + (p.inTransitQuantity || 0), 0);
+    const avgProfitMargin = sortedAnalytics.length > 0 
+      ? Math.round(sortedAnalytics.reduce((sum: number, p: any) => sum + (p.profitMargin || 0), 0) / sortedAnalytics.length) 
       : 0;
-    const needsReorder = analytics.filter(p => p.recommendedOrderQuantity > 0).length;
+    const needsReorder = sortedAnalytics.filter((p: any) => p.recommendedOrderQuantity > 0).length;
 
     console.log(`📊 Summary calculated: totalInTransit=${totalInTransit}, avgProfitMargin=${avgProfitMargin}%, needsReorder=${needsReorder}`);
 
@@ -452,11 +484,11 @@ export async function GET(request: NextRequest) {
       data: {
         products: sortedAnalytics,
         summary: {
-          totalProducts: analytics.length,
-          criticalStock: analytics.filter(p => p.stockStatus === 'critical').length,
-          lowStock: analytics.filter(p => p.stockStatus === 'low').length,
-          normalStock: analytics.filter(p => p.stockStatus === 'normal').length,
-          excessStock: analytics.filter(p => p.stockStatus === 'excess').length,
+          totalProducts: sortedAnalytics.length,
+          criticalStock: sortedAnalytics.filter((p: any) => p.stockStatus === 'critical').length,
+          lowStock: sortedAnalytics.filter((p: any) => p.stockStatus === 'low').length,
+          normalStock: sortedAnalytics.filter((p: any) => p.stockStatus === 'normal').length,
+          excessStock: sortedAnalytics.filter((p: any) => p.stockStatus === 'excess').length,
           needsReorder,
           inTransitTotal: totalInTransit,
           avgProfitMargin,

@@ -425,10 +425,12 @@ model products {
   brand                 String?                 @db.VarChar
   old_price             Decimal?                @db.Decimal(10, 2)
   is_visible            Boolean?                @default(true)
+  show_in_webapp        Boolean?                @default(true)
   prime_cost            Decimal?                @db.Decimal(10, 2)
   avgpurchasepricerub   Decimal?                @db.Decimal(10, 2)
   avgpurchasepricetry   Decimal?                @db.Decimal(10, 2)
   quantity_in_transit   Int?                    @default(0)
+  image_url             String?                 @db.VarChar(500)
   cart_items            cart_items[]
   favorites             favorites[]
   order_items           order_items[]
@@ -603,6 +605,7 @@ model users {
   product_subscriptions  product_subscriptions[]
   purchases              purchases[]
   reviews                reviews[]
+  notification_jobs      notification_jobs[]
   account_tiers          account_tiers?          @relation(fields: [account_tier_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rails_f4512aba16")
 
   @@index([account_tier_id], map: "index_users_on_account_tier_id")
@@ -665,4 +668,25 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("verificationtokens")
+}
+
+model notification_jobs {
+  id            BigInt   @id @default(autoincrement())
+  job_type      String   @db.VarChar(50)  // 'payment_reminder_first', 'payment_reminder_final', 'payment_reminder_cancel', 'bonus_notice', 'restock_notice'
+  target_id     BigInt   // order_id, product_id, etc.
+  user_id       BigInt
+  scheduled_at  DateTime
+  executed_at   DateTime?
+  status        String   @default("pending") @db.VarChar(20) // pending, executing, executed, failed, cancelled
+  retry_count   Int      @default(0)
+  data          Json?    // дополнительные данные для задачи
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  users         users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([scheduled_at, status])
+  @@index([job_type])
+  @@index([user_id])
+  @@index([target_id])
 }

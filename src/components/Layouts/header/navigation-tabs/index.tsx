@@ -15,7 +15,7 @@ const tabs = [
   {
     id: "purchases",
     name: "Закупки",
-    path: "/purchases-analytics",
+    path: "/purchases",
     icon: "🚚"
   },
   {

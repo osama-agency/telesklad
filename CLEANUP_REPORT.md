@@ -6,7 +6,7 @@
 - ❌ `PurchasesTableAviasales.tsx` - заменен на `PurchasesTableAviasalesFixed.tsx`
 - ❌ `SmartProductsTable.tsx` - заменен на `SmartProductsTableWithQuery.tsx`
 - ❌ `ExpensesTable.tsx` - заменен на `ExpensesTableWithQuery.tsx`
-- ❌ `PurchasesTable.tsx` - заменен на `PurchasesTableWithQuery.tsx`
+- ❌ `PurchasesTable.tsx` - заменен на `PurchasesTableAviasalesFixed.tsx` (карточки)
 - ❌ `OrdersTable.tsx` - заменен на `OrdersTableWithQuery.tsx`
 - ❌ `ProductsTable.tsx` - не используется вообще
 
@@ -49,7 +49,7 @@
 
 ### Основные компоненты:
 - ✅ `SmartProductsTableWithQuery.tsx` - таблица продуктов с аналитикой
-- ✅ `PurchasesTableAviasalesFixed.tsx` - таблица закупок
+- ✅ `PurchasesTableAviasalesFixed.tsx` - карточки закупок (только карточный вид)
 - ✅ `ExpensesTableWithQuery.tsx` - таблица расходов
 - ✅ `OrdersTableWithQuery.tsx` - таблица заказов
 - ✅ `PurchaseCartModal.tsx` - модальное окно корзины закупок

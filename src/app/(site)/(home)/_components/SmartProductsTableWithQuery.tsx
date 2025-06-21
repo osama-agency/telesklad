@@ -7,10 +7,11 @@ import { PurchaseCartModal } from "./PurchaseCartModal";
 import { EditablePriceTRY } from "./EditablePriceTRY";
 import { EditableField } from "@/components/ui/EditableField";
 import { EditProductModal } from "@/components/Modals/EditProductModal";
+import AddProductModal from "@/components/Modals/AddProductModal";
 import toast from 'react-hot-toast';
 
 interface ProductAnalytics {
-  id: number;
+  id: string;
   name: string;
   brand: string;
   
@@ -55,10 +56,13 @@ interface ProductAnalytics {
   inventoryTurnover: number;
   avgInventoryValue: number;
   daysInInventory: number;
+  
+  // ВИДИМОСТЬ В WEBAPP
+  show_in_webapp?: boolean;
 }
 
 interface CartItem {
-  id: number;
+  id: string;
   name: string;
   brand: string;
   quantity: number;
@@ -371,6 +375,16 @@ function SmartProductsTableContent() {
     quantity_in_transit: number | null;
   } | null>(null);
 
+  // Состояние модального окна добавления товара
+  const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
+  
+  // Состояние показа скрытых товаров
+  const [showHiddenProducts, setShowHiddenProducts] = useState(false);
+  
+  // Состояния фильтров
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [webappVisibilityFilter, setWebappVisibilityFilter] = useState<string>('all');
+
   const { dateRange } = useDateRange();
 
   // Рассчитываем период в днях
@@ -379,7 +393,12 @@ function SmartProductsTableContent() {
     : 31;
 
   // React Query hooks
-  const { data: analyticsData, isLoading: loading, error } = useProductsAnalytics(period);
+  const { data: analyticsData, isLoading: loading, error } = useProductsAnalytics(
+    period, 
+    showHiddenProducts, 
+    categoryFilter, 
+    webappVisibilityFilter
+  );
   const { data: exchangeRateData } = useExchangeRate('TRY');
   const updateProductMutation = useUpdateProduct();
   const createPurchaseMutation = useCreatePurchase();
@@ -388,11 +407,29 @@ function SmartProductsTableContent() {
   const summary = analyticsData?.summary;
   const exchangeRate = exchangeRateData?.rateWithBuffer;
 
-  // Фильтрация товаров
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(globalFilter.toLowerCase()) ||
-    product.brand.toLowerCase().includes(globalFilter.toLowerCase())
-  );
+  // Константы для категорий
+  const categoryOptions = [
+    { value: 'all', label: 'Все категории' },
+    { value: '23/20', label: 'СДВГ препараты' },
+    { value: '23/21', label: 'Добавки и витамины' },
+    { value: '23/24', label: 'Контрацептивы' },
+    { value: '23/36', label: 'Другие препараты' },
+  ];
+
+  const webappVisibilityOptions = [
+    { value: 'all', label: 'Все товары' },
+    { value: 'visible', label: 'Видимые в WebApp' },
+    { value: 'hidden', label: 'Скрытые в WebApp' },
+  ];
+
+  // Фильтрация товаров (только по поиску, остальные фильтры обрабатываются на сервере)
+  const filteredProducts = products.filter(product => {
+    // Фильтр по поиску
+    const matchesSearch = product.name.toLowerCase().includes(globalFilter.toLowerCase()) ||
+      product.brand.toLowerCase().includes(globalFilter.toLowerCase());
+    
+    return matchesSearch;
+  });
 
   // Сортировка
   const sortedProducts = [...filteredProducts].sort((a, b) => {
@@ -609,37 +646,64 @@ function SmartProductsTableContent() {
 
   // Функция сохранения изменений товара
   const handleSaveProduct = (updatedProduct: any) => {
-    // Обновляем данные в кэше
-    queryClient.invalidateQueries({ queryKey: ['products-analytics'] });
+    // Обновляем данные после сохранения
     setEditingProduct(null);
     setIsEditProductModalOpen(false);
+    window.location.reload(); // Простое решение
+  };
+
+  // Функция удаления товара
+  const handleDeleteProduct = (productId: number) => {
+    // Обновляем данные после удаления
+    setEditingProduct(null);
+    setIsEditProductModalOpen(false);
+    window.location.reload(); // Простое решение для обновления данных
+  };
+
+  // Функция обновления данных после добавления товара
+  const handleProductAdded = () => {
+    // Обновляем таблицу после добавления товара
+    window.location.reload(); // Простое решение для обновления данных
   };
 
   if (loading) {
     return (
-      <section className="bg-container rounded-xl border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-center py-16">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1A6DFF]"></div>
           <span className="ml-3 text-[#1E293B] dark:text-white">Загрузка умной аналитики...</span>
         </div>
-      </section>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <section className="bg-container rounded-xl border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-center py-16">
-          <div className="text-red-500 dark:text-red-400">Ошибка: {error.message}</div>
+          <div className="text-red-500 dark:text-red-400">Ошибка: {(error as any)?.message || 'Неизвестная ошибка'}</div>
         </div>
-      </section>
+      </div>
     );
   }
 
   return (
-    <section className="bg-container rounded-xl border border-gray-200 dark:border-gray-700 hover:border-[#1A6DFF]/30 dark:hover:border-[#1A6DFF]/30 transition-all duration-300">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-[#1A6DFF]/30 dark:hover:border-[#1A6DFF]/30 transition-all duration-300">
+      {/* Индикатор режима скрытых товаров */}
+      {showHiddenProducts && (
+        <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-3 bg-yellow-50 dark:bg-yellow-900/20">
+          <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-400">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+            </svg>
+            <span className="font-medium">Отображаются скрытые товары</span>
+            <span className="text-sm opacity-75">(товары с отключенной видимостью в админке)</span>
+          </div>
+        </div>
+      )}
+
       {/* Сводка */}
-      {summary && (
+      {summary && !showHiddenProducts && (
         <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-5">
           <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
             <div className="text-center">
@@ -671,7 +735,9 @@ function SmartProductsTableContent() {
       )}
 
       {/* Поиск и фильтры */}
-      <div className="flex flex-col gap-4 border-b border-gray-200 dark:border-gray-700 px-6 py-5 sm:flex-row-reverse sm:items-center sm:justify-between sm:gap-x-4 sm:gap-y-0">
+      <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-5">
+        {/* Первая строка - поиск и кнопки действий */}
+        <div className="flex flex-col gap-4 sm:flex-row-reverse sm:items-center sm:justify-between sm:gap-x-4 sm:gap-y-0 mb-4">
         <div className="flex items-center gap-4">
           <div className="relative z-20 w-full max-w-[414px]">
             <input
@@ -689,7 +755,40 @@ function SmartProductsTableContent() {
                 <path fillRule="evenodd" clipRule="evenodd" d="M8.625 2.0625C5.00063 2.0625 2.0625 5.00063 2.0625 8.625C2.0625 12.2494 5.00063 15.1875 8.625 15.1875C12.2494 15.1875 15.1875 12.2494 15.1875 8.625C15.1875 5.00063 12.2494 2.0625 8.625 2.0625ZM0.9375 8.625C0.9375 4.37931 4.37931 0.9375 8.625 0.9375C12.8707 0.9375 16.3125 4.37931 16.3125 8.625C16.3125 10.5454 15.6083 12.3013 14.4441 13.6487L16.8977 16.1023C17.1174 16.3219 17.1174 16.6781 16.8977 16.8977C16.6781 17.1174 16.3219 17.1174 16.1023 16.8977L13.6487 14.4441C12.3013 15.6083 10.5454 16.3125 8.625 16.3125C4.37931 16.3125 0.9375 12.8707 0.9375 8.625Z" />
               </svg>
             </button>
+            </div>
           </div>
+          
+          {/* Кнопка показа скрытых товаров */}
+          <button
+            onClick={() => setShowHiddenProducts(!showHiddenProducts)}
+            className={`px-4 py-2.5 rounded-lg hover:scale-105 transition-all duration-300 hover:shadow-md flex items-center gap-2 ${
+              showHiddenProducts 
+                ? 'bg-gray-600 text-white' 
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+            }`}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {showHiddenProducts ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              )}
+            </svg>
+            <span className="hidden sm:inline">
+              {showHiddenProducts ? 'Скрыть скрытые' : 'Показать скрытые'}
+            </span>
+          </button>
+
+          {/* Кнопка добавления товара */}
+          <button
+            onClick={() => setIsAddProductModalOpen(true)}
+            className="px-4 py-2.5 bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] text-white rounded-lg hover:scale-105 transition-all duration-300 hover:shadow-md flex items-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            <span className="hidden sm:inline">Новый товар</span>
+          </button>
           
           {/* Кнопка корзины */}
           <button
@@ -706,6 +805,58 @@ function SmartProductsTableContent() {
               </span>
             )}
           </button>
+        </div>
+
+        {/* Вторая строка - фильтры */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+          {/* Фильтр по категориям */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-[#1E293B] dark:text-white whitespace-nowrap">
+              Категория:
+            </label>
+            <select
+              value={categoryFilter}
+              onChange={(e) => {
+                setCategoryFilter(e.target.value);
+                setCurrentPage(0);
+              }}
+              className="rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm outline-none focus:border-[#1A6DFF] focus:ring-2 focus:ring-[#1A6DFF]/20 dark:text-white transition-all duration-300"
+            >
+              {categoryOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Фильтр по видимости в WebApp (только если не показываем скрытые товары) */}
+          {!showHiddenProducts && (
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-[#1E293B] dark:text-white whitespace-nowrap">
+                WebApp:
+              </label>
+              <select
+                value={webappVisibilityFilter}
+                onChange={(e) => {
+                  setWebappVisibilityFilter(e.target.value);
+                  setCurrentPage(0);
+                }}
+                className="rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm outline-none focus:border-[#1A6DFF] focus:ring-2 focus:ring-[#1A6DFF]/20 dark:text-white transition-all duration-300"
+              >
+                {webappVisibilityOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Счетчик отфильтрованных товаров */}
+          <div className="text-sm text-[#64748B] dark:text-gray-400 ml-auto">
+            {filteredProducts.length} из {products.length} товаров
+          </div>
         </div>
       </div>
 
@@ -958,26 +1109,34 @@ function SmartProductsTableContent() {
         onCreatePurchase={createPurchase}
       />
 
+      {/* Модальное окно добавления товара */}
+      <AddProductModal
+        isOpen={isAddProductModalOpen}
+        onClose={() => setIsAddProductModalOpen(false)}
+        onProductAdded={handleProductAdded}
+      />
+
       {/* Модальное окно редактирования товара */}
       <EditProductModal
         isOpen={isEditProductModalOpen}
         onClose={handleCloseEditModal}
         product={editingProduct}
         onSave={handleSaveProduct}
+        onDelete={handleDeleteProduct}
       />
-    </section>
+    </div>
   );
 }
 
 export function SmartProductsTable() {
   return (
     <Suspense fallback={
-      <section className="bg-container rounded-xl border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-center py-16">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1A6DFF]"></div>
           <span className="ml-3 text-[#1E293B] dark:text-white">Загрузка умной аналитики...</span>
         </div>
-      </section>
+      </div>
     }>
       <SmartProductsTableContent />
     </Suspense>

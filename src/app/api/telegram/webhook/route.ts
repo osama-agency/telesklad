@@ -8,10 +8,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('📨 Telegram webhook received:', JSON.stringify(body, null, 2));
 
-    // Обрабатываем callback query (нажатие на кнопки)
+    // Callback queries больше не обрабатываются
     if (body.callback_query) {
-      console.log('🔄 Processing callback query:', body.callback_query.data);
-      await TelegramBotService.handleCallback(body.callback_query);
+      console.log('ℹ️ Callback query ignored (no longer supported)');
       return NextResponse.json({ ok: true });
     }
 

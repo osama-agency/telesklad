@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import LoyaltyService from '@/lib/services/loyaltyService';
 import { S3Service } from '@/lib/services/s3';
+import { WebappTelegramBotService } from '@/lib/services/webapp-telegram-bot.service';
+import { NotificationSchedulerService } from '@/lib/services/notification-scheduler.service';
 
 const prisma = new PrismaClient();
 
@@ -151,6 +153,83 @@ export async function POST(request: NextRequest) {
       return order;
     });
 
+    // 🔥 ОТПРАВЛЯЕМ УВЕДОМЛЕНИЕ В TELEGRAM ЧЕРЕЗ WEBAPP БОТА
+    try {
+      // Получаем настройки для отправки сообщений
+      const settings = await prisma.settings.findMany();
+      const settingsMap = settings.reduce((acc, s) => {
+        if (s.variable && s.value) {
+          acc[s.variable] = s.value;
+        }
+        return acc;
+      }, {} as Record<string, string>);
+
+      // Получаем обновленные данные пользователя после обновления
+      const updatedUser = await prisma.users.findUnique({
+        where: { id: BigInt(TEST_USER_ID) }
+      });
+
+      if (updatedUser && updatedUser.tg_id) {
+        // Подготавливаем данные для уведомления
+        const orderData = {
+          id: Number(result.id),
+          total_amount: total,
+          items: cart_items.map((item: any) => {
+            // Находим товар в корзине для получения актуальной информации
+            const product = cart_items.find((ci: any) => ci.product_id === item.product_id);
+            return {
+              product_name: product?.name || item.name || 'Товар',
+              quantity: item.quantity,
+              price: Number(item.price || 0)
+            };
+          }),
+          bonus: bonus
+        };
+
+        const userData = {
+          tg_id: updatedUser.tg_id.toString(),
+          full_name: `${updatedUser.first_name || ''} ${updatedUser.last_name || ''}`.trim() || 'Клиент',
+          full_address: buildFullAddress(updatedUser),
+          phone_number: updatedUser.phone_number || 'Не указан',
+          postal_code: updatedUser.postal_code || undefined
+        };
+
+        // Отправляем уведомление о создании заказа
+        const notificationResult = await WebappTelegramBotService.sendOrderCreated(
+          orderData, 
+          userData, 
+          settingsMap
+        );
+
+        // Сохраняем message_id если уведомление отправлено успешно
+        if (notificationResult.success && notificationResult.messageId) {
+          await prisma.orders.update({
+            where: { id: result.id },
+            data: { msg_id: notificationResult.messageId }
+          });
+        }
+
+        console.log(`✅ Order #${Number(result.id)} notification sent:`, notificationResult.success);
+      } else {
+        console.log(`ℹ️ Order #${Number(result.id)} - user has no Telegram ID, skipping notification`);
+      }
+    } catch (notificationError) {
+      console.error('❌ Order notification error:', notificationError);
+      // Не блокируем создание заказа из-за ошибки уведомления
+    }
+
+    // 🔔 ПЛАНИРУЕМ НАПОМИНАНИЯ О НЕОПЛАЧЕННОМ ЗАКАЗЕ
+    try {
+      await NotificationSchedulerService.schedulePaymentReminder(
+        Number(result.id), 
+        TEST_USER_ID
+      );
+      console.log(`📅 Payment reminders scheduled for order #${Number(result.id)}`);
+    } catch (reminderError) {
+      console.error('❌ Error scheduling payment reminders:', reminderError);
+      // Не блокируем создание заказа из-за ошибки планирования
+    }
+
     return NextResponse.json({
       success: true,
       order: {
@@ -299,4 +378,17 @@ export async function GET(request: NextRequest) {
   } finally {
     await prisma.$disconnect();
   }
+}
+
+// Вспомогательная функция для построения полного адреса
+function buildFullAddress(user: any): string {
+  const parts = [];
+  
+  if (user.address) parts.push(user.address);
+  if (user.street) parts.push(user.street);
+  if (user.home) parts.push(`дом ${user.home}`);
+  if (user.apartment) parts.push(`кв. ${user.apartment}`);
+  if (user.build) parts.push(`корп. ${user.build}`);
+  
+  return parts.join(', ') || 'Адрес не указан';
 } 

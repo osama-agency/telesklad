@@ -56,6 +56,7 @@ export async function GET(request: NextRequest) {
       where: {
         ancestry: expectedAncestry,
         deleted_at: null, // available products
+        show_in_webapp: true, // только товары для показа в webapp
       },
       select: {
         id: true,
@@ -105,6 +106,7 @@ export async function GET(request: NextRequest) {
         old_price: product.old_price ? Number(product.old_price) : undefined,
         stock_quantity: Number(product.stock_quantity),
         image_url: blobKey ? S3Service.getImageUrl(blobKey) : undefined,
+        image_url_fallback: blobKey ? S3Service.getOldImageUrl(blobKey) : undefined,
       };
     });
 

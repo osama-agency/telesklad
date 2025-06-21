@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { prisma } from '@/libs/prismaDb';
+import { PrismaClient } from '@prisma/client';
+
+const prismaClient = new PrismaClient();
 
 // GET - получение товара по ID
 export async function GET(
@@ -109,31 +112,58 @@ export async function PUT(
   }
 }
 
-// DELETE - мягкое удаление товара (soft delete)
+// DELETE /api/products/[id] - Удаление товара
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession();
-    
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { id } = await params;
+    const productId = parseInt(id);
+
+    if (isNaN(productId)) {
+      return NextResponse.json(
+        { error: 'Некорректный ID товара' },
+        { status: 400 }
+      );
     }
 
-    const { id } = await params;
-    const product = await prisma.products.update({
-      where: { id: parseInt(id) },
-      data: {
-        deleted_at: new Date(),
-        is_visible: false,
-        updated_at: new Date(),
+    // Проверяем существование товара
+    const existingProduct = await prismaClient.products.findUnique({
+      where: { id: productId }
+    });
+
+    if (!existingProduct) {
+      return NextResponse.json(
+        { error: 'Товар не найден' },
+        { status: 404 }
+      );
+    }
+
+    // Удаляем связанные записи изображений
+    await prismaClient.active_storage_attachments.deleteMany({
+      where: {
+        record_type: 'Product',
+        record_id: productId,
+        name: 'image'
       }
     });
 
-    return NextResponse.json(product);
+    // Удаляем товар
+    await prismaClient.products.delete({
+      where: { id: productId }
+    });
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Товар успешно удален' 
+    });
+
   } catch (error) {
     console.error('Error deleting product:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Ошибка при удалении товара' },
+      { status: 500 }
+    );
   }
 } 

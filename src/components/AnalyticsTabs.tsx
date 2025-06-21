@@ -7,7 +7,7 @@ const tabs = [
   { name: "AI Аналитика", href: "/ai", icon: "🤖" },
   { name: "Товары", href: "/products", icon: "📦" },
   { name: "Заказы", href: "/orders-analytics", icon: "📋" },
-  { name: "Закупки", href: "/purchases-analytics", icon: "🛒" },
+  { name: "Закупки", href: "/purchases", icon: "🛒" },
   { name: "Расходы", href: "/expenses-analytics", icon: "💰" },
   { name: "Сообщения", href: "/messages", icon: "💬" },
   { name: "Отзывы", href: "/reviews", icon: "⭐" },

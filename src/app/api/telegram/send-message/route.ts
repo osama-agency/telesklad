@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/libs/prismaDb';
-
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
+import { TelegramTokenService } from '@/lib/services/telegram-token.service';
 
 // POST - отправка сообщения в Telegram
 export async function POST(request: NextRequest) {
@@ -17,7 +15,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!TELEGRAM_BOT_TOKEN) {
+    // Получаем токен бота из централизованного сервиса
+    const botToken = await TelegramTokenService.getTelegramBotToken();
+    
+    if (!botToken) {
       console.error('TELEGRAM_BOT_TOKEN not configured');
       return NextResponse.json(
         { error: 'Telegram bot not configured' },
@@ -25,8 +26,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const telegramApiUrl = `https://api.telegram.org/bot${botToken}`;
+
     // Отправляем сообщение в Telegram
-    const telegramResponse = await fetch(`${TELEGRAM_API_URL}/sendMessage`, {
+    const telegramResponse = await fetch(`${telegramApiUrl}/sendMessage`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

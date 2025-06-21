@@ -28,6 +28,7 @@ export default function FavoritesPage() {
   const [favoriteProducts, setFavoriteProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [removingProducts, setRemovingProducts] = useState<Set<number>>(new Set());
 
   // Загрузка избранных товаров из API
   const loadFavoriteProducts = async () => {
@@ -40,6 +41,13 @@ export default function FavoritesPage() {
         
       if (data.success) {
         setFavoriteProducts(data.favorites);
+        
+        // Синхронизируем localStorage с данными из API
+        const favoriteIds = data.favorites.map((product: Product) => product.id);
+        localStorage.setItem('webapp_favorites', JSON.stringify(favoriteIds));
+        
+        // Уведомляем все FavoriteButton компоненты об обновлении
+        window.dispatchEvent(new Event('favoritesSync'));
       } else {
         setError(data.error || 'Ошибка загрузки избранного');
       }
@@ -51,17 +59,43 @@ export default function FavoritesPage() {
     }
   };
 
+  // Обработчик удаления товара из избранного с анимацией
+  const handleProductRemoved = (productId: number) => {
+    // Добавляем товар в список удаляемых для анимации
+    setRemovingProducts(prev => new Set(prev).add(productId));
+    
+    // Через 300ms удаляем товар из списка
+    setTimeout(() => {
+      setFavoriteProducts(prev => prev.filter(product => product.id !== productId));
+      setRemovingProducts(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(productId);
+        return newSet;
+      });
+    }, 300);
+  };
+
   useEffect(() => {
     loadFavoriteProducts();
 
-    // Слушаем изменения избранного
-    const handleFavoritesUpdate = () => {
+    // Слушаем события удаления из избранного
+    const handleFavoriteRemoved = (event: CustomEvent) => {
+      const productId = event.detail.productId;
+      handleProductRemoved(productId);
+    };
+
+    // Слушаем события добавления в избранное (для обновления без перезагрузки)
+    const handleFavoriteAdded = (event: CustomEvent) => {
+      // Если товар добавлен в избранное, перезагружаем список
       loadFavoriteProducts();
     };
 
-    window.addEventListener('favoritesUpdated', handleFavoritesUpdate);
+    window.addEventListener('favoriteRemoved', handleFavoriteRemoved as EventListener);
+    window.addEventListener('favoriteAdded', handleFavoriteAdded as EventListener);
+    
     return () => {
-      window.removeEventListener('favoritesUpdated', handleFavoritesUpdate);
+      window.removeEventListener('favoriteRemoved', handleFavoriteRemoved as EventListener);
+      window.removeEventListener('favoriteAdded', handleFavoriteAdded as EventListener);
     };
   }, []);
 
@@ -114,11 +148,17 @@ export default function FavoritesPage() {
       {favoriteProducts.length > 0 ? (
         <div className="product-grid" id="favorites">
           {favoriteProducts.map((product) => (
-            <div key={product.id} className="product-card">
+            <div 
+              key={product.id} 
+              className={`product-card ${removingProducts.has(product.id) ? 'removing' : ''}`}
+            >
               <div className={`product-wrapper ${product.stock_quantity <= 0 ? 'out-of-stock' : ''}`}>
                 {/* Кнопка избранного - как в Rails */}
                 <div className="absolute right-3 top-3 z-10">
-                  <FavoriteButton productId={product.id} />
+                  <FavoriteButton 
+                    productId={product.id} 
+                    onRemoved={() => handleProductRemoved(product.id)}
+                  />
                 </div>
 
                 {/* Индикатор "нет в наличии" */}

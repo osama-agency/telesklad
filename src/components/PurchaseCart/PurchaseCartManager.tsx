@@ -86,7 +86,7 @@ const PurchaseCartManager: React.FC = () => {
   const getStatusText = (status: string) => {
     const statusMap: Record<string, string> = {
       'draft': '🗒️ Черновик',
-      'sent_to_supplier': '📤 Отправлено поставщику',
+      'sent_to_supplier': '📤 Отправлено в Телеграм',
       'supplier_editing': '✏️ Поставщик редактирует',
       'awaiting_payment': '💳 Ожидает оплату',
       'paid': '💰 Оплачено',

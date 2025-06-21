@@ -6,16 +6,40 @@ import { IconComponent } from "@/components/webapp/IconComponent";
 interface FavoriteButtonProps {
   productId: number;
   className?: string;
+  onRemoved?: () => void;
 }
 
-export function FavoriteButton({ productId, className = "" }: FavoriteButtonProps) {
+export function FavoriteButton({ productId, className = "", onRemoved }: FavoriteButtonProps) {
   const [isFavorite, setIsFavorite] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   // Загружаем состояние избранного из localStorage
   useEffect(() => {
     const favorites = JSON.parse(localStorage.getItem('webapp_favorites') || '[]');
-    setIsFavorite(favorites.includes(productId));
+    const isFav = favorites.includes(productId);
+    console.log(`Product ${productId}: favorites in localStorage:`, favorites, 'isFavorite:', isFav);
+    setIsFavorite(isFav);
+  }, [productId]);
+
+  // Слушаем изменения localStorage для синхронизации состояния
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const favorites = JSON.parse(localStorage.getItem('webapp_favorites') || '[]');
+      setIsFavorite(favorites.includes(productId));
+    };
+
+    // Слушаем события обновления избранного
+    window.addEventListener('favoriteAdded', handleStorageChange);
+    window.addEventListener('favoriteRemoved', handleStorageChange);
+    window.addEventListener('favoritesSync', handleStorageChange);
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('favoriteAdded', handleStorageChange);
+      window.removeEventListener('favoriteRemoved', handleStorageChange);
+      window.removeEventListener('favoritesSync', handleStorageChange);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, [productId]);
 
   // Haptic feedback
@@ -48,8 +72,18 @@ export function FavoriteButton({ productId, className = "" }: FavoriteButtonProp
     
     localStorage.setItem('webapp_favorites', JSON.stringify(favorites));
     
-    // Уведомляем об изменениях
-    window.dispatchEvent(new Event('favoritesUpdated'));
+    // Уведомляем об изменениях с конкретными событиями
+    if (newIsFavorite) {
+      window.dispatchEvent(new CustomEvent('favoriteAdded', { 
+        detail: { productId } 
+      }));
+    } else {
+      window.dispatchEvent(new CustomEvent('favoriteRemoved', { 
+        detail: { productId } 
+      }));
+      // Вызываем callback для анимации удаления
+      onRemoved?.();
+    }
   };
 
   // Обработчик клика по кнопке
@@ -72,11 +106,13 @@ export function FavoriteButton({ productId, className = "" }: FavoriteButtonProp
           body: JSON.stringify({ product_id: productId }),
         });
 
-        if (response.ok) {
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
           setIsFavorite(true);
           updateLocalStorage(true);
         } else {
-          throw new Error('Ошибка добавления в избранное');
+          throw new Error(data.error || 'Ошибка добавления в избранное');
         }
       } else {
         // Удаляем из избранного
@@ -84,19 +120,24 @@ export function FavoriteButton({ productId, className = "" }: FavoriteButtonProp
           method: 'DELETE',
         });
 
-        if (response.ok) {
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
           setIsFavorite(false);
           updateLocalStorage(false);
         } else {
-          throw new Error('Ошибка удаления из избранного');
+          throw new Error(data.error || 'Ошибка удаления из избранного');
         }
       }
     } catch (error) {
       console.error('Favorite toggle error:', error);
-      // В случае ошибки API всё равно обновляем localStorage
+      // В случае ошибки API всё равно обновляем localStorage для лучшего UX
       const newIsFavorite = !isFavorite;
       setIsFavorite(newIsFavorite);
       updateLocalStorage(newIsFavorite);
+      
+      // Показываем пользователю уведомление об ошибке (опционально)
+      // Можно добавить toast notification здесь
     } finally {
       setIsLoading(false);
     }

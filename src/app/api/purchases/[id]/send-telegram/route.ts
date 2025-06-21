@@ -63,7 +63,7 @@ export async function POST(
       await (prisma as any).purchases.update({
         where: { id: purchaseId },
         data: {
-          status: 'sent_to_supplier',
+          status: 'sent',
           updatedat: new Date(),
           telegrammessageid: result.messageId,
         }

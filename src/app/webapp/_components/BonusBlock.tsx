@@ -104,7 +104,7 @@ export default function BonusBlock() {
             </div>
             {nextTier && (
               <div className="text-xs opacity-80">
-                До уровня "{nextTier.title}": {nextTier.orders_to_next} заказов
+                До уровня &quot;{nextTier.title}&quot;: {nextTier.orders_to_next} заказов
               </div>
             )}
           </div>

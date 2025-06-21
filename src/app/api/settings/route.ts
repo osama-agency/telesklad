@@ -42,8 +42,25 @@ export async function GET() {
       }
     });
 
+    // Собираем настройки уведомлений
+    const notificationSettings = {
+      payment_reminder_first_hours: parseInt(settingsMap.notification_payment_reminder_first_hours) || 48,
+      payment_reminder_final_hours: parseInt(settingsMap.notification_payment_reminder_final_hours) || 51,
+      payment_auto_cancel_hours: parseInt(settingsMap.notification_payment_auto_cancel_hours) || 72,
+      review_request_days: parseInt(settingsMap.notification_review_request_days) || 10
+    };
+
+    // Создаем копию для маскировки токенов ботов для безопасности
+    const maskedSettings = { ...settingsMap };
+    if (maskedSettings.telegram_bot_token && maskedSettings.telegram_bot_token.length > 15) {
+      maskedSettings.telegram_bot_token = maskedSettings.telegram_bot_token.substring(0, 10) + '...' + maskedSettings.telegram_bot_token.slice(-4);
+    }
+    if (maskedSettings.webapp_telegram_bot_token && maskedSettings.webapp_telegram_bot_token.length > 15) {
+      maskedSettings.webapp_telegram_bot_token = maskedSettings.webapp_telegram_bot_token.substring(0, 10) + '...' + maskedSettings.webapp_telegram_bot_token.slice(-4);
+    }
+
     return NextResponse.json({
-      settings: settingsMap,
+      settings: maskedSettings,
       loyaltyTiers: loyaltyTiers.map(tier => ({
         id: tier.id.toString(),
         title: tier.title,
@@ -58,7 +75,8 @@ export async function GET() {
           orderCount: stat.order_count,
           userCount: stat._count.id
         }))
-      }
+      },
+      notificationSettings
     });
 
   } catch (error) {
@@ -74,11 +92,17 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { settings, loyaltyTiers } = body;
+    const { settings, loyaltyTiers, notificationSettings } = body;
 
     // Обновляем обычные настройки
     if (settings) {
       for (const [key, value] of Object.entries(settings)) {
+        // Пропускаем токены ботов если они замаскированы (содержат ...)
+        if ((key === 'telegram_bot_token' || key === 'webapp_telegram_bot_token') && 
+            String(value).includes('...')) {
+          continue;
+        }
+
         await prisma.settings.upsert({
           where: { variable: key },
           update: { 
@@ -88,6 +112,7 @@ export async function POST(request: NextRequest) {
           create: {
             variable: key,
             value: String(value),
+            description: key.includes('token') ? 'Токен Telegram бота (зашифрован)' : undefined,
             created_at: new Date(),
             updated_at: new Date()
           }
@@ -106,6 +131,35 @@ export async function POST(request: NextRequest) {
               bonus_percentage: parseInt(tier.bonus_percentage),
               order_threshold: parseInt(tier.order_threshold),
               order_min_amount: parseInt(tier.order_min_amount || 0),
+              updated_at: new Date()
+            }
+          });
+        }
+      }
+    }
+
+    // Обновляем настройки уведомлений
+    if (notificationSettings) {
+      const notificationSettingsMap = {
+        notification_payment_reminder_first_hours: notificationSettings.payment_reminder_first_hours?.toString(),
+        notification_payment_reminder_final_hours: notificationSettings.payment_reminder_final_hours?.toString(),
+        notification_payment_auto_cancel_hours: notificationSettings.payment_auto_cancel_hours?.toString(),
+        notification_review_request_days: notificationSettings.review_request_days?.toString()
+      };
+
+      for (const [key, value] of Object.entries(notificationSettingsMap)) {
+        if (value !== undefined) {
+          await prisma.settings.upsert({
+            where: { variable: key },
+            update: { 
+              value: value,
+              updated_at: new Date()
+            },
+            create: {
+              variable: key,
+              value: value,
+              description: `Настройка уведомлений: ${key}`,
+              created_at: new Date(),
               updated_at: new Date()
             }
           });

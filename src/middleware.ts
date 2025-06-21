@@ -11,7 +11,7 @@ function middleware(request: NextRequest) {
   if (pathname.startsWith('/analytics/')) {
     const redirectMap: Record<string, string> = {
       '/analytics/ai': '/products',
-      '/analytics/purchases': '/purchases-analytics',
+      '/analytics/purchases': '/purchases',
       '/analytics/orders': '/orders-analytics', 
       '/analytics/expenses': '/expenses-analytics',
     };

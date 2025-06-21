@@ -36,7 +36,7 @@ export interface PurchasesParams {
 }
 
 interface UsePurchasesResult {
-  data: Purchase[] | null;
+  data: Purchase[];
   isLoading: boolean;
   error: string | null;
   refetch: () => void;
@@ -44,7 +44,7 @@ interface UsePurchasesResult {
 
 // Основной хук для получения закупок
 export function usePurchases(params: PurchasesParams = {}): UsePurchasesResult {
-  const [data, setData] = useState<Purchase[] | null>(null);
+  const [data, setData] = useState<Purchase[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
