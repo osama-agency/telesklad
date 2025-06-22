@@ -8,6 +8,25 @@ import LoadingSpinner from "../_components/LoadingSpinner";
 import DeliveryForm from "../_components/DeliveryForm";
 import CartCheckoutSummary from "../_components/CartCheckoutSummary";
 
+// Telegram WebApp interface
+interface TelegramWebApp {
+  ready: () => void;
+  expand: () => void;
+  close: () => void;
+  sendData: (data: string) => void;
+  setHeaderColor: (color: string) => void;
+  setBackgroundColor: (color: string) => void;
+  initData: string;
+  initDataUnsafe: {
+    user?: {
+      id: number;
+      first_name: string;
+      last_name?: string;
+      username?: string;
+    };
+  };
+}
+
 interface CartItem {
   id: number;
   product_id: number;
@@ -188,7 +207,7 @@ export default function CartPage() {
     setDeliveryData(data);
   }, []);
 
-  // Обработчик оформления заказа
+  // Обработчик оформления заказа с Telegram WebApp интеграцией
   const handlePlaceOrder = async () => {
     if (!deliveryData || isOrderLoading) return;
 
@@ -200,13 +219,17 @@ export default function CartPage() {
         delivery_data: deliveryData,
         cart_items: cartItems,
         bonus: appliedBonus,
-        total: finalTotal
+        total: finalTotal,
+        telegram_user: (window as any).Telegram?.WebApp?.initDataUnsafe?.user || null
       };
 
       const response = await fetch('/api/webapp/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...((window as any).Telegram?.WebApp?.initData && {
+            'X-Telegram-Init-Data': (window as any).Telegram.WebApp.initData
+          })
         },
         body: JSON.stringify(orderData)
       });
@@ -218,11 +241,42 @@ export default function CartPage() {
         clearCart();
         localStorage.removeItem('webapp_delivery_data');
         
-        // Показываем уведомление об успешном оформлении
-        alert('Заказ успешно оформлен!');
-        
-        // Перенаправляем на страницу заказов
-        window.location.href = '/webapp/orders';
+        // Отправляем данные в Telegram бот для уведомления
+        if ((window as any).Telegram?.WebApp) {
+          const telegramData = {
+            action: 'order_placed',
+            order_id: result.order_id,
+            total: finalTotal,
+            items_count: cartItems.length,
+            delivery_address: `${deliveryData.address}, ${deliveryData.street}, ${deliveryData.home}`,
+            customer_name: `${deliveryData.first_name} ${deliveryData.last_name}`,
+            customer_phone: deliveryData.phone_number
+          };
+          
+          try {
+            (window as any).Telegram.WebApp.sendData(JSON.stringify(telegramData));
+            console.log('📱 Order data sent to Telegram bot:', telegramData);
+          } catch (error) {
+            console.error('Error sending data to Telegram:', error);
+          }
+          
+          // Закрываем WebApp через небольшую задержку
+          setTimeout(() => {
+            try {
+              (window as any).Telegram.WebApp.close();
+              console.log('📱 Telegram WebApp closed');
+            } catch (error) {
+              console.error('Error closing Telegram WebApp:', error);
+              // Fallback для обычного браузера
+              alert('Заказ успешно оформлен!');
+              window.location.href = '/webapp/orders';
+            }
+          }, 1000);
+        } else {
+          // Fallback для обычного браузера
+          alert('Заказ успешно оформлен!');
+          window.location.href = '/webapp/orders';
+        }
       } else {
         alert(result.error || 'Ошибка при оформлении заказа');
       }
@@ -250,12 +304,17 @@ export default function CartPage() {
     document.title = "Корзина";
     
     // Telegram Web App initialization
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-      const tg = window.Telegram.WebApp;
-      tg.ready();
-      tg.expand();
-      tg.setHeaderColor('#FFFFFF');
-      tg.setBackgroundColor('#f9f9f9');
+    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
+      const tg = (window as any).Telegram.WebApp;
+      try {
+        tg.ready();
+        tg.expand();
+        tg.setHeaderColor('#FFFFFF');
+        tg.setBackgroundColor('#f9f9f9');
+        console.log('📱 Telegram WebApp initialized for cart page');
+      } catch (error) {
+        console.error('Error initializing Telegram WebApp:', error);
+      }
     }
   }, []);
 
@@ -351,7 +410,7 @@ export default function CartPage() {
               Оформляем заказ...
             </span>
           ) : (
-            'Оформить заказ'
+            `Оформить заказ • ${finalTotal.toLocaleString('ru-RU')} ₽`
           )}
         </button>
         
