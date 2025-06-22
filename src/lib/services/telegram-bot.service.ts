@@ -205,14 +205,30 @@ ${items}
   static async sendPurchaseToSupplier(purchase: Purchase): Promise<{ success: boolean; messageId?: number }> {
     console.log(`🚀 Sending purchase #${purchase.id} to group ${this.GROUP_CHAT_ID}`);
 
-    // Рассчитываем общую сумму в лирах
-    const totalPrimeCostTry = purchase.items.reduce((sum, item) => sum + (item.costPrice * item.quantity), 0);
+    // Получаем курс лиры для конвертации из рублей в лиры
+    let tryRate = 30; // Курс по умолчанию, если не удастся получить актуальный
+    try {
+      const ExchangeRateService = (await import('@/lib/services/exchange-rate.service')).ExchangeRateService;
+      const latestRate = await ExchangeRateService.getLatestRate('TRY');
+      tryRate = Number(latestRate.rate); // Используем базовый курс без буфера для отображения
+      console.log(`💱 Using TRY rate for display: ${tryRate} RUB per TRY`);
+    } catch (error) {
+      console.warn(`⚠️ Could not get TRY rate, using default: ${tryRate}`);
+    }
 
-    // Формируем список товаров с себестоимостью в лирах
+    // Рассчитываем общую сумму в рублях (как хранится в базе)
+    const totalPrimeCostRub = purchase.items.reduce((sum, item) => sum + (item.costPrice * item.quantity), 0);
+    
+    // Конвертируем в лиры для отображения
+    const totalPrimeCostTry = totalPrimeCostRub / tryRate;
+
+    // Формируем список товаров с ценами в лирах
     const itemsText = purchase.items
       .map(item => {
-        const itemTotal = item.costPrice * item.quantity;
-        return `• <b>${item.productName}</b>\n  ${item.quantity} шт. × ₺${item.costPrice.toFixed(2)} = <b>₺${itemTotal.toFixed(2)}</b>`;
+        const itemTotalRub = item.costPrice * item.quantity;
+        const itemTotalTry = itemTotalRub / tryRate;
+        const costPriceTry = item.costPrice / tryRate;
+        return `• <b>${item.productName}</b>\n  ${item.quantity} шт. × ${costPriceTry.toFixed(2)} ₺ = <b>${itemTotalTry.toFixed(2)} ₺</b>`;
       })
       .join('\n\n');
 
@@ -222,10 +238,10 @@ ${items}
       chat_id: this.GROUP_CHAT_ID,
       text: `${urgentTag}📋 <b>Новая закупка #${purchase.id}</b>
 
-<b>Товары и себестоимость:</b>
+<b>Товары и цены:</b>
 ${itemsText}
 
-💰 <b>Общая себестоимость: ₺${totalPrimeCostTry.toFixed(2)}</b>
+💰 <b>Общая сумма: ${totalPrimeCostTry.toFixed(2)} ₺</b>
 
 📅 <b>Дата создания:</b> ${new Date(purchase.createdAt).toLocaleString('ru-RU', { 
         timeZone: 'Europe/Moscow',
@@ -251,15 +267,135 @@ ${itemsText}
     return { success: false };
   }
 
+  /**
+   * Закрепить сообщение в чате
+   */
+  private static async pinMessage(chatId: number | string, messageId: number): Promise<any> {
+    // Инициализируем токен если нужно
+    await this.initializeToken();
+    
+    if (!this.BOT_TOKEN || !this.API_URL) {
+      console.error('❌ TELEGRAM_BOT_TOKEN not configured');
+      return null;
+    }
 
+    try {
+      console.log(`📌 Pinning message ${messageId} in chat ${chatId}`);
+      
+      const response = await fetch(`${this.API_URL!}/pinChatMessage`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chat_id: chatId,
+          message_id: messageId,
+          disable_notification: false, // Уведомить участников о закреплении
+        }),
+      });
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Telegram API error: ${response.status} ${response.statusText} - ${errorText}`);
+      }
 
+      const result = await response.json();
+      console.log('✅ Message pinned successfully');
+      return result;
+    } catch (error) {
+      console.error('❌ Error pinning Telegram message:', error);
+      return null;
+    }
+  }
 
+  /**
+   * Отправить простое текстовое сообщение в группу
+   */
+  static async sendSimpleMessage(text: string, shouldPin: boolean = false, replyMarkup?: any): Promise<{ success: boolean; messageId?: number }> {
+    console.log(`📤 Sending simple message to group`);
 
+    const message: TelegramMessage = {
+      chat_id: this.GROUP_CHAT_ID,
+      text: text,
+      parse_mode: 'HTML',
+      reply_markup: replyMarkup
+    };
 
+    const result = await this.sendMessage(message);
+    
+    if (result && result.ok) {
+      const messageId = result.result.message_id;
+      console.log(`✅ Simple message sent to group, message_id: ${messageId}`);
+      
+      // Закрепляем сообщение если нужно
+      if (shouldPin) {
+        console.log(`📌 Attempting to pin message ${messageId}`);
+        const pinResult = await this.pinMessage(this.GROUP_CHAT_ID, messageId);
+        if (pinResult && pinResult.ok) {
+          console.log(`✅ Message ${messageId} pinned successfully`);
+        } else {
+          console.log(`⚠️ Failed to pin message ${messageId}, but message was sent`);
+        }
+      }
+      
+      return { success: true, messageId };
+    }
+    
+    console.log('❌ Failed to send simple message to group');
+    return { success: false };
+  }
 
+  /**
+   * Отправить уведомление об оплате закупки с интерактивной кнопкой
+   */
+  static async sendPaymentNotification(purchaseId: number, purchaseData: {
+    items: Array<{ productName: string; quantity: number }>;
+    totalAmount: number;
+    paidExchangeRate?: number;
+  }): Promise<{ success: boolean; messageId?: number }> {
+    console.log(`💰 Sending payment notification for purchase #${purchaseId} with interactive button`);
 
+    // Формируем список товаров
+    const itemsList = purchaseData.items
+      .map((item, index) => `${index + 1}. ${item.productName} - ${item.quantity} шт.`)
+      .join('\n');
 
+    // Конвертируем сумму из рублей в лиры для отображения
+    let totalInTry = purchaseData.totalAmount;
+    if (purchaseData.paidExchangeRate) {
+      totalInTry = purchaseData.totalAmount / purchaseData.paidExchangeRate;
+    } else {
+      // Если нет курса оплаты, используем текущий курс для отображения
+      try {
+        const ExchangeRateService = (await import('@/lib/services/exchange-rate.service')).ExchangeRateService;
+        const latestRate = await ExchangeRateService.getLatestRate('TRY');
+        totalInTry = purchaseData.totalAmount / Number(latestRate.rate);
+      } catch (error) {
+        totalInTry = purchaseData.totalAmount / 30; // Курс по умолчанию
+      }
+    }
+
+    const paymentMessage = `💰 <b>Закупка #${purchaseId} - оплачена!</b>
+
+📦 <b>Товары (${purchaseData.items.length} поз.):</b>
+${itemsList}
+
+💵 <b>Итого: ${totalInTry.toFixed(2)} ₺</b>
+
+✅ Статус изменен на "Оплачено"`;
+
+    // Создаем интерактивную кнопку
+    const replyMarkup = {
+      inline_keyboard: [[
+        {
+          text: "🚚 Отправлено в Карго",
+          callback_data: `shipped_${purchaseId}`
+        }
+      ]]
+    };
+
+    return await this.sendSimpleMessage(paymentMessage, true, replyMarkup);
+  }
 
   /**
    * Получить информацию о боте (для тестирования)

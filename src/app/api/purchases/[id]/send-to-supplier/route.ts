@@ -66,17 +66,17 @@ export async function POST(
     console.log(`🚀 Sending purchase #${purchaseId} to group via Telegram`);
 
     // Форматируем данные с себестоимостью в лирах для отправки в группу
-    const itemsWithTRY = purchase.purchase_items.map((item: any) => ({
-      productName: item.productname,
-      quantity: item.quantity,
-      costPrice: item.unitcosttry || 0, // используем себестоимость в лирах
-      total: (item.unitcosttry || 0) * item.quantity
-    }));
+      const itemsWithTRY = purchase.purchase_items.map((item: any) => ({
+        productName: item.productname,
+        quantity: item.quantity,
+        costPrice: item.unitcosttry || 0, // используем себестоимость в лирах
+        total: (item.unitcosttry || 0) * item.quantity
+      }));
 
     const telegramPurchaseData = {
-      ...formattedPurchase,
-      items: itemsWithTRY
-    };
+        ...formattedPurchase,
+        items: itemsWithTRY
+      };
 
     // Отправляем закупку в группу через Telegram
     const telegramResult = await TelegramBotService.sendPurchaseToSupplier(telegramPurchaseData);

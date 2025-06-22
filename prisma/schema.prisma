@@ -464,30 +464,24 @@ model purchase_items {
 }
 
 model purchases {
-  id                     Int              @id @default(autoincrement())
-  createdat              DateTime         @default(now()) @db.Timestamp(6)
-  updatedat              DateTime         @default(now()) @db.Timestamp(6)
-  totalamount            Float?
-  status                 String?          @default("draft") @db.VarChar
-  isurgent               Boolean?         @default(false)
-  expenses               Float?
-  userid                 BigInt
-  telegrammessageid      Int?
-  telegramchatid         String?          @db.VarChar
-  suppliername           String?          @db.VarChar
-  supplierphone          String?          @db.VarChar
-  supplieraddress        String?          @db.VarChar
-  notes                  String?
-  deliverydate           DateTime?        @db.Timestamp(6)
-  deliverytrackingnumber String?          @db.VarChar
-  deliverystatus         String?          @db.VarChar
-  deliverycarrier        String?          @db.VarChar
-  deliverynotes          String?
-  paymentbuttonclicks    Int?             @default(0)
-  purchase_items         purchase_items[]
-  users                  users            @relation(fields: [userid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_purchases_user")
+  id              Int             @id @default(autoincrement())
+  createdat       DateTime        @default(now()) @db.Timestamp(6)
+  updatedat       DateTime        @default(now()) @db.Timestamp(6)
+  totalamount     Float?
+  status          String          @default("draft") @db.VarChar
+  isurgent        Boolean         @default(false)
+  expenses        Float?
+  userid          BigInt
+  exchangerate    Decimal?        @db.Decimal(10, 4)
+  notes           String?
+  supplier        String?
+  totalcost       Decimal?        @db.Decimal(10, 2)
+  totalcosttry    Decimal?        @db.Decimal(10, 2)
+  paiddate        DateTime?       @db.Timestamp(6)
+  paidexchangerate Decimal?       @db.Decimal(10, 4)
+  purchase_items  purchase_items[]
+  users           users           @relation(fields: [userid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_purchases_user")
 
-  @@index([status], map: "idx_purchases_status")
   @@index([userid], map: "idx_purchases_userid")
 }
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TelegramBotService } from '@/lib/services/telegram-bot.service';
+import { TelegramTokenService } from '@/lib/services/telegram-token.service';
 import { prisma } from '@/libs/prismaDb';
 
 // POST - обработка webhook от Telegram
@@ -8,9 +9,85 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('📨 Telegram webhook received:', JSON.stringify(body, null, 2));
 
-    // Callback queries больше не обрабатываются
+    // Обрабатываем callback queries от кнопок
     if (body.callback_query) {
-      console.log('ℹ️ Callback query ignored (no longer supported)');
+      console.log('🔘 Processing callback query:', body.callback_query.data);
+      
+      const callbackQuery = body.callback_query;
+      const data = callbackQuery.data;
+      
+      // Обрабатываем кнопку "Отправлено в Карго"
+      if (data && data.startsWith('shipped_')) {
+        const purchaseId = parseInt(data.replace('shipped_', ''));
+        console.log(`🚚 Processing "shipped" callback for purchase #${purchaseId}`);
+        
+        try {
+          // Обновляем статус закупки на "in_transit"
+          const updatedPurchase = await (prisma as any).purchases.update({
+            where: { id: purchaseId },
+            data: {
+              status: 'in_transit',
+              updatedat: new Date()
+            }
+          });
+          
+          console.log(`✅ Purchase #${purchaseId} status updated to "in_transit"`);
+          
+          // Отправляем подтверждение пользователю
+          const confirmationText = `✅ Закупка #${purchaseId} помечена как "В пути"`;
+          
+          // Получаем токен из базы данных
+          const botToken = await TelegramTokenService.getTelegramBotToken();
+          
+          if (!botToken) {
+            throw new Error('Bot token not found');
+          }
+          
+          // Отвечаем на callback query
+          await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              callback_query_id: callbackQuery.id,
+              text: confirmationText,
+              show_alert: false
+            })
+          });
+          
+          // Обновляем сообщение, убирая кнопку
+          const originalMessage = callbackQuery.message;
+          const updatedText = originalMessage.text + '\n\n🚚 <b>Статус обновлен: В пути</b>';
+          
+          await fetch(`https://api.telegram.org/bot${botToken}/editMessageText`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: originalMessage.chat.id,
+              message_id: originalMessage.message_id,
+              text: updatedText,
+              parse_mode: 'HTML'
+            })
+          });
+          
+        } catch (error) {
+          console.error(`❌ Error updating purchase #${purchaseId} status:`, error);
+          
+          // Отвечаем с ошибкой
+          const botToken = await TelegramTokenService.getTelegramBotToken();
+          if (botToken) {
+            await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                callback_query_id: callbackQuery.id,
+                text: '❌ Ошибка при обновлении статуса',
+                show_alert: true
+              })
+            });
+          }
+        }
+      }
+      
       return NextResponse.json({ ok: true });
     }
 

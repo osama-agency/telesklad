@@ -131,10 +131,17 @@ export async function POST(
       // 3. Создаем запись расхода на логистику, если указан
       let logisticsExpenseRecord = null;
       if (logisticsExpense && logisticsExpense > 0) {
+        // Формируем детальное описание с перечислением всех товаров
+        const itemsDescription = receivedItems.map((item, index) => 
+          `${index + 1}. ${item.productName} - ${item.receivedQuantity} шт.`
+        ).join('\n');
+        
+        const fullDescription = `Логистика для закупки #${purchaseId}\n\nТовары (${receivedItems.length} поз.):\n${itemsDescription}\n\nПолучено: ${receivedItems.reduce((sum, item) => sum + item.receivedQuantity, 0)} шт.`;
+        
         logisticsExpenseRecord = await tx.expenses.create({
           data: {
             amount: logisticsExpense,
-            description: `Логистика для закупки #${purchaseId}`,
+            description: fullDescription,
             category: 'Логистика',
             date: receivedAt,
             userid: purchase.userid
@@ -168,14 +175,18 @@ export async function POST(
     return NextResponse.json({
       success: true,
       data: {
-        id: result.purchase.id,
+        id: Number(result.purchase.id),
         status: result.purchase.status,
         deliveryDays: result.deliveryDays,
-        receivedDate,
-        items: result.receivedItems,
+        receivedDate: receivedDate.toISOString(),
+        items: result.receivedItems.map(item => ({
+          ...item,
+          id: Number(item.id),
+          productId: Number(item.productId)
+        })),
         summary,
         logisticsExpense: logisticsExpense || 0,
-        logisticsExpenseId: result.logisticsExpense?.id,
+        logisticsExpenseId: result.logisticsExpense ? Number(result.logisticsExpense.id) : null,
         notes,
       },
       message: `Закупка #${purchaseId} успешно оприходована за ${deliveryDays} дней. Получено ${summary.totalReceived} из ${summary.totalOrdered} товаров.`,

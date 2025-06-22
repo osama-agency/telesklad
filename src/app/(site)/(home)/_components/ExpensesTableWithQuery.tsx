@@ -325,7 +325,19 @@ export function ExpensesTable() {
                         </span>
                       </td>
                       <td className="py-4 px-6 text-[#1E293B] dark:text-white font-medium">
-                        {expense.description}
+                        <div className="max-w-md">
+                          {expense.description.includes('\n') ? (
+                            <div className="space-y-1">
+                              {expense.description.split('\n').map((line, idx) => (
+                                <div key={idx} className={`${line.trim() === '' ? 'h-2' : ''} ${idx === 0 ? 'font-semibold' : 'text-sm text-[#64748B] dark:text-gray-400'}`}>
+                                  {line.trim() || '\u00A0'}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span>{expense.description}</span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-4 px-6 text-right font-semibold text-red-600 dark:text-red-400">
                         ₽{expense.amount.toLocaleString()}

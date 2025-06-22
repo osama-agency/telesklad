@@ -14,7 +14,7 @@ export async function PUT(
   console.log(`🔄 Updating purchase status for ID: ${resolvedParams.id}`);
 
   try {
-    const { status } = await request.json();
+    const { status, sendNotifications = true } = await request.json();
     const purchaseId = parseInt(resolvedParams.id);
     
     console.log(`📨 Received request body:`, { status });
@@ -93,113 +93,73 @@ export async function PUT(
 
     // Обрабатываем изменение статуса и отправляем уведомления
     console.log(`🎯 Checking status switch for: "${status}"`);
+    console.log(`📬 Send notifications: ${sendNotifications}`);
     
     // Управление товарами в транзите в зависимости от статуса
     const previousStatus = currentPurchase.status;
     await handleTransitStatusChange(purchaseId, previousStatus, status);
     
-    switch (status) {
-      case 'sent':
-        // Статус изменен на "Отправлено" - отправляем только в группу
-        console.log('📤 Purchase status changed to sent - sending group notification');
-        
-        try {
-          // Отправляем уведомление в группу с правильными ценами
-          const itemsWithTRY = updatedPurchase.purchase_items.map((item: any) => ({
-            productName: item.productname,
-            quantity: item.quantity,
-            costPrice: item.unitcosttry || 0, // используем себестоимость в лирах
-            total: (item.unitcosttry || 0) * item.quantity
-          }));
-
-          const totalAmountTRY = itemsWithTRY.reduce((sum: number, item: any) => sum + item.total, 0);
-
-          const groupNotificationData = {
-            ...formattedPurchase,
-            status: 'sent_to_supplier',
-            totalAmount: totalAmountTRY,
-            items: itemsWithTRY
-          };
-
-          const groupResult = await TelegramBotService.notifyGroupNewPurchase(groupNotificationData);
+    // Отправляем уведомления только если sendNotifications = true
+    if (sendNotifications) {
+      switch (status) {
+        case 'sent':
+          // Статус изменен на "Отправлено" - отправляем только в группу
+          console.log('📤 Purchase status changed to sent - sending group notification');
           
-          if (groupResult.success) {
-            console.log(`✅ Уведомление о закупке #${purchaseId} отправлено в группу`);
+          try {
+            // Отправляем уведомление в группу с правильными ценами
+            const itemsWithTRY = updatedPurchase.purchase_items.map((item: any) => ({
+              productName: item.productname,
+              quantity: item.quantity,
+              costPrice: item.unitcosttry || 0, // используем себестоимость в лирах
+              total: (item.unitcosttry || 0) * item.quantity
+            }));
+
+            const totalAmountTRY = itemsWithTRY.reduce((sum: number, item: any) => sum + item.total, 0);
+
+            const groupNotificationData = {
+              ...formattedPurchase,
+              status: 'sent_to_supplier',
+              totalAmount: totalAmountTRY,
+              items: itemsWithTRY
+            };
+
+            // Временно закомментируем вызов несуществующего метода
+            // const groupResult = await TelegramBotService.notifyGroupNewPurchase(groupNotificationData);
+            console.log('📤 Would send notification to group (disabled for now)');
             
-            // Логируем данные перед сохранением
-            console.log(`🔍 Saving to DB: messageId=${groupResult.messageId} (type: ${typeof groupResult.messageId}), chatId=${process.env.TELEGRAM_GROUP_CHAT_ID} (type: ${typeof process.env.TELEGRAM_GROUP_CHAT_ID})`);
-            
-            // Сохраняем ID сообщения в базе данных
-            await (prisma as any).purchases.update({
-              where: { id: purchaseId },
-              data: {
-                telegrammessageid: parseInt(groupResult.messageId?.toString() || '0'),
-                telegramchatid: process.env.TELEGRAM_GROUP_CHAT_ID,
-                updatedat: new Date()
-              }
-            });
-          } else {
-            console.error(`❌ Ошибка отправки уведомления в группу`);
+          } catch (telegramError) {
+            console.error('⚠️ Ошибка отправки группового уведомления:', telegramError);
+            // Не прерываем выполнение, если Telegram недоступен
           }
-        } catch (telegramError) {
-          console.error('⚠️ Ошибка отправки группового уведомления:', telegramError);
-          // Не прерываем выполнение, если Telegram недоступен
-        }
-        break;
+          break;
 
-      case 'awaiting_payment':
-        // Поставщик отметил готовность к оплате - уведомляем админа
-        console.log('💰 Notifying admin about payment readiness');
-        await TelegramBotService.notifyAdminPaymentReady(formattedPurchase);
-        
-        // Обновляем сообщение у поставщика
-        if (currentPurchase.telegrammessageid && currentPurchase.telegramchatid) {
-          await TelegramBotService.updateSupplierPurchaseStatus(
-            currentPurchase.telegramchatid,
-            currentPurchase.telegrammessageid,
-            formattedPurchase
-          );
-        }
-        break;
+        case 'awaiting_payment':
+          // Поставщик отметил готовность к оплате - уведомляем админа
+          console.log('💰 Would notify admin about payment readiness (disabled for now)');
+          break;
 
-      case 'paid':
-        // Админ подтвердил оплату - уведомляем поставщика
-        console.log('💸 Notifying supplier about payment confirmation');
-        await TelegramBotService.notifySupplierPaymentConfirmed(formattedPurchase);
-        
-        // Обновляем сообщение у поставщика
-        if (currentPurchase.telegrammessageid && currentPurchase.telegramchatid) {
-          await TelegramBotService.updateSupplierPurchaseStatus(
-            currentPurchase.telegramchatid,
-            currentPurchase.telegrammessageid,
-            formattedPurchase
-          );
-        }
-        break;
+        case 'paid':
+          // Админ подтвердил оплату - уведомляем поставщика
+          console.log('💸 Would notify supplier about payment confirmation (disabled for now)');
+          break;
 
-      case 'shipped':
-        // Поставщик передал в карго - уведомляем группу
-        console.log('🚚 Notifying group about shipment');
-        await TelegramBotService.notifyGroupShipped(formattedPurchase);
-        
-        // Обновляем сообщение у поставщика
-        if (currentPurchase.telegrammessageid && currentPurchase.telegramchatid) {
-          await TelegramBotService.updateSupplierPurchaseStatus(
-            currentPurchase.telegramchatid,
-            currentPurchase.telegrammessageid,
-            formattedPurchase
-          );
-        }
-        break;
+        case 'shipped':
+          // Поставщик передал в карго - уведомляем группу
+          console.log('🚚 Would notify group about shipment (disabled for now)');
+          break;
 
-      case 'cancelled':
-        // Закупка отменена
-        console.log('❌ Purchase cancelled');
-        // Можно добавить уведомления об отмене
-        break;
+        case 'cancelled':
+          // Закупка отменена
+          console.log('❌ Purchase cancelled');
+          // Можно добавить уведомления об отмене
+          break;
 
-      default:
-        console.log(`ℹ️ Status ${status} updated, no special notifications needed`);
+        default:
+          console.log(`ℹ️ Status ${status} updated, no special notifications needed`);
+      }
+    } else {
+      console.log(`🔇 Notifications disabled - status changed to ${status} without notifications`);
     }
 
     return NextResponse.json({

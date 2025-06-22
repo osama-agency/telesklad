@@ -4,7 +4,7 @@ import { prisma } from '@/libs/prismaDb';
 import { ExchangeRateService } from '@/lib/services/exchange-rate.service';
 import { Decimal } from '@prisma/client/runtime/library';
 
-// GET - получение списка закупок
+// GET - получение списка закупок с фильтрами
 export async function GET(request: NextRequest) {
   try {
     // ВРЕМЕННО ОТКЛЮЧЕНА АВТОРИЗАЦИЯ
@@ -20,10 +20,109 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const offset = (page - 1) * limit;
 
+    // 🔍 НОВЫЕ ФИЛЬТРЫ
+    const urgent = searchParams.get('urgent'); // true/false
+    const status = searchParams.get('status'); // draft, sent, paid, in_transit, received, cancelled
+    const search = searchParams.get('search'); // поиск по названию товара или поставщику
+    const dateFrom = searchParams.get('dateFrom'); // фильтр по дате создания (от)
+    const dateTo = searchParams.get('dateTo'); // фильтр по дате создания (до)
+    const minAmount = searchParams.get('minAmount'); // минимальная сумма
+    const maxAmount = searchParams.get('maxAmount'); // максимальная сумма
+    const sortBy = searchParams.get('sortBy') || 'createdat'; // поле сортировки
+    const sortOrder = searchParams.get('sortOrder') || 'desc'; // направление сортировки
+
+    // Строим условия фильтрации
+    const whereConditions: any = {};
+
+    // Фильтр по срочности
+    if (urgent !== null) {
+      whereConditions.isurgent = urgent === 'true';
+    }
+
+    // Фильтр по статусу
+    if (status) {
+      whereConditions.status = status;
+    }
+
+    // Фильтр по дате создания
+    if (dateFrom || dateTo) {
+      whereConditions.createdat = {};
+      if (dateFrom) {
+        whereConditions.createdat.gte = new Date(dateFrom);
+      }
+      if (dateTo) {
+        whereConditions.createdat.lte = new Date(dateTo);
+      }
+    }
+
+    // Фильтр по сумме
+    if (minAmount || maxAmount) {
+      whereConditions.totalamount = {};
+      if (minAmount) {
+        whereConditions.totalamount.gte = parseFloat(minAmount);
+      }
+      if (maxAmount) {
+        whereConditions.totalamount.lte = parseFloat(maxAmount);
+      }
+    }
+
+    // Поиск по тексту (поставщик или товары)
+    if (search) {
+      whereConditions.OR = [
+        {
+          suppliername: {
+            contains: search,
+            mode: 'insensitive'
+          }
+        },
+        {
+          notes: {
+            contains: search,
+            mode: 'insensitive'
+          }
+        },
+        {
+          purchase_items: {
+            some: {
+              productname: {
+                contains: search,
+                mode: 'insensitive'
+              }
+            }
+          }
+        }
+      ];
+    }
+
+    // Настройка сортировки
+    const orderBy: any = {};
+    if (sortBy === 'totalAmount') {
+      orderBy.totalamount = sortOrder;
+    } else if (sortBy === 'status') {
+      orderBy.status = sortOrder;
+    } else if (sortBy === 'isUrgent') {
+      orderBy.isurgent = sortOrder;
+    } else {
+      orderBy.createdat = sortOrder;
+    }
+
+    console.log('🔍 Applied filters:', {
+      urgent,
+      status,
+      search,
+      dateFrom,
+      dateTo,
+      minAmount,
+      maxAmount,
+      sortBy,
+      sortOrder
+    });
+
     // ✅ ИСПРАВЛЕНИЕ N+1: Используем include для загрузки связанных данных одним запросом
     try {
       const [purchases, totalCount] = await Promise.all([
         (prisma as any).purchases.findMany({
+          where: whereConditions,
           include: {
             purchase_items: {
               include: {
@@ -44,31 +143,48 @@ export async function GET(request: NextRequest) {
               }
             }
           },
-          orderBy: {
-            createdat: 'desc'
-          },
+          orderBy,
           skip: offset,
           take: limit
         }),
-        (prisma as any).purchases.count()
+        (prisma as any).purchases.count({
+          where: whereConditions
+        })
       ]);
 
       console.log('✅ Found purchases table');
 
       // Сериализуем данные без дополнительных запросов
       const serializedPurchases = purchases.map((purchase: any) => {
-        const items = purchase.purchase_items?.map((item: any) => ({
-          id: item.id ? String(item.id) : null,
-          productId: item.productid ? String(item.productid) : null,
-          productName: item.productname || item.products?.name || 'Unknown Product',
-          quantity: item.quantity || 0,
-          costPrice: item.costprice || 0,
-          total: item.total || 0,
-          totalCostRub: item.totalcostrub ? Number(item.totalcostrub) : null,
-          totalCostTry: item.totalcosttry ? Number(item.totalcosttry) : null,
-          unitCostRub: item.unitcostrub ? Number(item.unitcostrub) : null,
-          unitCostTry: item.unitcosttry ? Number(item.unitcosttry) : null
-        })) || [];
+        const items = purchase.purchase_items?.map((item: any) => {
+          // Определяем правильную цену за единицу - приоритет у лиры (TL)
+          const unitPrice = item.unitcosttry ? Number(item.unitcosttry) :
+                           item.unitcostrub ? Number(item.unitcostrub) :
+                           item.costprice || 0;
+
+          // Определяем правильную общую стоимость - приоритет у лиры (TL)
+          const totalPrice = item.totalcosttry ? Number(item.totalcosttry) :
+                            item.totalcostrub ? Number(item.totalcostrub) :
+                            item.total || 0;
+
+          return {
+            id: item.id ? String(item.id) : null,
+            productId: item.productid ? String(item.productid) : null,
+            productName: item.productname || item.products?.name || 'Unknown Product',
+            quantity: item.quantity || 0,
+            costPrice: unitPrice, // Используем определенную выше правильную цену
+            total: totalPrice, // Используем определенную выше правильную общую стоимость
+            totalCostRub: item.totalcostrub ? Number(item.totalcostrub) : null,
+            totalCostTry: item.totalcosttry ? Number(item.totalcosttry) : null,
+            unitCostRub: item.unitcostrub ? Number(item.unitcostrub) : null,
+            unitCostTry: item.unitcosttry ? Number(item.unitcosttry) : null
+          };
+        }) || [];
+
+        // Вычисляем правильную общую сумму в лирах на основе исправленных цен товаров
+        const totalAmountInTL = items.reduce((sum, item) => {
+          return sum + (item.total || 0);
+        }, 0);
 
         return {
           id: purchase.id ? String(purchase.id) : null,
@@ -76,7 +192,7 @@ export async function GET(request: NextRequest) {
           // Добавляем поля, которые ожидает фронтенд
           createdAt: purchase.createdat || purchase.created_at || new Date().toISOString(),
           updatedAt: purchase.updatedat || purchase.updated_at || new Date().toISOString(),
-          totalAmount: Number(purchase.totalamount || purchase.total_amount || 0),
+          totalAmount: totalAmountInTL, // Используем вычисленную сумму в лирах
           status: purchase.status || 'draft',
           isUrgent: Boolean(purchase.isurgent || purchase.is_urgent || false),
           expenses: Number(purchase.expenses || 0),
@@ -100,11 +216,14 @@ export async function GET(request: NextRequest) {
           deliveryStatus: purchase.deliverystatus || null,
           deliveryCarrier: purchase.deliverycarrier || null,
           deliveryNotes: purchase.deliverynotes || null,
-          paymentButtonClicks: Number(purchase.paymentbuttonclicks || 0)
+          paymentButtonClicks: Number(purchase.paymentbuttonclicks || 0),
+          // Новые поля для курса и даты оплаты
+          paidDate: purchase.paiddate || null,
+          paidExchangeRate: purchase.paidexchangerate ? Number(purchase.paidexchangerate) : null
         };
       });
 
-      console.log(`✅ Purchases API: Found ${serializedPurchases.length} purchases`);
+      console.log(`✅ Purchases API: Found ${serializedPurchases.length} purchases (filtered from ${totalCount} total)`);
       
       return NextResponse.json({
         purchases: serializedPurchases,
@@ -115,6 +234,17 @@ export async function GET(request: NextRequest) {
           totalPages: Math.ceil(totalCount / limit),
           hasNextPage: page < Math.ceil(totalCount / limit),
           hasPrevPage: page > 1
+        },
+        filters: {
+          urgent,
+          status,
+          search,
+          dateFrom,
+          dateTo,
+          minAmount,
+          maxAmount,
+          sortBy,
+          sortOrder
         }
       });
     } catch (purchasesError) {
@@ -129,6 +259,17 @@ export async function GET(request: NextRequest) {
           totalPages: 0,
           hasNextPage: false,
           hasPrevPage: false
+        },
+        filters: {
+          urgent,
+          status,
+          search,
+          dateFrom,
+          dateTo,
+          minAmount,
+          maxAmount,
+          sortBy,
+          sortOrder
         }
       });
     }
@@ -157,7 +298,7 @@ export async function POST(request: NextRequest) {
     //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     // }
 
-    const { items, totalAmount, isUrgent, expenses, currency = 'TRY' } = await request.json();
+    const { items, totalAmount, isUrgent, expenses, currency = 'RUB' } = await request.json();
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'Items are required' }, { status: 400 });
@@ -166,6 +307,8 @@ export async function POST(request: NextRequest) {
     if (!totalAmount || typeof totalAmount !== 'number') {
       return NextResponse.json({ error: 'Total amount is required' }, { status: 400 });
     }
+
+    console.log(`💰 Creating purchase with currency: ${currency}, total: ${totalAmount}`);
 
     // ВРЕМЕННО ОТКЛЮЧЕНА АВТОРИЗАЦИЯ - используем дефолтного пользователя
     const user = await (prisma as any).telesklad_user.findFirst({
@@ -187,7 +330,7 @@ export async function POST(request: NextRequest) {
 
     // Начинаем транзакцию для атомарности операций
     const purchase = await prisma.$transaction(async (tx) => {
-      // Создаем закупку
+      // Создаем закупку - сумма сохраняется в той валюте, в которой была создана
       const newPurchase = await (tx as any).purchases.create({
         data: {
           totalamount: totalAmount,
@@ -197,15 +340,15 @@ export async function POST(request: NextRequest) {
         }
       });
 
-      // Создаем элементы закупки
+      // Создаем элементы закупки - цены сохраняются как есть (в рублях)
       const purchaseItems = [];
       for (const item of items) {
         const purchaseItem = await (tx as any).purchase_items.create({
           data: {
             purchaseid: newPurchase.id,
             quantity: parseInt(item.quantity),
-            costprice: parseFloat(item.costPrice),
-            total: parseFloat(item.total),
+            costprice: parseFloat(item.costPrice), // Цена в рублях
+            total: parseFloat(item.total), // Итого в рублях
             productid: parseInt(item.productId),
             productname: item.productName || `Product ${item.productId}`
           }
@@ -214,6 +357,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Обновляем среднюю закупочную цену и количество для каждого товара
+      // ВАЖНО: Цены уже в рублях, конвертация не нужна
       for (const item of items) {
         const productId = parseInt(item.productId);
         const product = await (tx as any).products.findUnique({
@@ -226,36 +370,33 @@ export async function POST(request: NextRequest) {
         }
 
         try {
-        // Конвертируем цену в рубли
-        const priceInRub = await ExchangeRateService.convertToRub(
-            parseFloat(item.costPrice),
-          currency,
-          new Date()
-        );
+          // Цена уже в рублях - используем как есть
+          const priceInRub = parseFloat(item.costPrice);
 
-        // Рассчитываем новую среднюю цену
-        const currentStock = product.stock_quantity || 0;
+          // Рассчитываем новую среднюю цену
+          const currentStock = product.stock_quantity || 0;
           const currentAvgPrice = product.avgpurchasepricerub ? Number(product.avgpurchasepricerub) : 0;
         
-        const newAvgPrice = ExchangeRateService.calculateMovingAverage(
-          currentStock,
-          currentAvgPrice,
+          const newAvgPrice = ExchangeRateService.calculateMovingAverage(
+            currentStock,
+            currentAvgPrice,
             parseInt(item.quantity),
-          priceInRub
-        );
+            priceInRub
+          );
 
-        // Обновляем товар
+          // Обновляем товар
           await (tx as any).products.update({
             where: { id: productId },
-          data: {
+            data: {
               stock_quantity: currentStock + parseInt(item.quantity),
               avgpurchasepricerub: new Decimal(newAvgPrice),
-            // prime_cost должен храниться в лирах - конвертируем из рублей
-            prime_cost: new Decimal(await ExchangeRateService.convertFromRub(newAvgPrice, currency, new Date()))
-          }
-        });
-        } catch (exchangeError) {
-          console.log(`⚠️ Failed to update product ${productId} prices:`, exchangeError);
+              // prime_cost оставляем как есть - он будет обновлен при оплате закупки
+            }
+          });
+
+          console.log(`📦 Updated product ${productId}: stock +${item.quantity}, avg price: ${newAvgPrice.toFixed(2)} RUB`);
+        } catch (updateError) {
+          console.log(`⚠️ Failed to update product ${productId} prices:`, updateError);
           // Продолжаем выполнение, даже если не удалось обновить цены
         }
       }
@@ -279,6 +420,8 @@ export async function POST(request: NextRequest) {
       })) || [],
     };
 
+    console.log(`✅ Purchase created successfully with ID: ${purchase.id}, currency: ${currency}`);
+
     return NextResponse.json(serializedPurchase, { status: 201 });
   } catch (error) {
     console.error('❌ Error creating purchase:', error);
@@ -286,13 +429,6 @@ export async function POST(request: NextRequest) {
     
     if (error instanceof Error) {
       console.error('❌ Error message:', error.message);
-      
-      if (error.message.includes('No exchange rate found')) {
-        return NextResponse.json(
-          { error: 'Exchange rate not found. Please update exchange rates first.' },
-          { status: 400 }
-        );
-      }
       
       if (error.message.includes('Product with id')) {
         return NextResponse.json(

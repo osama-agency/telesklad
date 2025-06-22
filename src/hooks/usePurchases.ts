@@ -7,7 +7,7 @@ export interface Purchase {
   totalAmount: number;
   isUrgent: boolean;
   expenses?: number;
-  status: "draft" | "sent" | "awaiting_payment" | "paid" | "in_transit" | "received" | "cancelled";
+  status: "draft" | "sent" | "sent_to_supplier" | "awaiting_payment" | "paid" | "in_transit" | "received" | "cancelled";
   items: PurchaseItem[];
   createdAt: string;
   updatedAt: string;
@@ -295,6 +295,7 @@ export function getPurchaseStatusLabel(status: Purchase['status']): string {
   const statusLabels: Record<Purchase['status'], string> = {
     'draft': 'Черновик',
     'sent': 'Отправлена',
+    'sent_to_supplier': 'Отправлено в Телеграм',
     'awaiting_payment': 'Ожидает оплаты',
     'paid': 'Оплачена',
     'in_transit': 'В пути',
