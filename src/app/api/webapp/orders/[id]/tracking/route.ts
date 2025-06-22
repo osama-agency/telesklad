@@ -5,10 +5,11 @@ import { WebappTelegramBotService } from '@/lib/services/webapp-telegram-bot.ser
 const prisma = new PrismaClient();
 
 // PUT - добавление трек-номера к заказу
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { tracking_number } = await request.json();
-    const orderId = parseInt(params.id);
+    const { id } = await params;
+    const orderId = parseInt(id);
 
     if (!tracking_number || tracking_number.trim() === '') {
       return NextResponse.json({ error: 'Трек-номер не может быть пустым' }, { status: 400 });

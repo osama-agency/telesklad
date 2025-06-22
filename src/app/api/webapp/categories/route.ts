@@ -61,7 +61,14 @@ export async function GET() {
       }));
 
     console.log('Returning categories:', transformedCategories.length);
-    return NextResponse.json(transformedCategories);
+    
+    // Добавляем заголовки кэширования
+    const headers = {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
+    };
+
+    return new Response(JSON.stringify(transformedCategories), { status: 200, headers });
 
   } catch (error) {
     console.error('Error fetching categories:', error);

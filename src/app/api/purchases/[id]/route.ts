@@ -7,10 +7,11 @@ import { Decimal } from '@prisma/client/runtime/library';
 // GET - получение конкретной закупки
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const purchaseId = parseInt(params.id);
+    const { id } = await params;
+    const purchaseId = parseInt(id);
     
     if (!purchaseId || isNaN(purchaseId)) {
       return NextResponse.json({ error: 'Invalid purchase ID' }, { status: 400 });
@@ -194,7 +195,7 @@ export async function PUT(
 // DELETE - удаление закупки
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // ВРЕМЕННО ОТКЛЮЧЕНА АВТОРИЗАЦИЯ
@@ -203,7 +204,8 @@ export async function DELETE(
     //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     // }
 
-    const purchaseId = parseInt(params.id);
+    const { id } = await params;
+    const purchaseId = parseInt(id);
     
     if (!purchaseId || isNaN(purchaseId)) {
       return NextResponse.json({ error: 'Invalid purchase ID' }, { status: 400 });

@@ -291,7 +291,13 @@ export async function GET(request: NextRequest) {
 
     console.log(`Profile loaded: ${userData.first_name} ${userData.middle_name}`);
 
-    return NextResponse.json({
+    // Добавляем заголовки кэширования для персональных данных
+    const headers = {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'private, s-maxage=30, stale-while-revalidate=60'
+    };
+
+    const responseData = {
       success: true,
       user: userData,
       account_tiers: transformedTiers,
@@ -303,7 +309,9 @@ export async function GET(request: NextRequest) {
         bonus_percentage: nextTier.bonus_percentage,
         order_min_amount: nextTier.order_min_amount
       } : null
-    });
+    };
+
+    return new Response(JSON.stringify(responseData), { status: 200, headers });
 
   } catch (error) {
     console.error('Profile API error:', error);

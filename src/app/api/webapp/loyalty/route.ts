@@ -4,12 +4,16 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export async function GET(request: NextRequest) {
+  const headers = {
+    'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=30'
+  };
+
   try {
     const { searchParams } = new URL(request.url);
     const tgId = searchParams.get('tg_id');
 
     if (!tgId) {
-      return NextResponse.json({ error: 'tg_id обязателен' }, { status: 400 });
+      return NextResponse.json({ error: 'tg_id обязателен' }, { status: 400, headers });
     }
 
     // Получаем пользователя с информацией об уровне лояльности
@@ -21,7 +25,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'Пользователь не найден' }, { status: 404 });
+      return NextResponse.json({ error: 'Пользователь не найден' }, { status: 404, headers });
     }
 
     // Получаем все уровни лояльности для определения следующего
@@ -73,13 +77,13 @@ export async function GET(request: NextRequest) {
         bonus_percentage: tier.bonus_percentage,
         order_threshold: tier.order_threshold
       }))
-    });
+    }, { headers });
 
   } catch (error) {
     console.error('Ошибка получения информации о лояльности:', error);
     return NextResponse.json(
       { error: 'Ошибка получения информации о лояльности' },
-      { status: 500 }
+      { status: 500, headers }
     );
   }
 } 

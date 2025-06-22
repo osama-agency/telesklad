@@ -2,7 +2,33 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { prisma } from '@/libs/prismaDb';
 import { ExchangeRateService } from '@/lib/services/exchange-rate.service';
+import { CurrencyConverterService } from '@/lib/services/currency-converter.service';
 import { Decimal } from '@prisma/client/runtime/library';
+
+// Функция для рекурсивной конвертации BigInt в строки
+function serializeBigInt(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+  
+  if (typeof obj === 'bigint') {
+    return obj.toString();
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(serializeBigInt);
+  }
+  
+  if (typeof obj === 'object') {
+    const serialized: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      serialized[key] = serializeBigInt(value);
+    }
+    return serialized;
+  }
+  
+  return obj;
+}
 
 // GET - получение списка закупок с фильтрами
 export async function GET(request: NextRequest) {
@@ -120,16 +146,24 @@ export async function GET(request: NextRequest) {
 
     // ✅ ИСПРАВЛЕНИЕ N+1: Используем include для загрузки связанных данных одним запросом
     try {
+      console.log('🔍 About to query purchases with conditions:', JSON.stringify(whereConditions, null, 2));
+      console.log('🔍 Order by:', JSON.stringify(orderBy, null, 2));
+      console.log('🔍 Pagination: offset =', offset, ', limit =', limit);
+      
       const [purchases, totalCount] = await Promise.all([
         (prisma as any).purchases.findMany({
           where: whereConditions,
+          orderBy: orderBy,
+          skip: offset,
+          take: limit,
           include: {
             purchase_items: {
               include: {
                 products: {
                   select: {
                     id: true,
-                    name: true
+                    name: true,
+                    prime_cost: true
                   }
                 }
               }
@@ -142,91 +176,39 @@ export async function GET(request: NextRequest) {
                 last_name: true
               }
             }
-          },
-          orderBy,
-          skip: offset,
-          take: limit
+          }
         }),
-        (prisma as any).purchases.count({
-          where: whereConditions
-        })
+        (prisma as any).purchases.count({ where: whereConditions })
       ]);
 
-      console.log('✅ Found purchases table');
+      console.log('✅ Raw purchases from DB:', purchases.length);
+      console.log('✅ Total count from DB:', totalCount);
+      
+      if (purchases.length > 0) {
+        console.log('✅ First purchase sample: Found data structure');
+      }
 
-      // Сериализуем данные без дополнительных запросов
-      const serializedPurchases = purchases.map((purchase: any) => {
-        const items = purchase.purchase_items?.map((item: any) => {
-          // Определяем правильную цену за единицу - приоритет у лиры (TL)
-          const unitPrice = item.unitcosttry ? Number(item.unitcosttry) :
-                           item.unitcostrub ? Number(item.unitcostrub) :
-                           item.costprice || 0;
+      // ✅ Используем новый сервис конвертации валют для правильной обработки
+      console.log('🔄 Converting purchases using CurrencyConverterService...');
+      const serializedPurchases = await CurrencyConverterService.convertPurchasesBatch(purchases);
 
-          // Определяем правильную общую стоимость - приоритет у лиры (TL)
-          const totalPrice = item.totalcosttry ? Number(item.totalcosttry) :
-                            item.totalcostrub ? Number(item.totalcostrub) :
-                            item.total || 0;
-
-          return {
-            id: item.id ? String(item.id) : null,
-            productId: item.productid ? String(item.productid) : null,
-            productName: item.productname || item.products?.name || 'Unknown Product',
-            quantity: item.quantity || 0,
-            costPrice: unitPrice, // Используем определенную выше правильную цену
-            total: totalPrice, // Используем определенную выше правильную общую стоимость
-            totalCostRub: item.totalcostrub ? Number(item.totalcostrub) : null,
-            totalCostTry: item.totalcosttry ? Number(item.totalcosttry) : null,
-            unitCostRub: item.unitcostrub ? Number(item.unitcostrub) : null,
-            unitCostTry: item.unitcosttry ? Number(item.unitcosttry) : null
-          };
-        }) || [];
-
-        // Вычисляем правильную общую сумму в лирах на основе исправленных цен товаров
-        const totalAmountInTL = items.reduce((sum, item) => {
-          return sum + (item.total || 0);
-        }, 0);
-
-        return {
-          id: purchase.id ? String(purchase.id) : null,
-          userid: purchase.userid ? String(purchase.userid) : null,
-          // Добавляем поля, которые ожидает фронтенд
-          createdAt: purchase.createdat || purchase.created_at || new Date().toISOString(),
-          updatedAt: purchase.updatedat || purchase.updated_at || new Date().toISOString(),
-          totalAmount: totalAmountInTL, // Используем вычисленную сумму в лирах
-          status: purchase.status || 'draft',
-          isUrgent: Boolean(purchase.isurgent || purchase.is_urgent || false),
-          expenses: Number(purchase.expenses || 0),
-          items: items,
-          // Информация о пользователе
-          user: purchase.users ? {
-            id: String(purchase.users.id),
-            email: purchase.users.email,
-            firstName: purchase.users.first_name,
-            lastName: purchase.users.last_name
-          } : null,
-          // Дополнительные поля для Telegram
-          telegramMessageId: purchase.telegrammessageid ? String(purchase.telegrammessageid) : null,
-          telegramChatId: purchase.telegramchatid ? String(purchase.telegramchatid) : null,
-          supplierName: purchase.suppliername || null,
-          supplierPhone: purchase.supplierphone || null,
-          supplierAddress: purchase.supplieraddress || null,
-          notes: purchase.notes || null,
-          deliveryDate: purchase.deliverydate || null,
-          deliveryTrackingNumber: purchase.deliverytrackingnumber || null,
-          deliveryStatus: purchase.deliverystatus || null,
-          deliveryCarrier: purchase.deliverycarrier || null,
-          deliveryNotes: purchase.deliverynotes || null,
-          paymentButtonClicks: Number(purchase.paymentbuttonclicks || 0),
-          // Новые поля для курса и даты оплаты
-          paidDate: purchase.paiddate || null,
-          paidExchangeRate: purchase.paidexchangerate ? Number(purchase.paidexchangerate) : null
-        };
-      });
+      // Рассчитываем средневзвешенный курс для аналитики
+      const totalRubForAnalytics = serializedPurchases.reduce((sum, p) => sum + (p.totalAmountRub || 0), 0);
+      const totalTryForAnalytics = serializedPurchases.reduce((sum, p) => {
+        const rate = p.exchangeRate || 1; // 1 - для избежания деления на ноль
+        return sum + ((p.totalAmountRub || 0) / rate);
+      }, 0);
+      
+      const averageExchangeRate = totalTryForAnalytics > 0 ? totalRubForAnalytics / totalTryForAnalytics : null;
 
       console.log(`✅ Purchases API: Found ${serializedPurchases.length} purchases (filtered from ${totalCount} total)`);
       
-      return NextResponse.json({
+      // Применяем сериализацию BigInt ко всем данным
+      const responseData = serializeBigInt({
         purchases: serializedPurchases,
+        analytics: {
+          averageExchangeRate
+        },
         pagination: {
           page,
           limit,
@@ -247,6 +229,8 @@ export async function GET(request: NextRequest) {
           sortOrder
         }
       });
+      
+      return NextResponse.json(responseData);
     } catch (purchasesError) {
       console.log('❌ purchases table not found:', purchasesError);
       console.log('📝 Returning empty purchases array');
@@ -298,7 +282,7 @@ export async function POST(request: NextRequest) {
     //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     // }
 
-    const { items, totalAmount, isUrgent, expenses, currency = 'RUB' } = await request.json();
+    const { items, totalAmount, isUrgent, expenses, currency = 'RUB', supplierName, notes } = await request.json();
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'Items are required' }, { status: 400 });
@@ -328,16 +312,44 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Main user not found in users table' }, { status: 404 });
     }
 
+    // Получаем текущий курс валюты для TRY
+    let currentExchangeRate = null;
+    let totalCostTry = null;
+
+    if (currency === 'TRY') {
+      try {
+        console.log('📈 Getting current TRY exchange rate...');
+        const exchangeRateData = await ExchangeRateService.getLatestRate('TRY');
+        currentExchangeRate = Number(exchangeRateData.rateWithBuffer);
+        totalCostTry = totalAmount; // В лирах
+        console.log(`📈 Current TRY rate: ${currentExchangeRate}, Total in TRY: ${totalCostTry}`);
+      } catch (error) {
+        console.log('⚠️ Failed to get TRY exchange rate:', error);
+        // Продолжаем без курса, но логируем предупреждение
+      }
+    }
+
     // Начинаем транзакцию для атомарности операций
     const purchase = await prisma.$transaction(async (tx) => {
-      // Создаем закупку - сумма сохраняется в той валюте, в которой была создана
+      // Создаем закупку с сохранением курса валюты
+      const purchaseData: any = {
+        totalamount: totalAmount,
+        isurgent: Boolean(isUrgent),
+        expenses: expenses || null,
+        userid: mainUser.id, // Используем ID из таблицы users
+        suppliername: supplierName || null,
+        notes: notes || null,
+      };
+
+      // Добавляем данные о валюте если это TRY
+      if (currency === 'TRY' && currentExchangeRate && totalCostTry) {
+        purchaseData.exchangerate = new Decimal(currentExchangeRate);
+        purchaseData.totalcosttry = new Decimal(totalCostTry);
+        console.log(`💱 Saving exchange rate: ${currentExchangeRate} and total TRY: ${totalCostTry}`);
+      }
+
       const newPurchase = await (tx as any).purchases.create({
-        data: {
-          totalamount: totalAmount,
-          isurgent: Boolean(isUrgent),
-          expenses: expenses || null,
-          userid: mainUser.id, // Используем ID из таблицы users
-        }
+        data: purchaseData
       });
 
       // Создаем элементы закупки - цены сохраняются как есть (в рублях)

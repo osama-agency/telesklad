@@ -26,10 +26,11 @@ const ORDER_STATUSES = {
 };
 
 // PUT - обновление статуса заказа с уведомлениями
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { status } = await request.json();
-    const orderId = parseInt(params.id);
+    const { id } = await params;
+    const orderId = parseInt(id);
 
     if (!status || !STATUS_CODES.hasOwnProperty(status)) {
       return NextResponse.json({ error: 'Неверный статус' }, { status: 400 });
@@ -154,7 +155,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
               // Планируем уведомление о начислении бонусов
               await NotificationSchedulerService.scheduleBonusNotification(
                 Number(userId), 
-                bonusAmount, 
+                Number(bonusAmount), 
                 orderId
               );
             }

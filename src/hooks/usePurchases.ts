@@ -1,29 +1,63 @@
 import { useState, useEffect, useCallback } from 'react';
 import { get, post, put, del } from '@/lib/api';
 
-// Типы для закупок
+// Типы для закупок (обновленные для поддержки валют)
 export interface Purchase {
   id: number;
-  totalAmount: number;
+  // Новые поля для правильной обработки валют
+  totalAmountRub: number;
+  totalAmountDisplay?: {
+    primary: string;
+    secondary?: string;
+    full: string;
+  };
   isUrgent: boolean;
   expenses?: number;
   status: "draft" | "sent" | "sent_to_supplier" | "awaiting_payment" | "paid" | "in_transit" | "received" | "cancelled";
   items: PurchaseItem[];
   createdAt: string;
   updatedAt: string;
+  // Дополнительные поля
+  supplierName?: string;
+  notes?: string;
+  telegramMessageId?: string | number;
+  telegramChatId?: string;
+  user?: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+  };
+  // Новые поля для валютных данных
+  totalCostTry?: number;
+  exchangeRate?: number;
+  paidExchangeRate?: number;
+  paidDate?: string | Date;
+  // Поля для совместимости
+  totalAmount?: number; // Deprecated, используется для обратной совместимости
 }
 
 export interface PurchaseItem {
   id: number;
   productId: number;
   quantity: number;
-  costPrice: number;
-  total: number;
-  productName?: string; // Добавляем поле productName из API
+  // Новые поля для правильной обработки валют
+  costPriceRub: number;
+  totalRub: number;
+  productName?: string;
   product?: {
     id: number;
     name: string;
   };
+  // Дополнительные поля для истории валют
+  originalCostPrice?: number;
+  unitCostRub?: number;
+  unitCostTry?: number;
+  totalCostRub?: number;
+  totalCostTry?: number;
+  // Поля для совместимости
+  costPrice?: number; // Deprecated, используется для обратной совместимости
+  total?: number; // Deprecated, используется для обратной совместимости
 }
 
 export interface PurchasesParams {

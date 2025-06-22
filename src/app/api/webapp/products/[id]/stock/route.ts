@@ -5,10 +5,11 @@ import { NotificationSchedulerService } from '@/lib/services/notification-schedu
 const prisma = new PrismaClient();
 
 // PUT - обновление остатков товара с уведомлениями о поступлении
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { stock_quantity } = await request.json();
-    const productId = parseInt(params.id);
+    const { id } = await params;
+    const productId = parseInt(id);
 
     if (typeof stock_quantity !== 'number' || stock_quantity < 0) {
       return NextResponse.json({ 
@@ -83,9 +84,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 }
 
 // GET - получение информации об остатках товара
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const productId = parseInt(params.id);
+    const { id } = await params;
+    const productId = parseInt(id);
 
     const product = await prisma.products.findUnique({
       where: { id: BigInt(productId) },

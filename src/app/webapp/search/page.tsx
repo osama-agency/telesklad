@@ -111,10 +111,10 @@ export default function SearchPage() {
     return (
       <div className="webapp-container search-page">
         <div className="search-header-section">
-          <div className="search-query-info">
-            <h1>Поиск</h1>
-            <p className="search-query">"{query}"</p>
-          </div>
+                  <div className="search-query-info">
+          <h1>Поиск</h1>
+          <p className="search-query">&ldquo;{query}&rdquo;</p>
+        </div>
         </div>
 
         <div className="text-center py-8">
@@ -136,7 +136,7 @@ export default function SearchPage() {
       <div className="search-header-section">
         <div className="search-query-info">
           <h1>Результаты поиска</h1>
-          <p className="search-query">"{query}"</p>
+          <p className="search-query">&ldquo;{query}&rdquo;</p>
           {!loading && (
             <p className="search-results-count">
               {products.length === 0 

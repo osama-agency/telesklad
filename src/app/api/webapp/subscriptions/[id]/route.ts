@@ -6,10 +6,11 @@ const prisma = new PrismaClient();
 // DELETE /api/webapp/subscriptions/[id] - удалить подписку
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const subscriptionId = parseInt(params.id);
+    const { id } = await params;
+    const subscriptionId = parseInt(id);
 
     if (isNaN(subscriptionId)) {
       return NextResponse.json(

@@ -65,4 +65,6 @@ export const patch = <T>(endpoint: string, data: any) =>
 export const del = <T>(endpoint: string) =>
   apiRequest<T>(endpoint, {
     method: 'DELETE',
-  }); 
+  });
+
+import { prisma } from "@/lib/prisma"; 

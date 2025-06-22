@@ -219,7 +219,7 @@ function ProductCartActions({
           ✓ {cartItem.quantity}
         </div>
         <button
-          onClick={() => onRemoveFromCart(product.id)}
+          onClick={() => onRemoveFromCart(product.id as any)}
           className="w-6 h-6 flex items-center justify-center rounded-md bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
           title="Удалить из корзины"
         >

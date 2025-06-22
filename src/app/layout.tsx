@@ -6,6 +6,7 @@ import "jsvectormap/dist/jsvectormap.css";
 import "nouislider/dist/nouislider.css";
 
 import "@/css/telesklad.css";
+import "@/css/satoshi.css";
 import type { Metadata } from "next";
 import NextTopLoader from "nextjs-toploader";
 import type { PropsWithChildren } from "react";

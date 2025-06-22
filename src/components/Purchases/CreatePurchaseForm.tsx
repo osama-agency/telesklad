@@ -74,7 +74,7 @@ const CreatePurchaseForm: React.FC<CreatePurchaseFormProps> = ({
 
   const loadExchangeRates = async () => {
     try {
-      const response = await fetch('/api/rates/latest?currency=TRY');
+      const response = await fetch('/api/exchange-rates/latest?currency=TRY');
       if (response.ok) {
         const data = await response.json();
         setExchangeRates([data]);

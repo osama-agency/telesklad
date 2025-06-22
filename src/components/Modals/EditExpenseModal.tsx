@@ -199,7 +199,7 @@ export function EditExpenseModal({ isOpen, onClose, onEdit, onDelete, expense }:
                     Удалить расход?
                   </h3>
                   <p className="text-sm text-red-700 dark:text-red-300 mb-3">
-                    Расход "{expense.description}" будет удален безвозвратно.
+                    Расход &ldquo;{expense.description}&rdquo; будет удален безвозвратно.
                   </p>
                   <div className="flex gap-2">
                     <button

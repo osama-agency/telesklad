@@ -4,6 +4,7 @@ import LoyaltyService from '@/lib/services/loyaltyService';
 import { S3Service } from '@/lib/services/s3';
 import { WebappTelegramBotService } from '@/lib/services/webapp-telegram-bot.service';
 import { NotificationSchedulerService } from '@/lib/services/notification-scheduler.service';
+import { getServerSession } from "next-auth";
 
 const prisma = new PrismaClient();
 
@@ -29,6 +30,9 @@ const STATUS_LABELS = {
 
 // POST /api/webapp/orders - создание нового заказа с бонусами
 export async function POST(request: NextRequest) {
+  const session = await getServerSession();
+  if (!session) return new Response("Unauthorized", { status: 401 });
+
   try {
     const body = await request.json();
     const { delivery_data, cart_items, bonus = 0, total } = body;
@@ -362,12 +366,20 @@ export async function GET(request: NextRequest) {
       total_bonus_earned: orders.reduce((sum, order) => sum + order.bonus, 0)
     };
 
-    return NextResponse.json({
+    // Добавляем заголовки кэширования для персональных данных
+    const headers = {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'private, s-maxage=15, stale-while-revalidate=30'
+    };
+
+    const responseData = {
       success: true,
       orders: transformedOrders,
       stats: stats,
       count: transformedOrders.length
-    });
+    };
+
+    return new Response(JSON.stringify(responseData), { status: 200, headers });
 
   } catch (error) {
     console.error('Orders API error:', error);

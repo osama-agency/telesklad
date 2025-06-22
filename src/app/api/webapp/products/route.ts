@@ -111,7 +111,14 @@ export async function GET(request: NextRequest) {
     });
 
     console.log('Returning products with images:', transformedProducts.length);
-    return NextResponse.json(transformedProducts);
+
+    // Добавляем заголовки кэширования
+    const headers = {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300'
+    };
+
+    return new Response(JSON.stringify(transformedProducts), { status: 200, headers });
 
   } catch (error) {
     console.error('Error fetching products:', error);

@@ -66,11 +66,19 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json({
+    // Добавляем заголовки кэширования для персональных данных
+    const headers = {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'private, s-maxage=30, stale-while-revalidate=60'
+    };
+
+    const responseData = {
       success: true,
       favorites: favoriteProducts,
       count: favoriteProducts.length
-    });
+    };
+
+    return new Response(JSON.stringify(responseData), { status: 200, headers });
 
   } catch (error) {
     console.error('Favorites API error:', error);

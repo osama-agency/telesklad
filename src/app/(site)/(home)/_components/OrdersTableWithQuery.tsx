@@ -235,7 +235,7 @@ export function OrdersTable() {
     return (
       <div className="bg-container rounded-xl p-6 border border-gray-200 dark:border-gray-700">
         <div className="flex flex-col items-center justify-center py-16">
-          <div className="text-red-500 mb-4">Ошибка: {error.message}</div>
+          <div className="text-red-500 mb-4">Ошибка: {typeof error === 'string' ? error : (error as any)?.message || 'Неизвестная ошибка'}</div>
           <button
             onClick={() => refetch()}
             className="px-4 py-2 bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] text-white rounded-lg hover:scale-105 transition-all duration-300"
