@@ -29,15 +29,10 @@ interface CartCheckoutSummaryProps {
   onBonusChange: (bonus: number) => void;
 }
 
-const getTelegramUserData = () => {
-  if (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user) {
-    return window.Telegram.WebApp.initDataUnsafe.user;
-  }
-  // Для разработки используем тестового пользователя
-  return { id: 9999 };
-};
+import { useTelegramAuth } from "@/context/TelegramAuthContext";
 
 export default function CartCheckoutSummary({ onTotalChange, onBonusChange }: CartCheckoutSummaryProps) {
+  const { user: authUser, isAuthenticated } = useTelegramAuth();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loyaltyData, setLoyaltyData] = useState<LoyaltyData | null>(null);
   const [appliedBonus, setAppliedBonus] = useState(0);
@@ -92,10 +87,9 @@ export default function CartCheckoutSummary({ onTotalChange, onBonusChange }: Ca
 
   const fetchLoyaltyData = async () => {
     try {
-      const tgUser = getTelegramUserData();
-      if (!tgUser?.id) return;
+      if (!authUser?.tg_id) return;
 
-      const response = await fetch(`/api/webapp/loyalty?tg_id=${tgUser.id}`);
+      const response = await fetch(`/api/webapp/loyalty?tg_id=${authUser.tg_id}`);
       if (response.ok) {
         const data = await response.json();
         setLoyaltyData(data);

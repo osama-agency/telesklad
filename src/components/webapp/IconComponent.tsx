@@ -17,7 +17,9 @@ import {
   Clock,
   Settings,
   Check,
-  Star
+  Star,
+  Hourglass,
+  History,
 } from "lucide-react";
 
 interface IconProps {
@@ -49,7 +51,9 @@ export function IconComponent({ name, size = 24, className = "" }: IconProps) {
     cart2: <ShoppingCart size={size} className={className} />,
     admin: <Settings size={size} className={className} />,
     checked: <Check size={size} className={className} />,
-    star: <Star size={size} className={className} fill="currentColor" />
+    star: <Star size={size} className={className} fill="currentColor" />,
+    hourglass: <Hourglass size={size} className={className} />,
+    history: <History size={size} className={className} />,
   };
 
   const iconComponent = icons[name];

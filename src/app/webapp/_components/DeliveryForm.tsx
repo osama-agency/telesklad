@@ -16,6 +16,7 @@ interface DeliveryData {
   last_name: string;
   middle_name: string;
   phone_number: string;
+  city?: string; // добавляем поле city
 }
 
 // Значения по умолчанию для предотвращения null values
@@ -29,7 +30,8 @@ const defaultDeliveryData: DeliveryData = {
   first_name: '',
   last_name: '',
   middle_name: '',
-  phone_number: ''
+  phone_number: '',
+  city: ''
 };
 
 interface DeliveryFormProps {
@@ -250,7 +252,10 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
             addressType="city"
             value={safeFormData.address || ''}
             onChange={(value, data) => {
-              const updates: Partial<DeliveryData> = { address: value };
+              const updates: Partial<DeliveryData> = { 
+                address: value,
+                city: value // также сохраняем как city
+              };
               
               // Автозаполнение индекса из данных города
               if (data) {

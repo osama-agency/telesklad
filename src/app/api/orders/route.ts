@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { prisma } from '@/libs/prismaDb';
 import { OrderFilters } from '@/types/order';
 import { Prisma } from '@prisma/client';
+import { serializeBigInts } from '@/lib/utils';
 
 // GET - получение списка заказов с фильтрацией
 export async function GET(request: NextRequest) {
@@ -41,12 +42,23 @@ export async function GET(request: NextRequest) {
     const where: any = {};
 
     if (search) {
-      where.OR = [
+      // Проверяем, является ли поисковый запрос числом (для поиска по ID)
+      const searchAsNumber = parseInt(search);
+      const isNumericSearch = !isNaN(searchAsNumber) && searchAsNumber.toString() === search;
+
+      const searchConditions: any[] = [
         { customername: { contains: search, mode: 'insensitive' } },
         { customeremail: { contains: search, mode: 'insensitive' } },
         { customerphone: { contains: search, mode: 'insensitive' } },
         { externalid: { contains: search, mode: 'insensitive' } },
       ];
+
+      // Если поиск по числу, добавляем поиск по ID
+      if (isNumericSearch) {
+        searchConditions.push({ id: BigInt(searchAsNumber) });
+      }
+
+      where.OR = searchConditions;
     }
 
     if (status) {
@@ -237,114 +249,43 @@ export async function GET(request: NextRequest) {
 
     // Получаем уникальные user_id для загрузки пользователей
     const userIds = [...new Set(orders.map((order: any) => order.user_id).filter(Boolean))];
+    const users = userIds.length > 0 ? await (prisma as any).users.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, first_name: true, last_name: true, middle_name: true, tg_id: true, username: true, email: true, phone_number: true }
+    }) : [];
     
-    // Загружаем пользователей отдельно
-    let users: any[] = [];
-    if (userIds.length > 0) {
-      try {
-        users = await (prisma as any).users.findMany({
-          where: {
-            id: {
-              in: userIds
-            }
-          },
-          select: {
-            id: true,
-            email: true,
-            first_name: true,
-            last_name: true,
-            phone_number: true,
-            username: true,
-          }
-        });
-      } catch (error) {
-        console.log('Could not load users:', error);
-        // Пробуем другое название таблицы
-        try {
-          users = await (prisma as any).telesklad_users.findMany({
-            where: {
-              id: {
-                in: userIds
-              }
-            },
-            select: {
-              id: true,
-              email: true,
-              first_name: true,
-              last_name: true,
-              phone_number: true,
-              username: true,
-            }
-          });
-        } catch (error2) {
-          console.log('Could not load telesklad_users either:', error2);
-        }
+    const usersMap = new Map(users.map((user: any) => [user.id.toString(), user]));
+    
+    // Расчет распределения по городам для аналитики
+    const cityDistribution = uniqueCities.reduce((acc: Record<string, number>, cityGroup: { customercity: string | null; _count: number }) => {
+      if (cityGroup.customercity) {
+        acc[cityGroup.customercity] = cityGroup._count;
       }
-    }
-    
-    // Создаем карту пользователей для быстрого поиска
-    const usersMap = new Map(users.map(user => [user.id.toString(), user]));
+      return acc;
+    }, {});
 
-    // Преобразуем BigInt поля в строки для JSON сериализации
-    const serializedOrders = orders.map((order: any) => {
-      const serializedOrder: any = {};
-      
-      // Преобразуем все поля заказа
-      for (const [key, value] of Object.entries(order)) {
-        if (typeof value === 'bigint') {
-          serializedOrder[key] = value.toString();
-        } else if (key === 'order_items' && Array.isArray(value)) {
-          serializedOrder[key] = value.map((item: any) => {
-            const serializedItem: any = {};
-            for (const [itemKey, itemValue] of Object.entries(item)) {
-              if (typeof itemValue === 'bigint') {
-                serializedItem[itemKey] = itemValue.toString();
-              } else {
-                serializedItem[itemKey] = itemValue;
-              }
-            }
-            return serializedItem;
-          });
-        } else {
-          serializedOrder[key] = value;
-        }
-      }
-      
-      // Добавляем данные пользователя, если найден
-      if (order.user_id) {
-        const user = usersMap.get(order.user_id.toString());
-        if (user) {
-          serializedOrder.user = {
-            id: user.id.toString(),
-            email: user.email,
-            first_name: user.first_name,
-            last_name: user.last_name,
-            phone_number: user.phone_number,
-            username: user.username,
-          };
-          
-          // Если customername пустое, используем данные пользователя
-          if (!serializedOrder.customername && (user.first_name || user.last_name)) {
-            serializedOrder.customername = `${user.first_name || ''} ${user.last_name || ''}`.trim();
-          }
-          
-          // Если customeremail пустое, используем email пользователя
-          if (!serializedOrder.customeremail && user.email) {
-            serializedOrder.customeremail = user.email;
-          }
-          
-          // Если customerphone пустое, используем phone_number пользователя
-          if (!serializedOrder.customerphone && user.phone_number) {
-            serializedOrder.customerphone = user.phone_number;
-          }
-        }
-      }
-      
-      return serializedOrder;
+    // Обогащаем заказы информацией о пользователях
+    const enrichedOrders = orders.map((order: any) => {
+      const user: any = order.user_id ? usersMap.get(order.user_id.toString()) : null;
+      return {
+        ...order,
+        user: user ? {
+          id: user.id,
+          email: user.email,
+          first_name: user.first_name,
+          last_name: user.middle_name, // В старой Rails системе middle_name содержит фамилию
+          middle_name: user.last_name, // А last_name содержит отчество
+          phone_number: user.phone_number,
+          username: user.username,
+          full_name: [user.first_name, user.middle_name].filter(Boolean).join(' ') || user.username, // Имя + Фамилия
+        } : {
+          full_name: order.customername || 'Гость'
+        },
+      };
     });
 
-    return NextResponse.json({
-      orders: serializedOrders,
+    const responseData = {
+      orders: enrichedOrders,
       pagination: {
         page,
         limit,
@@ -354,16 +295,19 @@ export async function GET(request: NextRequest) {
         hasPrevPage: page > 1,
       },
       stats: {
-        totalRevenue: stats._sum.total_amount ? (typeof stats._sum.total_amount === 'bigint' ? stats._sum.total_amount.toString() : stats._sum.total_amount) : 0,
-        averageOrderValue: stats._avg.total_amount ? (typeof stats._avg.total_amount === 'bigint' ? stats._avg.total_amount.toString() : stats._avg.total_amount) : 0,
-        totalDeliveryCost: stats._sum.deliverycost ? (typeof stats._sum.deliverycost === 'bigint' ? stats._sum.deliverycost.toString() : stats._sum.deliverycost) : 0,
-        totalBonus: stats._sum.bonus ? (typeof stats._sum.bonus === 'bigint' ? stats._sum.bonus.toString() : stats._sum.bonus) : 0,
+        totalRevenue: stats._sum.total_amount || 0,
+        averageOrderValue: stats._avg.total_amount || 0,
+        totalDeliveryCost: stats._sum.deliverycost || 0,
+        totalBonus: stats._sum.bonus || 0,
         uniqueCities: uniqueCities.length,
         ordersWithTracking,
         paidOrders,
         shippedOrders,
+        cityDistribution,
       },
-    });
+    };
+
+    return NextResponse.json(serializeBigInts(responseData));
 
   } catch (error) {
     console.error('Error fetching orders:', error);
@@ -413,20 +357,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Преобразуем BigInt поля в строки для JSON сериализации
-    const serializedOrder = {
-      ...order,
-      id: order.id.toString(),
-      user_id: order.user_id ? order.user_id.toString() : null,
-      order_items: order.order_items?.map((item: any) => ({
-        ...item,
-        id: item.id.toString(),
-        order_id: item.order_id.toString(),
-        product_id: item.product_id ? item.product_id.toString() : null,
-      })) || [],
-    };
-
-    return NextResponse.json(serializedOrder);
+    return NextResponse.json(serializeBigInts(order));
 
   } catch (error) {
     console.error('Error creating order:', error);

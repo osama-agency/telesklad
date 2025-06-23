@@ -19,35 +19,37 @@ export class TelegramTokenService {
    */
   static async getTelegramBotToken(): Promise<string | null> {
     try {
-      // Проверяем кэш
-      if (this.isCacheValid() && this.tokenCache.telegram_bot_token) {
-        return this.tokenCache.telegram_bot_token;
-      }
-
-      // Получаем из базы данных
-      const setting = await prisma.settings.findUnique({
-        where: { variable: 'telegram_bot_token' }
-      });
-
-      let token: string | null = null;
-
-      if (setting && setting.value && !this.isMaskedToken(setting.value)) {
-        token = setting.value;
-        console.log('🔑 Using telegram_bot_token from database');
-      } else {
-        // Fallback к переменной окружения
-        token = process.env.TELEGRAM_BOT_TOKEN || null;
-        if (token) {
-          console.log('🔑 Using TELEGRAM_BOT_TOKEN from environment variables');
+      // В режиме разработки используем тестовый бот
+      if (process.env.NODE_ENV === 'development') {
+        // Сначала пробуем получить webapp_telegram_bot_token для тестирования
+        const webappBotSetting = await prisma.settings.findFirst({
+          where: { variable: 'webapp_telegram_bot_token' }
+        });
+        
+        if (webappBotSetting?.value) {
+          console.log('🧪 Using webapp_telegram_bot_token for development');
+          return webappBotSetting.value;
         }
       }
-
-      // Обновляем кэш
-      this.updateCache('telegram_bot_token', token);
-
-      return token;
+      
+      // В продакшене или если нет тестового токена - используем основной
+      const setting = await prisma.settings.findFirst({
+        where: { variable: 'tg_token' }
+      });
+      
+      if (setting?.value) {
+        console.log('🔑 Using tg_token from database');
+        return setting.value;
+      }
+      
+      // Fallback к переменной окружения
+      const envToken = process.env.TELEGRAM_BOT_TOKEN || null;
+      if (envToken) {
+        console.log('🔑 Using TELEGRAM_BOT_TOKEN from environment variables');
+      }
+      return envToken;
     } catch (error) {
-      console.error('❌ Error getting telegram bot token:', error);
+      console.warn('⚠️ Failed to get token from database, using environment variable');
       // Fallback к переменной окружения при ошибке
       return process.env.TELEGRAM_BOT_TOKEN || null;
     }

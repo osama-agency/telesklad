@@ -3,6 +3,20 @@ import { getServerSession } from 'next-auth';
 import { prisma } from '@/libs/prismaDb';
 import { ExchangeRateService } from '@/lib/services/exchange-rate.service';
 import { Decimal } from '@prisma/client/runtime/library';
+import { serializeBigInts } from '@/lib/utils';
+
+// Определяем возможные статусы закупки вручную
+export type PurchaseStatus = 'pending' | 'sent' | 'paid' | 'shipped' | 'in_transit' | 'received' | 'cancelled';
+
+const purchaseStatusMap: Record<string, PurchaseStatus> = {
+  pending: 'pending',
+  sent: 'sent',
+  paid: 'paid',
+  shipped: 'shipped',
+  in_transit: 'in_transit',
+  received: 'received',
+  cancelled: 'cancelled'
+};
 
 // PUT - обновление статуса закупки
 export async function PUT(
@@ -69,6 +83,10 @@ export async function PUT(
       }
     }
 
+    if (existingPurchase.status === 'received' && status !== 'received') {
+      return NextResponse.json({ error: 'Cannot change status of a received purchase' }, { status: 400 });
+    }
+
     // Обновляем закупку
     const updatedPurchase = await (prisma as any).purchases.update({
       where: { id: purchaseId },
@@ -95,22 +113,9 @@ export async function PUT(
       }
     });
 
-    // Преобразуем BigInt поля в строки для JSON сериализации
-    const serializedPurchase = {
-      ...updatedPurchase,
-      id: updatedPurchase.id.toString(),
-      userid: updatedPurchase.userid ? updatedPurchase.userid.toString() : null,
-      purchase_items: updatedPurchase.purchase_items?.map((item: any) => ({
-        ...item,
-        id: item.id.toString(),
-        purchaseid: item.purchaseid ? item.purchaseid.toString() : null,
-        productid: item.productid ? item.productid.toString() : null,
-      })) || [],
-    };
-
     console.log(`✅ Purchase ${purchaseId} status updated to: ${status}`);
 
-    return NextResponse.json(serializedPurchase);
+    return NextResponse.json(serializeBigInts(updatedPurchase));
   } catch (error) {
     console.error('❌ Error updating purchase status:', error);
     console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Settings, Mail, Bell, Globe, Star, FileText, Package } from "lucide-react";
+import { Settings, Mail, Bell, Globe, Star, FileText, Package, User } from "lucide-react";
 import BonusLogsTable from '@/components/BonusLogs/BonusLogsTable';
 import StockLogsTable from '@/components/StockLogs/StockLogsTable';
 import ManageFAQModal from '@/components/Modals/ManageFAQModal';
+import PageSkeleton from '@/components/common/PageSkeleton';
 
 interface SettingsData {
   settings: Record<string, string>;
@@ -93,6 +94,7 @@ export default function SettingsPage() {
 
   const tabs = [
     { id: "system", label: "Системные настройки", icon: Settings },
+    { id: "user", label: "Пользователь", icon: User },
     { id: "loyalty", label: "Программа лояльности", icon: Star },
     { id: "bonus-logs", label: "Логи бонусов", icon: FileText },
     { id: "stock-logs", label: "Логи остатков", icon: Package },
@@ -126,6 +128,8 @@ export default function SettingsPage() {
     switch (activeTab) {
       case "system":
         return <SystemSettings data={settingsData} onSave={saveSettings} saving={saving} />;
+      case "user":
+        return <UserSettings data={settingsData} onSave={saveSettings} saving={saving} />;
       case "loyalty":
         return <LoyaltySettings data={settingsData} onSave={saveSettings} saving={saving} />;
       case "bonus-logs":
@@ -142,6 +146,23 @@ export default function SettingsPage() {
         return <SystemSettings data={settingsData} onSave={saveSettings} saving={saving} />;
     }
   };
+
+  // Показываем полноценный скелетон страницы во время загрузки
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] dark:bg-gray-900">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <PageSkeleton 
+            title={true}
+            breadcrumbs={false}
+            tabs={8}
+            cards={0}
+            table={false}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-gray-900">
@@ -1515,6 +1536,294 @@ function NotificationSettings({ data, onSave, saving }: SettingsComponentProps) 
             <h4 className="font-medium text-blue-900 dark:text-blue-100">О системе уведомлений</h4>
             <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
               Все уведомления отправляются автоматически через CRON задачи. Система использует два Telegram бота: основной для админских уведомлений и WebApp бот для клиентов. Поддерживаются повторные попытки при ошибках и ведется детальная статистика.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Компонент настроек пользователя
+function UserSettings({ data, onSave, saving }: SettingsComponentProps) {
+  const [formData, setFormData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>('');
+  const [passwordChanging, setPasswordChanging] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarLoading, setAvatarLoading] = useState(false);
+
+  // Проверяем, что пользователь - администратор go@osama.agency
+  useEffect(() => {
+    checkAdminAccess();
+    loadCurrentAvatar();
+  }, []);
+
+  const checkAdminAccess = async () => {
+    try {
+      const response = await fetch('/api/user/check-admin');
+      if (!response.ok) {
+        window.location.href = '/';
+      }
+    } catch (error) {
+      console.error('Ошибка проверки доступа:', error);
+      window.location.href = '/';
+    }
+  };
+
+  const loadCurrentAvatar = async () => {
+    try {
+      const response = await fetch('/api/user/get-user');
+      if (response.ok) {
+        const userData = await response.json();
+        if (userData.image) {
+          setAvatarPreview(userData.image.startsWith('http') ? userData.image : `${process.env.NEXT_PUBLIC_IMAGE_URL || ''}${userData.image}`);
+        }
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки аватара:', error);
+    }
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (formData.newPassword !== formData.confirmPassword) {
+      alert('Пароли не совпадают');
+      return;
+    }
+
+    if (formData.newPassword.length < 8) {
+      alert('Пароль должен содержать минимум 8 символов');
+      return;
+    }
+
+    setPasswordChanging(true);
+    
+    try {
+      const response = await fetch('/api/user/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          currentPassword: formData.currentPassword,
+          password: formData.newPassword
+        })
+      });
+
+      if (response.ok) {
+        alert('Пароль успешно изменен');
+        setFormData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
+      } else {
+        const errorText = await response.text();
+        alert(`Ошибка: ${errorText}`);
+      }
+    } catch (error) {
+      console.error('Ошибка смены пароля:', error);
+      alert('Ошибка при смене пароля');
+    } finally {
+      setPasswordChanging(false);
+    }
+  };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB
+        alert('Размер файла не должен превышать 5MB');
+        return;
+      }
+      
+      if (!file.type.startsWith('image/')) {
+        alert('Можно загружать только изображения');
+        return;
+      }
+
+      setAvatarFile(file);
+      setAvatarLoading(true);
+      setAvatarPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleAvatarUpload = async () => {
+    if (!avatarFile) return;
+
+    setAvatarUploading(true);
+    
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append('avatar', avatarFile);
+
+      const response = await fetch('/api/user/upload-avatar', {
+        method: 'POST',
+        body: formDataUpload
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert('Аватар успешно обновлен');
+        setAvatarFile(null);
+        // Обновляем превью с новым URL
+        setAvatarPreview(result.avatarUrl);
+        // Перезагружаем страницу для обновления аватара в хедере
+        window.location.reload();
+      } else {
+        const errorText = await response.text();
+        alert(`Ошибка: ${errorText}`);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки аватара:', error);
+      alert('Ошибка при загрузке аватара');
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Смена пароля */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <h2 className="text-xl font-semibold text-[#1E293B] dark:text-white mb-6">Смена пароля</h2>
+        
+        <form onSubmit={handlePasswordChange} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-[#374151] dark:text-gray-300 mb-2">
+              Текущий пароль
+            </label>
+            <input
+              type="password"
+              value={formData.currentPassword}
+              onChange={(e) => setFormData(prev => ({ ...prev, currentPassword: e.target.value }))}
+              required
+              className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-[#1E293B] dark:text-white focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20 transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-[#374151] dark:text-gray-300 mb-2">
+              Новый пароль
+            </label>
+            <input
+              type="password"
+              value={formData.newPassword}
+              onChange={(e) => setFormData(prev => ({ ...prev, newPassword: e.target.value }))}
+              required
+              minLength={8}
+              className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-[#1E293B] dark:text-white focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20 transition-all"
+            />
+            <p className="text-sm text-[#64748B] dark:text-gray-400 mt-1">Минимум 8 символов</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-[#374151] dark:text-gray-300 mb-2">
+              Подтвердите новый пароль
+            </label>
+            <input
+              type="password"
+              value={formData.confirmPassword}
+              onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+              required
+              className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-[#1E293B] dark:text-white focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20 transition-all"
+            />
+          </div>
+
+          <button 
+            type="submit"
+            disabled={passwordChanging}
+            className="bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] text-white px-6 py-2 rounded-lg hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {passwordChanging ? 'Изменение...' : 'Изменить пароль'}
+          </button>
+        </form>
+      </div>
+
+      {/* Загрузка аватара */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <h2 className="text-xl font-semibold text-[#1E293B] dark:text-white mb-6">Аватар</h2>
+        
+        <div className="space-y-4">
+          <div className="flex items-center gap-4">
+            <div className="relative w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
+              {avatarLoading && (
+                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-pulse"></div>
+              )}
+              {avatarPreview ? (
+                <img 
+                  src={avatarPreview} 
+                  alt="Аватар" 
+                  className={`w-full h-full object-cover transition-opacity duration-200 ${avatarLoading ? 'opacity-0' : 'opacity-100'}`}
+                  onLoad={() => setAvatarLoading(false)}
+                  onError={() => setAvatarLoading(false)}
+                />
+              ) : (
+                <User size={24} className="text-gray-400" />
+              )}
+            </div>
+            
+            <div>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                className="hidden"
+                id="avatar-upload"
+              />
+              <label
+                htmlFor="avatar-upload"
+                className="cursor-pointer bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+              >
+                Выбрать файл
+              </label>
+              <p className="text-sm text-[#64748B] dark:text-gray-400 mt-1">
+                PNG, JPG, GIF до 5MB
+              </p>
+            </div>
+          </div>
+
+          {avatarFile && (
+            <div className="flex gap-3">
+              <button
+                onClick={handleAvatarUpload}
+                disabled={avatarUploading}
+                className="bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] text-white px-6 py-2 rounded-lg hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {avatarUploading ? 'Загрузка...' : 'Загрузить аватар'}
+              </button>
+              
+              <button
+                onClick={() => {
+                  setAvatarFile(null);
+                  setAvatarPreview('');
+                }}
+                className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-all"
+              >
+                Отмена
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Информация о безопасности */}
+      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <div className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5">
+            ⚠️
+          </div>
+          <div>
+            <h3 className="font-medium text-yellow-800 dark:text-yellow-200">Безопасность</h3>
+            <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+              Доступ к этому разделу имеет только администратор go@osama.agency. 
+              Все изменения логируются в системе безопасности.
             </p>
           </div>
         </div>

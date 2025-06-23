@@ -66,6 +66,22 @@ export interface OrderEntity {
   shippedat: string | null;
   total: number | null;
   updatedat: string | null;
+  user?: {
+    id: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+    middle_name?: string;
+    phone_number: string;
+    username?: string;
+    full_name: string;
+    address?: string;
+    street?: string;
+    home?: string;
+    build?: string;
+    apartment?: string;
+    postal_code?: number;
+  };
   order_items?: {
     id: string;
     order_id: string;
@@ -133,7 +149,9 @@ interface UseMutationResult<T, V> {
 }
 
 // Основной хук для получения заказов
-export function useOrdersQuery(params: OrdersParams = {}): UseOrdersQueryResult {
+export function useOrdersQuery(params: OrdersParams = {}): UseOrdersQueryResult & {
+  removeOrderOptimistically: (id: number) => void;
+} {
   const [data, setData] = useState<OrdersApiResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -179,6 +197,23 @@ export function useOrdersQuery(params: OrdersParams = {}): UseOrdersQueryResult 
     }
   }, [JSON.stringify(queryParams)]);
 
+  const removeOrderOptimistically = useCallback((id: number) => {
+    setData(prevData => {
+      if (!prevData) return prevData;
+      
+      const filteredOrders = prevData.orders.filter(order => order.id !== id);
+      
+      return {
+        ...prevData,
+        orders: filteredOrders,
+        pagination: {
+          ...prevData.pagination,
+          totalCount: prevData.pagination.totalCount - 1
+        }
+      };
+    });
+  }, []);
+
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
@@ -188,6 +223,7 @@ export function useOrdersQuery(params: OrdersParams = {}): UseOrdersQueryResult 
     isLoading,
     error,
     refetch: fetchOrders,
+    removeOrderOptimistically,
   };
 }
 
@@ -268,7 +304,9 @@ export function useUpdateOrder(): UseMutationResult<OrderEntity, { id: number; d
 }
 
 // Мутация для удаления заказа
-export function useDeleteOrder(): UseMutationResult<void, number> {
+export function useDeleteOrder(): UseMutationResult<void, number> & { 
+  mutateOptimistic: (id: number, onOptimisticUpdate?: (id: number) => void) => Promise<void>;
+} {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -285,7 +323,30 @@ export function useDeleteOrder(): UseMutationResult<void, number> {
     }
   }, []);
 
-  return { mutate, isLoading, error };
+  const mutateOptimistic = useCallback(async (
+    id: number, 
+    onOptimisticUpdate?: (id: number) => void
+  ): Promise<void> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Сначала выполняем оптимистичное обновление UI
+      if (onOptimisticUpdate) {
+        onOptimisticUpdate(id);
+      }
+      
+      // Затем отправляем запрос на сервер
+      await del(`/orders/${id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, mutateOptimistic, isLoading, error };
 }
 
 // Хук для обновления статуса заказа

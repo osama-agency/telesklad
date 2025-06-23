@@ -2,8 +2,11 @@
 
 import { Suspense, useEffect } from "react";
 import { ProductCatalog } from "./_components/ProductCatalog";
+import { useTelegramAuth } from "@/context/TelegramAuthContext";
+import Spinner from "@/components/common/Spinner";
 
 export default function WebappHomePage() {
+  const { user, isLoading, isAuthenticated } = useTelegramAuth();
 
   // Set document title for Telegram Web App
   useEffect(() => {
@@ -19,19 +22,40 @@ export default function WebappHomePage() {
     }
   }, []);
 
+  // Показываем загрузку пока идет аутентификация
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full min-h-[calc(100vh-200px)]">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  // Показываем ошибку если пользователь не аутентифицирован
+  if (!isAuthenticated) {
+    return (
+      <div className="no-items-wrapper">
+        <div className="w-full">
+          <div className="flex justify-center text-red-500 w-full mb-1">
+            <svg className="pointer-events-none" style={{ fill: "currentColor", width: 40, height: 40 }}>
+              <circle cx="20" cy="20" r="18" />
+            </svg>
+          </div>
+          <div className="no-items-title">Ошибка аутентификации</div>
+          <div className="text-center text-sm text-gray-500 mt-2">
+            Пожалуйста, запустите приложение из Telegram
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
-      {/* Product Catalog */}
+      {/* Product Catalog - показываем всегда, как в старом Rails приложении */}
       <Suspense fallback={
-        <div className="no-items-wrapper">
-          <div className="w-full">
-            <div className="flex justify-center text-gray-no-active w-full mb-1">
-              <svg className="pointer-events-none" style={{ fill: "currentColor", width: 40, height: 40 }}>
-                <circle cx="10" cy="10" r="8" />
-              </svg>
-            </div>
-            <div className="no-items-title">Загрузка каталога...</div>
-          </div>
+        <div className="flex items-center justify-center h-full min-h-[calc(100vh-200px)]">
+          <Spinner size="lg" />
         </div>
       }>
         <ProductCatalog />

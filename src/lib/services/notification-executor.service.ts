@@ -76,17 +76,17 @@ export class NotificationExecutorService {
             [
               {
                 text: "💳 Оплатить заказ",
-                url: `${process.env.WEBAPP_URL || 'https://telesklad.ru'}/webapp/orders/${order_id}`
+                url: `${process.env.WEBAPP_URL || 'https://strattera.ngrok.app/webapp'}/orders/${order_id}`
               }
             ],
             [
               {
                 text: "📋 Мои заказы", 
-                url: `${process.env.WEBAPP_URL || 'https://telesklad.ru'}/webapp/orders`
+                url: `${process.env.WEBAPP_URL || 'https://strattera.ngrok.app/webapp'}/orders`
               },
               {
                 text: "🛒 Продолжить покупки",
-                url: `${process.env.WEBAPP_URL || 'https://telesklad.ru'}/webapp`
+                url: `${process.env.WEBAPP_URL || 'https://strattera.ngrok.app/webapp'}`
               }
             ]
           ]

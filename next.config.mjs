@@ -18,6 +18,21 @@ const nextConfig = {
     
     return config;
   },
+  // Разрешаем cross-origin запросы с ngrok домена в режиме разработки
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: process.env.NODE_ENV === 'development' ? '*' : '',
+          },
+        ],
+      },
+    ];
+  },
+  allowedDevOrigins: ['https://strattera.ngrok.app'],
 };
 
 export default nextConfig;

@@ -9,6 +9,7 @@ import { IconComponent } from "@/components/webapp/IconComponent";
 import { CartSummary } from "./_components/CartSummary";
 import { BottomNavigation } from "./_components/BottomNavigation";
 import { SearchComponent } from "./_components/SearchComponent";
+import { TelegramAuthProvider } from "@/context/TelegramAuthContext";
 
 export default function WebappLayout({ children }: PropsWithChildren) {
   const pathname = usePathname();
@@ -30,34 +31,41 @@ export default function WebappLayout({ children }: PropsWithChildren) {
         strategy="beforeInteractive"
         onLoad={() => {
           console.log('📱 Telegram WebApp script loaded');
+          if (window.Telegram?.WebApp) {
+            console.log('✅ Telegram WebApp available:', window.Telegram.WebApp.version);
+          } else {
+            console.error('❌ Telegram WebApp not found after script load');
+          }
         }}
         onError={(e) => {
           console.error('❌ Failed to load Telegram WebApp script:', e);
         }}
       />
       
-      <div className={`webapp-container ${getPageClass()}`} style={{
-        minHeight: '100vh',
-        backgroundColor: '#f9f9f9'
-      }}>
-        {/* Header точно как в Rails */}
-        <header className="webapp-header">
-          <div className="container-adaptive py-3">
-            <SearchComponent />
-          </div>
-        </header>
+      <TelegramAuthProvider>
+        <div className={`webapp-container ${getPageClass()}`} style={{
+          minHeight: '100vh',
+          backgroundColor: '#f9f9f9'
+        }}>
+          {/* Header точно как в Rails */}
+          <header className="webapp-header">
+            <div className="container-adaptive py-3">
+              <SearchComponent />
+            </div>
+          </header>
 
-        {/* Main content - точно как в Rails с отступами */}
-        <main className="container-adaptive">
-          {children}
-        </main>
+          {/* Main content - точно как в Rails с отступами */}
+          <main className="container-adaptive">
+            {children}
+          </main>
 
-        {/* Cart Summary - глобально для всех страниц */}
-        <CartSummary />
+          {/* Cart Summary - глобально для всех страниц */}
+          <CartSummary />
 
-        {/* Fixed bottom navigation - динамическое с активной страницей */}
-        <BottomNavigation />
-      </div>
+          {/* Fixed bottom navigation - динамическое с активной страницей */}
+          <BottomNavigation />
+        </div>
+      </TelegramAuthProvider>
     </>
   );
 } 

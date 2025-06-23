@@ -219,99 +219,137 @@ async function ensureTestUser() {
   }
 }
 
+// Функция для построения ответа профиля
+async function buildProfileResponse(user: any, userId: number) {
+  // Подсчитываем реальное количество заказов из базы
+  const ordersCount = await prisma.orders.count({
+    where: { 
+      user_id: userId
+    }
+  });
+
+  // Получаем все уровни лояльности
+  const accountTiers = await prisma.account_tiers.findMany({
+    orderBy: { order_threshold: 'asc' }
+  });
+
+  // Вычисляем remaining_to_next_tier используя реальное количество заказов
+  const currentTier = user.account_tiers;
+  const nextTier = accountTiers.find(tier => 
+    currentTier ? tier.order_threshold > currentTier.order_threshold : tier.order_threshold > 0
+  );
+  const remainingToNextTier = nextTier 
+    ? Math.max(nextTier.order_threshold - ordersCount, 0)
+    : null;
+
+  // Преобразуем данные в нужный формат
+  const userData = {
+    id: Number(user.id),
+    email: user.email,
+    tg_id: user.tg_id ? Number(user.tg_id) : null,
+    username: user.username,
+    first_name: user.first_name,
+    first_name_raw: user.first_name_raw,
+    last_name: user.last_name,
+    last_name_raw: user.last_name_raw,
+    middle_name: user.middle_name,
+    phone_number: user.phone_number,
+    photo_url: user.photo_url,
+    address: user.address,
+    street: user.street,
+    home: user.home,
+    apartment: user.apartment,
+    build: user.build,
+    postal_code: user.postal_code,
+    bonus_balance: user.bonus_balance,
+    order_count: ordersCount,
+    account_tier: currentTier ? {
+      id: Number(currentTier.id),
+      title: currentTier.title,
+      order_threshold: currentTier.order_threshold,
+      bonus_percentage: currentTier.bonus_percentage,
+      order_min_amount: currentTier.order_min_amount
+    } : null,
+    role: user.role,
+    is_blocked: user.is_blocked,
+    started: user.started
+  };
+
+  const transformedTiers = accountTiers.map(tier => ({
+    id: Number(tier.id),
+    title: tier.title,
+    order_threshold: tier.order_threshold,
+    bonus_percentage: tier.bonus_percentage,
+    order_min_amount: tier.order_min_amount
+  }));
+
+  console.log(`Profile loaded: ${userData.first_name} ${userData.middle_name}`);
+
+  // Добавляем заголовки кэширования для персональных данных
+  const headers = {
+    'Content-Type': 'application/json',
+    'Cache-Control': 'private, s-maxage=30, stale-while-revalidate=60'
+  };
+
+  const responseData = {
+    success: true,
+    user: userData,
+    account_tiers: transformedTiers,
+    remaining_to_next_tier: remainingToNextTier,
+    next_tier: nextTier ? {
+      id: Number(nextTier.id),
+      title: nextTier.title,
+      order_threshold: nextTier.order_threshold,
+      bonus_percentage: nextTier.bonus_percentage,
+      order_min_amount: nextTier.order_min_amount
+    } : null
+  };
+
+  return new Response(JSON.stringify(responseData), { status: 200, headers });
+}
+
 // GET /api/webapp/profile - получить данные профиля
 export async function GET(request: NextRequest) {
   try {
-    console.log(`Getting profile for test user ${TEST_USER_ID}`);
+    console.log('🔍 Profile API: Getting user profile...');
+    
+    // Получаем tg_id из параметров запроса
+    const { searchParams } = new URL(request.url);
+    const tg_id = searchParams.get('tg_id');
+    
+    if (!tg_id) {
+      // Для совместимости с существующим кодом, используем тестового пользователя
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Getting profile for test user ${TEST_USER_ID}`);
+        const user = await ensureTestUser();
+        return await buildProfileResponse(user, TEST_USER_ID);
+      }
+      
+      console.error('❌ Profile API: tg_id parameter is required');
+      return NextResponse.json({
+        success: false,
+        error: 'tg_id parameter is required'
+      }, { status: 400 });
+    }
 
-    // Получаем или создаем тестового пользователя
-    const user = await ensureTestUser();
-
-    // Подсчитываем реальное количество заказов из базы
-    const ordersCount = await prisma.orders.count({
-      where: { 
-        user_id: TEST_USER_ID
+    // Ищем пользователя по tg_id
+    const user = await prisma.users.findUnique({
+      where: { tg_id: BigInt(tg_id) },
+      include: {
+        account_tiers: true
       }
     });
 
-    // Получаем все уровни лояльности
-    const accountTiers = await prisma.account_tiers.findMany({
-      orderBy: { order_threshold: 'asc' }
-    });
+    if (!user) {
+      console.error(`❌ Profile API: User with tg_id ${tg_id} not found`);
+      return NextResponse.json({
+        success: false,
+        error: 'User not found'
+      }, { status: 404 });
+    }
 
-    // Вычисляем remaining_to_next_tier используя реальное количество заказов
-    const currentTier = user.account_tiers;
-    const nextTier = accountTiers.find(tier => 
-      currentTier ? tier.order_threshold > currentTier.order_threshold : tier.order_threshold > 0
-    );
-    const remainingToNextTier = nextTier 
-      ? Math.max(nextTier.order_threshold - ordersCount, 0)
-      : null;
-
-    // Преобразуем данные в нужный формат
-    const userData = {
-      id: Number(user.id),
-      email: user.email,
-      tg_id: Number(user.tg_id),
-      username: user.username,
-      first_name: user.first_name,
-      first_name_raw: user.first_name_raw,
-      last_name: user.last_name,
-      last_name_raw: user.last_name_raw,
-      middle_name: user.middle_name,
-      phone_number: user.phone_number,
-      photo_url: user.photo_url,
-      address: user.address,
-      street: user.street,
-      home: user.home,
-      apartment: user.apartment,
-      build: user.build,
-      postal_code: user.postal_code,
-      bonus_balance: user.bonus_balance,
-      order_count: ordersCount,
-      account_tier: currentTier ? {
-        id: Number(currentTier.id),
-        title: currentTier.title,
-        order_threshold: currentTier.order_threshold,
-        bonus_percentage: currentTier.bonus_percentage,
-        order_min_amount: currentTier.order_min_amount
-      } : null,
-      role: user.role,
-      is_blocked: user.is_blocked,
-      started: user.started
-    };
-
-    const transformedTiers = accountTiers.map(tier => ({
-      id: Number(tier.id),
-      title: tier.title,
-      order_threshold: tier.order_threshold,
-      bonus_percentage: tier.bonus_percentage,
-      order_min_amount: tier.order_min_amount
-    }));
-
-    console.log(`Profile loaded: ${userData.first_name} ${userData.middle_name}`);
-
-    // Добавляем заголовки кэширования для персональных данных
-    const headers = {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'private, s-maxage=30, stale-while-revalidate=60'
-    };
-
-    const responseData = {
-      success: true,
-      user: userData,
-      account_tiers: transformedTiers,
-      remaining_to_next_tier: remainingToNextTier,
-      next_tier: nextTier ? {
-        id: Number(nextTier.id),
-        title: nextTier.title,
-        order_threshold: nextTier.order_threshold,
-        bonus_percentage: nextTier.bonus_percentage,
-        order_min_amount: nextTier.order_min_amount
-      } : null
-    };
-
-    return new Response(JSON.stringify(responseData), { status: 200, headers });
+    console.log(`✅ Profile API: Retrieved user ${user.id} (tg_id: ${user.tg_id})`);
+    return await buildProfileResponse(user, Number(user.id));
 
   } catch (error) {
     console.error('Profile API error:', error);

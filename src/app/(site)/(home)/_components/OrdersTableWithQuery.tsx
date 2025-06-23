@@ -6,10 +6,19 @@ import { motion } from "framer-motion";
 import { 
   useOrdersQuery, 
   ORDER_STATUSES,
-  useCities,
+  useDeleteOrder,
+  useUpdateOrder,
   type OrderEntity,
   type OrdersParams 
 } from "@/hooks/useOrders";
+import { get } from "@/lib/api";
+import DeleteOrderModal from "@/components/Modals/DeleteOrderModal";
+import EditOrderModal from "@/components/Modals/EditOrderModal";
+import { useToast } from "@/hooks/useToast";
+import { ToastContainer } from "@/components/ui/Toast";
+import Spinner from "@/components/common/Spinner";
+import { useDebounce } from "@/hooks/useDebounce";
+import TableSkeleton from "@/components/common/TableSkeleton";
 
 const statusOptions = [
   { value: 0, label: "Все статусы" },
@@ -105,23 +114,23 @@ const getStatusBadge = (status: number) => {
 };
 
 export function OrdersTable() {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [statusFilter, setStatusFilter] = useState(0);
-  const [cityFilter, setCityFilter] = useState("all");
   const [sortField, setSortField] = useState<"orderdate" | "total_amount">("orderdate");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [currentPage, setCurrentPage] = useState(1);
-
-  // Получаем список городов для фильтра
-  const { data: citiesData } = useCities();
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<OrderEntity | null>(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [orderToEdit, setOrderToEdit] = useState<OrderEntity | null>(null);
 
   // React Query hook
   const queryParams: OrdersParams = {
     page: currentPage,
     limit: 25,
-    search: searchQuery || undefined,
+    search: debouncedSearchTerm || undefined,
     status: statusFilter === 0 ? undefined : statusFilter,
-    customerCity: cityFilter === 'all' ? undefined : cityFilter,
     sortBy: sortField === "orderdate" ? "created_at" : sortField,
     sortOrder: sortDirection,
   };
@@ -130,21 +139,21 @@ export function OrdersTable() {
     data: ordersData, 
     isLoading: loading, 
     error,
-    refetch 
+    refetch,
+    removeOrderOptimistically
   } = useOrdersQuery(queryParams);
+
+  // Хук для удаления заказа
+  const deleteOrderMutation = useDeleteOrder();
+  // Хук для обновления заказа
+  const updateOrderMutation = useUpdateOrder();
+  
+  // Хук для тостов
+  const { toasts, success, error: showError, removeToast } = useToast();
 
   const orders = ordersData?.orders || [];
   const pagination = ordersData?.pagination;
   const stats = ordersData?.stats;
-
-  // Обновление поиска с задержкой
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      refetch();
-    }, 500);
-    
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery, refetch]);
 
   const formatCurrency = (amount: number | string | any) => {
     let numAmount: number;
@@ -191,6 +200,79 @@ export function OrdersTable() {
     return sortDirection === "asc" ? <ArrowUpIcon className="w-4 h-4" /> : <ArrowDownIcon className="w-4 h-4" />;
   };
 
+  const handleEditClick = async (order: OrderEntity) => {
+    try {
+      console.log('🔍 Loading order data from server for ID:', order.id);
+      // Загружаем полные данные заказа с сервера
+      const fullOrder = await get<OrderEntity>(`/orders/${order.id}`);
+      console.log('✅ Received full order data from server:', fullOrder);
+      setOrderToEdit(fullOrder);
+      setEditModalOpen(true);
+    } catch (error) {
+      console.error('❌ Ошибка загрузки заказа:', error);
+      console.log('🔄 Using fallback data from list:', order);
+      // Если не удалось загрузить с сервера, используем данные из списка
+      setOrderToEdit(order);
+      setEditModalOpen(true);
+    }
+  };
+
+  const handleEditSave = async (updatedOrder: Partial<OrderEntity>) => {
+    if (!orderToEdit) return;
+
+    try {
+      await updateOrderMutation.mutate({ id: orderToEdit.id, data: updatedOrder });
+      success('Заказ обновлен', `Данные заказа #${orderToEdit.externalid || orderToEdit.id} успешно обновлены.`);
+      setEditModalOpen(false);
+      refetch(); // Обновляем список заказов
+    } catch (error) {
+      showError('Ошибка обновления', error instanceof Error ? error.message : 'Не удалось обновить заказ');
+    }
+  };
+
+  const handleDeleteClick = (order: OrderEntity) => {
+    setOrderToDelete(order);
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!orderToDelete) return;
+    
+    const orderToDeleteRef = orderToDelete;
+    
+    // Закрываем модальное окно сразу
+    setDeleteModalOpen(false);
+    setOrderToDelete(null);
+    
+    try {
+      // Используем оптимистичное удаление
+      await deleteOrderMutation.mutateOptimistic(
+        orderToDeleteRef.id,
+        (id) => removeOrderOptimistically(id)
+      );
+      
+      // Показываем уведомление об успехе
+      success(
+        'Заказ удален',
+        `Заказ #${orderToDeleteRef.externalid || orderToDeleteRef.id} успешно удален из системы`
+      );
+    } catch (error) {
+      console.error('Ошибка при удалении заказа:', error);
+      // При ошибке обновляем данные с сервера, чтобы восстановить состояние
+      refetch();
+      // Показываем уведомление об ошибке
+      showError(
+        'Ошибка удаления',
+        error instanceof Error ? error.message : 'Не удалось удалить заказ'
+      );
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteModalOpen(false);
+    setOrderToDelete(null);
+  };
+
   // Компонент прогресс-бара для заказов
   const OrderProgress = ({ order }: { order: any }) => {
     const steps = [
@@ -224,7 +306,7 @@ export function OrdersTable() {
     return (
       <div className="bg-container rounded-xl p-6 border border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-center py-16">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1A6DFF]"></div>
+          <Spinner size="md" />
           <span className="ml-3 text-[#1E293B] dark:text-white">Загрузка заказов...</span>
         </div>
       </div>
@@ -249,9 +331,31 @@ export function OrdersTable() {
 
   return (
     <div className="space-y-8">
+      {/* Модальные окна */}
+      {orderToDelete && (
+        <DeleteOrderModal
+          isOpen={deleteModalOpen}
+          onClose={handleDeleteCancel}
+          onConfirm={handleDeleteConfirm}
+          orderData={{
+            id: orderToDelete.id,
+            externalid: orderToDelete.externalid,
+            customername: orderToDelete.customername,
+            total_amount: orderToDelete.total_amount,
+            status: orderToDelete.status
+          }}
+        />
+      )}
+      <EditOrderModal 
+        isOpen={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        onSave={handleEditSave}
+        order={orderToEdit}
+      />
+
       {/* Статистика */}
       {stats && (
-        <div className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        <div className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           <div className="bg-container rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:border-[#1A6DFF]/30 dark:hover:border-[#1A6DFF]/30 transition-all duration-300">
             <div className="text-2xl font-bold text-[#1E293B] dark:text-white mb-1">
               {pagination?.totalCount || 0}
@@ -298,12 +402,6 @@ export function OrdersTable() {
             </div>
             <div className="text-sm text-[#64748B] dark:text-gray-400">В пути</div>
           </div>
-          <div className="bg-container rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:border-[#1A6DFF]/30 dark:hover:border-[#1A6DFF]/30 transition-all duration-300">
-            <div className="text-2xl font-bold text-[#1E293B] dark:text-white mb-1">
-              {stats.uniqueCities}
-            </div>
-            <div className="text-sm text-[#64748B] dark:text-gray-400">Города</div>
-          </div>
         </div>
       )}
 
@@ -328,24 +426,7 @@ export function OrdersTable() {
             </select>
           </div>
 
-          {/* Фильтр по городам */}
-          <div className="w-full max-w-[200px]">
-            <label className="block text-sm font-medium text-[#1E293B] dark:text-white mb-3">
-              Город
-            </label>
-            <select
-              value={cityFilter}
-              onChange={(e) => setCityFilter(e.target.value)}
-              className="w-full appearance-none rounded-lg border border-gray-200 dark:border-gray-600 bg-container px-4 py-3 text-sm text-[#1E293B] dark:text-white transition-all focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20"
-            >
-              <option value="all">Все города</option>
-              {citiesData?.cities.map((city) => (
-                <option key={city.value} value={city.value}>
-                  {city.label} ({city.count})
-                </option>
-              ))}
-            </select>
-          </div>
+
 
           {/* Поиск */}
           <div className="flex-1 max-w-[350px]">
@@ -355,8 +436,8 @@ export function OrdersTable() {
             <div className="relative">
               <input
                 type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-container px-5 py-3 text-sm text-[#1E293B] dark:text-white transition-all focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20"
                 placeholder="Введите имя клиента или номер заказа..."
               />
@@ -427,27 +508,32 @@ export function OrdersTable() {
                       Статус
                     </div>
                   </th>
+                  <th className="px-6 py-4 text-center">
+                    <div className="flex items-center justify-center gap-2 text-xs font-medium text-[#64748B] dark:text-gray-400 uppercase tracking-wider">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+                      </svg>
+                      Действия
+                    </div>
+                  </th>
             </tr>
           </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                {orders.length === 0 ? (
+              {loading ? (
+                <TableSkeleton rows={10} />
+              ) : error ? (
+                <tbody className="bg-white dark:bg-gray-800">
                   <tr>
-                    <td colSpan={6} className="px-6 py-16 text-center">
-                      <div className="flex flex-col items-center gap-3">
-                        <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                          <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-[#1E293B] dark:text-white font-medium">Заказы не найдены</p>
-                          <p className="text-sm text-[#64748B] dark:text-gray-400 mt-1">Попробуйте изменить параметры поиска</p>
-                        </div>
-                      </div>
+                    <td colSpan={8} className="text-center py-10">
+                      <p className="text-red-500">Ошибка загрузки данных: {error}</p>
+                      <button onClick={() => refetch()} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                        Попробовать снова
+                      </button>
                     </td>
                   </tr>
-                ) : (
-                  orders.map((order) => (
+                </tbody>
+              ) : orders.length > 0 ? (
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                  {orders.map((order) => (
                     <tr key={order.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/20 transition-colors">
                       <td className="px-6 py-4">
                         <div className="space-y-1">
@@ -466,7 +552,9 @@ export function OrdersTable() {
                       <td className="px-6 py-4">
                         <div className="space-y-1">
                           <p className="font-medium text-[#1E293B] dark:text-white">
-                            {order.customername || 'Не указано'}
+                            {order.customername || 
+                             (order.user ? `${order.user.first_name || ''} ${order.user.last_name || ''}`.trim() : '') || 
+                             'Не указано'}
                           </p>
                           {(order.customeremail || order.customerphone) && (
                             <div className="space-y-0.5">
@@ -527,7 +615,19 @@ export function OrdersTable() {
                               <svg className="w-3 h-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                               </svg>
-                              {order.tracking_number}
+                              <a
+                                href={order.tracking_number.startsWith('@') 
+                                  ? order.tracking_number.substring(1) 
+                                  : order.tracking_number.startsWith('http') 
+                                    ? order.tracking_number 
+                                    : `https://www.pochta.ru/tracking#${order.tracking_number}`
+                                }
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[#1A6DFF] hover:text-[#00C5FF] transition-colors underline decoration-dotted"
+                              >
+                                {order.tracking_number}
+                              </a>
                             </div>
                           )}
                                                      {order.deliverycost && order.deliverycost > 0 && (
@@ -558,10 +658,51 @@ export function OrdersTable() {
                           {getStatusBadge(order.status)}
                         </div>
                       </td>
+                      <td className="px-6 py-4">
+                        <div className="flex justify-center gap-2">
+                          <button
+                            onClick={() => handleEditClick(order)}
+                            className="p-2 rounded-lg transition-all duration-300 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                            title="Редактировать заказ"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L15.232 5.232z"></path></svg>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(order)}
+                            className="p-2 rounded-lg transition-all duration-300 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                            title="Удалить заказ"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
+                  ))}
+                </tbody>
+              ) : (
+                <tbody className="bg-white dark:bg-gray-800">
+                  <tr>
+                    <td colSpan={8} className="text-center py-20">
+                      <div className="flex flex-col items-center">
+                        <SearchIcon className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
+                        <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200">
+                          Заказы не найдены
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                          Попробуйте изменить фильтры или поисковый запрос.
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              )}
             </table>
           </div>
         </div>
@@ -609,7 +750,9 @@ export function OrdersTable() {
                 {/* Customer */}
                 <div className="mb-3 pb-3 border-b border-gray-200 dark:border-gray-700">
                   <p className="text-sm font-medium text-[#1E293B] dark:text-white mb-1">
-                    {order.customername || 'Клиент не указан'}
+                    {order.customername || 
+                     (order.user ? `${order.user.first_name || ''} ${order.user.last_name || ''}`.trim() : '') || 
+                     'Клиент не указан'}
                   </p>
                   {(order.customeremail || order.customerphone) && (
                     <div className="space-y-0.5">
@@ -673,7 +816,19 @@ export function OrdersTable() {
                           <svg className="w-3 h-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                           </svg>
-                          <span className="font-mono text-[#1E293B] dark:text-white">{order.tracking_number}</span>
+                          <a
+                            href={order.tracking_number.startsWith('@') 
+                              ? order.tracking_number.substring(1) 
+                              : order.tracking_number.startsWith('http') 
+                                ? order.tracking_number 
+                                : `https://www.pochta.ru/tracking#${order.tracking_number}`
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-mono text-[#1A6DFF] hover:text-[#00C5FF] transition-colors underline decoration-dotted"
+                          >
+                            {order.tracking_number}
+                          </a>
                         </div>
                       )}
                       {order.deliverycost && order.deliverycost > 0 && (
@@ -703,6 +858,33 @@ export function OrdersTable() {
                     <p className="text-xs text-[#64748B] dark:text-gray-400">
                       {order.currency || 'RUB'}
                     </p>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex justify-end pt-3 border-t border-gray-200 dark:border-gray-700 mt-3">
+                  <div className="flex justify-center gap-2">
+                    <button
+                      onClick={() => handleEditClick(order)}
+                      className="p-2 rounded-lg transition-all duration-300 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                      title="Редактировать заказ"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L15.232 5.232z"></path></svg>
+                    </button>
+                    <button
+                      onClick={() => handleDeleteClick(order)}
+                      className="p-2 rounded-lg transition-all duration-300 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                      title="Удалить заказ"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                    </button>
                   </div>
                 </div>
               </motion.div>
@@ -738,6 +920,12 @@ export function OrdersTable() {
           </div>
         </div>
       )}
+
+      {/* Контейнер тостов */}
+      <ToastContainer 
+        toasts={toasts.map(toast => ({ ...toast, onClose: removeToast }))} 
+        onClose={removeToast} 
+      />
     </div>
   );
 } 

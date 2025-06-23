@@ -25,29 +25,25 @@ interface LoyaltyData {
   all_tiers: AccountTier[];
 }
 
-const getTelegramUserData = () => {
-  if (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user) {
-    return window.Telegram.WebApp.initDataUnsafe.user;
-  }
-  // Для разработки используем тестового пользователя
-  return { id: 9999 };
-};
+import { useTelegramAuth } from "@/context/TelegramAuthContext";
 
 export default function BonusBlock() {
+  const { user: authUser, isAuthenticated } = useTelegramAuth();
   const [loyaltyData, setLoyaltyData] = useState<LoyaltyData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showTierModal, setShowTierModal] = useState(false);
 
   useEffect(() => {
-    fetchLoyaltyData();
-  }, []);
+    if (isAuthenticated && authUser?.tg_id) {
+      fetchLoyaltyData();
+    }
+  }, [isAuthenticated, authUser]);
 
   const fetchLoyaltyData = async () => {
     try {
-      const tgUser = getTelegramUserData();
-      if (!tgUser?.id) return;
+      if (!authUser?.tg_id) return;
 
-      const response = await fetch(`/api/webapp/loyalty?tg_id=${tgUser.id}`);
+      const response = await fetch(`/api/webapp/loyalty?tg_id=${authUser.tg_id}`);
       if (response.ok) {
         const data = await response.json();
         setLoyaltyData(data);

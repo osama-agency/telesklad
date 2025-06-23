@@ -10,107 +10,114 @@ import { cn } from "@/lib/utils";
 import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LogOutIcon, SettingsIcon } from "./icons";
+import { useUserData } from "@/hooks/useUserData";
+
+// Компонент скелетона для аватара
+const AvatarSkeleton = () => (
+  <div className="relative h-12 w-12 rounded-full bg-gray-200 animate-pulse">
+    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-pulse"></div>
+  </div>
+);
+
+// Компонент скелетона для всего UserInfo
+const UserInfoSkeleton = () => (
+  <div className="flex items-center gap-4">
+    <AvatarSkeleton />
+    <div className="hidden text-right lg:block">
+      <div className="h-4 w-20 bg-gray-200 rounded animate-pulse mb-1"></div>
+      <div className="h-3 w-16 bg-gray-200 rounded animate-pulse"></div>
+    </div>
+    <div className="h-4 w-4 bg-gray-200 rounded animate-pulse"></div>
+  </div>
+);
 
 export function UserInfo() {
   const [isOpen, setIsOpen] = useState(false);
-
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
   const { data: session } = useSession();
+  const { userData, loading } = useUserData();
+
+  // Показываем скелетон пока загружаются данные пользователя
+  if (loading || !session) {
+    return <UserInfoSkeleton />;
+  }
 
   const USER = {
-    name: session?.user.name || "Admin User",
-    email: session?.user.email || "go@osama.agency",
-    img: session?.user?.image || "/images/user/user-03.png",
+    name: userData?.name || session?.user.name || "Admin User",
+    email: userData?.email || session?.user.email || "admin@example.com",
+    image: userData?.image || session?.user?.image || "/images/user/user-01.png",
+  };
+
+  const handleImageLoad = () => {
+    setImageLoading(false);
+  };
+
+  const handleImageError = () => {
+    setImageLoading(false);
+    setImageError(true);
   };
 
   return (
     <Dropdown isOpen={isOpen} setIsOpen={setIsOpen}>
-      <DropdownTrigger className="rounded align-middle outline-none ring-primary ring-offset-2 focus-visible:ring-1 dark:ring-offset-gray-dark">
-        <span className="sr-only">My Account</span>
-
-        <figure className="flex items-center gap-3">
+      <DropdownTrigger className="flex items-center gap-4 cursor-pointer">
+        <div className="relative h-12 w-12">
+          {imageLoading && <AvatarSkeleton />}
           <Image
-            src={USER.img}
-            className="size-12"
-            alt={`Avatar for ${USER.name}`}
-            role="presentation"
-            width={200}
-            height={200}
+            src={imageError ? "/images/user/user-01.png" : USER.image}
+            alt="User Avatar"
+            width={48}
+            height={48}
+            className={cn(
+              "rounded-full object-cover transition-opacity duration-200",
+              imageLoading ? "opacity-0 absolute inset-0" : "opacity-100"
+            )}
+            onLoad={handleImageLoad}
+            onError={handleImageError}
+            priority
           />
-          <figcaption className="flex items-center gap-1 font-medium text-dark dark:text-dark-6 max-[1024px]:sr-only">
-            <span>{USER.name}</span>
+        </div>
 
-            <ChevronUpIcon
-              aria-hidden
-              className={cn(
-                "rotate-180 transition-transform",
-                isOpen && "rotate-0",
-              )}
-              strokeWidth={1.5}
-            />
-          </figcaption>
-        </figure>
+        <div className="hidden text-right lg:block">
+          <span className="block text-sm font-medium text-black dark:text-white">
+            {USER.name}
+          </span>
+          <span className="block text-xs text-gray-500">{USER.email}</span>
+        </div>
+
+        <ChevronUpIcon
+          className={cn(
+            "hidden fill-current transition-transform duration-200 sm:block",
+            isOpen && "rotate-180"
+          )}
+        />
       </DropdownTrigger>
 
-      <DropdownContent
-        className="border border-stroke bg-white shadow-md dark:border-dark-3 dark:bg-gray-dark min-[230px]:min-w-[17.5rem]"
-        align="end"
-      >
-        <h2 className="sr-only">User information</h2>
-
-        <figure className="flex items-center gap-2.5 px-5 py-3.5">
-          <Image
-            src={USER.img}
-            className="size-12 rounded-full"
-            alt={`Avatar for ${USER.name}`}
-            role="presentation"
-            width={200}
-            height={200}
-          />
-
-          <figcaption className="space-y-1 text-base font-medium">
-            <div className="mb-2 leading-none text-dark dark:text-white">
-              {USER.name}
-            </div>
-
-            <div className="line-clamp-1 break-all leading-none text-gray-6">
-              {USER.email}
-            </div>
-          </figcaption>
-        </figure>
-
-        <hr className="border-[#E8E8E8] dark:border-dark-3" />
-
-        <div className="p-2 text-base text-[#4B5563] dark:text-dark-6 [&>*]:cursor-pointer">
-          <Link
-            href={"/pages/settings"}
-            onClick={() => setIsOpen(false)}
-            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[9px] hover:bg-gray-2 hover:text-dark dark:hover:bg-dark-3 dark:hover:text-white"
-          >
-            <SettingsIcon />
-
-            <span className="mr-auto text-base font-medium">
-              Настройки
-            </span>
-          </Link>
-        </div>
-
-        <hr className="border-[#E8E8E8] dark:border-dark-3" />
-
-        <div className="p-2 text-base text-[#4B5563] dark:text-dark-6">
-          <button
-            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[9px] hover:bg-gray-2 hover:text-dark dark:hover:bg-dark-3 dark:hover:text-white"
-            onClick={async () => {
-              await signOut();
-              setIsOpen(false);
-            }}
-          >
-            <LogOutIcon />
-
-            <span className="text-base font-medium">Выйти</span>
-          </button>
-        </div>
+      <DropdownContent align="end" className="w-62.5 rounded-sm border border-stroke bg-white py-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+        <ul className="flex flex-col gap-5 border-b border-stroke px-6 pb-6 dark:border-strokedark">
+          <li>
+            <Link
+              href="/pages/settings"
+              className="flex items-center gap-3.5 text-sm font-medium duration-300 ease-in-out hover:text-primary lg:text-base"
+              onClick={() => setIsOpen(false)}
+            >
+              <SettingsIcon />
+              Настройки аккаунта
+            </Link>
+          </li>
+        </ul>
+        <button
+          onClick={() => {
+            setIsOpen(false);
+            signOut();
+          }}
+          className="flex items-center gap-3.5 px-6 py-4 text-sm font-medium duration-300 ease-in-out hover:text-primary lg:text-base"
+        >
+          <LogOutIcon />
+          Выйти
+        </button>
       </DropdownContent>
     </Dropdown>
   );

@@ -19,7 +19,7 @@ export async function GET() {
       bot: botInfo.result,
       status: 'Bot is working',
       token_preview: '7754514670:AAF***',
-      webhook_url: `${process.env.NEXTAUTH_URL || 'http://localhost:3009'}/api/telegram/webapp-webhook`,
+      webhook_url: `${process.env.NEXTAUTH_URL || 'https://strattera.ngrok.app'}/api/telegram/webapp-webhook`,
       timestamp: new Date().toISOString()
     });
 

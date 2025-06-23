@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import LoyaltyService from '@/lib/services/loyaltyService';
 import { S3Service } from '@/lib/services/s3';
-import { WebappTelegramBotService } from '@/lib/services/webapp-telegram-bot.service';
+import { TelegramService } from '@/lib/services/telegram-service.service';
+import { ReportService } from '@/lib/services/report.service';
 import { NotificationSchedulerService } from '@/lib/services/notification-scheduler.service';
 import { getServerSession } from "next-auth";
 
@@ -30,12 +31,28 @@ const STATUS_LABELS = {
 
 // POST /api/webapp/orders - создание нового заказа с бонусами
 export async function POST(request: NextRequest) {
-  const session = await getServerSession();
-  if (!session) return new Response("Unauthorized", { status: 401 });
-
   try {
     const body = await request.json();
-    const { delivery_data, cart_items, bonus = 0, total } = body;
+    const { delivery_data, cart_items, bonus = 0, total, telegram_user } = body;
+
+    // Получаем tg_id из данных пользователя Telegram
+    let userId = TEST_USER_ID; // fallback для разработки
+    
+    if (telegram_user?.id) {
+      // Ищем пользователя по tg_id
+      const user = await prisma.users.findUnique({
+        where: { tg_id: BigInt(telegram_user.id) }
+      });
+      
+      if (user) {
+        userId = Number(user.id);
+      } else {
+        return NextResponse.json(
+          { success: false, error: 'Пользователь не найден' },
+          { status: 404 }
+        );
+      }
+    }
 
     // Валидация данных
     if (!delivery_data || !cart_items || cart_items.length === 0) {
@@ -47,7 +64,7 @@ export async function POST(request: NextRequest) {
 
     // Получаем пользователя
     const user = await prisma.users.findUnique({
-      where: { id: BigInt(TEST_USER_ID) },
+      where: { id: BigInt(userId) },
       include: {
         account_tiers: true
       }
@@ -64,7 +81,7 @@ export async function POST(request: NextRequest) {
     if (bonus > 0) {
       try {
         await LoyaltyService.validateBonusUsage(
-          BigInt(TEST_USER_ID),
+          BigInt(userId),
           bonus,
           total - bonus // общая сумма без учета бонусов
         );
@@ -80,12 +97,13 @@ export async function POST(request: NextRequest) {
     const result = await prisma.$transaction(async (tx) => {
       // Обновляем данные пользователя из формы доставки
       await tx.users.update({
-        where: { id: BigInt(TEST_USER_ID) },
+        where: { id: BigInt(userId) },
         data: {
           first_name: delivery_data.first_name,
           last_name: delivery_data.last_name,
           middle_name: delivery_data.middle_name,
           phone_number: delivery_data.phone_number,
+          email: delivery_data.email,
           address: delivery_data.address,
           street: delivery_data.street,
           home: delivery_data.home,
@@ -102,14 +120,20 @@ export async function POST(request: NextRequest) {
       // Создаем заказ
       const order = await tx.orders.create({
         data: {
-          user_id: BigInt(TEST_USER_ID),
+          user_id: BigInt(userId),
           total_amount: total,
           status: 0, // unpaid
           has_delivery: hasDelivery,
           bonus: bonus,
           created_at: new Date(),
           updated_at: new Date(),
-          externalid: `webapp_${Date.now()}_${TEST_USER_ID}`
+          externalid: `webapp_${Date.now()}_${userId}`,
+          // Сохраняем данные доставки в заказ
+          customername: `${delivery_data.first_name || ''} ${delivery_data.last_name || ''}`.trim(),
+          customerphone: delivery_data.phone_number || null,
+          customeremail: delivery_data.email || null,
+          customercity: delivery_data.city || null,
+          customeraddress: buildFullAddress(delivery_data) || null,
         }
       });
 
@@ -146,7 +170,7 @@ export async function POST(request: NextRequest) {
       // Списываем бонусы если они использованы
       if (bonus > 0) {
         await LoyaltyService.deductBonus(
-          BigInt(TEST_USER_ID),
+          BigInt(userId),
           bonus,
           'order_deduct',
           'orders',
@@ -170,7 +194,7 @@ export async function POST(request: NextRequest) {
 
       // Получаем обновленные данные пользователя после обновления
       const updatedUser = await prisma.users.findUnique({
-        where: { id: BigInt(TEST_USER_ID) }
+        where: { id: BigInt(userId) }
       });
 
       if (updatedUser && updatedUser.tg_id) {
@@ -193,27 +217,31 @@ export async function POST(request: NextRequest) {
         const userData = {
           tg_id: updatedUser.tg_id.toString(),
           full_name: `${updatedUser.first_name || ''} ${updatedUser.last_name || ''}`.trim() || 'Клиент',
-          full_address: buildFullAddress(updatedUser),
+          full_address: buildFullAddress({
+            city: delivery_data.city, // берем город из данных доставки
+            address: updatedUser.address,
+            street: updatedUser.street,
+            home: updatedUser.home,
+            apartment: updatedUser.apartment,
+            build: updatedUser.build
+          }),
           phone_number: updatedUser.phone_number || 'Не указан',
           postal_code: updatedUser.postal_code || undefined
         };
 
-        // Отправляем уведомление о создании заказа
-        const notificationResult = await WebappTelegramBotService.sendOrderCreated(
-          orderData, 
-          userData, 
-          settingsMap
-        );
-
-        // Сохраняем message_id если уведомление отправлено успешно
-        if (notificationResult.success && notificationResult.messageId) {
-          await prisma.orders.update({
-            where: { id: result.id },
-            data: { msg_id: notificationResult.messageId }
-          });
-        }
-
-        console.log(`✅ Order #${Number(result.id)} notification sent:`, notificationResult.success);
+        // Отправляем уведомление о создании заказа через ReportService
+        // Передаем previousStatus = -1 чтобы указать что это новый заказ
+        const orderForReport = {
+          id: result.id,
+          user_id: result.user_id,
+          status: result.status,
+          total_amount: result.total_amount,
+          tracking_number: result.tracking_number,
+          msg_id: result.msg_id ? BigInt(result.msg_id) : null
+        };
+        await ReportService.handleOrderStatusChange(orderForReport, -1);
+        
+        console.log(`✅ Order #${Number(result.id)} notification sent`);
       } else {
         console.log(`ℹ️ Order #${Number(result.id)} - user has no Telegram ID, skipping notification`);
       }
@@ -226,7 +254,7 @@ export async function POST(request: NextRequest) {
     try {
       await NotificationSchedulerService.schedulePaymentReminder(
         Number(result.id), 
-        TEST_USER_ID
+        userId
       );
       console.log(`📅 Payment reminders scheduled for order #${Number(result.id)}`);
     } catch (reminderError) {
@@ -258,10 +286,32 @@ export async function POST(request: NextRequest) {
 // GET /api/webapp/orders - получить историю заказов пользователя
 export async function GET(request: NextRequest) {
   try {
+    // Получаем tg_id из параметров запроса
+    const { searchParams } = new URL(request.url);
+    const tg_id = searchParams.get('tg_id');
+    
+    let userId = TEST_USER_ID; // fallback для разработки
+    
+    if (tg_id) {
+      // Ищем пользователя по tg_id
+      const user = await prisma.users.findUnique({
+        where: { tg_id: BigInt(tg_id) }
+      });
+      
+      if (user) {
+        userId = Number(user.id);
+      } else {
+        return NextResponse.json(
+          { success: false, error: 'Пользователь не найден' },
+          { status: 404 }
+        );
+      }
+    }
+
     // Получаем заказы пользователя с товарами (как в Rails: user.orders.includes(:order_items))
     const orders = await prisma.orders.findMany({
       where: {
-        user_id: TEST_USER_ID
+        user_id: userId
       },
       include: {
         order_items: {
@@ -393,14 +443,16 @@ export async function GET(request: NextRequest) {
 }
 
 // Вспомогательная функция для построения полного адреса
-function buildFullAddress(user: any): string {
+function buildFullAddress(data: any): string {
   const parts = [];
   
-  if (user.address) parts.push(user.address);
-  if (user.street) parts.push(user.street);
-  if (user.home) parts.push(`дом ${user.home}`);
-  if (user.apartment) parts.push(`кв. ${user.apartment}`);
-  if (user.build) parts.push(`корп. ${user.build}`);
+  // Добавляем город если есть
+  if (data.city) parts.push(data.city);
+  if (data.address) parts.push(data.address);
+  if (data.street) parts.push(data.street);
+  if (data.home) parts.push(`дом ${data.home}`);
+  if (data.apartment) parts.push(`кв. ${data.apartment}`);
+  if (data.build) parts.push(`корп. ${data.build}`);
   
   return parts.join(', ') || 'Адрес не указан';
 } 

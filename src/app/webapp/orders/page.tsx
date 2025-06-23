@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { IconComponent } from '@/components/webapp/IconComponent';
 import SkeletonLoading from '../_components/SkeletonLoading';
 import LoadingSpinner from '../_components/LoadingSpinner';
+import { useTelegramAuth } from "@/context/TelegramAuthContext";
 
 interface Order {
   id: number;
@@ -57,6 +58,7 @@ interface OrdersApiResponse {
 
 const OrdersPage: React.FC = () => {
   const router = useRouter();
+  const { user: authUser, isAuthenticated } = useTelegramAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [stats, setStats] = useState<OrderStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -86,10 +88,12 @@ const OrdersPage: React.FC = () => {
     // Загрузка данных заказов из API
     const loadOrders = async () => {
       try {
+        if (!authUser?.tg_id) return;
+        
         setIsLoading(true);
         setError(null);
 
-        const response = await fetch('/api/webapp/orders');
+        const response = await fetch(`/api/webapp/orders?tg_id=${authUser.tg_id}`);
         const data: OrdersApiResponse = await response.json();
         
         if (data.success) {
@@ -106,8 +110,10 @@ const OrdersPage: React.FC = () => {
       }
     };
 
-    loadOrders();
-  }, []);
+    if (isAuthenticated && authUser?.tg_id) {
+      loadOrders();
+    }
+  }, [isAuthenticated, authUser]);
 
   const handleBack = () => {
     router.back();

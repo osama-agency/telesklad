@@ -47,6 +47,7 @@ interface DeliveryData {
   last_name: string;
   middle_name: string;
   phone_number: string;
+  city?: string; // добавляем поле city
 }
 
 interface UserProfile {
@@ -216,7 +217,10 @@ export default function CartPage() {
     try {
       // Создаем заказ с примененными бонусами
       const orderData = {
-        delivery_data: deliveryData,
+        delivery_data: {
+          ...deliveryData,
+          city: deliveryData.address // передаем город как city
+        },
         cart_items: cartItems,
         bonus: appliedBonus,
         total: finalTotal,

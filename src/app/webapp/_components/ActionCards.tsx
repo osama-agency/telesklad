@@ -186,7 +186,7 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
       id: 'subscriptions',
       title: 'Товары в ожидании',
       description: 'Отслеживайте поступление товаров',
-      icon: 'clock',
+      icon: 'hourglass',
       href: '/webapp/subscriptions',
       badge: currentSubscriptionsCount && currentSubscriptionsCount > 0 ? {
         count: currentSubscriptionsCount,
@@ -198,29 +198,24 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
     {
       id: 'orders',
       title: 'История заказов',
-      description: 'Ваши покупки и доставки',
-      icon: 'cart2',
+      description: 'Просмотр и отслеживание заказов',
+      icon: 'history',
       href: '/webapp/orders',
       badge: ordersCount && ordersCount > 0 ? {
         count: ordersCount,
-        text: ordersCount === 1 ? 'заказ' : 
-              ordersCount < 5 ? 'заказа' : 'заказов',
-        type: 'success'
+        text: 'активных',
+        type: 'info'
       } : undefined
-    }
+    },
+    // {
+    //   id: 'support',
+    //   title: 'Поддержка',
+    //   description: 'Связаться с нами в Telegram',
+    //   icon: 'support',
+    //   href: 'https://t.me/Telesklad_support',
+    //   external: true
+    // }
   ];
-
-  if (isAdmin) {
-    actionItems.push({
-      id: 'admin',
-      title: 'Админка',
-      description: 'Управление системой',
-      icon: 'admin',
-      href: '/admin',
-      variant: 'admin',
-      external: true
-    });
-  }
 
   const getBadgeColors = (type: string) => {
     switch (type) {

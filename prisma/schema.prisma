@@ -620,6 +620,7 @@ model telesklad_user {
 
   accounts Account[]
   sessions Session[]
+  auditLogs AuditLog[]
 
   @@map("telesklad_users")
 }
@@ -683,4 +684,23 @@ model notification_jobs {
   @@index([job_type])
   @@index([user_id])
   @@index([target_id])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String
+  action      String
+  resource    String
+  resourceId  String?
+  details     Json?
+  ip          String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+  
+  user        telesklad_user @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
+  @@index([resource])
+  @@index([createdAt])
+  @@map("audit_logs")
 }

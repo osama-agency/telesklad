@@ -56,14 +56,19 @@ interface Subscription {
   updated_at: string;
 }
 
+import { useTelegramAuth } from "@/context/TelegramAuthContext";
+
 const ProfilePage: React.FC = () => {
+  const { user: authUser, isAuthenticated } = useTelegramAuth();
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadProfileData();
+    if (isAuthenticated && authUser?.tg_id) {
+      loadProfileData();
+    }
 
     // Слушаем событие обновления профиля
     const handleProfileUpdate = () => {
@@ -75,15 +80,17 @@ const ProfilePage: React.FC = () => {
     return () => {
       window.removeEventListener('profileUpdated', handleProfileUpdate);
     };
-  }, []);
+  }, [isAuthenticated, authUser]);
 
   const loadProfileData = async () => {
     try {
+      if (!authUser?.tg_id) return;
+      
       setIsLoading(true);
       
       // Параллельно загружаем профиль и подписки
       const [profileResponse, subscriptionsResponse] = await Promise.all([
-        fetch('/api/webapp/profile'),
+        fetch(`/api/webapp/profile?tg_id=${authUser.tg_id}`),
         fetch('/api/webapp/subscriptions')
       ]);
 
