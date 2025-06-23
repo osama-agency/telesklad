@@ -2,7 +2,7 @@ import TelegramBot from 'node-telegram-bot-api';
 import { prisma } from '@/libs/prismaDb';
 import { TelegramTokenService } from './telegram-token.service';
 import { TelegramService } from './TelegramService';
-import { ReportService } from './report.service';
+import { ReportService } from './ReportService';
 
 interface BotSettings {
   tg_token?: string;
@@ -504,10 +504,10 @@ export class TelegramBotWorker {
       
       if (!orderNumber) return;
 
-      // Отправляем сообщение с запросом трек-номера
+      // Отправляем сообщение с запросом трек-номера как в старом проекте
       const msg = await this.bot.sendMessage(
         query.message.chat.id,
-        `📦 Введите трек-номер для заказа №${orderNumber}\n👤 ФИО: ${fullName || 'Не указано'}`
+        `Введите трек-номер для заказа №${orderNumber}\n\n👤 ФИО:\n${fullName || 'Не указано'}\n\nв чат:`
       );
 
       // Сохраняем состояние

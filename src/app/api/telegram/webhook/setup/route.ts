@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/libs/auth';
-import { TelegramBotWorker } from '@/lib/services/telegram-bot-worker.service';
+import { TelegramBotWorker } from '@/lib/services/TelegramBotWorker';
 
 const botWorker = TelegramBotWorker.getInstance();
 

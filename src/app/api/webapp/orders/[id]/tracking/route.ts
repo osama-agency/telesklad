@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { WebappTelegramBotService } from '@/lib/services/webapp-telegram-bot.service';
+import { ReportService } from '@/lib/services/ReportService';
 
 const prisma = new PrismaClient();
 
@@ -30,13 +30,16 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
               }
             }
           }
-        }
+        },
+        bank_cards: true
       }
     });
 
     if (!order) {
       return NextResponse.json({ error: 'Заказ не найден' }, { status: 404 });
     }
+
+    const previousStatus = order.status;
 
     // Обновляем заказ с трек-номером и статусом "shipped"
     const updatedOrder = await prisma.orders.update({
@@ -46,38 +49,30 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         status: 3, // shipped
         shipped_at: new Date(),
         updated_at: new Date()
+      },
+      include: {
+        users: true,
+        order_items: {
+          include: { 
+            products: true
+          }
+        },
+        bank_cards: true
       }
     });
 
-    // Подготавливаем данные для уведомления
-    const orderData = {
-      id: orderId,
-      total_amount: Number(order.total_amount),
-      items: order.order_items.map(item => ({
-        product_name: item.products.name || 'Товар',
-        quantity: item.quantity,
-        price: Number(item.price || 0)
-      })),
-      bonus: order.bonus
-    };
-
-    const userData = {
-      tg_id: order.users.tg_id.toString(),
-      full_name: `${order.users.first_name || ''} ${order.users.last_name || ''}`.trim() || 'Клиент',
-      full_address: buildFullAddress(order.users),
-      phone_number: order.users.phone_number || 'Не указан',
-      postal_code: order.users.postal_code || undefined
-    };
-
-    // 🔥 ОТПРАВЛЯЕМ УВЕДОМЛЕНИЕ О ДОСТАВКЕ С ТРЕК-НОМЕРОМ
+    // 🔥 ОТПРАВЛЯЕМ УВЕДОМЛЕНИЯ ЧЕРЕЗ REPORTSERVICE
     let notificationResult = false;
     
     try {
-      notificationResult = await WebappTelegramBotService.sendOrderShipped(
-        orderData, 
-        userData, 
-        tracking_number.trim()
-      );
+      if (previousStatus !== updatedOrder.status) {
+        const orderForReport = {
+          ...updatedOrder,
+          msg_id: updatedOrder.msg_id ? BigInt(updatedOrder.msg_id) : null
+        };
+        await ReportService.handleOrderStatusChange(orderForReport as any, previousStatus);
+        notificationResult = true;
+      }
     } catch (notificationError) {
       console.error('❌ Shipping notification error:', notificationError);
       // Не блокируем обновление из-за ошибки уведомления

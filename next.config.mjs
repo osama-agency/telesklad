@@ -9,10 +9,15 @@ const nextConfig = {
     ],
   },
   serverExternalPackages: ["@prisma/client"],
+  // Исключаем old-webapp из обработки
+  pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'md', 'mdx'],
+  experimental: {
+    externalDir: true
+  },
   webpack: (config, { isServer }) => {
-    // Исключаем папку nextadmin-nextjs-pro-v2-main из сборки
+    // Исключаем папки из сборки
     config.module.rules.push({
-      test: /nextadmin-nextjs-pro-v2-main/,
+      test: /(nextadmin-nextjs-pro-v2-main|old-webapp|scripts)/,
       use: 'ignore-loader'
     });
     

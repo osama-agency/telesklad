@@ -234,11 +234,11 @@ export class TelegramService {
   }
 
   private getButtonText(markup: string): string {
-    // Маппинг кнопок как в Rails проекте
+    // Маппинг кнопок точно как в старом проекте (ru.yml tg_btn)
     const buttonTexts: { [key: string]: string } = {
       'i_paid': 'Я оплатил',
-      'approve_payment': 'Подтвердить оплату',
-      'submit_tracking': 'Отправить трек-номер',
+      'approve_payment': 'Оплата пришла',
+      'submit_tracking': 'Привязать трек',
       'new_order': 'Новый заказ',
       'mailing': 'Рассылка'
     };

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { TelegramBotService } from '@/lib/services/telegram-bot.service';
+import { TelegramService } from '@/lib/services/TelegramService';
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,19 +15,20 @@ export async function POST(request: NextRequest) {
     };
 
     // Отправляем тестовое уведомление с кнопкой
-    const result = await TelegramBotService.sendPaymentNotification(999, testPurchaseData);
+    const result = await TelegramService.call('🧪 Test message with button', null, { markup: 'i_paid' });
 
-    if (result.success) {
+    if (typeof result === 'number') {
       console.log('✅ Test interactive button sent successfully');
       return NextResponse.json({
         success: true,
         message: 'Test interactive button sent',
-        messageId: result.messageId
+        messageId: result
       });
     } else {
       return NextResponse.json({
         success: false,
-        message: 'Failed to send test interactive button'
+        message: 'Failed to send test interactive button',
+        error: result.message
       }, { status: 500 });
     }
 

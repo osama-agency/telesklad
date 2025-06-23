@@ -10,7 +10,7 @@ import { useTelegramAuth } from "@/context/TelegramAuthContext";
 interface Order {
   id: number;
   total_amount: number;
-  status: 'unpaid' | 'paid' | 'shipped' | 'delivered' | 'cancelled';
+  status: 'unpaid' | 'paid' | 'shipped' | 'delivered' | 'cancelled' | 'processing';
   status_label: string;
   created_at: string;
   paid_at?: string;
@@ -154,11 +154,18 @@ const OrdersPage: React.FC = () => {
           bgColor: '#DBEAFE',
           icon: 'info'
         };
+      case 'processing':
+        return {
+          label: 'Обрабатывается',
+          color: '#7C3AED',
+          bgColor: '#EDE9FE',
+          icon: 'arrow-right'
+        };
       case 'shipped':
         return {
           label: 'Отправлен',
-          color: '#7C3AED',
-          bgColor: '#EDE9FE',
+          color: '#059669',
+          bgColor: '#D1FAE5',
           icon: 'arrow-right'
         };
       case 'delivered':

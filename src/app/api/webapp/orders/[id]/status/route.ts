@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { WebappTelegramBotService } from '@/lib/services/webapp-telegram-bot.service';
+import { ReportService } from '@/lib/services/ReportService';
 import { NotificationSchedulerService } from '@/lib/services/notification-scheduler.service';
 import LoyaltyService from '@/lib/services/loyaltyService';
 
@@ -110,22 +110,29 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     try {
       switch (status) {
         case 'unpaid':
-          // Новый заказ создан - отправляем клиенту
-          const createResult = await WebappTelegramBotService.sendOrderCreated(orderData, userData, settingsMap);
-          notificationResult = createResult.success;
-          
-          // Сохраняем message_id для возможности редактирования
-          if (createResult.messageId) {
-            await prisma.orders.update({
-              where: { id: BigInt(orderId) },
-              data: { msg_id: createResult.messageId }
-            });
-          }
+          // Новый заказ создан - отправляем клиенту через ReportService
+          const orderForReport = {
+            ...updatedOrder,
+            users: order.users,
+            order_items: order.order_items,
+            bank_cards: null,
+            msg_id: updatedOrder.msg_id ? BigInt(updatedOrder.msg_id) : null
+          };
+          await ReportService.handleOrderStatusChange(orderForReport as any, oldStatus === 'unpaid' ? -1 : STATUS_CODES[oldStatus as keyof typeof STATUS_CODES]);
+          notificationResult = true;
           break;
 
         case 'paid':
-          // Клиент нажал "Я оплатил" - уведомляем админа
-          notificationResult = await WebappTelegramBotService.sendPaymentReceived(orderData, userData, settingsMap);
+          // Клиент нажал "Я оплатил" - уведомляем админа через ReportService
+          const paidOrderForReport = {
+            ...updatedOrder,
+            users: order.users,
+            order_items: order.order_items,
+            bank_cards: null,
+            msg_id: updatedOrder.msg_id ? BigInt(updatedOrder.msg_id) : null
+          };
+          await ReportService.handleOrderStatusChange(paidOrderForReport as any, STATUS_CODES[oldStatus as keyof typeof STATUS_CODES]);
+          notificationResult = true;
           
           // 🚫 ОТМЕНЯЕМ НАПОМИНАНИЯ О НЕОПЛАЧЕННОМ ЗАКАЗЕ
           try {
@@ -137,8 +144,16 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
           break;
 
         case 'processing':
-          // Админ подтвердил оплату - уведомляем клиента и курьера
-          notificationResult = await WebappTelegramBotService.sendOrderProcessing(orderData, userData, settingsMap);
+          // Админ подтвердил оплату - уведомляем клиента и курьера через ReportService
+          const processingOrderForReport = {
+            ...updatedOrder,
+            users: order.users,
+            order_items: order.order_items,
+            bank_cards: null,
+            msg_id: updatedOrder.msg_id ? BigInt(updatedOrder.msg_id) : null
+          };
+          await ReportService.handleOrderStatusChange(processingOrderForReport as any, STATUS_CODES[oldStatus as keyof typeof STATUS_CODES]);
+          notificationResult = true;
           
           // 🎁 ОБРАБАТЫВАЕМ КЭШБЕК И УВЕДОМЛЕНИЯ О БОНУСАХ
           try {
@@ -196,8 +211,16 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
           break;
 
         case 'cancelled':
-          // Заказ отменен - уведомляем клиента
-          notificationResult = await WebappTelegramBotService.sendOrderCancelled(orderData, userData);
+          // Заказ отменен - уведомляем клиента через ReportService
+          const cancelledOrderForReport = {
+            ...updatedOrder,
+            users: order.users,
+            order_items: order.order_items,
+            bank_cards: null,
+            msg_id: updatedOrder.msg_id ? BigInt(updatedOrder.msg_id) : null
+          };
+          await ReportService.handleOrderStatusChange(cancelledOrderForReport as any, STATUS_CODES[oldStatus as keyof typeof STATUS_CODES]);
+          notificationResult = true;
           break;
 
         default:

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/libs/prismaDb';
-import { TelegramBotService } from '@/lib/services/telegram-bot.service';
+import { TelegramService } from '@/lib/services/TelegramService';
 
 export async function POST(
   request: NextRequest,
@@ -79,9 +79,10 @@ export async function POST(
       };
 
     // Отправляем закупку в группу через Telegram
-    const telegramResult = await TelegramBotService.sendPurchaseToSupplier(telegramPurchaseData);
+    const message = `📦 Новая закупка #${purchase.id}\n\nТовары: ${telegramPurchaseData.items.length} позиций\nСумма: ${telegramPurchaseData.totalAmount}₽`;
+    const telegramResult = await TelegramService.call(message, process.env.TELEGRAM_GROUP_ID);
 
-    if (!telegramResult.success) {
+    if (telegramResult instanceof Error) {
       return NextResponse.json(
         { error: 'Failed to send purchase to group via Telegram' },
         { status: 500 }
@@ -93,7 +94,7 @@ export async function POST(
       where: { id: purchaseId },
       data: {
         status: 'sent_to_supplier',
-        telegrammessageid: telegramResult.messageId,
+        telegrammessageid: typeof telegramResult === 'number' ? telegramResult : null,
         telegramchatid: process.env.TELEGRAM_GROUP_CHAT_ID || '-4729817036',
         updatedat: new Date()
       },

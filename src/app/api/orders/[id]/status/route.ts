@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/libs/prismaDb';
-import { ReportService } from '@/lib/services/report.service';
+import { ReportService } from '@/lib/services/ReportService';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { status } = await request.json();
-    const orderId = parseInt(params.id);
+    const { id } = await params;
+    const orderId = parseInt(id);
 
     if (isNaN(orderId)) {
       return NextResponse.json({ error: 'Invalid order ID' }, { status: 400 });

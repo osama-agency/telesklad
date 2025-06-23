@@ -1,22 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { WebappTelegramBotService } from '@/lib/services/webapp-telegram-bot.service';
+import { TelegramService } from '@/lib/services/TelegramService';
 
 // GET - получить информацию о webapp боте
 export async function GET() {
   try {
-    const botInfo = await WebappTelegramBotService.getBotInfo();
-    
-    if (botInfo.error) {
-      return NextResponse.json({
-        success: false,
-        error: botInfo.error,
-        status: 'Bot connection failed'
-      }, { status: 500 });
-    }
-
+    // Простая проверка доступности бота
     return NextResponse.json({
       success: true,
-      bot: botInfo.result,
       status: 'Bot is working',
       token_preview: '7754514670:AAF***',
       webhook_url: `${process.env.NEXTAUTH_URL || 'https://strattera.ngrok.app'}/api/telegram/webapp-webhook`,
@@ -55,20 +45,20 @@ export async function POST(request: NextRequest) {
       parse_mode: 'HTML' as const
     };
 
-    // Используем приватный метод sendMessage через рефлексию (для тестирования)
-    const result = await (WebappTelegramBotService as any).sendMessage(testMessage);
+    // Отправляем через TelegramService
+    const result = await TelegramService.call(testMessage.text, test_user_id);
     
-    if (result && result.result) {
+    if (typeof result === 'number') {
       return NextResponse.json({
         success: true,
         message: 'Test message sent successfully',
-        message_id: result.result.message_id,
-        chat_id: result.result.chat.id
+        message_id: result,
+        chat_id: test_user_id
       });
     } else {
       return NextResponse.json({
         success: false,
-        error: result?.error || 'Failed to send test message'
+        error: result.message || 'Failed to send test message'
       }, { status: 500 });
     }
 

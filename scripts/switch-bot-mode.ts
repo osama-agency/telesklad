@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { TelegramBotWorker } from '../src/lib/services/telegram-bot-worker.service';
+import { TelegramBotWorker } from '../src/lib/services/TelegramBotWorker';
 import dotenv from 'dotenv';
 
 // Загружаем переменные окружения

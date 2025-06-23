@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { prisma } from '@/libs/prismaDb';
-import { TelegramBotService } from '@/lib/services/telegram-bot.service';
+import { TelegramService } from '@/lib/services/TelegramService';
 
 // POST - отправить закупку закупщику в Telegram
 export async function POST(
@@ -55,24 +55,25 @@ export async function POST(
       notes: purchase.notes,
     };
 
-    // Отправляем в Telegram
-    const result = await TelegramBotService.sendPurchaseToSupplier(telegramPurchase);
+          // Отправляем в Telegram
+      const message = `📦 Закупка #${purchase.id}\n\nТовары: ${telegramPurchase.items.length} позиций\nСумма: ${telegramPurchase.totalAmount}₽`;
+      const result = await TelegramService.call(message, process.env.TELEGRAM_GROUP_ID);
 
-    if (result.success && result.messageId) {
+      if (typeof result === 'number') {
       // Обновляем статус закупки
       await (prisma as any).purchases.update({
         where: { id: purchaseId },
         data: {
           status: 'sent',
           updatedat: new Date(),
-          telegrammessageid: result.messageId,
+          telegrammessageid: result,
         }
       });
 
       return NextResponse.json({
         success: true,
         message: 'Purchase sent to supplier',
-        telegramMessageId: result.messageId,
+        telegramMessageId: result,
       });
     } else {
       return NextResponse.json(

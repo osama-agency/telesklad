@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/libs/prismaDb';
-import { TelegramBotService } from '@/lib/services/telegram-bot.service';
+import { TelegramService } from '@/lib/services/TelegramService';
 import { ExchangeRateService } from '@/lib/services/exchange-rate.service';
 import { Decimal } from '@prisma/client/runtime/library';
 
@@ -90,10 +90,11 @@ export async function POST(
       paidExchangeRate: tryRateWithBuffer || undefined
     };
 
-    // Отправляем уведомление об оплате с интерактивной кнопкой
-    const telegramResult = await TelegramBotService.sendPaymentNotification(purchaseId, purchaseData);
+          // Отправляем уведомление об оплате 
+      const message = `💰 Закупка #${purchaseId} оплачена\n\nСумма: ${purchaseData.totalAmount}₽`;
+      const telegramResult = await TelegramService.call(message, process.env.TELEGRAM_GROUP_ID);
 
-    if (!telegramResult.success) {
+      if (telegramResult instanceof Error) {
       console.warn('⚠️ Failed to send payment notification to Telegram, but purchase status updated');
     }
 

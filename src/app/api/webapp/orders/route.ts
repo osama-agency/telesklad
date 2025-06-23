@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import LoyaltyService from '@/lib/services/loyaltyService';
 import { S3Service } from '@/lib/services/s3';
-import { TelegramService } from '@/lib/services/telegram-service.service';
-import { ReportService } from '@/lib/services/report.service';
+import { TelegramService } from '@/lib/services/TelegramService';
+import { ReportService } from '@/lib/services/ReportService';
 import { NotificationSchedulerService } from '@/lib/services/notification-scheduler.service';
 import { getServerSession } from "next-auth";
 
@@ -16,14 +16,16 @@ const TEST_USER_ID = 9999;
 const ORDER_STATUSES = {
   0: 'unpaid',     // не оплачен
   1: 'paid',       // оплачен
-  2: 'shipped',    // отправлен
-  3: 'delivered',  // доставлен
-  4: 'cancelled'   // отменен
+  2: 'processing', // обрабатывается
+  3: 'shipped',    // отправлен
+  4: 'delivered',  // доставлен
+  5: 'cancelled'   // отменен
 };
 
 const STATUS_LABELS = {
   'unpaid': 'Не оплачен',
   'paid': 'Оплачен',
+  'processing': 'Обрабатывается',
   'shipped': 'Отправлен', 
   'delivered': 'Доставлен',
   'cancelled': 'Отменен'
@@ -109,7 +111,7 @@ export async function POST(request: NextRequest) {
           home: delivery_data.home,
           apartment: delivery_data.apartment,
           build: delivery_data.build,
-          postal_code: delivery_data.postal_code,
+          postal_code: delivery_data.postal_code ? parseInt(delivery_data.postal_code) : null,
           updated_at: new Date()
         }
       });
@@ -229,17 +231,28 @@ export async function POST(request: NextRequest) {
           postal_code: updatedUser.postal_code || undefined
         };
 
-        // Отправляем уведомление о создании заказа через ReportService
-        // Передаем previousStatus = -1 чтобы указать что это новый заказ
-        const orderForReport = {
-          id: result.id,
-          user_id: result.user_id,
-          status: result.status,
-          total_amount: result.total_amount,
-          tracking_number: result.tracking_number,
-          msg_id: result.msg_id ? BigInt(result.msg_id) : null
-        };
-        await ReportService.handleOrderStatusChange(orderForReport, -1);
+        // Получаем полные данные заказа для уведомления
+        const fullOrder = await prisma.orders.findUnique({
+          where: { id: result.id },
+          include: {
+            order_items: {
+              include: {
+                products: true
+              }
+            },
+            users: true,
+            bank_cards: true
+          }
+        });
+
+        if (fullOrder) {
+          // Отправляем уведомление о создании заказа через ReportService
+          const orderForReport = {
+            ...fullOrder,
+            msg_id: fullOrder.msg_id ? BigInt(fullOrder.msg_id) : null
+          };
+          await ReportService.handleOrderStatusChange(orderForReport as any, -1);
+        }
         
         console.log(`✅ Order #${Number(result.id)} notification sent`);
       } else {
@@ -409,9 +422,9 @@ export async function GET(request: NextRequest) {
       total_orders: orders.length,
       unpaid_orders: orders.filter(o => o.status === 0).length,
       paid_orders: orders.filter(o => o.status === 1).length,
-      shipped_orders: orders.filter(o => o.status === 2).length,
-      delivered_orders: orders.filter(o => o.status === 3).length,
-      cancelled_orders: orders.filter(o => o.status === 4).length,
+      shipped_orders: orders.filter(o => o.status === 3).length,
+      delivered_orders: orders.filter(o => o.status === 4).length,
+      cancelled_orders: orders.filter(o => o.status === 5).length,
       total_amount: orders.reduce((sum, order) => sum + Number(order.total_amount), 0),
       total_bonus_earned: orders.reduce((sum, order) => sum + order.bonus, 0)
     };

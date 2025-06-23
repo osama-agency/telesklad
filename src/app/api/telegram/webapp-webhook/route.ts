@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { WebappTelegramBotService } from '@/lib/services/webapp-telegram-bot.service';
+import { TelegramBotWorker } from '@/lib/services/TelegramBotWorker';
 import { prisma } from '@/libs/prismaDb';
 
 // POST - обработка webhook от WEBAPP бота
@@ -13,7 +13,8 @@ export async function POST(request: NextRequest) {
       console.log('🔄 [WEBAPP BOT] Processing callback:', body.callback_query.data);
       
       if (body.callback_query.data.startsWith('order_')) {
-        await WebappTelegramBotService.handleOrderCallback(body.callback_query);
+        const worker = TelegramBotWorker.getInstance();
+        await worker.processWebhookUpdate(body);
       }
       
       return NextResponse.json({ ok: true });
