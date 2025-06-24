@@ -543,9 +543,23 @@ html, body {
     top: -6px;
     left: 50%;
     transform: translateX(-50%);
-    width: 30px;
+    width: 100px; /* Увеличиваем ширину для более заметного эффекта */
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(72, 201, 40, 0.3), transparent);
+    background: linear-gradient(90deg, 
+      transparent 0%,
+      rgba(72, 201, 40, 0.3) 50%,
+      transparent 100%
+    );
+    animation: gradient-flow 2s linear infinite;
+  }
+}
+
+@keyframes gradient-flow {
+  0% {
+    transform: translateX(-150%) translateY(0);
+  }
+  100% {
+    transform: translateX(150%) translateY(0);
   }
 }
 

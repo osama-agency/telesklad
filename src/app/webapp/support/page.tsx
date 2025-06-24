@@ -123,57 +123,49 @@ export default function SupportPage() {
         </a>
       </div>
 
-      {/* Заголовок FAQ */}
-      {faqItems.length > 0 && (
-        <h3 className="mb-4">Часто задаваемые вопросы</h3>
-      )}
-
       {/* FAQ список */}
-      {faqItems.length > 0 ? (
-        <div className="faq-container">
-          {faqItems.map((item) => (
-            <div key={item.id} className="main-block mb-2">
-              <div className="faq-question">
-                <div 
-                  className="faq-question-header"
-                  onClick={() => toggleFAQ(item.id)}
-                >
-                  <div className="faq-question-text">
-                    {item.question}
-                  </div>
-                  <button 
-                    className={`faq-toggle-icon ${openItems.has(item.id) ? 'open' : ''}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleFAQ(item.id);
-                    }}
+      {faqItems.length > 0 && (
+        <>
+          <h3 className="mb-4">Часто задаваемые вопросы</h3>
+          <div className="faq-container">
+            {faqItems.map((item) => (
+              <div key={item.id} className="main-block">
+                <div className="faq-question">
+                  <div 
+                    className="faq-question-header"
+                    onClick={() => toggleFAQ(item.id)}
                   >
-                    <IconComponent name="down" size={16} />
-                  </button>
-                </div>
-                
-                <div className={`faq-answer ${openItems.has(item.id) ? 'open' : ''}`}>
-                  <div className="faq-answer-content">
-                    {item.answer}
+                    <div className="faq-question-text">
+                      {item.question}
+                    </div>
+                    <button 
+                      className={`faq-toggle-icon ${openItems.has(item.id) ? 'open' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFAQ(item.id);
+                      }}
+                    >
+                      <IconComponent name="down" size={16} />
+                    </button>
+                  </div>
+                  
+                  <div className={`faq-answer ${openItems.has(item.id) ? 'open' : ''}`}>
+                    <div className="faq-answer-content">
+                      {item.answer}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="main-block">
-          <div className="text-center text-gray-500">
-            <p>FAQ пока не добавлены</p>
+            ))}
           </div>
-        </div>
+        </>
       )}
 
       {/* Дополнительная информация */}
       {supportContacts && (
         <div className="main-block mt-6">
           <div className="support-contacts">
-            <h4 className="mb-3 font-semibold">Контакты поддержки</h4>
+            <h4>Контакты поддержки</h4>
             <div className="support-contact-item">
               <div className="support-contact-label">Telegram:</div>
               <a 

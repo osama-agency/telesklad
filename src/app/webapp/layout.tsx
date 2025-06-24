@@ -23,6 +23,7 @@ function WebappLayoutInner({ children }: PropsWithChildren) {
     if (pathname.startsWith("/webapp/favorites")) return "favorites-page";
     if (pathname.startsWith("/webapp/cart")) return "cart-page";
     if (pathname.startsWith("/webapp/profile")) return "profile-page";
+    if (pathname.startsWith("/webapp/support")) return "support-page";
     return "";
   };
 
