@@ -8,7 +8,6 @@ import "nouislider/dist/nouislider.css";
 import "@/css/telesklad.css";
 import "@/css/satoshi.css";
 import type { Metadata } from "next";
-import NextTopLoader from "nextjs-toploader";
 import type { PropsWithChildren } from "react";
 import { Providers } from "./providers";
 
@@ -26,19 +25,6 @@ export default function RootLayout({ children }: PropsWithChildren) {
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
         <Providers>
-          <NextTopLoader 
-            color="#1B6EF3" 
-            showSpinner={false}
-            height={3}
-            crawl={true}
-            crawlSpeed={200}
-            initialPosition={0.08}
-            easing="ease"
-            speed={200}
-            shadow="0 0 10px #1B6EF3,0 0 5px #1B6EF3"
-            template='<div class="bar" role="bar"><div class="peg"></div></div>'
-            zIndex={1600}
-          />
           {children}
         </Providers>
       </body>

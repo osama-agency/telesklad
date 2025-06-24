@@ -1,3 +1,6 @@
+import React from 'react';
+import LoadingWrapper from '@/components/ui/loading-wrapper';
+
 export function ProductSkeleton({ outOfStock = false }: { outOfStock?: boolean }) {
   return (
     <div className="product-card">
@@ -33,12 +36,10 @@ export function ProductSkeleton({ outOfStock = false }: { outOfStock?: boolean }
   );
 }
 
-export function ProductGridSkeleton({ count = 6 }: { count?: number }) {
-  return (
-    <div className="product-grid">
-      {Array.from({ length: count }, (_, index) => (
-        <ProductSkeleton key={index} />
-      ))}
-    </div>
-  );
-} 
+interface ProductGridSkeletonProps {
+    count?: number;
+}
+
+export const ProductGridSkeleton: React.FC<ProductGridSkeletonProps> = () => {
+    return <LoadingWrapper />;
+}; 

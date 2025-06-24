@@ -8,6 +8,7 @@ import { AddToCartButton } from "../_components/AddToCartButton";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import { useFavorites } from "@/context/FavoritesContext";
 import { useTelegramHaptic } from "@/hooks/useTelegramHaptic";
+import LoadingWrapper from "@/components/ui/loading-wrapper";
 
 interface Product {
   id: number;
@@ -134,11 +135,7 @@ export default function FavoritesPage() {
     return (
       <div className="webapp-container favorites-page">
         <h1>Избранное</h1>
-        <div className="main-block">
-          <div className="text-center">
-            <p>Загрузка...</p>
-          </div>
-        </div>
+        <LoadingWrapper />
       </div>
     );
   }
@@ -148,11 +145,7 @@ export default function FavoritesPage() {
     return (
       <div className="webapp-container favorites-page">
         <h1>Избранное</h1>
-        <div className="main-block">
-          <div className="text-center">
-            <p>Загружаем избранное...</p>
-          </div>
-        </div>
+        <LoadingWrapper />
       </div>
     );
   }
