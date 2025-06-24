@@ -389,31 +389,29 @@ html, body {
   justify-content: center;
   font-weight: 500;
   font-size: clamp(13px, 3vw, 14px);
-  border: 1px solid #48C928;
+  background: rgba(72, 201, 40, 0.08);
   color: #48C928;
-  border-radius: clamp(12px, 3vw, 16px);
-  padding: clamp(12px, 3vw, 16px) clamp(16px, 4vw, 20px);
-  min-height: 44px; /* Touch-friendly размер */
+  border: none;
+  border-radius: 10px;
+  padding: clamp(8px, 2vw, 10px) clamp(12px, 3vw, 16px);
+  min-height: 36px;
   transition: all 0.2s ease;
   text-decoration: none;
   white-space: nowrap;
   scroll-snap-align: start;
+  -webkit-tap-highlight-color: transparent;
   
   /* Touch feedback */
   &:active {
-    background-color: rgba(72, 201, 40, 0.1);
-    transform: scale(0.98);
+    transform: scale(0.95);
+    background: rgba(72, 201, 40, 0.15);
   }
 }
 
-.catalog-nav li button.active,
-.catalog-nav li button:hover {
-  color: white;
-  background-color: #48C928;
-}
-
-.catalog-nav li button.active:hover {
-  background-color: #3AA120;
+.catalog-nav li button.active {
+  background: #48C928;
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(72, 201, 40, 0.2);
 }
 
 /* Адаптивная сетка товаров */
@@ -7079,4 +7077,5 @@ body,
     animation: cart-slide-up 0.3s ease-out;
   }
 }
+
 
