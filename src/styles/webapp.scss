@@ -2162,33 +2162,45 @@ html, body {
 .profile-page {
   /* Убираем лишнее пространство между компонентами */
   .bonus-block {
-    margin-bottom: 12px; /* Увеличенный отступ для комфорта */
+    margin-bottom: 12px;
   }
   
-  /* Убираем отступы в header для профиля */
+  /* Оптимизируем отступы в header */
   .webapp-header {
-    margin-bottom: 12px; /* Увеличенный отступ после header */
+    margin-bottom: 12px;
     
     .container-adaptive {
-      padding-bottom: 6px; /* Увеличенный отступ снизу в header */
-      padding-top: 10px; /* Увеличенный верхний отступ */
+      padding-bottom: 6px;
+      padding-top: 10px;
     }
   }
   
   /* Оптимизируем пространство в main */
   main.container-adaptive {
-    padding-top: 0; /* Убираем верхний отступ */
+    padding-top: 0;
   }
   
-  /* Убираем лишний отступ после action-cards */
+  /* Оптимизируем отступы в action-cards */
   .action-cards-container {
-    margin-bottom: -16px; /* Максимально компенсируем gap */
-    gap: 12px; /* Увеличенный gap между карточками */
+    margin-bottom: 0;
+    gap: 12px;
   }
   
   /* Уменьшаем отступы в заголовке профиля */
   .flex.items-center.gap-3 {
-    margin-bottom: 10px; /* Увеличенный отступ для заголовка */
+    margin-bottom: 10px;
+  }
+
+  /* Убираем лишний padding-bottom */
+  &.webapp-container {
+    padding-bottom: 0;
+  }
+
+  /* Оптимизируем карточки действий */
+  .action-card {
+    .action-card-content {
+      padding: 12px 16px;
+    }
   }
 }
 
@@ -7032,4 +7044,25 @@ body,
 // Компоненты
 @import './loader.scss';
 @import './photo-uploader.scss';
+
+/* Убираем фиксированный отступ для плашки корзины */
+.webapp-container.profile-page {
+  padding-bottom: 0 !important;
+}
+
+/* Оптимизируем отступы для плашки корзины */
+.cart-button-fixed {
+  &.visible {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    padding: 12px 16px;
+    padding-bottom: max(env(safe-area-inset-bottom), 12px);
+    background: white;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
+    animation: cart-slide-up 0.3s ease-out;
+  }
+}
 

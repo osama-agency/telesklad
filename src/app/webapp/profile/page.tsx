@@ -144,7 +144,7 @@ const ProfilePage: React.FC = () => {
   return (
     <div className="webapp-container profile-page">
       {/* Заголовок профиля */}
-      <div className="flex items-center gap-3 mb-2">
+      <div className="flex items-center gap-3">
         <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center profile-avatar">
           {authUser?.photo_url ? (
             <img 
@@ -165,12 +165,14 @@ const ProfilePage: React.FC = () => {
       <BonusBlock />
 
       {/* Меню действий */}
-      <ActionCards 
-        isAdmin={isAdminOrManagerOrModerator(user.role)} 
-        user={user}
-        subscriptionsCount={subscriptions.length}
-        ordersCount={user.order_count}
-      />
+      <div className="flex-grow">
+        <ActionCards 
+          isAdmin={isAdminOrManagerOrModerator(user.role)} 
+          user={user}
+          subscriptionsCount={subscriptions.length}
+          ordersCount={user.order_count}
+        />
+      </div>
     </div>
   );
 };
