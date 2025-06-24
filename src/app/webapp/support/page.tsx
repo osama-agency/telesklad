@@ -33,21 +33,9 @@ export default function SupportPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Set document title for Telegram Web App
-    document.title = "Поддержка";
-    
-    // Telegram Web App initialization
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-      const tg = window.Telegram.WebApp;
-      tg.ready();
-      tg.expand();
-      tg.setHeaderColor('#FFFFFF');
-      tg.setBackgroundColor('#f9f9f9');
-    }
-
-    // Загрузка FAQ данных из API
-    const loadFAQ = async () => {
+    const loadData = async () => {
       try {
+        setIsLoading(true);
         const response = await fetch('/api/webapp/support');
         const data: SupportApiResponse = await response.json();
         
@@ -65,7 +53,7 @@ export default function SupportPage() {
       }
     };
 
-    loadFAQ();
+    loadData();
   }, []);
 
   const toggleFAQ = (id: number) => {
@@ -82,75 +70,58 @@ export default function SupportPage() {
 
   if (isLoading) {
     return (
-      <div className="webapp-container support-page">
-        <SkeletonLoading type="page" />
+      <div className="webapp-container">
+        <SkeletonLoading type="support" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="webapp-container support-page">
-        <h1>Поддержка</h1>
-        <div className="main-block">
-          <div className="text-center text-red-600">
-            <p>{error}</p>
-            <button 
-              onClick={() => window.location.reload()} 
-              className="webapp-btn-secondary mt-4"
-            >
-              Попробовать снова
-            </button>
-          </div>
+      <div className="webapp-container">
+        <div className="text-center py-8">
+          <div className="text-red-600 mb-4">{error}</div>
+          <button 
+            onClick={() => window.location.reload()}
+            className="btn btn-secondary"
+          >
+            Попробовать снова
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="webapp-container support-page">
-      <h1>Поддержка</h1>
-      
-      {/* Кнопка связи с поддержкой */}
-      <div className="mb-6">
-        <a 
-          href={supportContacts?.telegram_url || "https://t.me/your_support_bot"}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="webapp-btn-secondary webapp-btn-big block text-center"
-        >
-          Задать вопрос
-        </a>
+    <div className="webapp-container">
+      {/* Заголовок поддержки */}
+      <div className="flex items-center gap-3 mb-2">
+        <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center profile-avatar">
+          <IconComponent name="support" size={20} />
+        </div>
+        <h2 className="!mb-0 text-xl font-semibold">
+          Поддержка 💬
+        </h2>
       </div>
 
-      {/* Заголовок FAQ */}
+      {/* FAQ блок */}
       {faqItems.length > 0 && (
-        <h3 className="mb-4">Часто задаваемые вопросы</h3>
-      )}
-
-      {/* FAQ список */}
-      {faqItems.length > 0 ? (
-        <div className="faq-container">
-          {faqItems.map((item) => (
-            <div key={item.id} className="main-block mb-2">
-              <div className="faq-question">
-                <div 
-                  className="faq-question-header"
+        <div className="support-faq-section">
+          <h3 className="section-title">Часто задаваемые вопросы</h3>
+          <div className="faq-list">
+            {faqItems.map((item) => (
+              <div key={item.id} className="faq-item">
+                <button 
+                  className="faq-question"
                   onClick={() => toggleFAQ(item.id)}
                 >
-                  <div className="faq-question-text">
-                    {item.question}
-                  </div>
-                  <button 
+                  <span className="faq-question-text">{item.question}</span>
+                  <IconComponent 
+                    name="down" 
+                    size={16} 
                     className={`faq-toggle-icon ${openItems.has(item.id) ? 'open' : ''}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleFAQ(item.id);
-                    }}
-                  >
-                    <IconComponent name="down" size={16} />
-                  </button>
-                </div>
+                  />
+                </button>
                 
                 <div className={`faq-answer ${openItems.has(item.id) ? 'open' : ''}`}>
                   <div className="faq-answer-content">
@@ -158,40 +129,34 @@ export default function SupportPage() {
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="main-block">
-          <div className="text-center text-gray-500">
-            <p>FAQ пока не добавлены</p>
+            ))}
           </div>
         </div>
       )}
 
-      {/* Дополнительная информация */}
+      {/* Контакты поддержки */}
       {supportContacts && (
-        <div className="main-block mt-6">
-          <div className="support-contacts">
-            <h4 className="mb-3 font-semibold">Контакты поддержки</h4>
-            <div className="support-contact-item">
-              <div className="support-contact-label">Telegram:</div>
+        <div className="support-contacts-section">
+          <h3 className="section-title">Контакты</h3>
+          <div className="support-info">
+            <div className="support-info-item">
+              <span className="support-info-label">Telegram:</span>
               <a 
                 href={supportContacts.telegram_url} 
-                className="support-contact-value" 
+                className="support-info-value link" 
                 target="_blank" 
                 rel="noopener noreferrer"
               >
                 {supportContacts.telegram}
               </a>
             </div>
-            <div className="support-contact-item">
-              <div className="support-contact-label">Время работы:</div>
-              <div className="support-contact-value">{supportContacts.working_hours}</div>
+            <div className="support-info-item">
+              <span className="support-info-label">Время работы:</span>
+              <span className="support-info-value">{supportContacts.working_hours}</span>
             </div>
-            <div className="support-contact-item">
-              <div className="support-contact-label">Время ответа:</div>
-              <div className="support-contact-value">{supportContacts.response_time}</div>
+            <div className="support-info-item">
+              <span className="support-info-label">Время ответа:</span>
+              <span className="support-info-value">{supportContacts.response_time}</span>
             </div>
           </div>
         </div>
