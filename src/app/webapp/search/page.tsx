@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from "next/navigation";
 import { ProductGrid } from "../_components/ProductGrid";
 import { ProductGridSkeleton } from "../_components/ProductSkeleton";
+import { webAppFetch } from '@/lib/utils/webapp-fetch';
 
 interface Product {
   id: number;
@@ -28,70 +29,89 @@ export default function SearchPage() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [subscribedProductIds, setSubscribedProductIds] = useState<number[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
   
   const searchParams = useSearchParams();
   const router = useRouter();
   const query = searchParams.get('q') || '';
 
   // Fetch subscriptions
-  const fetchSubscriptions = async () => {
+  const loadSubscriptions = async () => {
     try {
-      const response = await fetch('/api/webapp/subscriptions');
+      const response = await webAppFetch('/api/webapp/subscriptions');
       if (response.ok) {
         const data = await response.json();
-        setSubscriptions(data.subscriptions || []);
+        const subscriptions = data.subscriptions || [];
+        setSubscribedProductIds(subscriptions.map((sub: any) => sub.product_id));
       }
-    } catch (err) {
-      console.error('Failed to fetch subscriptions:', err);
+    } catch (error) {
+      console.error('Error loading subscriptions:', error);
     }
   };
 
   // Search products
-  useEffect(() => {
-    const searchProducts = async () => {
-      if (!query.trim()) {
-        router.push('/webapp');
-        return;
-      }
+  const handleSearch = async (searchQuery: string) => {
+    if (!searchQuery.trim()) {
+      setProducts([]);
+      setHasSearched(false);
+      setLoading(false);
+      return;
+    }
 
-      setLoading(true);
-      setError(null);
+    setLoading(true);
+    setError(null);
+    try {
+      console.log('🔍 Searching for:', searchQuery);
       
-      try {
-        const [productsResponse, subscriptionsResponse] = await Promise.all([
-          fetch(`/api/webapp/products/search?q=${encodeURIComponent(query)}`),
-          fetch('/api/webapp/subscriptions')
-        ]);
-        
-        if (productsResponse.ok) {
-          const productsData = await productsResponse.json();
-          setProducts(productsData);
-        } else {
-          setError('Ошибка поиска товаров');
-        }
+      const [searchResponse, subscriptionsResponse] = await Promise.all([
+        webAppFetch(`/api/webapp/products/search?q=${encodeURIComponent(searchQuery)}`),
+        webAppFetch('/api/webapp/subscriptions')
+      ]);
 
-        if (subscriptionsResponse.ok) {
-          const subscriptionsData = await subscriptionsResponse.json();
-          setSubscriptions(subscriptionsData.subscriptions || []);
-        }
-      } catch (err) {
-        setError('Ошибка соединения');
-        console.error('Failed to search products:', err);
-      } finally {
-        setLoading(false);
+      if (searchResponse.ok) {
+        const searchData = await searchResponse.json();
+        console.log('🔍 Search results:', searchData);
+        setProducts(searchData.products || []);
+      } else {
+        const errorData = await searchResponse.json();
+        console.error('🔍 Search API error:', errorData);
+        setError('Ошибка поиска товаров');
       }
-    };
 
-    searchProducts();
-  }, [query, router]);
+      if (subscriptionsResponse.ok) {
+        const subscriptionsData = await subscriptionsResponse.json();
+        const subscriptions = subscriptionsData.subscriptions || [];
+        setSubscribedProductIds(subscriptions.map((sub: any) => sub.product_id));
+      }
+
+      setHasSearched(true);
+    } catch (error) {
+      console.error('Search error:', error);
+      setError('Ошибка соединения');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Выполняем поиск при изменении query параметра
+  useEffect(() => {
+    if (query.trim()) {
+      handleSearch(query);
+    } else {
+      setProducts([]);
+      setHasSearched(false);
+      setLoading(false);
+    }
+  }, [query]);
 
   // Set document title
   useEffect(() => {
     document.title = query ? `Поиск: ${query}` : "Поиск товаров";
     
     // Telegram Web App initialization
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-      const tg = window.Telegram.WebApp;
+    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
+      const tg = (window as any).Telegram.WebApp;
       tg.ready();
       tg.expand();
       tg.setHeaderColor('#FFFFFF');
@@ -101,26 +121,23 @@ export default function SearchPage() {
 
   // Handle subscription changes
   const handleSubscriptionChange = () => {
-    fetchSubscriptions();
+    loadSubscriptions();
   };
-
-  // Get subscribed product IDs
-  const subscribedProductIds = subscriptions.map(sub => sub.product_id);
 
   if (error) {
     return (
       <div className="webapp-container search-page">
         <div className="search-header-section">
-                  <div className="search-query-info">
-          <h1>Поиск</h1>
-          <p className="search-query">&ldquo;{query}&rdquo;</p>
-        </div>
+          <div className="search-query-info">
+            <h1>Поиск</h1>
+            <p className="search-query">&ldquo;{query}&rdquo;</p>
+          </div>
         </div>
 
         <div className="text-center py-8">
           <p className="text-red-600">{error}</p>
           <button 
-            onClick={() => window.location.reload()} 
+            onClick={() => handleSearch(query)} 
             className="mt-2 px-4 py-2 bg-blue-600 text-white rounded"
           >
             Повторить
@@ -137,7 +154,7 @@ export default function SearchPage() {
         <div className="search-query-info">
           <h1>Результаты поиска</h1>
           <p className="search-query">&ldquo;{query}&rdquo;</p>
-          {!loading && (
+          {!loading && hasSearched && (
             <p className="search-results-count">
               {products.length === 0 
                 ? "Ничего не найдено" 
@@ -157,7 +174,7 @@ export default function SearchPage() {
           subscribedProductIds={subscribedProductIds}
           onSubscriptionChange={handleSubscriptionChange}
         />
-      ) : (
+      ) : hasSearched ? (
         <div className="search-no-results-page">
           <div className="search-no-results-icon">
             <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
@@ -175,7 +192,7 @@ export default function SearchPage() {
             Вернуться к каталогу
           </button>
         </div>
-      )}
+      ) : null}
     </div>
   );
 } 

@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { IconComponent } from "@/components/webapp/IconComponent";
 import LoadingSpinner from "../_components/LoadingSpinner";
+import { webAppFetch } from "@/lib/utils/webapp-fetch";
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
 
 interface Product {
   id: number;
@@ -23,24 +25,34 @@ interface Subscription {
   updated_at: string;
 }
 
-export default function SubscriptionsPage() {
+const SubscriptionsPage: React.FC = () => {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user, isAuthenticated, isLoading: authLoading } = useTelegramAuth();
 
   // Загружаем подписки
-  const fetchSubscriptions = async () => {
+  const loadSubscriptions = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('/api/webapp/subscriptions');
-      if (response.ok) {
-        const data = await response.json();
-        // API теперь возвращает объект с полем subscriptions
-        setSubscriptions(data.subscriptions || []);
+      // Проверяем аутентификацию
+      if (!isAuthenticated || !user?.tg_id) {
+        console.warn('User not authenticated, cannot load subscriptions');
+        setSubscriptions([]);
+        setLoading(false);
+        return;
+      }
+      
+      const response = await webAppFetch(`/api/webapp/subscriptions?tg_id=${user.tg_id}`);
+      const data = await response.json();
+
+      if (response.ok && data.subscriptions) {
+        setSubscriptions(data.subscriptions);
+        console.log(`✅ Loaded ${data.subscriptions.length} subscriptions for user ${user.tg_id}`);
       } else {
-        setError('Ошибка загрузки подписок');
+        setError(data.error || 'Ошибка загрузки подписок');
       }
     } catch (err) {
       setError('Ошибка соединения');
@@ -52,15 +64,17 @@ export default function SubscriptionsPage() {
 
   // Отписаться от товара
   const handleUnsubscribe = async (productId: number) => {
+    if (!user?.tg_id) return;
+
     try {
-      const response = await fetch(`/api/webapp/subscriptions?product_id=${productId}`, {
+      const response = await webAppFetch(`/api/webapp/subscriptions?product_id=${productId}&tg_id=${user.tg_id}`, {
         method: 'DELETE'
       });
 
       if (response.ok) {
         // Обновляем список подписок
         setSubscriptions(prev => prev.filter(sub => sub.product_id !== productId));
-        console.log(`Unsubscribed from product ${productId}`);
+        console.log(`✅ Unsubscribed from product ${productId}`);
       } else {
         const error = await response.json();
         console.error('Failed to unsubscribe:', error);
@@ -72,8 +86,11 @@ export default function SubscriptionsPage() {
 
   // Загружаем данные при монтировании
   useEffect(() => {
-    fetchSubscriptions();
-  }, []);
+    // Ждем завершения аутентификации перед загрузкой подписок
+    if (!authLoading) {
+      loadSubscriptions();
+    }
+  }, [authLoading, isAuthenticated, user?.tg_id]);
 
   // Функция для определения статуса товара
   const getProductStatus = (product: Product) => {
@@ -95,7 +112,7 @@ export default function SubscriptionsPage() {
       <div className="text-center py-8">
         <p className="text-red-600">{error}</p>
         <button 
-          onClick={fetchSubscriptions} 
+          onClick={loadSubscriptions} 
           className="mt-2 webapp-btn-secondary"
         >
           Повторить
@@ -239,4 +256,6 @@ export default function SubscriptionsPage() {
       )}
     </div>
   );
-} 
+};
+
+export default SubscriptionsPage; 

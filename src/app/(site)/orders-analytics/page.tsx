@@ -67,7 +67,7 @@ export default function OrdersAnalyticsPage() {
               </div>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-[#64748B] dark:text-gray-400">Оплаченные заказы</span>
+                  <span className="text-sm text-[#64748B] dark:text-gray-400">Проверка оплаты</span>
                   <span className="font-medium text-[#1E293B] dark:text-white">
                     {loading ? 'Загрузка...' : (stats?.paidOrders || 0)}
                   </span>

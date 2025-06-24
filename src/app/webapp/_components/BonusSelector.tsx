@@ -53,53 +53,78 @@ export default function BonusSelector({
 
   if (bonusDisabled) {
     return (
-      <div className="bonus-block-cart opacity-50">
-        <h3>Использовать бонусы</h3>
-        <p className="text-xs text-gray-500 mt-2">
-          {userBonus < 100 ? (
-            'У вас недостаточно бонусов (нужно ≥ 100₽)'
-          ) : totalPrice < bonusThreshold ? (
-            `Минимальная сумма заказа для использования бонусов: ${bonusThreshold}₽`
-          ) : (
-            'Бонусы недоступны'
-          )}
-        </p>
+      <div className="bonus-selector-card disabled">
+        <div className="bonus-header">
+          <div className="bonus-icon disabled-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L13.09 8.26L22 9L13.09 9.74L12 16L10.91 9.74L2 9L10.91 8.26L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          <h3 className="bonus-title">Бонусы недоступны</h3>
+        </div>
+        
+        <div className="bonus-message">
+          <div className="message-icon">ℹ️</div>
+          <div className="message-text">
+            {userBonus < 100 ? (
+              'У вас недостаточно бонусов (нужно ≥ 100₽)'
+            ) : totalPrice < bonusThreshold ? (
+              `Минимальная сумма заказа: ${bonusThreshold.toLocaleString('ru-RU')}₽`
+            ) : (
+              'Бонусы недоступны для данного заказа'
+            )}
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="main-block mb-5 bonus-block-cart">
-      <h3>Используйте бонусы</h3>
-      
-      <div className="bonus-ranges">
-        <div>0₽</div>
-        <div>{applicableBonusSteps}₽</div>
-      </div>
-      
-      <div className="px-3">
-        <input
-          className="bonus-range"
-          name="bonus"
-          type="range"
-          min={0}
-          max={applicableBonusSteps}
-          step={100}
-          value={selectedBonus}
-          onChange={(e) => handleBonusChange(parseInt(e.target.value, 10))}
-        />
-      </div>
-
-      {selectedBonus > 0 && (
-        <div className="mt-3 text-center">
-          <div className="text-sm text-gray-600">
-            Будет списано: <span className="font-semibold text-green-600">{selectedBonus}₽</span>
-          </div>
+    <div className="bonus-selector-card">
+      <div className="bonus-header">
+        <div className="bonus-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L13.09 8.26L22 9L13.09 9.74L12 16L10.91 9.74L2 9L10.91 8.26L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
         </div>
-      )}
+        <h3 className="bonus-title">Используйте бонусы</h3>
+        <div className="bonus-balance">{userBonus.toLocaleString('ru-RU')}₽</div>
+      </div>
+      
+      <div className="bonus-slider-container">
+        <div className="bonus-range-labels">
+          <span className="range-label">0₽</span>
+          <span className="range-label">{applicableBonusSteps.toLocaleString('ru-RU')}₽</span>
+        </div>
+        
+        <div className="bonus-slider-wrapper">
+          <input
+            className="bonus-range-slider"
+            name="bonus"
+            type="range"
+            min={0}
+            max={applicableBonusSteps}
+            step={100}
+            value={selectedBonus}
+            onChange={(e) => handleBonusChange(parseInt(e.target.value, 10))}
+          />
+          <div className="slider-track-fill" style={{width: `${(selectedBonus / applicableBonusSteps) * 100}%`}}></div>
+        </div>
 
-      <div className="mt-2 text-xs text-gray-500">
-        Доступно к списанию: {userBonus}₽ • Шаг: 100₽
+        {selectedBonus > 0 && (
+          <div className="bonus-selected">
+            <div className="selected-icon">🎁</div>
+            <div className="selected-content">
+              <div className="selected-text">Будет списано</div>
+              <div className="selected-amount">{selectedBonus.toLocaleString('ru-RU')}₽</div>
+            </div>
+          </div>
+        )}
+
+        <div className="bonus-info">
+          <span className="info-icon">💡</span>
+          <span className="info-text">Доступно: {userBonus.toLocaleString('ru-RU')}₽ • Шаг: 100₽</span>
+        </div>
       </div>
     </div>
   );

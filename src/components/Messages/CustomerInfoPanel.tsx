@@ -63,7 +63,7 @@ interface CustomerData {
 const statusLabels: Record<number, { label: string; color: string }> = {
   0: { label: "Новый", color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" },
   1: { label: "Подтвержден", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200" },
-  2: { label: "Оплачен", color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" },
+  2: { label: "Проверка оплаты", color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" },
   3: { label: "Отправлен", color: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200" },
   4: { label: "Доставлен", color: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200" },
   5: { label: "Отменен", color: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200" },

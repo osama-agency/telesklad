@@ -1,10 +1,14 @@
 "use client";
 
+import React, { useState, useEffect } from 'react';
 import Link from "next/link";
-import { useState } from "react";
 import { IconComponent } from "@/components/webapp/IconComponent";
 import { AddToCartButton } from "./AddToCartButton";
-import { FavoriteButton } from "./FavoriteButton";
+import { AnimatedFavoriteButton } from "./AnimatedFavoriteButton";
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import LoadingSpinner from './LoadingSpinner';
+import { webAppFetch } from '@/lib/utils/webapp-fetch';
+import { useTelegramHaptic } from '@/hooks/useTelegramHaptic';
 
 interface Product {
   id: number;
@@ -23,14 +27,82 @@ interface ProductGridProps {
 }
 
 export function ProductGrid({ products, subscribedProductIds = [], onSubscriptionChange }: ProductGridProps) {
+  const { user } = useTelegramAuth();
+  const [subscribedProducts, setSubscribedProducts] = useState(new Set(subscribedProductIds));
+  const [loading, setLoading] = useState<Record<number, boolean>>({});
+  const { impactLight } = useTelegramHaptic();
+
+  const handleSubscriptionToggle = async (product: Product) => {
+    if (!user) return;
+
+    const isSubscribed = subscribedProducts.has(product.id);
+    setLoading(prev => ({ ...prev, [product.id]: true }));
+
+    try {
+      if (isSubscribed) {
+        // Отписываемся
+        const response = await webAppFetch(`/api/webapp/subscriptions?product_id=${product.id}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          setSubscribedProducts(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(product.id);
+            return newSet;
+          });
+          console.log(`✅ Unsubscribed from product ${product.id}`);
+          onSubscriptionChange?.();
+        } else {
+          throw new Error('Failed to unsubscribe');
+        }
+      } else {
+        // Подписываемся
+        const response = await webAppFetch('/api/webapp/subscriptions', {
+          method: 'POST',
+          body: JSON.stringify({
+            product_id: product.id
+          })
+        });
+
+        if (response.ok) {
+          setSubscribedProducts(prev => {
+            const newSet = new Set(prev);
+            newSet.add(product.id);
+            return newSet;
+          });
+          console.log(`✅ Subscribed to product ${product.id}`);
+          onSubscriptionChange?.();
+        } else {
+          throw new Error('Failed to subscribe');
+        }
+      }
+    } catch (error) {
+      console.error('Subscription toggle error:', error, {
+        productId: product.id,
+        userId: user?.tg_id
+      });
+    } finally {
+      setLoading(prev => ({ ...prev, [product.id]: false }));
+    }
+  };
+
+  const handleProductClick = (productId: number) => {
+    // Добавляем haptic feedback БЕЗ изменения навигации
+    impactLight();
+    
+    // Навигация осуществляется через Link компоненты в карточке
+  };
+
   return (
     <div className="product-grid" id="products">
       {products.map((product) => (
         <ProductCard 
           key={product.id} 
           product={product}
-          isSubscribed={subscribedProductIds.includes(product.id)}
-          onSubscriptionChange={onSubscriptionChange}
+          isSubscribed={subscribedProducts.has(product.id)}
+          onSubscriptionChange={() => handleSubscriptionToggle(product)}
+          onProductClick={handleProductClick}
         />
       ))}
     </div>
@@ -41,77 +113,96 @@ interface ProductCardProps {
   product: Product;
   isSubscribed?: boolean;
   onSubscriptionChange?: () => void;
+  onProductClick?: (productId: number) => void;
 }
 
-function ProductCard({ product, isSubscribed = false, onSubscriptionChange }: ProductCardProps) {
+function ProductCard({ product, isSubscribed = false, onSubscriptionChange, onProductClick }: ProductCardProps) {
   const hasStock = product.stock_quantity > 0;
   const [isNotificationEnabled, setIsNotificationEnabled] = useState(isSubscribed);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
-
-  // Haptic feedback (только для мобильных устройств)
-  const triggerHaptic = (type: 'light' | 'medium' | 'heavy' = 'medium') => {
-    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
-      const patterns = {
-        light: [10],
-        medium: [20],
-        heavy: [30]
-      };
-      navigator.vibrate(patterns[type]);
-    }
-  };
+  
+  // Используем Telegram haptic feedback
+  const { impactLight, impactMedium, notificationSuccess, notificationError } = useTelegramHaptic();
+  
+  // Добавляем контекст аутентификации
+  const { user } = useTelegramAuth();
 
   // Обработка нажатия на кнопку уведомления
   const handleNotificationToggle = async () => {
-    if (isLoading) return;
+    console.log('🔄 ProductCard handleNotificationToggle called', { 
+      user: user ? { id: user.id, tg_id: user.tg_id } : null,
+      product: { id: product.id, name: product.name },
+      isNotificationEnabled,
+      isLoading
+    });
+    
+    if (isLoading || !user) {
+      console.log('❌ Aborting toggle:', { isLoading, hasUser: !!user });
+      return;
+    }
 
     setIsAnimating(true);
     setIsLoading(true);
-    triggerHaptic('medium');
+    impactMedium(); // Тактильный отклик при нажатии
     
     try {
       if (isNotificationEnabled) {
         // Отключаем уведомление
-        const response = await fetch(`/api/webapp/subscriptions?product_id=${product.id}`, {
+        console.log('📤 Sending DELETE request for subscription');
+        const response = await fetch(`/api/webapp/subscriptions?product_id=${product.id}&tg_id=${user.tg_id}`, {
           method: 'DELETE'
         });
 
         if (response.ok) {
           setIsNotificationEnabled(false);
-          console.log(`Unsubscribed from product ${product.id}`);
+          notificationSuccess(); // Успешное отключение
+          console.log(`✅ Unsubscribed from product ${product.id}`);
           onSubscriptionChange?.(); // Уведомляем родительский компонент
         } else {
           const error = await response.json();
-          console.error('Failed to unsubscribe:', error);
-          triggerHaptic('heavy'); // Вибрация при ошибке
+          console.error('❌ Failed to unsubscribe:', error);
+          notificationError(); // Ошибка
         }
       } else {
         // Включаем уведомление
+        const requestBody = {
+          product_id: product.id,
+          tg_id: user.tg_id
+        };
+        console.log('📤 Sending POST request for subscription:', requestBody);
+        
         const response = await fetch('/api/webapp/subscriptions', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            product_id: product.id
-          })
+          body: JSON.stringify(requestBody)
+        });
+
+        console.log('📥 Subscription response:', { 
+          ok: response.ok, 
+          status: response.status, 
+          statusText: response.statusText 
         });
 
         if (response.ok) {
+          const result = await response.json();
           setIsNotificationEnabled(true);
-          console.log(`Subscribed to product ${product.id}`);
+          notificationSuccess(); // Успешное включение
+          console.log(`✅ Subscribed to product ${product.id}:`, result.message || 'Success');
           onSubscriptionChange?.(); // Уведомляем родительский компонент
         } else {
           const error = await response.json();
-          console.error('Failed to subscribe:', error);
-          triggerHaptic('heavy'); // Вибрация при ошибке
+          console.error('❌ Failed to subscribe:', error);
+          notificationError(); // Ошибка
         }
       }
     } catch (error) {
-      console.error('Error toggling notification:', error);
-      triggerHaptic('heavy'); // Вибрация при ошибке
+      console.error('💥 Error toggling notification:', error);
+      notificationError(); // Ошибка
     } finally {
       setIsLoading(false);
       // Анимация завершается через 200ms
@@ -120,11 +211,11 @@ function ProductCard({ product, isSubscribed = false, onSubscriptionChange }: Pr
   };
 
   return (
-    <div className="product-card">
+    <div className="product-card haptic-feedback" onClick={() => onProductClick?.(product.id)}>
       <div className={`product-wrapper ${!hasStock ? 'out-of-stock' : ''}`}>
         {/* Кнопка избранного - как в Rails */}
         <div className="absolute right-3 top-3 z-10">
-          <FavoriteButton productId={product.id} />
+                          <AnimatedFavoriteButton productId={product.id} />
         </div>
 
         {/* Индикатор "нет в наличии" */}

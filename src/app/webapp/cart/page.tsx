@@ -7,6 +7,10 @@ import { IconComponent } from "@/components/webapp/IconComponent";
 import LoadingSpinner from "../_components/LoadingSpinner";
 import DeliveryForm from "../_components/DeliveryForm";
 import CartCheckoutSummary from "../_components/CartCheckoutSummary";
+import { useTelegramBackButton } from "../_components/TelegramBackButton";
+import TelegramMainButton from '../_components/TelegramMainButton';
+import { useTelegramHaptic } from '@/hooks/useTelegramHaptic';
+import { telegramSDK } from '@/lib/telegram-sdk';
 
 // Telegram WebApp interface
 interface TelegramWebApp {
@@ -71,6 +75,15 @@ export default function CartPage() {
   const [finalTotal, setFinalTotal] = useState(0);
   const [appliedBonus, setAppliedBonus] = useState(0);
   const [isOrderLoading, setIsOrderLoading] = useState(false);
+  const { notificationSuccess, notificationError } = useTelegramHaptic();
+
+  // Кастомная кнопка назад для корзины
+  useTelegramBackButton({
+    onBack: () => {
+      // При выходе из корзины возвращаемся на главную страницу каталога
+      window.location.href = '/webapp';
+    }
+  });
 
   // Загрузка корзины с изображениями
   const loadCart = async () => {
@@ -109,7 +122,18 @@ export default function CartPage() {
   // Загрузка профиля пользователя для предзаполнения данных доставки
   const loadUserProfile = async () => {
     try {
-      const response = await fetch('/api/webapp/profile');
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+
+      // Добавляем Telegram initData если доступен
+      if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.initData) {
+        headers['X-Telegram-Init-Data'] = (window as any).Telegram.WebApp.initData;
+      }
+
+      const response = await fetch('/api/webapp/profile', {
+        headers
+      });
       
       if (response.ok) {
         const data = await response.json();
@@ -130,6 +154,8 @@ export default function CartPage() {
           
           setUserProfile(profile);
         }
+      } else {
+        console.error('Profile loading failed:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Error loading user profile:', error);
@@ -271,22 +297,21 @@ export default function CartPage() {
               console.log('📱 Telegram WebApp closed');
             } catch (error) {
               console.error('Error closing Telegram WebApp:', error);
-              // Fallback для обычного браузера
-              alert('Заказ успешно оформлен!');
+              // Для обычного браузера просто перенаправляем без alert
               window.location.href = '/webapp/orders';
             }
-          }, 1000);
+          }, 500); // Уменьшаем задержку
         } else {
-          // Fallback для обычного браузера
-          alert('Заказ успешно оформлен!');
+          // Для обычного браузера просто перенаправляем без alert
           window.location.href = '/webapp/orders';
         }
       } else {
-        alert(result.error || 'Ошибка при оформлении заказа');
+        console.error('Order creation failed:', result.error);
+        // Просто логируем ошибку без alert
       }
     } catch (error) {
       console.error('Order creation error:', error);
-      alert('Ошибка при оформлении заказа');
+      // Просто логируем ошибку без alert
     } finally {
       setIsOrderLoading(false);
     }
@@ -313,14 +338,54 @@ export default function CartPage() {
       try {
         tg.ready();
         tg.expand();
+        
+        // Принудительно устанавливаем светлую тему для корзины
+        // чтобы нижняя панель была белой даже в темной теме
         tg.setHeaderColor('#FFFFFF');
-        tg.setBackgroundColor('#f9f9f9');
-        console.log('📱 Telegram WebApp initialized for cart page');
+        tg.setBackgroundColor('#FFFFFF');
+        
+        // Дополнительная попытка установить светлые цвета
+        if (tg.themeParams) {
+          // Переопределяем параметры темы для светлого фона
+          tg.themeParams.bg_color = '#FFFFFF';
+          tg.themeParams.secondary_bg_color = '#F7F7F7';
+        }
+        
+        console.log('📱 Telegram WebApp initialized for cart page with light theme');
       } catch (error) {
         console.error('Error initializing Telegram WebApp:', error);
       }
     }
   }, []);
+
+  // Скрываем MainButton Telegram, так как используем кастомную кнопку
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.MainButton) {
+      try {
+        (window as any).Telegram.WebApp.MainButton.hide();
+      } catch (error) {
+        console.warn('Could not hide MainButton:', error);
+      }
+    }
+  }, []);
+
+  const handleTelegramCheckout = async () => {
+    if (!deliveryData || isOrderLoading) return;
+
+    // Добавляем haptic feedback
+    notificationSuccess();
+    
+    try {
+      // Используем существующую логику оформления заказа
+      await handlePlaceOrder();
+      // После успешного заказа ничего не показываем - сразу закрываем WebApp
+      
+    } catch (error) {
+      notificationError();
+      console.error('Telegram checkout error:', error);
+      // Просто логируем ошибку без popup
+    }
+  };
 
   if (isLoading) {
     return (
@@ -334,7 +399,7 @@ export default function CartPage() {
   // Пустая корзина
   if (cartItems.length === 0) {
     return (
-      <>
+      <div className="webapp-container cart-page">
         <h1>Корзина</h1>
         <div className="empty-state">
           <div className="empty-state-content">
@@ -350,13 +415,13 @@ export default function CartPage() {
             </Link>
           </div>
         </div>
-      </>
+      </div>
     );
   }
 
   // Корзина с товарами
   return (
-    <>
+    <div className="webapp-container cart-page">
       <h1>Корзина</h1>
       
       <div className="main-block mb-5">
@@ -401,30 +466,25 @@ export default function CartPage() {
         onBonusChange={setAppliedBonus}
       />
 
-      {/* Кнопка оформления заказа */}
-      <div className="main-block">
-        <button 
-          className="webapp-btn webapp-btn-big w-full"
-          disabled={!isDeliveryFormValid || isOrderLoading}
-          onClick={handlePlaceOrder}
-        >
-          {isOrderLoading ? (
-            <span className="flex items-center justify-center gap-2">
-              <LoadingSpinner variant="default" size="sm" />
-              Оформляем заказ...
-            </span>
-          ) : (
-            `Оформить заказ • ${finalTotal.toLocaleString('ru-RU')} ₽`
-          )}
-        </button>
-        
-        <Link 
-          href="/webapp" 
-          className="block text-center mt-3 text-gray-600 hover:text-green-600 transition-colors"
-        >
-          Продолжить покупки
-        </Link>
-      </div>
-    </>
+      {/* Кастомная кнопка оформления заказа для всех случаев */}
+      {cartItems.length > 0 && isDeliveryFormValid && (
+        <div className="checkout-button-container">
+          <button 
+            onClick={handleTelegramCheckout}
+            disabled={isOrderLoading}
+            className="checkout-button-custom"
+          >
+            {isOrderLoading ? (
+              <span className="button-loading">
+                <span className="loading-spinner"></span>
+                Оформляем...
+              </span>
+            ) : (
+              `Оформить заказ (${finalTotal.toLocaleString('ru-RU')} ₽)`
+            )}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

@@ -46,7 +46,7 @@ export default function EditOrderModal({ isOpen, onClose, onSave, order }: EditO
         // Данные заказа
         total_amount: order.total_amount || 0,
         bonus: order.bonus || 0,
-        deliverycost: order.deliverycost || 0,
+        deliverycost: order.deliverycost || 500, // 500₽ доставка по умолчанию
         tracking_number: order.tracking_number || "",
         paid_at: order.paid_at,
         shipped_at: order.shipped_at,
@@ -60,7 +60,7 @@ export default function EditOrderModal({ isOpen, onClose, onSave, order }: EditO
         email: (order.user?.email || order.customeremail || "").trim(),
         phone_number: (order.user?.phone_number || order.customerphone || "").trim(),
         
-        // Адрес доставки - город из customercity заказа, fallback на address пользователя
+        // Адрес доставки - сначала пытаемся получить из заказа, потом из профиля пользователя
         city: (order.customercity || order.user?.address || "").trim(),
         street: (order.user?.street || "").trim(),
         home: (order.user?.home || "").trim(),
@@ -68,6 +68,17 @@ export default function EditOrderModal({ isOpen, onClose, onSave, order }: EditO
         apartment: (order.user?.apartment || "").trim(),
         postal_code: order.user?.postal_code || "",
       };
+      
+      // Если есть customeraddress в заказе, но нет детальных полей адреса - пытаемся разобрать
+      if (order.customeraddress && !newFormData.street && !newFormData.home) {
+        const parsedAddress = parseCustomerAddress(order.customeraddress);
+        if (parsedAddress.postal_code && !newFormData.postal_code) newFormData.postal_code = parsedAddress.postal_code;
+        if (parsedAddress.city && !newFormData.city) newFormData.city = parsedAddress.city;
+        if (parsedAddress.street && !newFormData.street) newFormData.street = parsedAddress.street;
+        if (parsedAddress.home && !newFormData.home) newFormData.home = parsedAddress.home;
+        if (parsedAddress.build && !newFormData.build) newFormData.build = parsedAddress.build;
+        if (parsedAddress.apartment && !newFormData.apartment) newFormData.apartment = parsedAddress.apartment;
+      }
       
       // Автоматически генерируем полный адрес из компонентов
       newFormData.full_address = buildFullAddress(newFormData) || (order.customeraddress || "").trim();
@@ -77,6 +88,43 @@ export default function EditOrderModal({ isOpen, onClose, onSave, order }: EditO
     }
     // Убираем flatpickr инициализацию
   }, [order, isOpen]);
+
+  // Функция для парсинга customeraddress в компоненты
+  const parseCustomerAddress = (customeraddress: string) => {
+    const result: any = {};
+    
+    // Пример: "199106, г Санкт-Петербург, ул Шевченко, дом 16, корп. 2, кв. 999"
+    const parts = customeraddress.split(',').map(p => p.trim());
+    
+    for (const part of parts) {
+      // Почтовый индекс (6 цифр в начале)
+      if (/^\d{6}$/.test(part)) {
+        result.postal_code = part;
+      }
+      // Город (начинается с "г ")
+      else if (part.startsWith('г ')) {
+        result.city = part;
+      }
+      // Улица (содержит "ул ")
+      else if (part.includes('ул ')) {
+        result.street = part;
+      }
+      // Дом (содержит "дом ")
+      else if (part.includes('дом ')) {
+        result.home = part.replace('дом ', '');
+      }
+      // Корпус (содержит "корп.")
+      else if (part.includes('корп.')) {
+        result.build = part.replace('корп. ', '');
+      }
+      // Квартира (содержит "кв.")
+      else if (part.includes('кв.')) {
+        result.apartment = part.replace('кв. ', '');
+      }
+    }
+    
+    return result;
+  };
 
   // Функция для автоматического формирования полного адреса
   const buildFullAddress = (data: any) => {

@@ -12,7 +12,10 @@ export async function GET() {
 
     if (!rootSetting?.value) {
       console.log('No root_product_id found in settings');
-      return NextResponse.json([]);
+      return NextResponse.json({
+        categories: [],
+        total: 0
+      });
     }
 
     const rootProductId = parseInt(rootSetting.value);
@@ -28,7 +31,10 @@ export async function GET() {
 
     if (!rootProduct) {
       console.log('Root product not found');
-      return NextResponse.json([]);
+      return NextResponse.json({
+        categories: [],
+        total: 0
+      });
     }
 
     // Get children of root product (categories) - like Rails: find(root_id).children.available
@@ -62,18 +68,25 @@ export async function GET() {
 
     console.log('Returning categories:', transformedCategories.length);
     
-    // Добавляем заголовки кэширования
-    const headers = {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
-    };
-
-    return new Response(JSON.stringify(transformedCategories), { status: 200, headers });
+    // Возвращаем в правильном формате для компонентов
+    return NextResponse.json({
+      categories: transformedCategories,
+      total: transformedCategories.length,
+      root_category: {
+        id: rootProductId,
+        name: rootProduct.name
+      }
+    });
 
   } catch (error) {
     console.error('Error fetching categories:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch categories', details: error instanceof Error ? error.message : String(error) },
+      { 
+        error: 'Failed to fetch categories', 
+        details: error instanceof Error ? error.message : String(error),
+        categories: [],
+        total: 0
+      },
       { status: 500 }
     );
   }

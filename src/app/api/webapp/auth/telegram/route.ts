@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/libs/prismaDb';
-import crypto from 'crypto';
+import { UserService } from '@/lib/services/UserService';
 
 // POST - аутентификация через Telegram Web App
 export async function POST(request: NextRequest) {
@@ -15,70 +15,22 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Парсим initData
-    const urlParams = new URLSearchParams(initData);
-    const hash = urlParams.get('hash');
-    const userParam = urlParams.get('user');
-    
-    if (!userParam || !hash) {
-      return NextResponse.json({
-        success: false,
-        error: "Invalid initData format"
-      }, { status: 400 });
+    // Валидация подписи Telegram через UserService
+    const isValid = UserService.validateTelegramInitData(initData);
+    if (!isValid) {
+      console.warn('Telegram initData signature validation failed');
+      // В продакшене можно вернуть ошибку, но для разработки пропускаем
+      // return NextResponse.json({
+      //   success: false,
+      //   error: "Invalid signature"
+      // }, { status: 401 });
     }
 
-    // Валидация подписи Telegram (опционально)
-    const botToken = process.env.WEBAPP_TELEGRAM_BOT_TOKEN;
-    if (botToken) {
-      const secretKey = crypto.createHash('sha256').update(botToken).digest();
-      
-      // Создаем строку для проверки подписи
-      const dataCheckString = Array.from(urlParams.entries())
-        .filter(([key]) => key !== 'hash')
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([key, value]) => `${key}=${value}`)
-        .join('\n');
-      
-      const hmac = crypto.createHmac('sha256', secretKey);
-      hmac.update(dataCheckString);
-      const calculatedHash = hmac.digest('hex');
-      
-      if (calculatedHash !== hash) {
-        console.warn('Telegram initData signature validation failed');
-        // В продакшене можно вернуть ошибку, но для разработки пропускаем
-        // return NextResponse.json({
-        //   success: false,
-        //   error: "Invalid signature"
-        // }, { status: 401 });
-      }
-    }
-
-    // Парсим данные пользователя
-    const tgUser = JSON.parse(userParam);
+    // Парсинг данных пользователя через UserService
+    const tgUser = UserService.parseTelegramInitData(initData);
     
-    // Находим или создаем пользователя по tg_id
-    const user = await prisma.users.upsert({
-      where: { tg_id: BigInt(tgUser.id) },
-      update: {
-        first_name_raw: tgUser.first_name || null,
-        last_name_raw: tgUser.last_name || null,
-        username: tgUser.username || null,
-        photo_url: tgUser.photo_url || null,
-        updated_at: new Date(),
-      },
-      create: {
-        tg_id: BigInt(tgUser.id),
-        first_name_raw: tgUser.first_name || null,
-        last_name_raw: tgUser.last_name || null,
-        username: tgUser.username || null,
-        email: `tg_${tgUser.id}@tgapp.online`,
-        encrypted_password: '', // Пустой пароль для Telegram пользователей
-        photo_url: tgUser.photo_url || null,
-        started: true, // Пользователь начал работу с ботом
-        created_at: new Date(),
-        updated_at: new Date(),
-      },
-    });
+    // Находим или создаем пользователя через UserService
+    const user = await UserService.findOrCreateTelegramUser(tgUser);
 
     console.log(`✅ Telegram user authenticated: ${user.id} (tg_id: ${user.tg_id})`);
 
@@ -145,9 +97,8 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const user = await prisma.users.findUnique({
-      where: { tg_id: BigInt(tg_id) }
-    });
+    // Используем UserService для получения пользователя
+    const user = await UserService.getUserByTelegramId(tg_id);
 
     if (!user) {
       return NextResponse.json({

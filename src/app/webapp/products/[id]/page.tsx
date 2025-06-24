@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { IconComponent } from '@/components/webapp/IconComponent'
 import { AddToCartButton } from '@/app/webapp/_components/AddToCartButton'
-import { FavoriteButton } from '@/app/webapp/_components/FavoriteButton'
+import { AnimatedFavoriteButton } from '@/app/webapp/_components/AnimatedFavoriteButton'
 import { ReviewsList } from '@/app/webapp/_components/ReviewsList'
 import { ReviewForm } from '@/app/webapp/_components/ReviewForm'
 import LoadingSpinner from '@/app/webapp/_components/LoadingSpinner'
+import { useTelegramAuth } from '@/context/TelegramAuthContext'
 
 interface Product {
   id: number
@@ -27,7 +28,14 @@ interface Product {
 export default function ProductDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const { user } = useTelegramAuth()
   const productId = params.id as string
+
+  // Отладка контекста аутентификации
+  console.log('🔍 ProductDetailPage rendered:', {
+    user: user ? { id: user.id, tg_id: user.tg_id, authenticated: true } : null,
+    productId
+  });
   
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
@@ -36,6 +44,23 @@ export default function ProductDetailPage() {
   const [reviewsKey, setReviewsKey] = useState(0)
   const [isNotificationEnabled, setIsNotificationEnabled] = useState(false)
   const [isNotificationLoading, setIsNotificationLoading] = useState(false)
+
+  const checkSubscriptionStatus = async () => {
+    if (!user) return;
+    
+    try {
+      const response = await fetch(`/api/webapp/subscriptions?tg_id=${user.tg_id}`)
+      if (response.ok) {
+        const data = await response.json()
+        // API возвращает объект { success: true, subscriptions: [...] }
+        const subscriptions = data.subscriptions || []
+        const isSubscribed = subscriptions.some((sub: any) => sub.product_id === parseInt(productId))
+        setIsNotificationEnabled(isSubscribed)
+      }
+    } catch (err) {
+      console.error('Failed to check subscription status:', err)
+    }
+  }
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -53,26 +78,16 @@ export default function ProductDetailPage() {
       }
     }
 
-    const checkSubscriptionStatus = async () => {
-      try {
-        const response = await fetch('/api/webapp/subscriptions')
-        if (response.ok) {
-          const data = await response.json()
-          // API возвращает объект { success: true, subscriptions: [...] }
-          const subscriptions = data.subscriptions || []
-          const isSubscribed = subscriptions.some((sub: any) => sub.product_id === parseInt(productId))
-          setIsNotificationEnabled(isSubscribed)
-        }
-      } catch (err) {
-        console.error('Failed to check subscription status:', err)
-      }
-    }
-
     if (productId) {
       fetchProduct()
-      checkSubscriptionStatus()
     }
   }, [productId])
+
+  useEffect(() => {
+    if (product && user) {
+      checkSubscriptionStatus()
+    }
+  }, [product, user])
 
   const handleReviewFormShow = () => {
     setShowReviewForm(true)
@@ -101,7 +116,22 @@ export default function ProductDetailPage() {
 
   // Обработка нажатия на кнопку уведомления
   const handleNotificationToggle = async () => {
-    if (isNotificationLoading || !product) return;
+    console.log('🔄 handleNotificationToggle called', { 
+      user: user ? { id: user.id, tg_id: user.tg_id, full: user } : null,
+      product: product ? { id: product.id, name: product.name } : null,
+      isNotificationLoading,
+      functionVersion: 'v2-with-tg-id'
+    });
+    
+    if (isNotificationLoading || !product || !user) {
+      console.log('❌ Aborting toggle:', { 
+        isNotificationLoading, 
+        hasProduct: !!product, 
+        hasUser: !!user,
+        userDetails: user ? { tg_id: user.tg_id } : 'no user'
+      });
+      return;
+    }
 
     setIsNotificationLoading(true);
     triggerHaptic('medium');
@@ -109,7 +139,7 @@ export default function ProductDetailPage() {
     try {
       if (isNotificationEnabled) {
         // Отключаем уведомление
-        const response = await fetch(`/api/webapp/subscriptions?product_id=${product.id}`, {
+        const response = await fetch(`/api/webapp/subscriptions?product_id=${product.id}&tg_id=${user.tg_id}`, {
           method: 'DELETE'
         });
 
@@ -124,23 +154,33 @@ export default function ProductDetailPage() {
         }
       } else {
         // Включаем уведомление
+        const requestBody = {
+          product_id: product.id,
+          tg_id: user.tg_id
+        };
+        console.log('📤 Sending subscription request:', requestBody);
+        
         const response = await fetch('/api/webapp/subscriptions', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            product_id: product.id
-          })
+          body: JSON.stringify(requestBody)
+        });
+
+        console.log('📥 Subscription response:', { 
+          ok: response.ok, 
+          status: response.status,
+          statusText: response.statusText 
         });
 
         if (response.ok) {
           setIsNotificationEnabled(true);
-          console.log(`Subscribed to product ${product.id}`);
+          console.log(`✅ Subscribed to product ${product.id}`);
           triggerHaptic('light'); // Легкая вибрация при успехе
         } else {
           const error = await response.json();
-          console.error('Failed to subscribe:', error);
+          console.error('❌ Failed to subscribe:', error);
           triggerHaptic('heavy'); // Вибрация при ошибке
         }
       }
@@ -253,7 +293,7 @@ export default function ProductDetailPage() {
             )}
           </div>
           <div className="card-favorite">
-            <FavoriteButton productId={product.id} />
+                            <AnimatedFavoriteButton productId={product.id} />
           </div>
         </div>
 

@@ -5,6 +5,7 @@ import Sheet from '@/components/ui/sheet';
 import { IconComponent } from '@/components/webapp/IconComponent';
 import LoadingSpinner from './LoadingSpinner';
 import toast from 'react-hot-toast';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
 
 interface Product {
   id: number;
@@ -33,6 +34,7 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
   isOpen,
   onClose
 }) => {
+  const { user, isAuthenticated } = useTelegramAuth();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,20 +43,25 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
 
   // Загружаем подписки при открытии модального окна
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && user?.tg_id) {
       loadSubscriptions();
     }
-  }, [isOpen]);
+  }, [isOpen, user?.tg_id]);
 
   const loadSubscriptions = async () => {
+    if (!user?.tg_id) {
+      setError('Пользователь не аутентифицирован');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await fetch('/api/webapp/subscriptions');
+      const response = await fetch(`/api/webapp/subscriptions?tg_id=${user.tg_id}`);
       const data = await response.json();
 
-      if (data.success) {
+      if (response.ok) {
         setSubscriptions(data.subscriptions || []);
       } else {
         setError(data.error || 'Ошибка загрузки подписок');
@@ -174,7 +181,14 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
       title="Товары в ожидании"
       className="subscriptions-sheet"
     >
-      {isLoading ? (
+      {!isAuthenticated || !user ? (
+        <div className="error-container">
+          <div className="error-banner">
+            <IconComponent name="warning" size={16} />
+            Необходима авторизация для просмотра подписок
+          </div>
+        </div>
+      ) : isLoading ? (
         <div className="loading-container">
           <LoadingSpinner variant="default" size="lg" />
           <p>Загружаем ваши подписки...</p>
@@ -374,11 +388,8 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
           background: #F9FAFB;
           border-radius: 12px;
           border: 1px solid #F3F4F6;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          transform: translateX(0);
+          transition: all 0.2s ease;
           opacity: 1;
-          max-height: 200px;
-          overflow: hidden;
         }
 
         .subscription-item.deleting {
@@ -389,11 +400,8 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
         }
 
         .subscription-item.animate-out {
-          transform: translateX(100%);
           opacity: 0;
-          max-height: 0;
-          padding: 0 16px;
-          margin-bottom: -16px;
+          transform: scale(0.95);
         }
 
         .subscription-image {
@@ -466,15 +474,12 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
           border-radius: 6px;
           color: #DC2626;
           cursor: pointer;
-          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-          position: relative;
-          overflow: hidden;
+          transition: all 0.2s ease;
         }
 
         .unsubscribe-btn:hover:not(:disabled) {
           background: #FEE2E2;
           border-color: #FCA5A5;
-          transform: scale(1.05);
         }
 
         .unsubscribe-btn:active:not(:disabled) {
@@ -489,7 +494,7 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
         .unsubscribe-btn.loading {
           background: #FEF2F2;
           border-color: #FECACA;
-          animation: pulse 1.5s infinite;
+          opacity: 0.7;
         }
 
         .spinner {
@@ -506,16 +511,7 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
           100% { transform: rotate(360deg); }
         }
 
-        @keyframes pulse {
-          0%, 100% { 
-            background: #FEF2F2;
-            border-color: #FECACA;
-          }
-          50% { 
-            background: #FEE2E2;
-            border-color: #FCA5A5;
-          }
-        }
+
 
         /* Адаптивность */
         @media (max-width: 640px) {

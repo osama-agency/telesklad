@@ -10,7 +10,7 @@ export const orderStatusTranslations = {
   // Дополнительные статусы
   completed: 'Завершён',
   delivered: 'Доставлен', 
-  paid: 'Оплачен',
+  paid: 'Проверка оплаты',
   confirmed: 'Подтверждён',
   
   // Для обратной совместимости
@@ -57,7 +57,7 @@ export const paidOrderStatuses = [
   'processing', // в обработке (но оплачен)
   'completed',  // завершён
   'delivered',  // доставлен
-  'paid',       // оплачен
+  'paid',       // проверка оплаты
   'confirmed'   // подтверждён
 ] as const;
 

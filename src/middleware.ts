@@ -9,8 +9,10 @@ export default withAuth(
     const token = req.nextauth.token;
     const { pathname } = req.nextUrl;
     
-    // Логирование для отладки
-    console.log(`[Middleware] Path: ${pathname}, User: ${token?.email}, Role: ${token?.role}`);
+    // Логирование только для не-webapp маршрутов
+    if (!pathname.startsWith('/webapp') && !pathname.startsWith('/api/webapp')) {
+      console.log(`[Middleware] Path: ${pathname}, User: ${token?.email}, Role: ${token?.role}`);
+    }
     
     // Проверка доступа к админским маршрутам
     const isAdminRoute = pathname.startsWith('/admin') || 
@@ -83,6 +85,8 @@ export default withAuth(
           '/webapp',
           '/api/webapp',
           '/api/telegram/webhook',
+          '/api/telegram/webapp-webhook',
+          '/api/redis',
           '/_next',
           '/favicon.ico',
           '/images',
@@ -116,7 +120,10 @@ export const config = {
      * - favicon.ico (favicon file)
      * - public folder
      * - images in public
+     * - webapp (все webapp маршруты)
+     * - api/webapp (webapp API)
+     * - api/telegram (telegram webhooks)
      */
-    "/((?!_next/static|_next/image|favicon.ico|public|uploads).*)",
+    "/((?!_next/static|_next/image|favicon.ico|public|uploads|webapp|api/webapp|api/telegram).*)",
   ],
 };

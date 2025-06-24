@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { IconComponent } from '@/components/webapp/IconComponent'
+import { ReviewPhotos } from './ReviewPhotos'
 
 interface Review {
   id: number
@@ -387,21 +388,7 @@ export function ReviewsList({ productId, onReviewCreate }: ReviewsListProps) {
               <div className="mb-2">{review.content}</div>
               
               {/* Фотографии отзыва */}
-              {review.photos.length > 0 && (
-                <div className="img-block">
-                  {review.photos.map((photo, index) => (
-                    <div 
-                      key={index}
-                      className="review-photo"
-                      style={{ 
-                        backgroundImage: `url('${photo}')`, 
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center'
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
+              <ReviewPhotos photos={review.photos} reviewId={review.id} />
               
               <div className="text-xs text-gray-500 mt-2">
                 {formatDate(review.created_at)}

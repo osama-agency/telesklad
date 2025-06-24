@@ -500,6 +500,7 @@ model reviews {
   product_id BigInt
   content    String?
   rating     Int      @default(0)
+  photos     String[] @default([])
   created_at DateTime @db.Timestamp(6)
   updated_at DateTime @db.Timestamp(6)
   approved   Boolean  @default(false)

@@ -6,6 +6,8 @@ import { IconComponent } from '@/components/webapp/IconComponent';
 import SkeletonLoading from '../_components/SkeletonLoading';
 import LoadingSpinner from '../_components/LoadingSpinner';
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
+import Link from 'next/link';
+import { webAppFetch } from '@/lib/utils/webapp-fetch';
 
 interface Order {
   id: number;
@@ -87,24 +89,26 @@ const OrdersPage: React.FC = () => {
 
     // Загрузка данных заказов из API
     const loadOrders = async () => {
-      try {
-        if (!authUser?.tg_id) return;
-        
-        setIsLoading(true);
-        setError(null);
+      if (!authUser?.tg_id) {
+        setIsLoading(false);
+        return;
+      }
 
-        const response = await fetch(`/api/webapp/orders?tg_id=${authUser.tg_id}`);
-        const data: OrdersApiResponse = await response.json();
+      try {
+        setIsLoading(true);
+        const response = await webAppFetch('/api/webapp/orders');
         
-        if (data.success) {
-          setOrders(data.orders);
+        if (response.ok) {
+          const data = await response.json();
+          setOrders(data.orders || []);
           setStats(data.stats);
         } else {
-          setError(data.error || 'Ошибка загрузки заказов');
+          const errorData = await response.json();
+          setError(errorData.error || 'Ошибка загрузки заказов');
         }
-      } catch (error) {
-        console.error('Error loading orders:', error);
-        setError('Не удалось загрузить историю заказов. Попробуйте позже.');
+      } catch (err) {
+        setError('Ошибка соединения');
+        console.error('Orders loading error:', err);
       } finally {
         setIsLoading(false);
       }
@@ -142,14 +146,14 @@ const OrdersPage: React.FC = () => {
     switch (status) {
       case 'unpaid':
         return {
-          label: 'Не оплачен',
+          label: 'Ожидает оплаты',
           color: '#D97706',
           bgColor: '#FEF3C7',
           icon: 'clock'
         };
       case 'paid':
         return {
-          label: 'Оплачен',
+          label: 'Проверка оплаты',
           color: '#2563EB',
           bgColor: '#DBEAFE',
           icon: 'info'
@@ -376,7 +380,7 @@ const OrdersPage: React.FC = () => {
                   {order.paid_at && (
                     <div className="detail-row">
                       <IconComponent name="info" size={14} />
-                      <span className="detail-label">Оплачен:</span>
+                      <span className="detail-label">Проверка оплаты:</span>
                       <span className="detail-value">{formatDate(order.paid_at)}</span>
                     </div>
                   )}

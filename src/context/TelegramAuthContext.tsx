@@ -111,6 +111,7 @@ export function TelegramAuthProvider({ children }: TelegramAuthProviderProps) {
   const login = async (initData: string): Promise<boolean> => {
     try {
       setIsLoading(true);
+      console.log('🔐 Attempting Telegram authentication...');
       
       const response = await fetch('/api/webapp/auth/telegram', {
         method: 'POST',
@@ -124,10 +125,21 @@ export function TelegramAuthProvider({ children }: TelegramAuthProviderProps) {
 
       if (data.success) {
         setUser(data.user);
-        console.log('✅ User authenticated:', data.user);
+        console.log('✅ User authenticated successfully:', {
+          id: data.user.id,
+          tg_id: data.user.tg_id,
+          name: `${data.user.first_name} ${data.user.last_name || ''}`.trim(),
+          username: data.user.username
+        });
         return true;
       } else {
         console.error('❌ Authentication failed:', data.error);
+        
+        // Если пользователь не найден или заблокирован, показываем соответствующее сообщение
+        if (data.error?.includes('not started') || data.error?.includes('banned')) {
+          console.warn('⚠️ User needs to start the bot or is banned');
+        }
+        
         return false;
       }
     } catch (error) {

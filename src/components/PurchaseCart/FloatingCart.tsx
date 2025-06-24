@@ -23,7 +23,7 @@ export default function FloatingCart() {
       <div className="fixed bottom-8 right-8 z-50">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="group relative overflow-hidden bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] text-white rounded-2xl p-4 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-4 focus:ring-[#1A6DFF]/30"
+          className="group relative overflow-hidden bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] text-white rounded-2xl p-4 shadow-xl hover:shadow-2xl transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-[#1A6DFF]/30"
         >
           <div className="relative z-10 flex items-center justify-center">
             <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -36,13 +36,10 @@ export default function FloatingCart() {
           
           {/* Счетчик товаров */}
           {totalItems > 0 && (
-            <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-7 w-7 flex items-center justify-center font-bold border-2 border-white shadow-lg animate-pulse">
+            <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-7 w-7 flex items-center justify-center font-bold border-2 border-white shadow-lg">
               {totalItems > 99 ? '99+' : totalItems}
             </div>
           )}
-
-          {/* Анимированный пульс */}
-          <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] animate-ping opacity-20"></div>
         </button>
       </div>
 
@@ -196,7 +193,7 @@ export default function FloatingCart() {
                     <div className="space-y-3">
                       <button
                         onClick={handleGoToPurchases}
-                        className="group relative overflow-hidden w-full bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] text-white py-4 rounded-xl font-bold transition-all duration-300 hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-[#1A6DFF]/30"
+                        className="group relative overflow-hidden w-full bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] text-white py-4 rounded-xl font-bold transition-all duration-200 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-[#1A6DFF]/30"
                       >
                         <span className="relative z-10 flex items-center justify-center space-x-2">
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

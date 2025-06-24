@@ -23,6 +23,12 @@ export default function WebappLayout({ children }: PropsWithChildren) {
     return "";
   };
 
+  // Определяем нужно ли показывать нижнее меню (скрываем на странице корзины)
+  const shouldShowBottomNavigation = !pathname.startsWith("/webapp/cart");
+  
+  // Определяем нужно ли показывать поиск (скрываем на странице корзины)
+  const shouldShowSearch = !pathname.startsWith("/webapp/cart");
+
   return (
     <>
       {/* Telegram WebApp SDK */}
@@ -32,7 +38,7 @@ export default function WebappLayout({ children }: PropsWithChildren) {
         onLoad={() => {
           console.log('📱 Telegram WebApp script loaded');
           if (window.Telegram?.WebApp) {
-            console.log('✅ Telegram WebApp available:', window.Telegram.WebApp.version);
+            console.log('✅ Telegram WebApp available:', (window.Telegram.WebApp as any).version || 'unknown');
           } else {
             console.error('❌ Telegram WebApp not found after script load');
           }
@@ -50,7 +56,7 @@ export default function WebappLayout({ children }: PropsWithChildren) {
           {/* Header точно как в Rails */}
           <header className="webapp-header">
             <div className="container-adaptive py-3">
-              <SearchComponent />
+              {shouldShowSearch && <SearchComponent />}
             </div>
           </header>
 
@@ -62,8 +68,8 @@ export default function WebappLayout({ children }: PropsWithChildren) {
           {/* Cart Summary - глобально для всех страниц */}
           <CartSummary />
 
-          {/* Fixed bottom navigation - динамическое с активной страницей */}
-          <BottomNavigation />
+          {/* Fixed bottom navigation - скрываем на странице корзины */}
+          {shouldShowBottomNavigation && <BottomNavigation />}
         </div>
       </TelegramAuthProvider>
     </>

@@ -39,28 +39,7 @@ export async function GET(
       }
     });
 
-    // Получаем фотографии отзывов
-    const reviewIds = reviews.map(r => Number(r.id));
-    const attachments = await prisma.active_storage_attachments.findMany({
-      where: {
-        record_type: 'Review',
-        record_id: { in: reviewIds },
-        name: 'photos'
-      },
-      include: {
-        active_storage_blobs: true
-      }
-    });
-
-    // Создаем карту фотографий по review_id
-    const photosMap = new Map<number, string[]>();
-    attachments.forEach(attachment => {
-      const reviewId = Number(attachment.record_id);
-      if (!photosMap.has(reviewId)) {
-        photosMap.set(reviewId, []);
-      }
-      photosMap.get(reviewId)!.push(S3Service.getImageUrl(attachment.active_storage_blobs.key));
-    });
+    // Фотографии теперь хранятся прямо в поле photos таблицы reviews
 
     // Трансформируем данные
     const transformedReviews = reviews.map(review => ({
@@ -76,7 +55,7 @@ export async function GET(
         photo_url: review.users.photo_url,
         display_name: review.users.first_name || review.users.username || `User ${review.users.id}`
       },
-      photos: photosMap.get(Number(review.id)) || []
+      photos: review.photos || []
     }));
 
     // Статистика рейтингов
@@ -126,7 +105,7 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { content, rating, tg_id } = body;
+    const { content, rating, photos = [], tg_id } = body;
 
     // Валидация
     if (!content || content.length < 5 || content.length > 1000) {
@@ -148,6 +127,35 @@ export async function POST(
         { error: 'Пользователь не авторизован' },
         { status: 401 }
       );
+    }
+
+    // Валидация фотографий
+    if (photos && photos.length > 3) {
+      return NextResponse.json(
+        { error: 'Можно загрузить максимум 3 фотографии' },
+        { status: 400 }
+      );
+    }
+
+    // Проверяем, что все фотографии - валидные URL
+    if (photos && photos.length > 0) {
+      for (const photo of photos) {
+        try {
+          new URL(photo);
+          // Проверяем, что URL ведет на наш S3
+          if (!photo.includes(process.env.S3_ENDPOINT || 'storage.beget.cloud')) {
+            return NextResponse.json(
+              { error: 'Недопустимый URL фотографии' },
+              { status: 400 }
+            );
+          }
+        } catch {
+          return NextResponse.json(
+            { error: 'Недопустимый URL фотографии' },
+            { status: 400 }
+          );
+        }
+      }
     }
 
     // Находим пользователя
@@ -206,6 +214,7 @@ export async function POST(
       data: {
         content,
         rating,
+        photos: photos || [],
         user_id: Number(user.id),
         product_id: productId,
         approved: false, // Требует модерации

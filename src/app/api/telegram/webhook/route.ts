@@ -53,6 +53,8 @@ export async function POST(request: NextRequest) {
         console.warn('⚠️ Invalid webhook signature');
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
+    } else {
+      console.log('🔓 Webhook working without secret token verification');
     }
 
     // Парсим JSON

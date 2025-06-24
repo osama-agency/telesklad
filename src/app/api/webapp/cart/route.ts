@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/libs/prismaDb';
 import { S3Service } from '@/lib/services/s3';
-
-const prisma = new PrismaClient();
 
 // POST /api/webapp/cart - получить данные корзины с изображениями
 export async function POST(request: NextRequest) {

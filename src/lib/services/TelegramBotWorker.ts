@@ -3,6 +3,10 @@ import { prisma } from '@/libs/prismaDb';
 import { TelegramTokenService } from './telegram-token.service';
 import { TelegramService } from './TelegramService';
 import { ReportService } from './ReportService';
+import { RedisService } from './redis.service';
+import { CacheService } from './cache.service';
+import { RedisQueueService } from './redis-queue.service';
+import { UserService } from './UserService';
 
 interface BotSettings {
   tg_token?: string;
@@ -27,10 +31,6 @@ export class TelegramBotWorker {
   private bot: TelegramBot | null = null;
   private settings: BotSettings = {};
   private static instance: TelegramBotWorker | null = null;
-  
-  // Кэш состояний пользователей (аналог Rails.cache)
-  private userStates: Map<string, any> = new Map();
-  private TRACK_CACHE_PERIOD = 5 * 60 * 1000; // 5 минут
 
   private constructor() {}
 
@@ -43,23 +43,44 @@ export class TelegramBotWorker {
 
   async initialize(): Promise<void> {
     try {
-      // Используем настройки из переменных окружения
-      this.settings = {
-        tg_token: process.env.TELEGRAM_BOT_TOKEN,
-        tg_main_bot: process.env.TELEGRAM_BOT_USERNAME || '@strattera_bot',
-        admin_chat_id: process.env.TELEGRAM_ADMIN_CHAT_ID || '125861752',
-        courier_tg_id: process.env.TELEGRAM_COURIER_ID || '821810448',
-        admin_ids: process.env.TELEGRAM_ADMIN_IDS || '125861752',
-        test_id: process.env.TELEGRAM_TEST_ID,
-        preview_msg: process.env.TELEGRAM_PREVIEW_MSG,
-        first_video_id: process.env.TELEGRAM_FIRST_VIDEO_ID,
-        bot_btn_title: process.env.TELEGRAM_BOT_BTN_TITLE || 'Открыть приложение',
-        group_btn_title: process.env.TELEGRAM_GROUP_BTN_TITLE || 'Присоединиться к группе',
-        tg_group: process.env.TELEGRAM_GROUP_URL || 'https://t.me/joinchat/your_group',
-        tg_support: process.env.TELEGRAM_SUPPORT_URL || 'https://t.me/your_support'
-      };
+      // Инициализируем Redis
+      await RedisService.initialize();
       
-      console.log('📌 Bot settings loaded from environment variables');
+      // Запускаем Redis Queue Worker если Redis доступен
+      if (RedisService.isAvailable()) {
+        await RedisQueueService.startWorker();
+      }
+      
+      // Загружаем настройки из базы данных
+      await this.loadSettings();
+      
+      // Если настройки не загрузились из БД, используем fallback из переменных окружения
+      if (!this.settings.tg_main_bot) {
+        this.settings = {
+          ...this.settings,
+          tg_main_bot: process.env.TELEGRAM_BOT_USERNAME || '@strattera_bot',
+          admin_chat_id: process.env.TELEGRAM_ADMIN_CHAT_ID || '125861752',
+          courier_tg_id: process.env.TELEGRAM_COURIER_ID || '821810448',
+          admin_ids: process.env.TELEGRAM_ADMIN_IDS || '125861752',
+          test_id: process.env.TELEGRAM_TEST_ID,
+          preview_msg: process.env.TELEGRAM_PREVIEW_MSG || 'Добро пожаловать!',
+          first_video_id: process.env.TELEGRAM_FIRST_VIDEO_ID,
+          bot_btn_title: process.env.TELEGRAM_BOT_BTN_TITLE || 'Каталог',
+          group_btn_title: process.env.TELEGRAM_GROUP_BTN_TITLE || 'Присоединиться к группе',
+          tg_group: process.env.TELEGRAM_GROUP_URL || 'https://t.me/+2rTVT8IxtFozNDY0',
+          tg_support: process.env.TELEGRAM_SUPPORT_URL || 'https://t.me/strattera_help'
+        };
+        console.log('📌 Bot settings loaded from environment variables');
+      } else {
+        console.log('📋 Loaded settings:', {
+          tg_main_bot: this.settings.tg_main_bot,
+          bot_btn_title: this.settings.bot_btn_title,
+          group_btn_title: this.settings.group_btn_title,
+          has_preview_msg: !!this.settings.preview_msg,
+          has_first_video_id: !!this.settings.first_video_id
+        });
+        console.log('📌 Bot settings loaded from database');
+      }
       
       // Получаем токен бота
       const token = await TelegramTokenService.getTelegramBotToken();
@@ -168,13 +189,21 @@ export class TelegramBotWorker {
   }
 
   private async loadSettings(): Promise<void> {
-    const settings = await prisma.settings.findMany();
-    this.settings = settings.reduce((acc, setting) => {
-      if (setting.variable && setting.value) {
-        acc[setting.variable as keyof BotSettings] = setting.value;
-      }
-      return acc;
-    }, {} as BotSettings);
+    // Пытаемся загрузить настройки из кэша
+    const cachedSettings = await CacheService.getBotSettings();
+    
+    if (Object.keys(cachedSettings).length > 0) {
+      this.settings = cachedSettings as BotSettings;
+    } else {
+      // Загружаем из базы данных если кэш пуст
+      const settings = await prisma.settings.findMany();
+      this.settings = settings.reduce((acc, setting) => {
+        if (setting.variable && setting.value) {
+          acc[setting.variable as keyof BotSettings] = setting.value;
+        }
+        return acc;
+      }, {} as BotSettings);
+    }
   }
 
   private async handleCallback(callbackQuery: TelegramBot.CallbackQuery): Promise<void> {
@@ -210,57 +239,160 @@ export class TelegramBotWorker {
     if (!this.bot) return;
 
     const chatId = msg.chat.id;
+    console.log(`📥 Handling message from ${chatId}: ${msg.text || 'non-text message'}`);
+    
+    // Инкрементируем активность пользователя в Redis
+    if (RedisService.isAvailable()) {
+      await RedisQueueService.addAnalyticsJob('user_activity', {
+        userId: chatId.toString(),
+        action: 'message',
+        text: msg.text || 'non-text'
+      });
+      console.log(`📊 User activity logged to Redis for ${chatId}`);
+    }
     
     // Проверка на сообщение от курьера с трек-номером
     if (chatId.toString() === this.settings.courier_tg_id) {
+      console.log(`📦 Courier message detected from ${chatId}`);
       await this.inputTrackingNumber(msg);
       return;
     }
 
     // Обработка обычных сообщений
     if (msg.text) {
+      console.log(`💬 Processing text message: "${msg.text}"`);
       await this.processMessage(msg);
-      
-      // Отправляем приветственное сообщение если это не команда /start
-      if (msg.text !== '/start') {
-        await this.sendFirstMsg(chatId);
-      }
     } else if (msg.video) {
+      console.log(`🎥 Processing video message`);
       await this.savePreviewVideo(msg);
     } else if (msg.photo) {
+      console.log(`📸 Processing photo message`);
       await this.savePhoto(msg);
     } else {
+      console.log(`❓ Processing other message type`);
       await this.otherMessage(msg);
+    }
+    
+    // Отправляем приветственное сообщение для всех сообщений (если это не админская команда)
+    const text = msg.text?.toLowerCase();
+    const adminIds = this.settings.admin_ids?.split(',').map(id => id.trim()) || ['125861752'];
+    const isAdmin = adminIds.includes(chatId.toString());
+    const isAdminCommand = isAdmin && (text === '/admin' || text === '/settings' || text === '/test');
+    
+    console.log(`🔍 Admin check: isAdmin=${isAdmin}, isAdminCommand=${isAdminCommand}, text="${text}"`);
+    
+    if (!isAdminCommand) {
+      console.log(`✉️ Sending welcome message to ${chatId}`);
+      await this.sendFirstMsg(chatId);
+    } else {
+      console.log(`⏭️ Skipping welcome message for admin command`);
     }
   }
 
   private async processMessage(msg: TelegramBot.Message): Promise<void> {
-    const tgUser = msg.chat;
-    
-    // Поиск или создание пользователя
-    const user = await this.findOrCreateUser(tgUser, true);
-    
-    if (user && !user.started) {
-      await this.unlockUser(user);
-    }
+    if (!msg.text) return;
 
-    // Сохраняем сообщение если это не /start
-    if (msg.text !== '/start' && user && msg.message_id) {
-      try {
-        await prisma.messages.create({
-          data: {
-            tg_id: BigInt(user.tg_id),
-            text: msg.text,
-            tg_msg_id: BigInt(msg.message_id),
-            is_incoming: true,
-            created_at: new Date(),
-            updated_at: new Date()
-          }
-        });
-      } catch (error) {
-        console.error('Error saving message:', error);
+    const chatId = msg.chat.id;
+    const text = msg.text.toLowerCase();
+    
+    // Проверяем, является ли отправитель администратором
+    const adminIds = this.settings.admin_ids?.split(',').map(id => id.trim()) || ['125861752'];
+    const isAdmin = adminIds.includes(chatId.toString());
+    
+    // Обработка команды /start
+    if (text === '/start') {
+      await this.handleStartCommand(msg);
+      return;
+    }
+    
+    // Команды для администраторов
+    if (isAdmin) {
+      if (text === '/admin' || text === '/settings') {
+        await this.sendAdminInfo(chatId);
+        return;
+      }
+      
+      if (text === '/test') {
+        await this.sendFirstMsg(chatId);
+        return;
       }
     }
+    
+    // Обычная обработка сообщений (логирование)
+    console.log(`💬 Message from ${chatId}: ${msg.text}`);
+  }
+
+  /**
+   * Обработка команды /start
+   */
+  private async handleStartCommand(msg: TelegramBot.Message): Promise<void> {
+    const chatId = msg.chat.id;
+    const tgUser = {
+      id: msg.from?.id,
+      first_name: msg.from?.first_name,
+      last_name: msg.from?.last_name,
+      username: msg.from?.username
+    };
+
+    try {
+      // Регистрируем/обновляем пользователя в базе через UserService
+      const user = await UserService.handleTelegramStart(tgUser);
+      console.log(`🔓 User ${user.id} started bot (tg_id: ${user.tg_id})`);
+      
+      // Уведомляем админа о новом пользователе (если это новый)
+      const timeDiff = user.updated_at.getTime() - user.created_at.getTime();
+      if (timeDiff < 1000) { // Если пользователь создан только что (разница меньше секунды)
+        await this.notifyAdminNewUser(user);
+      }
+      
+    } catch (error) {
+      console.error('❌ Error handling /start command:', error);
+      // Продолжаем выполнение - всё равно отправляем приветствие
+    }
+    
+    // Отправляем приветственное сообщение в любом случае
+    // НЕ отправляем здесь, так как это будет сделано в handleMessage
+  }
+
+  /**
+   * Уведомление админа о новом пользователе
+   */
+  private async notifyAdminNewUser(user: any): Promise<void> {
+    if (!this.settings.test_id) return;
+
+    const message = `🆕 Новый пользователь!\n\n` +
+      `👤 ID: ${user.id}\n` +
+      `📱 Telegram ID: ${user.tg_id}\n` +
+      `👋 Имя: ${user.first_name_raw} ${user.last_name_raw}\n` +
+      `🔗 Username: ${user.username ? '@' + user.username : 'не указан'}\n` +
+      `📅 Дата регистрации: ${user.created_at.toLocaleString('ru-RU')}`;
+
+    try {
+      await TelegramService.call(message, this.settings.test_id);
+    } catch (error) {
+      console.error('❌ Failed to notify admin about new user:', error);
+    }
+  }
+
+  private async sendAdminInfo(chatId: number): Promise<void> {
+    if (!this.bot) return;
+
+    const responseText = `⚙️ Настройки бота\n\n` +
+      `🤖 Основной бот: ${this.settings.tg_main_bot || 'не указан'}\n` +
+      `🔘 Кнопка каталога: ${this.settings.bot_btn_title || 'не указана'}\n` +
+      `👥 Кнопка группы: ${this.settings.group_btn_title || 'не указана'}\n` +
+      `🔗 Ссылка на группу: ${this.settings.tg_group || 'не указана'}\n` +
+      `💬 Ссылка на поддержку: ${this.settings.tg_support || 'не указана'}\n` +
+      `📹 ID приветственного видео: ${this.settings.first_video_id || 'не указан'}\n` +
+      `📝 Приветственное сообщение: ${this.settings.preview_msg ? 'настроено' : 'не настроено'}\n\n` +
+      `🔧 Доступные команды:\n` +
+      `/admin - показать эту информацию\n` +
+      `/test - протестировать приветственное сообщение\n` +
+      `📹 Отправьте видео - получить file_id\n` +
+      `🖼 Отправьте фото - получить file_id\n\n` +
+      `💡 Для изменения настроек используйте админку`;
+
+    await this.bot.sendMessage(chatId, responseText);
   }
 
   private async findOrCreateUser(tgChat: any, createIfNotExists: boolean): Promise<any> {
@@ -309,7 +441,11 @@ export class TelegramBotWorker {
 
   private async inputTrackingNumber(msg: TelegramBot.Message): Promise<void> {
     const chatId = msg.chat.id.toString();
-    const userState = this.userStates.get(`user_${chatId}_state`);
+    const userState = await RedisService.getUserState<{
+      order_id: bigint;
+      msg_id?: number;
+      h_msg?: number;
+    }>(`user_${chatId}_state`);
     
     if (!userState?.order_id || !msg.text) return;
 
@@ -369,7 +505,7 @@ export class TelegramBotWorker {
       }
 
       // Очищаем состояние
-      this.userStates.delete(`user_${chatId}_state`);
+      await RedisService.clearUserState(`user_${chatId}_state`);
       
     } catch (error) {
       console.error('Error saving tracking number:', error);
@@ -553,7 +689,7 @@ export class TelegramBotWorker {
     return match ? match[1].trim() : null;
   }
 
-  private saveCache(orderId: string, msgId: number, hMsgId: number, chatId: number): void {
+  private async saveCache(orderId: string, msgId: number, hMsgId: number, chatId: number): Promise<void> {
     const key = `user_${chatId}_state`;
     const state = {
       order_id: BigInt(orderId),
@@ -562,12 +698,8 @@ export class TelegramBotWorker {
       timestamp: Date.now()
     };
     
-    this.userStates.set(key, state);
-    
-    // Автоматически удаляем через TRACK_CACHE_PERIOD
-    setTimeout(() => {
-      this.userStates.delete(key);
-    }, this.TRACK_CACHE_PERIOD);
+    // Сохраняем состояние пользователя в Redis с TTL 5 минут
+    await RedisService.setUserState(key, state, 300);
   }
 
   private async sendFirstMsg(chatId: number): Promise<void> {
@@ -581,61 +713,123 @@ export class TelegramBotWorker {
       
       const caption = (this.settings.preview_msg || 'Добро пожаловать!').replace(/\\n/g, '\n');
       
+      // Пытаемся отправить видео, если есть video_id
       if (this.settings.first_video_id) {
-        await this.bot.sendVideo(chatId, this.settings.first_video_id, {
-          caption,
-          reply_markup: markup
-        });
-      } else {
-        await this.bot.sendMessage(chatId, caption, {
-          reply_markup: markup
-        });
+        try {
+          await this.bot.sendVideo(chatId, this.settings.first_video_id, {
+            caption,
+            reply_markup: markup
+          });
+          console.log(`✅ Welcome video sent to ${chatId}`);
+          return;
+        } catch (videoError) {
+          console.error('❌ Failed to send video, falling back to text message:', videoError);
+          // Продолжаем выполнение, чтобы отправить текстовое сообщение
+        }
       }
+      
+      // Отправляем текстовое сообщение (если видео не настроено или не удалось отправить)
+      await this.bot.sendMessage(chatId, caption, {
+        reply_markup: markup
+      });
+      console.log(`✅ Welcome message sent to ${chatId}`);
+      
     } catch (error) {
       console.error('Error sending first message:', error);
     }
   }
 
   private initializeFirstBtn(): TelegramBot.InlineKeyboardButton[][] {
-    const mainBotUsername = this.settings.tg_main_bot || 'your_bot';
+    // Используем URL нового webapp вместо старого бота
+    const webappUrl = process.env.WEBAPP_URL || 'https://strattera.ngrok.app/webapp';
     
     return [
       [{
-        text: this.settings.bot_btn_title || 'Новый заказ',
-        url: `https://t.me/${mainBotUsername}?startapp`
+        text: this.settings.bot_btn_title || 'Каталог',
+        web_app: { url: webappUrl }
       }],
       [{
         text: this.settings.group_btn_title || 'Наша группа',
-        url: this.settings.tg_group || 'https://t.me/your_group'
+        url: this.settings.tg_group || 'https://t.me/+2rTVT8IxtFozNDY0'
       }],
       [{
         text: 'Задать вопрос',
-        url: this.settings.tg_support || 'https://t.me/support'
+        url: this.settings.tg_support || 'https://t.me/strattera_help'
       }]
     ];
   }
 
   private async savePreviewVideo(msg: TelegramBot.Message): Promise<void> {
-    if (!msg.video || !this.bot) return;
+    if (!this.bot || !msg.video) return;
 
-    const adminIds = this.settings.admin_ids?.split(',') || [];
+    const chatId = msg.chat.id;
+    const video = msg.video;
     
-    if (adminIds.includes(msg.chat.id.toString())) {
-      await this.bot.sendMessage(msg.chat.id, `ID видео:\n${msg.video.file_id}`);
+    // Проверяем, является ли отправитель администратором
+    const adminIds = this.settings.admin_ids?.split(',').map(id => id.trim()) || ['125861752'];
+    const isAdmin = adminIds.includes(chatId.toString());
+    
+    if (isAdmin) {
+      // Отправляем file_id администратору
+      const responseText = `📹 *Видео получено!*\n\n` +
+        `🆔 *File ID:* \`${video.file_id}\`\n` +
+        `📏 *Размер:* ${video.width}x${video.height}\n` +
+        `⏱ *Длительность:* ${video.duration} сек\n` +
+        `📦 *Размер файла:* ${Math.round((video.file_size || 0) / 1024)} KB\n\n` +
+        `💡 *Инструкция:*\n` +
+        `1. Скопируйте File ID выше\n` +
+        `2. Откройте админку → Настройки\n` +
+        `3. Найдите параметр \`first_video_id\`\n` +
+        `4. Вставьте скопированный ID\n` +
+        `5. Сохраните изменения`;
+
+      await this.bot.sendMessage(chatId, responseText, {
+        parse_mode: 'Markdown',
+        reply_to_message_id: msg.message_id
+      });
+      
+      console.log(`📹 Video file_id sent to admin ${chatId}: ${video.file_id}`);
+    } else {
+      // Обычным пользователям отправляем приветственное сообщение
+      await this.sendFirstMsg(chatId);
     }
   }
 
   private async savePhoto(msg: TelegramBot.Message): Promise<void> {
-    if (!msg.photo || msg.photo.length === 0) return;
+    if (!this.bot || !msg.photo) return;
 
-    const tgId = msg.chat.id;
-    const fileId = msg.photo[msg.photo.length - 1].file_id; // Берем самое большое фото
-    const msgId = msg.message_id;
+    const chatId = msg.chat.id;
+    const photos = msg.photo;
     
-    // В продакшене здесь должна быть логика сохранения файла
-    console.log(`📸 Photo received from ${tgId}: ${fileId}`);
+    // Проверяем, является ли отправитель администратором
+    const adminIds = this.settings.admin_ids?.split(',').map(id => id.trim()) || ['125861752'];
+    const isAdmin = adminIds.includes(chatId.toString());
     
-    // TODO: Implement file download and save logic
+    if (isAdmin) {
+      // Получаем фото наилучшего качества (последнее в массиве)
+      const bestPhoto = photos[photos.length - 1];
+      
+      // Отправляем file_id администратору
+      const responseText = `🖼 *Фото получено!*\n\n` +
+        `🆔 *File ID:* \`${bestPhoto.file_id}\`\n` +
+        `📏 *Размер:* ${bestPhoto.width}x${bestPhoto.height}\n` +
+        `📦 *Размер файла:* ${Math.round((bestPhoto.file_size || 0) / 1024)} KB\n\n` +
+        `📋 *Все размеры:*\n` +
+        photos.map((photo, index) => 
+          `${index + 1}. ${photo.width}x${photo.height} - \`${photo.file_id}\``
+        ).join('\n') +
+        `\n\n💡 *Для использования в приветствии рекомендуется наилучшее качество (последний ID)*`;
+
+      await this.bot.sendMessage(chatId, responseText, {
+        parse_mode: 'Markdown',
+        reply_to_message_id: msg.message_id
+      });
+      
+      console.log(`🖼 Photo file_id sent to admin ${chatId}: ${bestPhoto.file_id}`);
+    } else {
+      // Обычным пользователям отправляем приветственное сообщение
+      await this.sendFirstMsg(chatId);
+    }
   }
 
   private async otherMessage(msg: TelegramBot.Message): Promise<void> {

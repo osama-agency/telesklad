@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { IconComponent } from "@/components/webapp/IconComponent";
+import { useTelegramAuth } from "@/context/TelegramAuthContext";
 
 interface FavoriteButtonProps {
   productId: number;
@@ -12,6 +13,7 @@ interface FavoriteButtonProps {
 export function FavoriteButton({ productId, className = "", onRemoved }: FavoriteButtonProps) {
   const [isFavorite, setIsFavorite] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { user, isAuthenticated } = useTelegramAuth();
 
   // Загружаем состояние избранного из localStorage
   useEffect(() => {
@@ -90,6 +92,17 @@ export function FavoriteButton({ productId, className = "", onRemoved }: Favorit
   const handleToggleFavorite = async () => {
     if (isLoading) return;
 
+    // Проверяем аутентификацию
+    if (!isAuthenticated || !user?.tg_id) {
+      console.warn('User not authenticated, using localStorage only');
+      // Если пользователь не аутентифицирован, работаем только с localStorage
+      const newIsFavorite = !isFavorite;
+      setIsFavorite(newIsFavorite);
+      updateLocalStorage(newIsFavorite);
+      triggerHaptic('medium');
+      return;
+    }
+
     setIsLoading(true);
     triggerHaptic('medium');
 
@@ -103,7 +116,10 @@ export function FavoriteButton({ productId, className = "", onRemoved }: Favorit
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ product_id: productId }),
+          body: JSON.stringify({ 
+            product_id: productId,
+            tg_id: user.tg_id 
+          }),
         });
 
         const data = await response.json();
@@ -111,12 +127,13 @@ export function FavoriteButton({ productId, className = "", onRemoved }: Favorit
         if (response.ok && data.success) {
           setIsFavorite(true);
           updateLocalStorage(true);
+          console.log(`✅ Product ${productId} added to favorites for user ${user.tg_id}`);
         } else {
           throw new Error(data.error || 'Ошибка добавления в избранное');
         }
       } else {
         // Удаляем из избранного
-        const response = await fetch(`/api/webapp/favorites?product_id=${productId}`, {
+        const response = await fetch(`/api/webapp/favorites?product_id=${productId}&tg_id=${user.tg_id}`, {
           method: 'DELETE',
         });
 
@@ -125,6 +142,7 @@ export function FavoriteButton({ productId, className = "", onRemoved }: Favorit
         if (response.ok && data.success) {
           setIsFavorite(false);
           updateLocalStorage(false);
+          console.log(`✅ Product ${productId} removed from favorites for user ${user.tg_id}`);
         } else {
           throw new Error(data.error || 'Ошибка удаления из избранного');
         }

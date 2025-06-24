@@ -29,7 +29,11 @@ export async function GET(request: NextRequest) {
 
     if (!productId) {
       console.log('No valid product_id found');
-      return NextResponse.json([]);
+      return NextResponse.json({
+        products: [],
+        total: 0,
+        category_id: categoryId
+      });
     }
 
     // Find the parent category (like Rails logic)
@@ -42,7 +46,11 @@ export async function GET(request: NextRequest) {
 
     if (!parent) {
       console.log('Parent category not found for id:', productId);
-      return NextResponse.json([]);
+      return NextResponse.json({
+        products: [],
+        total: 0,
+        category_id: categoryId
+      });
     }
 
     console.log('Found parent category:', parent.name, 'ancestry:', parent.ancestry);
@@ -65,6 +73,7 @@ export async function GET(request: NextRequest) {
         old_price: true,
         stock_quantity: true,
         ancestry: true,
+        image_url: true
       },
       // Rails sorts by: stock_quantity: :desc, created_at: :desc
       orderBy: [
@@ -99,31 +108,45 @@ export async function GET(request: NextRequest) {
       const productId = Number(product.id);
       const blobKey = imageMap.get(productId);
       
+      // Приоритет image_url из базы, затем из S3
+      let imageUrl = product.image_url;
+      if (!imageUrl && blobKey) {
+        imageUrl = S3Service.getImageUrl(blobKey);
+      }
+      
       return {
         id: productId,
         name: product.name,
         price: Number(product.price || 0),
         old_price: product.old_price ? Number(product.old_price) : undefined,
         stock_quantity: Number(product.stock_quantity),
-        image_url: blobKey ? S3Service.getImageUrl(blobKey) : undefined,
+        image_url: imageUrl,
         image_url_fallback: blobKey ? S3Service.getOldImageUrl(blobKey) : undefined,
       };
     });
 
     console.log('Returning products with images:', transformedProducts.length);
 
-    // Добавляем заголовки кэширования
-    const headers = {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300'
-    };
-
-    return new Response(JSON.stringify(transformedProducts), { status: 200, headers });
+    // Возвращаем в правильном формате для компонентов
+    return NextResponse.json({
+      products: transformedProducts,
+      total: transformedProducts.length,
+      category_id: categoryId,
+      parent_category: {
+        id: productId,
+        name: parent.name
+      }
+    });
 
   } catch (error) {
     console.error('Error fetching products:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch products', details: error instanceof Error ? error.message : String(error) },
+      { 
+        error: 'Failed to fetch products', 
+        details: error instanceof Error ? error.message : String(error),
+        products: [],
+        total: 0
+      },
       { status: 500 }
     );
   }

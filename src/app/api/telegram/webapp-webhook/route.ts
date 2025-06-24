@@ -8,14 +8,13 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('📨 [WEBAPP BOT] Webhook received:', JSON.stringify(body, null, 2));
 
-    // Обрабатываем callback query (нажатие на кнопки заказов)
+    // Обрабатываем callback query (нажатие на кнопки)
     if (body.callback_query) {
       console.log('🔄 [WEBAPP BOT] Processing callback:', body.callback_query.data);
       
-      if (body.callback_query.data.startsWith('order_')) {
-        const worker = TelegramBotWorker.getInstance();
-        await worker.processWebhookUpdate(body);
-      }
+      // Обрабатываем все callback'и через TelegramBotWorker
+      const worker = TelegramBotWorker.getInstance();
+      await worker.processWebhookUpdate(body);
       
       return NextResponse.json({ ok: true });
     }

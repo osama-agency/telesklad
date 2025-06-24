@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { IconComponent } from '@/components/webapp/IconComponent'
+import { PhotoUploader } from './PhotoUploader'
 
 interface ReviewFormProps {
   productId: number
@@ -13,6 +14,7 @@ interface ReviewFormProps {
 export function ReviewForm({ productId, productName, onSuccess, onCancel }: ReviewFormProps) {
   const [rating, setRating] = useState(0)
   const [content, setContent] = useState('')
+  const [photos, setPhotos] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [hoverRating, setHoverRating] = useState(0)
@@ -63,6 +65,7 @@ export function ReviewForm({ productId, productName, onSuccess, onCancel }: Revi
         body: JSON.stringify({
           content: content.trim(),
           rating,
+          photos,
           tg_id: '9999' // В реальном приложении получать из контекста пользователя
         })
       })
@@ -141,6 +144,15 @@ export function ReviewForm({ productId, productName, onSuccess, onCancel }: Revi
           <div className="text-xs text-gray-500 mt-1">
             {content.length}/1000 символов
           </div>
+        </div>
+
+        {/* Загрузка фотографий */}
+        <div className="input-container !mb-4">
+          <PhotoUploader
+            onPhotosChange={setPhotos}
+            maxPhotos={3}
+            disabled={isSubmitting}
+          />
         </div>
 
         {/* Ошибка */}

@@ -1,22 +1,32 @@
 import { TelegramService } from './TelegramService';
+import { AdminTelegramService } from './AdminTelegramService';
 import { prisma } from '@/libs/prismaDb';
 
 interface OrderForReport {
   id: bigint;
   status: number;
   total_amount: number;
+  deliverycost?: number | null;
   tracking_number?: string | null;
   msg_id?: bigint | null;
   shipped_at?: Date | null;
   paid_at?: Date | null;
   created_at: Date;
+  customeraddress?: string | null;
   users: {
     id: bigint;
     tg_id: bigint;
+    first_name?: string | null;
+    last_name?: string | null;
+    middle_name?: string | null;
     first_name_raw?: string | null;
     last_name_raw?: string | null;
     postal_code?: string | null;
     address?: string | null;
+    street?: string | null;
+    home?: string | null;
+    apartment?: string | null;
+    build?: string | null;
     phone_number?: string | null;
   };
   order_items: Array<{
@@ -28,7 +38,10 @@ interface OrderForReport {
     };
   }>;
   bank_cards?: {
-    bank_details?: string | null;
+    id?: bigint;
+    name?: string;
+    fio?: string;
+    number?: string;
   } | null;
 }
 
@@ -72,17 +85,29 @@ export class ReportService {
 
     const user = order.users;
     const orderItemsStr = this.formatOrderItems(order.order_items);
-    const bankDetails = order.bank_cards?.bank_details || 'Реквизиты не указаны';
-    const fullAddress = this.buildFullAddress(user);
+    const bankDetails = order.bank_cards 
+      ? `${order.bank_cards.name}\n${order.bank_cards.fio}\n\`${order.bank_cards.number}\``
+      : 'Карта не настроена';
+    const fullAddress = this.buildFullAddress(order);
 
-    // Используем шаблон как в старом проекте
+    // Формируем состав заказа с доставкой как в рабочем боте
+    let orderComposition = orderItemsStr;
+    const deliveryCost = order.deliverycost || 0;
+    if (deliveryCost > 0) {
+      orderComposition += `\n• Доставка — услуга — ${deliveryCost}₽`;
+    }
+    
+    // Общая сумма к оплате = товары + доставка
+    const totalToPay = Number(order.total_amount) + Number(deliveryCost);
+
+    // Точно копируем формат рабочего бота
     const msg = `🎉 Ваш заказ №${order.id} принят.\n\n` +
       `📌 Проверьте заказ перед оплатой:\n\n` +
-      `Состав заказа:\n${orderItemsStr}\n\n` +
+      `Состав заказа:\n${orderComposition}\n\n` +
       `Данные для доставки:\n👤 ${this.getFullName(user)}\n\n` +
-      `🏠 ${fullAddress}, ${user.postal_code || 'Не указан'}\n\n` +
+      `🏠 ${fullAddress}\n\n` +
       `📞 ${user.phone_number || 'Не указан'}\n\n` +
-      `Сумма к оплате: ${order.total_amount}₽\n\n` +
+      `Сумма к оплате: ${totalToPay}₽\n\n` +
       `✅ Дальнейшие действия:\n` +
       `1. Сделайте перевод:\n` +
       `ВНИМАНИЕ, ОПЛАЧИВАЙТЕ ИМЕННО НА\n${bankDetails}.\n\n` +
@@ -109,14 +134,24 @@ export class ReportService {
 
     const user = order.users;
     const orderItemsStr = this.formatOrderItems(order.order_items);
-    const bankDetails = order.bank_cards?.bank_details || 'Реквизиты не указаны';
-    const fullAddress = this.buildFullAddress(user);
+    const bankDetails = order.bank_cards 
+      ? `${order.bank_cards.name} — ${order.bank_cards.fio} — ${order.bank_cards.number}`
+      : 'Карта не настроена';
+    const fullAddress = this.buildFullAddress(order);
 
-    // Сообщение админу как в старом проекте
+    // Формируем состав заказа с доставкой для админа
+    let orderComposition = orderItemsStr;
+    const deliveryCost = order.deliverycost || 0;
+    if (deliveryCost > 0) {
+      orderComposition += `,\n• Доставка — услуга — ${deliveryCost}₽`;
+    }
+
+    // Сообщение админу как в старом проекте  
+    const totalToPay = Number(order.total_amount) + Number(deliveryCost);
     const adminMsg = `Надо проверить оплату по заказу №${order.id}\n\n` +
-      `Итого отправил клиент: ${order.total_amount}₽\n\n` +
+      `Итого отправил клиент: ${totalToPay}₽\n\n` +
       `Банк: ${bankDetails}\n\n` +
-      `📄 Состав заказа:\n${orderItemsStr}\n\n` +
+      `📄 Состав заказа:\n${orderComposition}\n\n` +
       `📍 Адрес:\n${fullAddress}\n\n` +
       `👤 ФИО:\n${this.getFullName(user)}\n\n` +
       `📱 Телефон:\n${user.phone_number || 'Не указан'}`;
@@ -128,6 +163,7 @@ export class ReportService {
 
     await this.sendReport(order, {
       adminMsg: adminMsg,
+      adminTgId: '125861752', // ID админа Эльдара
       adminMarkup: 'approve_payment',
       userMsg: userMsg,
       userTgId: user.tg_id.toString()
@@ -142,7 +178,7 @@ export class ReportService {
 
     const user = order.users;
     const orderItemsStr = this.formatOrderItems(order.order_items, true);
-    const fullAddress = this.buildFullAddress(user);
+    const fullAddress = this.buildFullAddress(order);
 
     // Сообщение курьеру как в старом проекте
     const courierMsg = `👀 Нужно отправить заказ №${order.id}\n\n` +
@@ -178,7 +214,7 @@ export class ReportService {
 
     const user = order.users;
     const orderItemsStr = this.formatOrderItems(order.order_items);
-    const fullAddress = this.buildFullAddress(user);
+    const fullAddress = this.buildFullAddress(order);
 
     // Сообщение клиенту как в старом проекте
     const clientMsg = `✅ Заказ №${order.id}\n\n` +
@@ -250,11 +286,20 @@ export class ReportService {
     try {
       // Отправляем сообщение админу/курьеру
       if (options.adminMsg) {
-        await TelegramService.call(
-          options.adminMsg,
-          options.adminTgId,
-          { markup: options.adminMarkup }
-        );
+        // Если это сообщение админу (ID 125861752), используем основной бот
+        if (options.adminTgId === '125861752') {
+          await AdminTelegramService.sendToAdmin(
+            options.adminMsg,
+            { markup: options.adminMarkup }
+          );
+        } else {
+          // Для курьера используем обычный TelegramService
+          await TelegramService.call(
+            options.adminMsg,
+            options.adminTgId,
+            { markup: options.adminMarkup }
+          );
+        }
       }
 
       // Удаляем предыдущее сообщение пользователя если есть
@@ -320,12 +365,12 @@ export class ReportService {
   }
 
   /**
-   * Форматирование списка товаров
+   * Форматирование списка товаров как в рабочем боте
    */
   private static formatOrderItems(orderItems: OrderForReport['order_items'], withPrices: boolean = false): string {
     return orderItems.map(item => {
-      const baseStr = `• ${item.products.name} x${item.quantity}`;
-      return withPrices ? `${baseStr} (${item.price}₽)` : baseStr;
+      // Формат как в рабочем боте: "• Atominex 18 mg — 1шт. — 5200₽"
+      return `• ${item.products.name} — ${item.quantity}шт. — ${item.price}₽`;
     }).join('\n');
   }
 
@@ -333,20 +378,30 @@ export class ReportService {
    * Получение полного имени пользователя
    */
   private static getFullName(user: OrderForReport['users']): string {
-    const firstName = user.first_name_raw || '';
-    const lastName = user.last_name_raw || '';
-    return `${firstName} ${lastName}`.trim() || 'Не указано';
+    // Используем основные поля, а не _raw поля
+    const firstName = (user as any).first_name || user.first_name_raw || '';
+    const lastName = (user as any).last_name || user.last_name_raw || '';
+    const middleName = (user as any).middle_name || '';
+    
+    return `${firstName} ${lastName} ${middleName}`.trim() || 'Не указано';
   }
 
   /**
-   * Построение полного адреса
+   * Построение полного адреса как в рабочем боте
    */
-  private static buildFullAddress(user: OrderForReport['users']): string {
+  private static buildFullAddress(order: OrderForReport): string {
+    // Используем customeraddress из заказа если есть
+    if (order.customeraddress) {
+      return order.customeraddress;
+    }
+    
+    // Fallback к адресу пользователя
+    const user = order.users;
     const parts = [];
     
+    // Формируем адрес с индексом как в рабочем боте
+    if (user.postal_code) parts.push(`${user.postal_code}`);
     if (user.address) parts.push(user.address);
-    // В старом проекте адрес строится из нескольких полей, но в новом проекте 
-    // у нас только поле address, поэтому используем его
     
     return parts.join(', ') || 'Адрес не указан';
   }

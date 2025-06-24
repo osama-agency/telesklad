@@ -277,7 +277,7 @@ export function OrdersTable() {
   const OrderProgress = ({ order }: { order: any }) => {
     const steps = [
       { key: 'created', label: 'Создан', date: order.created_at, active: true },
-      { key: 'paid', label: 'Оплачен', date: order.paid_at, active: !!order.paid_at },
+                  { key: 'paid', label: 'Проверка оплаты', date: order.paid_at, active: !!order.paid_at },
       { key: 'shipped', label: 'Отправлен', date: order.shipped_at, active: !!order.shipped_at },
     ];
     

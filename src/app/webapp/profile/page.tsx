@@ -6,6 +6,8 @@ import { IconComponent } from '@/components/webapp/IconComponent';
 import BonusBlock from '../_components/BonusBlock';
 import ActionCards from '../_components/ActionCards';
 import LoadingSpinner from '../_components/LoadingSpinner';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
+import { webAppFetch } from '@/lib/utils/webapp-fetch';
 
 interface AccountTier {
   id: number;
@@ -56,8 +58,6 @@ interface Subscription {
   updated_at: string;
 }
 
-import { useTelegramAuth } from "@/context/TelegramAuthContext";
-
 const ProfilePage: React.FC = () => {
   const { user: authUser, isAuthenticated } = useTelegramAuth();
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
@@ -67,12 +67,12 @@ const ProfilePage: React.FC = () => {
 
   useEffect(() => {
     if (isAuthenticated && authUser?.tg_id) {
-      loadProfileData();
+      loadData();
     }
 
     // Слушаем событие обновления профиля
     const handleProfileUpdate = () => {
-      loadProfileData();
+      loadData();
     };
 
     window.addEventListener('profileUpdated', handleProfileUpdate);
@@ -82,41 +82,30 @@ const ProfilePage: React.FC = () => {
     };
   }, [isAuthenticated, authUser]);
 
-  const loadProfileData = async () => {
+  const loadData = async () => {
+    if (!authUser?.tg_id) return;
+
     try {
-      if (!authUser?.tg_id) return;
-      
       setIsLoading(true);
       
-      // Параллельно загружаем профиль и подписки
       const [profileResponse, subscriptionsResponse] = await Promise.all([
-        fetch(`/api/webapp/profile?tg_id=${authUser.tg_id}`),
-        fetch('/api/webapp/subscriptions')
+        webAppFetch('/api/webapp/profile'),
+        webAppFetch('/api/webapp/subscriptions')
       ]);
 
-      // Проверяем статус ответов перед парсингом JSON
-      if (!profileResponse.ok) {
-        const errorText = await profileResponse.text();
-        console.error('Profile API error:', profileResponse.status, errorText);
-        setError(`Ошибка загрузки профиля: ${profileResponse.status}`);
-        return;
+      if (profileResponse.ok) {
+        const profileData = await profileResponse.json();
+        if (profileData.success) {
+          setProfileData(profileData);
+        }
       }
 
-      const profileData = await profileResponse.json();
-      const subscriptionsData = subscriptionsResponse.ok 
-        ? await subscriptionsResponse.json()
-        : { subscriptions: [] };
-
-      if (profileData.success) {
-        setProfileData(profileData);
-        // API теперь возвращает объект с полем subscriptions
+      if (subscriptionsResponse.ok) {
+        const subscriptionsData = await subscriptionsResponse.json();
         setSubscriptions(subscriptionsData.subscriptions || []);
-      } else {
-        setError(profileData.error || 'Ошибка загрузки профиля');
       }
-    } catch (err) {
-      setError('Ошибка загрузки профиля');
-      console.error('Profile loading error:', err);
+    } catch (error) {
+      console.error('Error loading profile data:', error);
     } finally {
       setIsLoading(false);
     }
@@ -140,7 +129,7 @@ const ProfilePage: React.FC = () => {
         <div className="text-center py-8">
           <div className="text-red-600 mb-4">{error}</div>
           <button 
-            onClick={loadProfileData}
+            onClick={loadData}
             className="btn btn-secondary"
           >
             Попробовать снова

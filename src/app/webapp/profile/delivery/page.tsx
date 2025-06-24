@@ -32,7 +32,19 @@ const DeliveryDataPage: React.FC = () => {
   const loadProfile = async () => {
     try {
       setIsLoadingProfile(true);
-      const response = await fetch('/api/webapp/profile');
+      
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+
+      // Добавляем Telegram initData если доступен
+      if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.initData) {
+        headers['X-Telegram-Init-Data'] = (window as any).Telegram.WebApp.initData;
+      }
+
+      const response = await fetch('/api/webapp/profile', {
+        headers
+      });
       const data = await response.json();
 
       if (data.success) {
@@ -78,11 +90,18 @@ const DeliveryDataPage: React.FC = () => {
     setErrors([]);
 
     try {
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+
+      // Добавляем Telegram initData если доступен
+      if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.initData) {
+        headers['X-Telegram-Init-Data'] = (window as any).Telegram.WebApp.initData;
+      }
+
       const response = await fetch('/api/webapp/profile', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(formData),
       });
 

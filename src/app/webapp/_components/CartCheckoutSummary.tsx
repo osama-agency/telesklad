@@ -123,6 +123,8 @@ export default function CartCheckoutSummary({ onTotalChange, onBonusChange }: Ca
                           itemsTotal >= bonusThreshold && 
                           futureBonus > 0;
 
+
+
   // Уведомляем родительский компонент об изменениях
   useEffect(() => {
     onTotalChange(finalTotal);
@@ -144,7 +146,7 @@ export default function CartCheckoutSummary({ onTotalChange, onBonusChange }: Ca
   };
 
   if (!loyaltyData) {
-    return <div className="animate-pulse h-32 bg-gray-200 rounded"></div>;
+    return <div className="animate-pulse h-32 bg-gray-200 rounded-2xl"></div>;
   }
 
   return (
@@ -159,42 +161,67 @@ export default function CartCheckoutSummary({ onTotalChange, onBonusChange }: Ca
         />
       )}
 
-      {/* Итоговый расчет */}
-      <div className="main-block">
-        <h3 className="mb-4">Итого</h3>
+      {/* Улучшенный блок итогового расчета */}
+      <div className="checkout-summary-card">
+        <div className="summary-header">
+          <div className="summary-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 12L11 14L15 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2"/>
+            </svg>
+          </div>
+          <h3 className="summary-title">Итого</h3>
+        </div>
         
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <div className="price-title">Товары:</div>
-            <div className="font-medium">{itemsTotal}₽</div>
+        <div className="summary-details">
+          <div className="summary-row">
+            <div className="summary-label">
+              <span className="label-icon">🛍️</span>
+              <span>Товары</span>
+            </div>
+            <div className="summary-value">{itemsTotal.toLocaleString('ru-RU')}₽</div>
           </div>
           
           {appliedBonus > 0 && (
-            <div className="flex justify-between">
-              <div className="price-title">Скидка:</div>
-              <div className="font-medium green">-{appliedBonus}₽</div>
+            <div className="summary-row discount-row">
+              <div className="summary-label">
+                <span className="label-icon">🎁</span>
+                <span>Скидка</span>
+              </div>
+              <div className="summary-value discount-value">-{appliedBonus.toLocaleString('ru-RU')}₽</div>
             </div>
           )}
           
-          <div className="flex justify-between">
-            <div className="price-title">Доставка:</div>
-            <div className="font-medium">{deliveryFee}₽</div>
+          <div className="summary-row">
+            <div className="summary-label">
+              <span className="label-icon">🚚</span>
+              <span>Доставка</span>
+            </div>
+            <div className="summary-value">{deliveryFee.toLocaleString('ru-RU')}₽</div>
           </div>
           
-          <hr className="my-3" />
+          <div className="summary-divider"></div>
           
-          <div className="flex justify-between">
-            <div className="price-title font-semibold">Итоговая стоимость:</div>
-            <div className="end-price">{finalTotal}₽</div>
+          <div className="summary-row total-row">
+            <div className="summary-label">
+              <span className="label-icon">💰</span>
+              <span>Итоговая стоимость</span>
+            </div>
+            <div className="summary-total">{finalTotal.toLocaleString('ru-RU')}₽</div>
           </div>
           
           {/* Информация о будущем кэшбеке */}
           {showFutureBonus && (
-            <div className="bonus-user-up mt-3">
-              Начислим кэшбек после оплаты:
-              <span className="price">{futureBonus}₽</span>
+            <div className="future-bonus-card">
+              <div className="bonus-icon">✨</div>
+              <div className="bonus-content">
+                <div className="bonus-text">Начислим кэшбек после оплаты</div>
+                <div className="bonus-amount">{futureBonus.toLocaleString('ru-RU')}₽</div>
+              </div>
             </div>
           )}
+
+
         </div>
       </div>
     </div>

@@ -48,7 +48,7 @@ export function UserInfo() {
   const USER = {
     name: userData?.name || session?.user.name || "Admin User",
     email: userData?.email || session?.user.email || "admin@example.com",
-    image: userData?.image || session?.user?.image || "/images/user/user-01.png",
+    image: userData?.image || session?.user?.image || "/images/user/user-01.svg",
   };
 
   const handleImageLoad = () => {
@@ -66,7 +66,7 @@ export function UserInfo() {
         <div className="relative h-12 w-12">
           {imageLoading && <AvatarSkeleton />}
           <Image
-            src={imageError ? "/images/user/user-01.png" : USER.image}
+            src={imageError ? "/images/user/user-01.svg" : USER.image}
             alt="User Avatar"
             width={48}
             height={48}
