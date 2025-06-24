@@ -43,6 +43,16 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    if (action === 'force_update') {
+      // Принудительное обновление всех шаблонов
+      await TelegramMessageTemplatesService.initializeDefaultTemplates();
+      
+      return NextResponse.json({
+        success: true,
+        message: 'Все шаблоны принудительно обновлены'
+      });
+    }
+
     // Создание/обновление одного шаблона
     const result = await TelegramMessageTemplatesService.setTemplate(key, template, description);
     

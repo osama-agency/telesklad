@@ -1,0 +1,311 @@
+import { RedisService } from './redis.service';
+import { NotificationExecutorService } from './notification-executor.service';
+
+/**
+ * Redis Queue Worker для обработки уведомлений и фоновых задач
+ * ОПТИМИЗИРОВАНО для Upstash Redis (short-lived соединения)
+ */
+export class RedisQueueService {
+  private static isRunning = false;
+  private static pollingInterval = 10000; // 10 секунд (увеличили для serverless)
+  private static queueName = 'notifications';
+  private static processTimeout: NodeJS.Timeout | null = null;
+
+  /**
+   * Запуск обработчика очереди (short-lived)
+   */
+  static async startWorker(): Promise<void> {
+    if (this.isRunning) {
+      console.log('⚠️ Queue worker already running');
+      return;
+    }
+
+    if (!RedisService.isAvailable()) {
+      console.log('⚠️ Redis not available, queue worker disabled');
+      return;
+    }
+
+    this.isRunning = true;
+    console.log('🚀 Starting Redis Queue Worker (Upstash optimized)');
+
+    // Запускаем первую итерацию
+    await this.processSingleIteration();
+    
+    // Планируем следующую итерацию
+    this.scheduleNextIteration();
+  }
+
+  /**
+   * Остановка обработчика очереди
+   */
+  static stopWorker(): void {
+    this.isRunning = false;
+    
+    if (this.processTimeout) {
+      clearTimeout(this.processTimeout);
+      this.processTimeout = null;
+    }
+    
+    console.log('⏹️ Stopping Redis Queue Worker');
+  }
+
+  /**
+   * Планирование следующей итерации
+   */
+  private static scheduleNextIteration(): void {
+    if (!this.isRunning) return;
+    
+    this.processTimeout = setTimeout(async () => {
+      if (this.isRunning) {
+        await this.processSingleIteration();
+        this.scheduleNextIteration();
+      }
+    }, this.pollingInterval);
+  }
+
+  /**
+   * Одна итерация обработки (short-lived)
+   */
+  private static async processSingleIteration(): Promise<void> {
+    try {
+      console.log('🔄 Processing queues iteration...');
+      
+      // Проверяем доступность Redis перед каждой итерацией
+      if (!RedisService.isAvailable()) {
+        console.log('⚠️ Redis unavailable, skipping iteration');
+        return;
+      }
+
+      // Обрабатываем уведомления (короткое соединение)
+      await this.processNotificationQueue();
+      
+      // Обрабатываем аналитику (короткое соединение)
+      await this.processAnalyticsQueue();
+      
+      console.log('✅ Queue iteration completed');
+      
+    } catch (error) {
+      console.error('❌ Queue processing error:', error);
+    }
+  }
+
+  /**
+   * Обработка очереди уведомлений (short-lived)
+   */
+  private static async processNotificationQueue(): Promise<void> {
+    let client = null;
+    
+    try {
+      // Открываем короткое соединение
+      client = RedisService.getClient();
+      if (!client) return;
+
+      // Получаем задачи из очереди
+      const jobs = await this.getNotificationJobs(5); // Меньше задач за раз
+      
+      if (jobs.length === 0) {
+        console.log('📭 No notification jobs in queue');
+        return;
+      }
+
+      console.log(`📨 Processing ${jobs.length} notification jobs`);
+      
+      for (const job of jobs) {
+        try {
+          console.log(`📨 Processing notification job: ${job.id}`);
+          
+          // Обрабатываем уведомление
+          await this.handleNotificationJob(job);
+          
+          // Удаляем задачу из очереди
+          await this.removeNotificationJob(job.id);
+          
+          console.log(`✅ Notification job ${job.id} completed`);
+          
+        } catch (error) {
+          console.error(`❌ Failed to process notification job ${job.id}:`, error);
+          
+          // Увеличиваем счетчик попыток
+          job.retryCount = (job.retryCount || 0) + 1;
+          
+          // Если превышен лимит попыток, удаляем задачу
+          if (job.retryCount >= 3) {
+            await this.removeNotificationJob(job.id);
+            console.log(`❌ Notification job ${job.id} failed after 3 attempts`);
+          } else {
+            // Перепланируем с задержкой
+            await this.rescheduleJob(job);
+            console.log(`🔄 Notification job ${job.id} rescheduled, attempt ${job.retryCount}`);
+          }
+        }
+      }
+      
+    } catch (error) {
+      console.error('❌ Error processing notification queue:', error);
+    }
+    // Соединение автоматически закроется (short-lived)
+  }
+
+  /**
+   * Получение задач уведомлений (оптимизировано для Upstash)
+   */
+  private static async getNotificationJobs(limit: number = 5): Promise<any[]> {
+    try {
+      const client = RedisService.getClient();
+      if (!client) return [];
+
+      // ИСПРАВЛЕНИЕ: Используем LPOP для атомарного получения и удаления задач
+      // Это предотвращает дублирование задач между worker'ами
+      const jobs: any[] = [];
+      
+      for (let i = 0; i < limit; i++) {
+        const jobStr = await client.lpop(this.queueName);
+        if (!jobStr) break; // Очередь пуста
+        
+        try {
+          const job = JSON.parse(jobStr);
+          jobs.push({
+            id: `job_${Date.now()}_${i}`,
+            data: job,
+            retryCount: job.retryCount || 0
+          });
+        } catch (parseError) {
+          console.error('❌ Failed to parse job:', parseError);
+          // Задача уже удалена из очереди, пропускаем
+        }
+      }
+      
+      return jobs;
+      
+    } catch (error) {
+      console.error('❌ Error getting notification jobs:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Удаление задачи уведомления
+   */
+  private static async removeNotificationJob(jobId: string): Promise<void> {
+    try {
+      const client = RedisService.getClient();
+      if (!client) return;
+
+      // Удаляем первый элемент из списка (FIFO)
+      await client.lpop(this.queueName);
+      
+    } catch (error) {
+      console.error('❌ Error removing notification job:', error);
+    }
+  }
+
+  /**
+   * Перепланирование задачи
+   */
+  private static async rescheduleJob(job: any): Promise<void> {
+    try {
+      const client = RedisService.getClient();
+      if (!client) return;
+
+      // Удаляем текущую задачу
+      await client.lpop(this.queueName);
+      
+      // Добавляем обратно в конец очереди с увеличенным счетчиком
+      const rescheduledJob = {
+        ...job.data,
+        retryCount: job.retryCount
+      };
+      
+      await client.rpush(this.queueName, JSON.stringify(rescheduledJob));
+      
+    } catch (error) {
+      console.error('❌ Error rescheduling job:', error);
+    }
+  }
+
+  /**
+   * Обработка задачи уведомления
+   */
+  private static async handleNotificationJob(job: any): Promise<void> {
+    const { type, data } = job.data;
+    
+    switch (type) {
+      case 'payment_reminder':
+        await this.handlePaymentReminder(data);
+        break;
+        
+      case 'bonus_notification':
+        await this.handleBonusNotification(data);
+        break;
+        
+      case 'restock_notification':
+        await this.handleRestockNotification(data);
+        break;
+        
+      case 'order_status_update':
+        await this.handleOrderStatusUpdate(data);
+        break;
+        
+      case 'order_status_change':
+        await this.handleOrderStatusChange(data);
+        break;
+        
+      default:
+        console.warn(`⚠️ Unknown notification type: ${type}`);
+    }
+  }
+
+  /**
+   * Обработка напоминания об оплате
+   */
+  private static async handlePaymentReminder(data: any): Promise<void> {
+    const { orderId, reminderType } = data;
+    
+    const jobData = {
+      order_id: orderId,
+      reminder_type: reminderType
+    };
+    
+    await NotificationExecutorService.executePaymentReminder(Date.now(), jobData);
+  }
+
+  /**
+   * Обработка уведомления о бонусах
+   */
+  private static async handleBonusNotification(data: any): Promise<void> {
+    const { orderId, bonusAmount } = data;
+    
+    const jobData = {
+      order_id: orderId,
+      bonus_amount: bonusAmount
+    };
+    
+    await NotificationExecutorService.executeBonusNotification(Date.now(), jobData);
+  }
+
+  /**
+   * Обработка уведомления о поступлении товара
+   */
+  private static async handleRestockNotification(data: any): Promise<void> {
+    const { productId, userId } = data;
+    
+    const jobData = {
+      product_id: productId,
+      user_id: userId
+    };
+    
+    await NotificationExecutorService.executeRestockNotification(Date.now(), jobData);
+  }
+
+  /**
+   * Обработка обновления статуса заказа
+   */
+  private static async handleOrderStatusUpdate(data: any): Promise<void> {
+    const { orderId, status, userId } = data;
+    
+    // Инкрементируем активность пользователя (short connection)
+    if (userId) {
+      try {
+        const client = RedisService.getClient();
+        if (client) {
+          const key = `activity:${new Date().toISOString().split('T')[0]}:${userId}`

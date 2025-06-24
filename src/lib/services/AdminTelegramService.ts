@@ -1,3 +1,5 @@
+import { TelegramTokenService } from './telegram-token.service';
+
 interface AdminTelegramServiceOptions {
   markup?: string;
   markup_url?: string;
@@ -6,16 +8,15 @@ interface AdminTelegramServiceOptions {
 }
 
 /**
- * AdminTelegramService - сервис для отправки сообщений админу через основной бот
- * Использует токен основного бота: 7612206140:AAHA6sV7VZLyUu0Ua1DAoULiFYehAkAjJK4
+ * AdminTelegramService - сервис для отправки сообщений админу
+ * ВСЕГДА использует @telesklad_bot для админских уведомлений
  */
 export class AdminTelegramService {
-  private static readonly MAIN_BOT_TOKEN = '7612206140:AAHA6sV7VZLyUu0Ua1DAoULiFYehAkAjJK4';
   private static readonly ADMIN_CHAT_ID = '125861752'; // ID Эльдара
   private static readonly MESSAGE_LIMIT = 4090;
 
   /**
-   * Отправить сообщение админу через основной бот
+   * Отправить сообщение админу через @telesklad_bot
    */
   static async sendToAdmin(message: string, options: AdminTelegramServiceOptions = {}): Promise<number | Error> {
     console.log(`📤 AdminTelegramService.sendToAdmin:`, {
@@ -25,6 +26,14 @@ export class AdminTelegramService {
     });
 
     try {
+      // Админские уведомления ВСЕГДА идут в @telesklad_bot
+      const botToken = await TelegramTokenService.getTelegramBotToken();
+      console.log('🔑 AdminTelegramService using TELESKLAD_BOT_TOKEN (@telesklad_bot) for admin notifications');
+
+      if (!botToken) {
+        throw new Error('Bot token not available');
+      }
+
       // Добавляем префикс для разработки
       let finalMessage = message;
       if (process.env.NODE_ENV === 'development') {
@@ -36,7 +45,7 @@ export class AdminTelegramService {
         finalMessage = finalMessage.substring(0, this.MESSAGE_LIMIT - 10) + '...';
       }
 
-      const url = `https://api.telegram.org/bot${this.MAIN_BOT_TOKEN}/sendMessage`;
+      const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
       
       const payload: any = {
         chat_id: this.ADMIN_CHAT_ID,
@@ -60,7 +69,7 @@ export class AdminTelegramService {
       const result = await response.json();
 
       if (result.ok) {
-        console.log(`✅ Message sent to admin via main bot, ID: ${result.result.message_id}`);
+        console.log(`✅ Message sent to admin, ID: ${result.result.message_id}`);
         return result.result.message_id;
       } else {
         console.error('❌ Failed to send message to admin:', result);

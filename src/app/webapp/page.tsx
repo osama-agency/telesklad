@@ -3,7 +3,7 @@
 import { Suspense, useEffect } from "react";
 import { ProductCatalog } from "./_components/ProductCatalog";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
-import Spinner from "@/components/common/Spinner";
+import SkeletonLoading from "./_components/SkeletonLoading";
 
 export default function WebappHomePage() {
   const { user, isLoading, isAuthenticated } = useTelegramAuth();
@@ -25,8 +25,8 @@ export default function WebappHomePage() {
   // Показываем загрузку пока идет аутентификация
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full min-h-[calc(100vh-200px)]">
-        <Spinner size="lg" />
+      <div className="min-h-screen bg-[#F8F9FA]">
+        <SkeletonLoading type="catalog" />
       </div>
     );
   }
@@ -54,8 +54,8 @@ export default function WebappHomePage() {
     <>
       {/* Product Catalog - показываем всегда, как в старом Rails приложении */}
       <Suspense fallback={
-        <div className="flex items-center justify-center h-full min-h-[calc(100vh-200px)]">
-          <Spinner size="lg" />
+        <div className="min-h-screen bg-[#F8F9FA]">
+          <SkeletonLoading type="catalog" />
         </div>
       }>
         <ProductCatalog />

@@ -79,6 +79,7 @@ export class ReportService {
 
   /**
    * Заказ не оплачен - отправляем клиенту реквизиты и кнопку "Я оплатил"
+   * И уведомляем админа о новом заказе
    */
   private static async onUnpaid(order: OrderForReport): Promise<void> {
     console.log(`Order ${order.id} is now unpaid`);
@@ -100,8 +101,8 @@ export class ReportService {
     // Общая сумма к оплате = товары + доставка
     const totalToPay = Number(order.total_amount) + Number(deliveryCost);
 
-    // Точно копируем формат рабочего бота
-    const msg = `🎉 Ваш заказ №${order.id} принят.\n\n` +
+    // Сообщение клиенту - точно копируем формат рабочего бота
+    const userMsg = `🎉 Ваш заказ №${order.id} принят.\n\n` +
       `📌 Проверьте заказ перед оплатой:\n\n` +
       `Состав заказа:\n${orderComposition}\n\n` +
       `Данные для доставки:\n👤 ${this.getFullName(user)}\n\n` +
@@ -114,8 +115,26 @@ export class ReportService {
       `2. Нажмите кнопку «Я оплатил», чтобы мы проверили поступление и отправили ваш заказ.\n\n` +
       `❗️ Если заметили ошибку — нажмите «Изменить заказ».`;
 
+    // Сообщение админу о новом заказе
+    const adminBankDetails = order.bank_cards 
+      ? `${order.bank_cards.name} — ${order.bank_cards.fio} — ${order.bank_cards.number}`
+      : 'Карта не настроена';
+    
+    const adminMsg = `📋 Новый заказ №${order.id} создан!\n\n` +
+      `Сумма заказа: ${totalToPay}₽\n\n` +
+      `Банк: ${adminBankDetails}\n\n` +
+      `📄 Состав заказа:\n${orderComposition.replace(/\n•/g, ',\n•')}\n\n` +
+      `📍 Адрес:\n${fullAddress}\n\n` +
+      `👤 ФИО:\n${this.getFullName(user)}\n\n` +
+      `📱 Телефон:\n${user.phone_number || 'Не указан'}\n\n` +
+      `⏳ Ожидаем оплаты от клиента...`;
+
+    // ИСПРАВЛЕНО: Убираем отправку уведомлений админу о новых заказах
+    // Отправляем только клиенту сообщение с реквизитами для оплаты
     await this.sendReport(order, {
-      userMsg: msg,
+      // adminMsg: adminMsg,  // Закомментировано - админу не нужны уведомления о новых заказах
+      // adminTgId: '125861752',
+      userMsg: userMsg,
       userTgId: user.tg_id.toString(),
       userMarkup: 'i_paid'
     });
@@ -177,19 +196,18 @@ export class ReportService {
     console.log(`Order ${order.id} is being processed. Payment confirmed.`);
 
     const user = order.users;
-    const orderItemsStr = this.formatOrderItems(order.order_items, true);
+    const orderItemsStr = this.formatOrderItems(order.order_items, false); // без цен для курьера
     const fullAddress = this.buildFullAddress(order);
 
-    // Сообщение курьеру как в старом проекте
+    // Сообщение курьеру согласно новому сценарию
     const courierMsg = `👀 Нужно отправить заказ №${order.id}\n\n` +
       `📄 Состав заказа:\n${orderItemsStr}\n\n` +
-      `📍 Адрес:\n\`${fullAddress}\`\n\n` +
-      `📍 Индекс: \`${user.postal_code || 'Не указан'}\`\n\n` +
-      `👤 ФИО:\n\`${this.getFullName(user)}\`\n\n` +
-      `📱 Телефон:\n\`${user.phone_number || 'Не указан'}\`\n\n` +
-      `🌟━━━━━━━━━━━━🌟`;
+      `📍 Адрес:\n${fullAddress}\n\n` +
+      `📍 Индекс: ${user.postal_code || 'Не указан'}\n\n` +
+      `👤 ФИО:\n${this.getFullName(user)}\n\n` +
+      `📱 Телефон:\n${user.phone_number || 'Не указан'}`;
 
-    // Сообщение клиенту как в старом проекте
+    // Сообщение клиенту согласно новому сценарию
     const userMsg = `❤️ Благодарим вас за покупку!\n\n` +
       `🚚 Заказ №${order.id} находится у курьера и готовится к отправке.\n\n` +
       `Как только посылка будет отправлена, мы незамедлительно вышлем вам трек-номер для отслеживания.\n\n` +
@@ -213,30 +231,47 @@ export class ReportService {
     console.log(`Order ${order.id} has been shipped`);
 
     const user = order.users;
-    const orderItemsStr = this.formatOrderItems(order.order_items);
+    const orderItemsStr = this.formatOrderItems(order.order_items, false);
     const fullAddress = this.buildFullAddress(order);
 
-    // Сообщение клиенту как в старом проекте
-    const clientMsg = `✅ Заказ №${order.id}\n\n` +
-      `📦 Посылка отправлена!\n\n` +
-      `Ваш трек-номер: ${order.tracking_number || 'Не указан'}\n\n` +
+    // Сообщение клиенту согласно новому сценарию  
+    const clientMsg = `📦 Отличные новости!\n\n` +
+      `Ваш заказ №${order.id} отправлен.\n` +
+      `Вот ваш трек-номер для отслеживания: ${order.tracking_number || 'Не указан'}\n\n` +
+      `Как только он будет принят транспортной службой, начнёт обновляться статус доставки.\n\n` +
+      `Спасибо за ваш заказ!`;
+
+    // Сообщение курьеру согласно новому сценарию
+    const courierMsg = `Клиент получил номер заказа №${order.id}\n\n` +
       `📄 Состав заказа:\n${orderItemsStr}\n\n` +
       `📍 Адрес:\n${fullAddress}\n\n` +
+      `📍 Индекс: ${user.postal_code || 'Не указан'}\n\n` +
       `👤 ФИО:\n${this.getFullName(user)}\n\n` +
-      `📱 Телефон:\n${user.phone_number || 'Не указан'}`;
+      `📱 Телефон:\n${user.phone_number || 'Не указан'}\n\n` +
+      `📦 Трек-номер: ${order.tracking_number || 'Не указан'}`;
 
-    // Сообщение курьеру как в старом проекте
-    const courierMsg = `✅ Готово! Трек-номер отправлен клиенту.\n\n` +
-      `Трек-номер: ${order.tracking_number || 'Не указан'}\n\n` +
-      `Заказ №${order.id}\n\n` +
-      `Клиент: ${this.getFullName(user)}`;
+    // Формируем URL для отслеживания трек-номера
+    let trackingUrl = '';
+    if (order.tracking_number) {
+      // Если трек-номер начинается с @, то это ссылка
+      if (order.tracking_number.startsWith('@')) {
+        trackingUrl = order.tracking_number.substring(1);
+      } else if (order.tracking_number.startsWith('http')) {
+        trackingUrl = order.tracking_number;
+      } else {
+        // Стандартный трек-номер - используем Почту России
+        trackingUrl = `https://www.pochta.ru/tracking#${order.tracking_number}`;
+      }
+    }
 
     await this.sendReport(order, {
       adminMsg: courierMsg,
       adminTgId: 'courier',
+      adminMarkup: 'resend_tracking',
       userMsg: clientMsg,
       userTgId: user.tg_id.toString(),
-      userMarkup: 'new_order'
+      userMarkup: 'new_order'  // ИСПРАВЛЕНО: заменили track_package на new_order (открывает WebApp)
+      // userMarkupUrl убран - кнопка будет открывать WebApp вместо ссылки на отслеживание
     });
 
     // Планируем запросы отзывов (в реальном проекте нужно использовать очереди)
@@ -282,6 +317,7 @@ export class ReportService {
     userMsg?: string;
     userTgId?: string;
     userMarkup?: string;
+    userMarkupUrl?: string;
   }): Promise<void> {
     try {
       // Отправляем сообщение админу/курьеру
@@ -307,23 +343,26 @@ export class ReportService {
         await this.removePreviousMessage(order.users.tg_id.toString(), order.msg_id.toString());
       }
 
-      // Отправляем сообщение пользователю
+      // Отправляем сообщение пользователю (клиенту)
       if (options.userMsg && options.userTgId) {
-        const msgId = await TelegramService.call(
+        const msgId = await this.sendClientNotification(
           options.userMsg,
           options.userTgId,
-          { markup: options.userMarkup }
+          {
+            markup: options.userMarkup,
+            markup_url: options.userMarkupUrl
+          }
         );
 
-                 // Сохраняем ID сообщения в заказе
-         if (typeof msgId === 'number') {
-           await prisma.orders.update({
-             where: { id: order.id },
-             data: { msg_id: msgId }
-           });
-         } else if (msgId instanceof Error) {
-           await this.notifyAdmin(msgId, order.id.toString());
-         }
+        // Сохраняем ID сообщения в заказе
+        if (typeof msgId === 'number') {
+          await prisma.orders.update({
+            where: { id: order.id },
+            data: { msg_id: msgId }
+          });
+        } else if (msgId instanceof Error) {
+          await this.notifyAdmin(msgId, order.id.toString());
+        }
       }
     } catch (error) {
       console.error('Error in sendReport:', error);
@@ -331,6 +370,139 @@ export class ReportService {
         await this.notifyAdmin(error, order.id.toString());
       }
     }
+  }
+
+  /**
+   * Отправка уведомлений клиентам через правильный бот
+   * В development: всегда @strattera_test_bot
+   * В production: @telesklad_bot
+   */
+  private static async sendClientNotification(
+    message: string,
+    userTgId: string,
+    options: {
+      markup?: string;
+      markup_url?: string;
+    } = {}
+  ): Promise<number | Error> {
+    // В development клиентские уведомления ВСЕГДА идут через @strattera_test_bot
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔄 Forcing client notification through @strattera_test_bot in development');
+      
+      try {
+        // Получаем токен тестового бота
+        const { TelegramTokenService } = await import('./telegram-token.service');
+        const botToken = await TelegramTokenService.getWebappBotToken();
+        
+        if (!botToken) {
+          throw new Error('Webapp bot token not available');
+        }
+        
+        console.log('🔑 ClientNotification using WEBAPP_TELEGRAM_BOT_TOKEN (@strattera_test_bot) for client in development');
+        
+        // Добавляем префикс для разработки
+        const finalMessage = `‼️‼️Development‼️‼️\n\n${message}`;
+        
+        // Формируем клавиатуру если нужно
+        const markup = this.formClientMarkup(options);
+        
+        const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            chat_id: userTgId,
+            text: this.escapeMarkdown(finalMessage),
+            parse_mode: 'MarkdownV2',
+            reply_markup: markup
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.text();
+          throw new Error(`Telegram API error: ${response.status} - ${errorData}`);
+        }
+
+        const result = await response.json();
+        const messageId = result.result.message_id;
+        console.log(`✅ Client message sent to ${userTgId}, ID: ${messageId}`);
+        
+        return messageId;
+        
+      } catch (error) {
+        console.error(`❌ Failed to send client message: ${error}`);
+        return error instanceof Error ? error : new Error('Unknown error');
+      }
+    } else {
+      // В production используем обычную логику
+      return await TelegramService.call(message, userTgId, options);
+    }
+  }
+
+  private static escapeMarkdown(text: string): string {
+    // Удаляем ANSI escape коды и экранируем специальные символы для MarkdownV2
+    return text
+      .replace(/\[[0-9;]*m/g, '') // удаляем ANSI коды
+      .replace(/([-_\[\]()~>#+=|{}.!])/g, '\\$1'); // экранируем спецсимволы
+  }
+
+  private static formClientMarkup(options: { markup?: string; markup_url?: string }): any {
+    if (!options.markup && !options.markup_url) {
+      return undefined;
+    }
+
+    const buttons: any[][] = [];
+    
+    if (options.markup) {
+      // ИСПРАВЛЕНО: Кнопка "Новый заказ" должна открывать WebApp
+      if (options.markup === 'new_order') {
+        buttons.push([{
+          text: this.getButtonText(options.markup),
+          web_app: { url: process.env.WEBAPP_URL || 'https://strattera.ngrok.app/webapp' }
+        }]);
+      } else {
+        // Для остальных кнопок используем callback_data
+        buttons.push([{
+          text: this.getButtonText(options.markup),
+          callback_data: options.markup
+        }]);
+      }
+      
+      if (options.markup === 'i_paid') {
+        buttons.push([{
+          text: 'Изменить заказ',
+          url: `https://t.me/strattera_bot?startapp`
+        }]);
+        buttons.push([{
+          text: 'Задать вопрос',
+          url: 'https://t.me/your_support'
+        }]);
+      }
+    }
+    
+    if (options.markup_url) {
+      buttons.push([{
+        text: 'Отследить посылку',
+        url: options.markup_url
+      }]);
+    }
+    
+    return buttons.length > 0 ? { inline_keyboard: buttons } : undefined;
+  }
+
+  private static getButtonText(markup: string): string {
+    const buttonTexts: { [key: string]: string } = {
+      'i_paid': 'Я оплатил',
+      'approve_payment': 'Оплата пришла',
+      'submit_tracking': 'Привязать трек-номер',
+      'resend_tracking': 'Переотправить трек-номер',
+      'track_package': 'Отследить посылку',
+      'new_order': 'Новый заказ',
+      'mailing': 'Рассылка'
+    };
+    
+    return buttonTexts[markup] || markup;
   }
 
   /**

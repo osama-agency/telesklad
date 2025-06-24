@@ -5,7 +5,7 @@ export const orderStatusTranslations = {
   cancelled: 'Отменён',      // красный #FF4B4B  
   overdue: 'Просрочен',      // жёлтый #FFC732
   processing: 'В обработке',  // синий #5AC8FA
-  unpaid: 'Не оплачен',      // оранжевый #F5A623
+  unpaid: 'Ожидает оплаты',      // оранжевый #F5A623
   
   // Дополнительные статусы
   completed: 'Завершён',
@@ -63,6 +63,6 @@ export const paidOrderStatuses = [
 
 // Список статусов, которые НЕ считаются продажами
 export const unpaidOrderStatuses = [
-  'unpaid',     // не оплачен
+  'unpaid',     // ожидает оплаты
   'overdue'     // просрочен
 ] as const; 

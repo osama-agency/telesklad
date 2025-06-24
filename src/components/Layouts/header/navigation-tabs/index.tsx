@@ -5,15 +5,26 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { useHeaderResponsive } from "@/hooks/useHeaderResponsive";
+import { Package, Truck, ShoppingCart, DollarSign, MessageCircle, Star } from "lucide-react";
+import { ComponentType } from "react";
 
-const tabs = [
+interface Tab {
+  id: string;
+  name: string;
+  shortName: string;
+  compactName: string;
+  path: string;
+  icon: ComponentType<{ className?: string }>;
+}
+
+const tabs: Tab[] = [
   {
     id: "products",
     name: "Товары",
     shortName: "Товары",
     compactName: "Товары",
     path: "/products",
-    icon: "📦"
+    icon: Package
   },
   {
     id: "purchases",
@@ -21,7 +32,7 @@ const tabs = [
     shortName: "Закупки", 
     compactName: "Закупки",
     path: "/purchases",
-    icon: "🚚"
+    icon: Truck
   },
   {
     id: "orders",
@@ -29,7 +40,7 @@ const tabs = [
     shortName: "Заказы",
     compactName: "Заказы",
     path: "/orders-analytics",
-    icon: "🛒"
+    icon: ShoppingCart
   },
   {
     id: "expenses",
@@ -37,7 +48,7 @@ const tabs = [
     shortName: "Расходы",
     compactName: "Расходы",
     path: "/expenses-analytics",
-    icon: "💰"
+    icon: DollarSign
   },
   {
     id: "messages",
@@ -45,7 +56,7 @@ const tabs = [
     shortName: "Чат",
     compactName: "Чат",
     path: "/messages",
-    icon: "💬"
+    icon: MessageCircle
   },
   {
     id: "reviews",
@@ -53,7 +64,7 @@ const tabs = [
     shortName: "Отзывы",
     compactName: "Отзывы",
     path: "/reviews",
-    icon: "⭐"
+    icon: Star
   },
 ];
 
@@ -78,6 +89,7 @@ export function NavigationTabs() {
     }`}>
       {tabs.map((tab, index) => {
         const isActive = pathname === tab.path;
+        const IconComponent = tab.icon;
         
         return (
           <motion.div
@@ -102,9 +114,9 @@ export function NavigationTabs() {
               )}
               title={tab.name} // Всегда показываем полное название в tooltip
             >
-              <span className={`${isSmallDesktop ? 'text-sm' : 'text-base'} transition-all duration-300`}>
-                {tab.icon}
-              </span>
+              <IconComponent 
+                className={`${isSmallDesktop ? 'h-4 w-4' : 'h-5 w-5'} transition-all duration-300`}
+              />
               
               {/* Адаптивное отображение текста */}
               {showFull && (

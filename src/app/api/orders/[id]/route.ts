@@ -140,8 +140,8 @@ export async function PUT(
     };
 
     // Обновляем только переданные поля
-    if (body.status !== undefined) updateData.status = body.status;
-    if (body.total_amount !== undefined) updateData.total_amount = body.total_amount;
+    if (body.status !== undefined) updateData.status = parseInt(body.status);
+    if (body.total_amount !== undefined) updateData.total_amount = parseFloat(body.total_amount);
     if (body.customername !== undefined) updateData.customername = body.customername;
     if (body.customeremail !== undefined) updateData.customeremail = body.customeremail;
     if (body.customerphone !== undefined) updateData.customerphone = body.customerphone;
@@ -150,8 +150,8 @@ export async function PUT(
     if (body.tracking_number !== undefined) updateData.tracking_number = body.tracking_number;
     if (body.paid_at !== undefined) updateData.paid_at = body.paid_at ? new Date(body.paid_at) : null;
     if (body.shipped_at !== undefined) updateData.shipped_at = body.shipped_at ? new Date(body.shipped_at) : null;
-    if (body.bonus !== undefined) updateData.bonus = body.bonus;
-    if (body.deliverycost !== undefined) updateData.deliverycost = body.deliverycost;
+    if (body.bonus !== undefined) updateData.bonus = parseInt(body.bonus);
+    if (body.deliverycost !== undefined) updateData.deliverycost = parseFloat(body.deliverycost);
 
     const updatedOrder = await (prisma as any).orders.update({
       where: { id: BigInt(orderId) },
@@ -218,11 +218,15 @@ export async function DELETE(
     });
 
     if (!existingOrder) {
+      console.log(`❌ Order #${orderId} not found`);
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
+    console.log(`📋 Order #${orderId} found with status: ${existingOrder.status}`);
+
     // Проверяем статус заказа - нельзя удалять отправленные заказы
     if (existingOrder.status === 4) { // статус "Отправлен"
+      console.log(`❌ Cannot delete shipped order #${orderId} with status ${existingOrder.status}`);
       return NextResponse.json({ 
         error: 'Cannot delete shipped order' 
       }, { status: 400 });

@@ -1,5 +1,8 @@
 import { prisma } from '@/libs/prismaDb';
 
+// Типы токенов
+type TokenType = 'tg_token' | 'webapp_telegram_bot_token' | 'telesklad_bot_token';
+
 /**
  * Централизованный сервис для управления токенами Telegram ботов
  */
@@ -7,56 +10,52 @@ export class TelegramTokenService {
   
   // Кэш для токенов (обновляется каждые 5 минут)
   private static tokenCache: {
-    telegram_bot_token?: string;
+    tg_token?: string;
     webapp_telegram_bot_token?: string;
+    telesklad_bot_token?: string;
     lastUpdated: number;
   } = { lastUpdated: 0 };
 
   private static readonly CACHE_TTL = 5 * 60 * 1000; // 5 минут
 
   /**
-   * Получить токен основного Telegram бота (для закупок и админа)
+   * Получить токен бота для закупок и админа (@telesklad_bot)
    */
   static async getTelegramBotToken(): Promise<string | null> {
     try {
-      // В режиме разработки используем тестовый бот
-      if (process.env.NODE_ENV === 'development') {
-        // Сначала пробуем получить webapp_telegram_bot_token для тестирования
-        const webappBotSetting = await prisma.settings.findFirst({
-          where: { variable: 'webapp_telegram_bot_token' }
-        });
-        
-        if (webappBotSetting?.value) {
-          console.log('🧪 Using webapp_telegram_bot_token for development');
-          return webappBotSetting.value;
-        }
+      // Проверяем кэш
+      if (this.isCacheValid() && this.tokenCache.telesklad_bot_token) {
+        return this.tokenCache.telesklad_bot_token;
       }
-      
-      // В продакшене или если нет тестового токена - используем основной
+
+      // Получаем токен из базы данных
       const setting = await prisma.settings.findFirst({
-        where: { variable: 'tg_token' }
+        where: { variable: 'telesklad_bot_token' }
       });
       
       if (setting?.value) {
-        console.log('🔑 Using tg_token from database');
+        console.log('🔑 Using telesklad_bot_token from database');
+        // Обновляем кэш
+        this.updateCache('telesklad_bot_token', setting.value);
         return setting.value;
       }
       
       // Fallback к переменной окружения
-      const envToken = process.env.TELEGRAM_BOT_TOKEN || null;
+      const envToken = process.env.TELESKLAD_BOT_TOKEN || null;
       if (envToken) {
-        console.log('🔑 Using TELEGRAM_BOT_TOKEN from environment variables');
+        console.log('🔑 Using TELESKLAD_BOT_TOKEN from environment variables');
+        // Обновляем кэш
+        this.updateCache('telesklad_bot_token', envToken);
       }
       return envToken;
     } catch (error) {
-      console.warn('⚠️ Failed to get token from database, using environment variable');
-      // Fallback к переменной окружения при ошибке
-      return process.env.TELEGRAM_BOT_TOKEN || null;
+      console.warn('⚠️ Failed to get telesklad bot token:', error);
+      return process.env.TELESKLAD_BOT_TOKEN || null;
     }
   }
 
   /**
-   * Получить токен WebApp бота (для клиентских уведомлений)
+   * Получить токен WebApp бота (@strattera_test_bot для разработки)
    */
   static async getWebappBotToken(): Promise<string | null> {
     try {
@@ -74,7 +73,7 @@ export class TelegramTokenService {
 
       if (setting && setting.value && !this.isMaskedToken(setting.value)) {
         token = setting.value;
-        console.log('🔑 Using webapp_telegram_bot_token from database');
+        console.log('🔑 Using webapp_telegram_bot_token (@strattera_test_bot) from database');
       } else {
         // Fallback к переменной окружения
         token = process.env.WEBAPP_TELEGRAM_BOT_TOKEN || null;
@@ -89,8 +88,40 @@ export class TelegramTokenService {
       return token;
     } catch (error) {
       console.error('❌ Error getting webapp bot token:', error);
-      // Fallback к переменной окружения при ошибке
       return process.env.WEBAPP_TELEGRAM_BOT_TOKEN || null;
+    }
+  }
+
+  /**
+   * Получить токен основного бота (@strattera_bot)
+   * Этот бот работает на Rails сервере, поэтому здесь только для справки
+   */
+  static async getMainBotToken(): Promise<string | null> {
+    try {
+      // Проверяем кэш
+      if (this.isCacheValid() && this.tokenCache.tg_token) {
+        return this.tokenCache.tg_token;
+      }
+
+      // Получаем из базы данных
+      const setting = await prisma.settings.findUnique({
+        where: { variable: 'tg_token' }
+      });
+
+      let token: string | null = null;
+
+      if (setting && setting.value && !this.isMaskedToken(setting.value)) {
+        token = setting.value;
+        console.log('🔑 Using tg_token (@strattera_bot) from database');
+      }
+
+      // Обновляем кэш
+      this.updateCache('tg_token', token);
+
+      return token;
+    } catch (error) {
+      console.error('❌ Error getting main bot token:', error);
+      return null;
     }
   }
 
@@ -287,19 +318,26 @@ export class TelegramTokenService {
 
   // Приватные методы
 
+  /**
+   * Обновить значение в кэше
+   */
+  private static updateCache(tokenType: TokenType, value: string | null): void {
+    this.tokenCache[tokenType] = value || undefined;
+    this.tokenCache.lastUpdated = Date.now();
+  }
+
+  /**
+   * Проверить актуальность кэша
+   */
   private static isCacheValid(): boolean {
     return Date.now() - this.tokenCache.lastUpdated < this.CACHE_TTL;
   }
 
-  private static updateCache(tokenType: 'telegram_bot_token' | 'webapp_telegram_bot_token', token: string | null): void {
-    if (token) {
-      this.tokenCache[tokenType] = token;
-    }
-    this.tokenCache.lastUpdated = Date.now();
-  }
-
-  private static isMaskedToken(value: string): boolean {
-    return value.includes('...') || value.length < 20;
+  /**
+   * Проверить, является ли токен замаскированным
+   */
+  private static isMaskedToken(token: string): boolean {
+    return token.includes('***') || token.includes('...');
   }
 
   private static maskToken(token: string): string {

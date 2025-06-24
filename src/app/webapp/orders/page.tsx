@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { IconComponent } from '@/components/webapp/IconComponent';
 import SkeletonLoading from '../_components/SkeletonLoading';
-import LoadingSpinner from '../_components/LoadingSpinner';
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import Link from 'next/link';
 import { webAppFetch } from '@/lib/utils/webapp-fetch';
@@ -119,9 +118,7 @@ const OrdersPage: React.FC = () => {
     }
   }, [isAuthenticated, authUser]);
 
-  const handleBack = () => {
-    router.back();
-  };
+
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('ru-RU', {
@@ -199,14 +196,11 @@ const OrdersPage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="webapp-container">
-        <div className="header-with-back">
-          <button onClick={handleBack} className="back-btn">
-            <IconComponent name="left" size={20} />
-          </button>
+        <div className="header-simple">
           <h1>История заказов</h1>
         </div>
         
-        <LoadingSpinner variant="page" size="lg" />
+        <SkeletonLoading type="order" count={3} />
       </div>
     );
   }
@@ -214,10 +208,7 @@ const OrdersPage: React.FC = () => {
   if (error) {
     return (
       <div className="webapp-container">
-        <div className="header-with-back">
-          <button onClick={handleBack} className="back-btn">
-            <IconComponent name="left" size={20} />
-          </button>
+        <div className="header-simple">
           <h1>История заказов</h1>
         </div>
         <div className="main-block">
@@ -238,10 +229,7 @@ const OrdersPage: React.FC = () => {
   if (orders.length === 0) {
     return (
       <div className="webapp-container">
-        <div className="header-with-back">
-          <button onClick={handleBack} className="back-btn">
-            <IconComponent name="left" size={20} />
-          </button>
+        <div className="header-simple">
           <h1>История заказов</h1>
         </div>
         
@@ -264,10 +252,7 @@ const OrdersPage: React.FC = () => {
 
   return (
     <div className="webapp-container">
-      <div className="header-with-back">
-        <button onClick={handleBack} className="back-btn">
-          <IconComponent name="left" size={20} />
-        </button>
+      <div className="header-simple">
         <h1>История заказов</h1>
       </div>
 

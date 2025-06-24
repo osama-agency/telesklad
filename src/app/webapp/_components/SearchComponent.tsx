@@ -116,7 +116,63 @@ export function SearchComponent({ onProductSelect }: SearchComponentProps) {
         onClick={query ? clearSearch : undefined}
       >
         {isLoading ? (
-          <div className="simple-spinner" style={{ width: 20, height: 20 }} />
+                      <>
+              <div className="search-skeleton">
+                <div className="skeleton-search-item">
+                  <div className="skeleton-search-image"></div>
+                  <div className="skeleton-search-content">
+                    <div className="skeleton-search-title"></div>
+                    <div className="skeleton-search-price"></div>
+                  </div>
+                </div>
+              </div>
+              <style jsx>{`
+              .search-skeleton {
+                padding: 8px;
+              }
+              .skeleton-search-item {
+                display: flex;
+                gap: 8px;
+                margin-bottom: 8px;
+              }
+              .skeleton-search-image {
+                width: 40px;
+                height: 40px;
+                background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+                background-size: 200% 100%;
+                animation: shimmer 1.5s infinite;
+                border-radius: 6px;
+                flex-shrink: 0;
+              }
+              .skeleton-search-content {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                gap: 4px;
+              }
+              .skeleton-search-title {
+                height: 12px;
+                background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+                background-size: 200% 100%;
+                animation: shimmer 1.5s infinite;
+                border-radius: 3px;
+                width: 80%;
+              }
+              .skeleton-search-price {
+                height: 10px;
+                background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+                background-size: 200% 100%;
+                animation: shimmer 1.5s infinite;
+                border-radius: 3px;
+                width: 50%;
+              }
+              @keyframes shimmer {
+                0% { background-position: -200% 0; }
+                100% { background-position: 200% 0; }
+              }
+            `}</style>
+            </>
         ) : query ? (
           <IconComponent name="close" size={20} />
         ) : (

@@ -76,31 +76,19 @@ export default withAuth(
   {
     callbacks: {
       authorized: ({ token, req }) => {
-        const { pathname } = req.nextUrl;
+        const pathname = req.nextUrl.pathname;
         
-        // Публичные маршруты, доступные без авторизации
-        const publicPaths = [
-          '/login',
-          '/api/auth',
-          '/webapp',
-          '/api/webapp',
-          '/api/telegram/webhook',
-          '/api/telegram/webapp-webhook',
-          '/api/redis',
-          '/_next',
-          '/favicon.ico',
-          '/images',
-          '/api/rates/latest',
-          '/forgot-password'
-        ];
+        // Разрешаем доступ к публичным маршрутам без токена
+        if (pathname.startsWith('/api/webhook') || 
+            pathname.startsWith('/api/telegram') ||
+            pathname.startsWith('/api/webapp') ||
+            pathname.startsWith('/api/redis') ||
+            pathname.startsWith('/api/test-telegram-notifications') ||
+            pathname.startsWith('/api/test-shipped')) {
+          return true;
+        }
         
-        // Проверяем, является ли путь публичным
-        const isPublic = publicPaths.some(path => pathname.startsWith(path));
-        
-        // Если маршрут публичный - разрешаем
-        if (isPublic) return true;
-        
-        // Для всех остальных маршрутов требуем авторизацию
+        // Для всех остальных защищенных маршрутов требуем токен
         return !!token;
       },
     },
@@ -113,17 +101,7 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     * - images in public
-     * - webapp (все webapp маршруты)
-     * - api/webapp (webapp API)
-     * - api/telegram (telegram webhooks)
-     */
-    "/((?!_next/static|_next/image|favicon.ico|public|uploads|webapp|api/webapp|api/telegram).*)",
+    // Защищаем все маршруты кроме публичных
+    "/((?!_next/static|_next/image|favicon.ico|login|signup|reset|verify|webapp).*)",
   ],
 };

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { IconComponent } from "@/components/webapp/IconComponent";
-import LoadingSpinner from "../_components/LoadingSpinner";
+import SkeletonLoading from "../_components/SkeletonLoading";
 import { webAppFetch } from "@/lib/utils/webapp-fetch";
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 
@@ -103,7 +103,7 @@ const SubscriptionsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <LoadingSpinner variant="page" size="lg" />
+      <SkeletonLoading type="subscription" count={4} />
     );
   }
 

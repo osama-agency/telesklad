@@ -92,7 +92,24 @@ export class TelegramService {
   }
 
   private async botReady(): Promise<boolean> {
-    this.bot_token = await TelegramTokenService.getTelegramBotToken();
+    // Определяем, кому отправляется сообщение
+    const isAdminOrCourier = this.chat_id === '125861752' || // админ
+                            this.chat_id === process.env.TELEGRAM_COURIER_ID || // курьер
+                            this.chat_id === '7690550402'; // курьер (хардкод для надежности)
+    
+    if (isAdminOrCourier) {
+      // Админу и курьеру ВСЕГДА отправляем через @telesklad_bot
+      this.bot_token = await TelegramTokenService.getTelegramBotToken();
+      console.log('🔑 Using TELESKLAD_BOT_TOKEN (@telesklad_bot) for admin/courier');
+    } else if (process.env.NODE_ENV === 'development') {
+      // Клиентам в development отправляем через @strattera_test_bot
+      this.bot_token = await TelegramTokenService.getWebappBotToken();
+      console.log('🔑 Using WEBAPP_TELEGRAM_BOT_TOKEN (@strattera_test_bot) for client in development');
+    } else {
+      // В production всем отправляем через @telesklad_bot
+      this.bot_token = await TelegramTokenService.getTelegramBotToken();
+      console.log('🔑 Using TELESKLAD_BOT_TOKEN (@telesklad_bot) for production');
+    }
     
     if (this.bot_token && this.chat_id && this.message) {
       // Добавляем префикс для разработки как в Rails
@@ -167,7 +184,7 @@ export class TelegramService {
   private formKeyboard(): InlineKeyboardButton[][] {
     const buttons: InlineKeyboardButton[][] = [];
     
-    if (this.markup !== 'new_order' && this.markup !== 'mailing') {
+    if (this.markup !== 'new_order' && this.markup !== 'mailing' && this.markup !== 'track_package') {
       if (this.markup) {
         buttons.push([{
           text: this.getButtonText(this.markup),
@@ -179,6 +196,15 @@ export class TelegramService {
         buttons.push(this.orderBtn('Изменить заказ'));
         buttons.push(this.askBtn());
       }
+    } else if (this.markup === 'track_package') {
+      // Кнопка "Отследить посылку" с URL для отслеживания
+      if (this.markup_url) {
+        buttons.push([{
+          text: 'Отследить посылку',
+          url: this.markup_url
+        }]);
+      }
+      buttons.push(this.orderBtn('Новый заказ'));
     } else {
       const textBtn = this.markup === 'mailing' 
         ? (this.settings.bot_btn_title || 'Новый заказ') 
@@ -238,7 +264,9 @@ export class TelegramService {
     const buttonTexts: { [key: string]: string } = {
       'i_paid': 'Я оплатил',
       'approve_payment': 'Оплата пришла',
-      'submit_tracking': 'Привязать трек',
+      'submit_tracking': 'Привязать трек-номер',
+      'resend_tracking': 'Переотправить трек-номер',
+      'track_package': 'Отследить посылку',
       'new_order': 'Новый заказ',
       'mailing': 'Рассылка'
     };

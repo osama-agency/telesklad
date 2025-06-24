@@ -17,7 +17,7 @@ interface DeleteOrderModalProps {
 }
 
 const statusLabels: Record<number, string> = {
-  0: 'Неоплачен',
+  0: 'Ожидает оплаты',
   1: 'Ожидает',
   2: 'На отправке',
   3: 'Готовим к отправке',

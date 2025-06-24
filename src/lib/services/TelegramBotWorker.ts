@@ -82,11 +82,12 @@ export class TelegramBotWorker {
         console.log('📌 Bot settings loaded from database');
       }
       
-      // Получаем токен бота
-      const token = await TelegramTokenService.getTelegramBotToken();
+      // ИСПРАВЛЕНО: Получаем токен WebApp бота для клиентских сообщений
+      // @telesklad_bot используется только для курьера и админа!
+      const token = await TelegramTokenService.getWebappBotToken();
       if (!token) {
-        console.error('❌ tg_token not specified!');
-        throw new Error('Telegram bot token not configured');
+        console.error('❌ webapp_telegram_bot_token not specified!');
+        throw new Error('Webapp Telegram bot token not configured');
       }
 
       // Инициализируем бота БЕЗ polling (только webhook)
@@ -227,6 +228,12 @@ export class TelegramBotWorker {
       case 'submit_tracking':
         await this.handleSubmitTracking(callbackQuery);
         break;
+      case 'track_back':
+        await this.handleTrackBack(callbackQuery);
+        break;
+      case 'resend_tracking':
+        await this.handleResendTracking(callbackQuery);
+        break;
       default:
         // Обработка динамических callback'ов
         if (data.startsWith('order_')) {
@@ -252,8 +259,9 @@ export class TelegramBotWorker {
     }
     
     // Проверка на сообщение от курьера с трек-номером
-    if (chatId.toString() === this.settings.courier_tg_id) {
-      console.log(`📦 Courier message detected from ${chatId}`);
+    const courierTgId = this.settings.courier_tg_id || process.env.TELEGRAM_COURIER_ID || '7690550402';
+    if (chatId.toString() === courierTgId) {
+      console.log(`📦 Courier message detected from ${chatId} (courier_id: ${courierTgId})`);
       await this.inputTrackingNumber(msg);
       return;
     }
@@ -513,30 +521,71 @@ export class TelegramBotWorker {
   }
 
   private async handleIPaid(query: TelegramBot.CallbackQuery): Promise<void> {
-    if (!query.from || !query.message) return;
+    if (!query.message) return;
 
     try {
-      const user = await prisma.users.findUnique({
-        where: { tg_id: BigInt(query.from.id) }
-      });
+      // Проверяем возраст callback (Telegram делает их недействительными через ~48 часов)
+      const callbackAge = Date.now() - (query.message.date * 1000);
+      const MAX_CALLBACK_AGE = 24 * 60 * 60 * 1000; // 24 часа
+      
+      if (callbackAge > MAX_CALLBACK_AGE) {
+        console.warn('⚠️ Callback too old, skipping answerCallbackQuery');
+        
+        // Отправляем новое сообщение пользователю вместо ответа на старый callback
+        if (this.bot) {
+          await this.bot.sendMessage(query.from.id, 
+            'Кнопка устарела. Пожалуйста, оформите новый заказ через каталог.');
+        }
+        return;
+      }
 
-      if (!user) return;
+      // Быстрый ответ пользователю для лучшего UX (с обработкой ошибок)
+      if (this.bot) {
+        try {
+          await this.bot.answerCallbackQuery(query.id, { 
+            text: 'Спасибо! Ожидайте подтверждения оплаты.',
+            show_alert: false // Используем всплывающее уведомление вместо alert
+          });
+        } catch (callbackError: any) {
+          // Если callback слишком старый или недействительный, логируем и продолжаем
+          if (callbackError.message?.includes('query is too old') || 
+              callbackError.message?.includes('query ID is invalid')) {
+            console.warn('⚠️ Callback query expired, continuing without answer');
+          } else {
+            console.error('❌ Error answering callback query:', callbackError);
+          }
+        }
+      }
 
-      // Парсим номер заказа из сообщения
-      const orderNumber = this.parseOrderNumber(query.message.text || '');
-      if (!orderNumber) return;
+      // Параллельно выполняем запросы к базе данных
+      let user = null;
+      let orderNumber = null;
 
-      // Получаем текущий заказ
-      const currentOrder = await prisma.orders.findUnique({
-        where: { id: BigInt(orderNumber) },
-        select: { status: true }
-      });
+      try {
+        [user, orderNumber] = await Promise.all([
+          // Пытаемся получить пользователя из Redis кэша
+          RedisService.getUserData(query.from.id.toString())
+            .then(cachedUser => cachedUser || prisma.users.findUnique({ 
+              where: { tg_id: BigInt(query.from.id) }
+            }))
+            .catch(() => prisma.users.findUnique({ 
+              where: { tg_id: BigInt(query.from.id) }
+            })),
+          // Парсим номер заказа
+          Promise.resolve(this.parseOrderNumber(query.message.text || ''))
+        ]);
+      } catch (fetchError) {
+        console.error('❌ Error fetching user/order data:', fetchError);
+        // Fallback - получаем данные напрямую из БД
+        user = await prisma.users.findUnique({ 
+          where: { tg_id: BigInt(query.from.id) }
+        });
+        orderNumber = this.parseOrderNumber(query.message.text || '');
+      }
 
-      if (!currentOrder) return;
+      if (!user || !orderNumber) return;
 
-      const previousStatus = currentOrder.status;
-
-      // Обновляем статус заказа
+      // Получаем и обновляем заказ одним запросом
       const updatedOrder = await prisma.orders.update({
         where: { id: BigInt(orderNumber) },
         data: {
@@ -555,43 +604,125 @@ export class TelegramBotWorker {
       });
 
       // Отправляем уведомления через ReportService
-      if (previousStatus !== updatedOrder.status) {
-        // Преобразуем msg_id в bigint если оно есть
-        const orderForReport = {
-          ...updatedOrder,
-          msg_id: updatedOrder.msg_id ? BigInt(updatedOrder.msg_id) : null
-        };
-        await ReportService.handleOrderStatusChange(orderForReport as any, previousStatus);
+      const orderForReport = {
+        ...updatedOrder,
+        msg_id: updatedOrder.msg_id ? BigInt(updatedOrder.msg_id) : null
+      };
+      
+      // Пытаемся добавить задачу в Redis очередь для асинхронной обработки
+      let notificationSent = false;
+      if (RedisService.isAvailable()) {
+        try {
+          await RedisQueueService.addNotificationJob('order_status_change', {
+            order: orderForReport,
+            previousStatus: 0 // unpaid
+          });
+          notificationSent = true;
+        } catch (redisError) {
+          console.warn('⚠️ Redis notification failed, using fallback:', redisError);
+        }
+      }
+      
+      // Если Redis недоступен или произошла ошибка, обрабатываем синхронно
+      if (!notificationSent) {
+        await ReportService.handleOrderStatusChange(orderForReport as any, 0);
       }
 
-      // Отвечаем на callback
-      if (this.bot) {
-        await this.bot.answerCallbackQuery(query.id, { text: 'Спасибо! Ожидайте подтверждения оплаты.' });
+      // Кэшируем данные пользователя для будущих запросов (с обработкой ошибок)
+      if (RedisService.isAvailable()) {
+        try {
+          await RedisService.setUserData(query.from.id.toString(), user);
+        } catch (cacheError) {
+          console.warn('⚠️ Failed to cache user data:', cacheError);
+          // Не критично, продолжаем выполнение
+        }
       }
 
     } catch (error) {
-      console.error('Error handling i_paid:', error);
+      console.error('❌ Error handling i_paid:', error);
+      // В случае ошибки отправляем уведомление пользователю
+      if (this.bot && query.id) {
+        await this.bot.answerCallbackQuery(query.id, {
+          text: 'Произошла ошибка. Попробуйте еще раз или обратитесь в поддержку.',
+          show_alert: true
+        });
+      }
     }
   }
 
   private async handleApprovePayment(query: TelegramBot.CallbackQuery): Promise<void> {
-    if (!query.message || !this.bot) return;
+    if (!query.message) return;
 
     try {
+      // Проверяем возраст callback  
+      const callbackAge = Date.now() - (query.message.date * 1000);
+      const MAX_CALLBACK_AGE = 24 * 60 * 60 * 1000; // 24 часа
+      
+      if (callbackAge > MAX_CALLBACK_AGE) {
+        console.warn('⚠️ Admin callback too old, skipping answerCallbackQuery');
+        return;
+      }
+
       const orderNumber = this.parseOrderNumber(query.message.text || '');
       if (!orderNumber) return;
 
-      // Получаем текущий заказ
-      const currentOrder = await prisma.orders.findUnique({
+      // Определяем, от какого бота пришел callback
+      const messageBotId = query.message.from?.id;
+      const isMainBot = messageBotId === 7612206140; // @telesklad_bot
+      
+      console.log(`🤖 Callback from bot ID: ${messageBotId}, isMainBot: ${isMainBot}`);
+
+      // Быстрый ответ на callback через правильный бот (с обработкой ошибок)
+      try {
+        if (isMainBot) {
+          // Отвечаем через основной бот
+          const MAIN_BOT_TOKEN = '7612206140:AAHA6sV7VZLyUu0Ua1DAoULiFYehAkAjJK4';
+          const answerUrl = `https://api.telegram.org/bot${MAIN_BOT_TOKEN}/answerCallbackQuery`;
+          
+          await fetch(answerUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              callback_query_id: query.id,
+              text: 'Подтверждаем оплату...',
+              show_alert: false
+            })
+          });
+        } else if (this.bot) {
+          // Отвечаем через тестовый бот
+          await this.bot.answerCallbackQuery(query.id, { 
+            text: 'Подтверждаем оплату...',
+            show_alert: false 
+          });
+        }
+      } catch (callbackError: any) {
+        if (callbackError.message?.includes('query is too old') || 
+            callbackError.message?.includes('query ID is invalid')) {
+          console.warn('⚠️ Admin callback query expired, continuing without answer');
+        } else {
+          console.error('❌ Error answering admin callback:', callbackError);
+        }
+      }
+
+      // Получаем заказ с полной информацией
+      const order = await prisma.orders.findUnique({
         where: { id: BigInt(orderNumber) },
-        select: { status: true }
+        include: {
+          order_items: {
+            include: {
+              products: true
+            }
+          },
+          users: true,
+          bank_cards: true
+        }
       });
 
-      if (!currentOrder) return;
+      if (!order) return;
 
-      const previousStatus = currentOrder.status;
+      const previousStatus = order.status;
 
-      // Обновляем статус заказа
+      // Обновляем статус заказа на "processing" (в обработке)
       const updatedOrder = await prisma.orders.update({
         where: { id: BigInt(orderNumber) },
         data: {
@@ -605,13 +736,83 @@ export class TelegramBotWorker {
               products: true
             }
           },
-          users: true
+          users: true,
+          bank_cards: true
         }
       });
 
-      // Отправляем уведомления через ReportService
+      // Формируем новый текст сообщения для админа
+      const user = updatedOrder.users;
+      const orderItems = updatedOrder.order_items;
+      
+      const itemsStr = orderItems.map(item => 
+        `• ${item.products.name} — ${item.quantity}шт. — ${item.price}₽`
+      ).join(',\n');
+
+      const bankCardInfo = updatedOrder.bank_cards 
+        ? `${updatedOrder.bank_cards.name} — ${updatedOrder.bank_cards.fio} — ${updatedOrder.bank_cards.number}`
+        : 'Не указана';
+
+      const fullAddress = this.buildFullAddress(user);
+      const fullName = this.getFullName(user);
+
+      const deliveryCost = updatedOrder.deliverycost || 0;
+      const totalPaid = Number(updatedOrder.total_amount) + Number(deliveryCost);
+
+      const newMessageText = `📲 Заказ №${orderNumber} отправлен курьеру!\n\n` +
+        `Итого клиент оплатил: ${totalPaid}₽\n\n` +
+        `Банк: ${bankCardInfo}\n\n` +
+        `📄 Состав заказа:\n${itemsStr}\n\n` +
+        `📍 Адрес:\n${fullAddress}\n\n` +
+        `👤 ФИО:\n${fullName}\n\n` +
+        `📱 Телефон:\n${user.phone_number || 'Не указан'}`;
+
+      // Редактируем сообщение через правильный бот
+      try {
+        let finalMessage = newMessageText;
+        if (process.env.NODE_ENV === 'development') {
+          finalMessage = `‼️‼️Development‼️‼️\n\n${newMessageText}`;
+        }
+
+        if (isMainBot) {
+          // Редактируем через основной бот
+          const MAIN_BOT_TOKEN = '7612206140:AAHA6sV7VZLyUu0Ua1DAoULiFYehAkAjJK4';
+          const editUrl = `https://api.telegram.org/bot${MAIN_BOT_TOKEN}/editMessageText`;
+
+          const editResponse = await fetch(editUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: query.message.chat.id,
+              message_id: query.message.message_id,
+              text: finalMessage,
+              parse_mode: 'HTML',
+              reply_markup: { inline_keyboard: [] } // Убираем кнопки
+            })
+          });
+
+          const editResult = await editResponse.json();
+          if (!editResult.ok) {
+            console.warn('⚠️ Could not edit message via main bot:', editResult);
+          } else {
+            console.log('✅ Message edited successfully via main bot');
+          }
+        } else if (this.bot) {
+          // Редактируем через тестовый бот
+          await this.bot.editMessageText(finalMessage, {
+            chat_id: query.message.chat.id,
+            message_id: query.message.message_id,
+            parse_mode: 'HTML',
+            reply_markup: { inline_keyboard: [] } // Убираем кнопки
+          });
+          console.log('✅ Message edited successfully via test bot');
+        }
+      } catch (editError) {
+        console.warn('⚠️ Could not edit message:', editError);
+      }
+
+      // Отправляем уведомления через ReportService (включая сообщение клиенту)
       if (previousStatus !== updatedOrder.status) {
-        // Преобразуем msg_id в bigint если оно есть
         const orderForReport = {
           ...updatedOrder,
           msg_id: updatedOrder.msg_id ? BigInt(updatedOrder.msg_id) : null
@@ -619,18 +820,201 @@ export class TelegramBotWorker {
         await ReportService.handleOrderStatusChange(orderForReport as any, previousStatus);
       }
 
-      // Удаляем сообщение
-      await this.bot.deleteMessage(query.message.chat.id, query.message.message_id);
-
-      // Отвечаем на callback
-      await this.bot.answerCallbackQuery(query.id, { text: 'Оплата подтверждена!' });
-
     } catch (error) {
       console.error('Error handling approve_payment:', error);
     }
   }
 
   private async handleSubmitTracking(query: TelegramBot.CallbackQuery): Promise<void> {
+    if (!query.message) return;
+
+    try {
+      const text = query.message.text || '';
+      const orderNumber = this.parseOrderNumber(text);
+      const fullName = this.parseFullName(text);
+      
+      if (!orderNumber) return;
+
+      // Определяем, от какого бота пришел callback
+      const messageBotId = query.message.from?.id;
+      const isMainBot = messageBotId === 7612206140; // @telesklad_bot
+      
+      console.log(`🤖 Submit tracking callback from bot ID: ${messageBotId}, isMainBot: ${isMainBot}`);
+
+      // Создаем клавиатуру с кнопкой "Назад"
+      const keyboard = {
+        inline_keyboard: [[
+          {
+            text: "← Назад",
+            callback_data: "track_back"
+          }
+        ]]
+      };
+
+      let msgId: number;
+
+      if (isMainBot) {
+        // Отправляем через основной бот (@telesklad_bot)
+        const MAIN_BOT_TOKEN = '7612206140:AAHA6sV7VZLyUu0Ua1DAoULiFYehAkAjJK4';
+        
+        const response = await fetch(`https://api.telegram.org/bot${MAIN_BOT_TOKEN}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: query.message.chat.id,
+            text: `Введите трек-номер для заказа №${orderNumber}\n\n👤 ФИО:\n${fullName || 'Не указано'}`,
+            reply_markup: keyboard
+          })
+        });
+
+        const result = await response.json();
+        if (result.ok) {
+          msgId = result.result.message_id;
+          console.log('✅ Tracking request sent via main bot');
+        } else {
+          throw new Error(`Main bot API error: ${result.description}`);
+        }
+
+        // Отвечаем на callback через основной бот
+        await fetch(`https://api.telegram.org/bot${MAIN_BOT_TOKEN}/answerCallbackQuery`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            callback_query_id: query.id,
+            text: 'Введите трек-номер в чат'
+          })
+        });
+
+      } else {
+        // Отправляем через тестовый бот (@strattera_test_bot)
+        if (!this.bot) return;
+        
+        const msg = await this.bot.sendMessage(
+          query.message.chat.id,
+          `Введите трек-номер для заказа №${orderNumber}\n\n👤 ФИО:\n${fullName || 'Не указано'}`,
+          { reply_markup: keyboard }
+        );
+        
+        msgId = msg.message_id;
+        console.log('✅ Tracking request sent via test bot');
+
+        // Отвечаем на callback через тестовый бот
+        await this.bot.answerCallbackQuery(query.id, { text: 'Введите трек-номер в чат' });
+      }
+
+      // Сохраняем состояние
+      this.saveCache(orderNumber, query.message.message_id, msgId, query.message.chat.id);
+
+    } catch (error) {
+      console.error('Error handling submit_tracking:', error);
+    }
+  }
+
+  private async handleTrackBack(query: TelegramBot.CallbackQuery): Promise<void> {
+    if (!query.message) return;
+
+    try {
+      const text = query.message.text || '';
+      const orderNumber = this.parseOrderNumber(text);
+      
+      if (!orderNumber) return;
+
+      // Определяем, от какого бота пришел callback
+      const messageBotId = query.message.from?.id;
+      const isMainBot = messageBotId === 7612206140; // @telesklad_bot
+      
+      console.log(`🤖 Track back callback from bot ID: ${messageBotId}, isMainBot: ${isMainBot}`);
+
+      // Получаем детали заказа
+      const order = await prisma.orders.findUnique({
+        where: { id: BigInt(orderNumber) },
+        include: {
+          order_items: {
+            include: {
+              products: true
+            }
+          },
+          users: true
+        }
+      });
+
+      if (!order) return;
+
+      const user = order.users;
+      const orderItemsStr = order.order_items.map(item => 
+        `• ${item.products.name} — ${item.quantity}шт.`
+      ).join('\n');
+      const fullAddress = this.buildFullAddress(user);
+
+      // Восстанавливаем исходное сообщение курьера
+      const courierMsg = `👀 Нужно отправить заказ №${orderNumber}\n\n` +
+        `📄 Состав заказа:\n${orderItemsStr}\n\n` +
+        `📍 Адрес:\n${fullAddress}\n\n` +
+        `📍 Индекс: ${user.postal_code || 'Не указан'}\n\n` +
+        `👤 ФИО:\n${this.getFullName(user)}\n\n` +
+        `📱 Телефон:\n${user.phone_number || 'Не указан'}`;
+
+      const keyboard = {
+        inline_keyboard: [[
+          {
+            text: "Привязать трек-номер",
+            callback_data: "submit_tracking"
+          }
+        ]]
+      };
+
+      if (isMainBot) {
+        // Обновляем сообщение через основной бот (@telesklad_bot)
+        const MAIN_BOT_TOKEN = '7612206140:AAHA6sV7VZLyUu0Ua1DAoULiFYehAkAjJK4';
+        
+        await fetch(`https://api.telegram.org/bot${MAIN_BOT_TOKEN}/editMessageText`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: query.message.chat.id,
+            message_id: query.message.message_id,
+            text: courierMsg,
+            reply_markup: keyboard
+          })
+        });
+
+        // Отвечаем на callback через основной бот
+        await fetch(`https://api.telegram.org/bot${MAIN_BOT_TOKEN}/answerCallbackQuery`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            callback_query_id: query.id,
+            text: 'Возврат к деталям заказа'
+          })
+        });
+
+        console.log('✅ Message updated via main bot');
+
+      } else {
+        // Обновляем сообщение через тестовый бот (@strattera_test_bot)
+        if (!this.bot) return;
+
+        await this.bot.editMessageText(courierMsg, {
+          chat_id: query.message.chat.id,
+          message_id: query.message.message_id,
+          reply_markup: keyboard
+        });
+
+        // Отвечаем на callback через тестовый бот
+        await this.bot.answerCallbackQuery(query.id, { text: 'Возврат к деталям заказа' });
+
+        console.log('✅ Message updated via test bot');
+      }
+
+      // Очищаем состояние пользователя
+      await RedisService.clearUserState(`user_${query.message.chat.id}_state`);
+
+    } catch (error) {
+      console.error('Error handling track_back:', error);
+    }
+  }
+
+  private async handleResendTracking(query: TelegramBot.CallbackQuery): Promise<void> {
     if (!query.message || !this.bot) return;
 
     try {
@@ -640,20 +1024,31 @@ export class TelegramBotWorker {
       
       if (!orderNumber) return;
 
-      // Отправляем сообщение с запросом трек-номера как в старом проекте
+      // Создаем клавиатуру с кнопкой "Назад"
+      const keyboard = {
+        inline_keyboard: [[
+          {
+            text: "← Назад",
+            callback_data: "track_back"
+          }
+        ]]
+      };
+
+      // Отправляем новое сообщение с запросом трек-номера
       const msg = await this.bot.sendMessage(
         query.message.chat.id,
-        `Введите трек-номер для заказа №${orderNumber}\n\n👤 ФИО:\n${fullName || 'Не указано'}\n\nв чат:`
+        `Введите трек-номер для заказа №${orderNumber}\n\n👤 ФИО:\n${fullName || 'Не указано'}`,
+        { reply_markup: keyboard }
       );
 
-      // Сохраняем состояние
+      // Сохраняем состояние (используем ID старого сообщения как основное)
       this.saveCache(orderNumber, query.message.message_id, msg.message_id, query.message.chat.id);
 
       // Отвечаем на callback
-      await this.bot.answerCallbackQuery(query.id, { text: 'Введите трек-номер в чат' });
+      await this.bot.answerCallbackQuery(query.id, { text: 'Введите новый трек-номер' });
 
     } catch (error) {
-      console.error('Error handling submit_tracking:', error);
+      console.error('Error handling resend_tracking:', error);
     }
   }
 
@@ -850,5 +1245,32 @@ export class TelegramBotWorker {
     
     // В продакшене здесь должна быть отправка email об ошибке
     // EmailService.sendError(errorMessage, error.stack);
+  }
+
+  /**
+   * Получение полного имени пользователя
+   */
+  private getFullName(user: any): string {
+    const firstName = user.first_name || user.first_name_raw || '';
+    const lastName = user.last_name || user.last_name_raw || '';
+    const middleName = user.middle_name || '';
+    
+    return `${firstName} ${lastName} ${middleName}`.trim() || 'Не указано';
+  }
+
+  /**
+   * Построение полного адреса пользователя
+   */
+  private buildFullAddress(user: any): string {
+    const parts = [];
+    
+    if (user.postal_code) parts.push(`${user.postal_code}`);
+    if (user.address) parts.push(user.address);
+    if (user.street) parts.push(user.street);
+    if (user.home) parts.push(`дом ${user.home}`);
+    if (user.apartment) parts.push(`кв. ${user.apartment}`);
+    if (user.build) parts.push(`корп. ${user.build}`);
+    
+    return parts.join(', ') || 'Адрес не указан';
   }
 }

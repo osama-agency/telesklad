@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { IconComponent } from "@/components/webapp/IconComponent";
-import LoadingSpinner from "../_components/LoadingSpinner";
+import SkeletonLoading from "../_components/SkeletonLoading";
 
 interface FAQItem {
   id: number;
@@ -83,8 +83,7 @@ export default function SupportPage() {
   if (isLoading) {
     return (
       <div className="webapp-container support-page">
-        <h1>Поддержка</h1>
-        <LoadingSpinner variant="page" size="lg" />
+        <SkeletonLoading type="page" />
       </div>
     );
   }

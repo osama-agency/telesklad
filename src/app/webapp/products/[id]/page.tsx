@@ -7,8 +7,9 @@ import { AddToCartButton } from '@/app/webapp/_components/AddToCartButton'
 import { AnimatedFavoriteButton } from '@/app/webapp/_components/AnimatedFavoriteButton'
 import { ReviewsList } from '@/app/webapp/_components/ReviewsList'
 import { ReviewForm } from '@/app/webapp/_components/ReviewForm'
-import LoadingSpinner from '@/app/webapp/_components/LoadingSpinner'
+import SkeletonLoading from '@/app/webapp/_components/SkeletonLoading'
 import { useTelegramAuth } from '@/context/TelegramAuthContext'
+import { useTelegramBackButton } from '@/app/webapp/_components/TelegramBackButton'
 
 interface Product {
   id: number
@@ -44,6 +45,14 @@ export default function ProductDetailPage() {
   const [reviewsKey, setReviewsKey] = useState(0)
   const [isNotificationEnabled, setIsNotificationEnabled] = useState(false)
   const [isNotificationLoading, setIsNotificationLoading] = useState(false)
+
+  // Кастомная кнопка "Назад" для страницы товара
+  useTelegramBackButton({
+    onBack: () => {
+      // Возвращаемся на главную страницу каталога
+      router.push('/webapp');
+    }
+  });
 
   const checkSubscriptionStatus = async () => {
     if (!user) return;
@@ -195,9 +204,7 @@ export default function ProductDetailPage() {
   if (loading) {
     return (
       <div className="webapp-container">
-        <div className="flex justify-center items-center min-h-screen">
-          <LoadingSpinner />
-        </div>
+        <SkeletonLoading type="product" />
       </div>
     )
   }

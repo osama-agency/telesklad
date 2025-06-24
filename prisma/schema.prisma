@@ -19,6 +19,24 @@ model account_tiers {
   users            users[]
 }
 
+model accounts {
+  id                String          @id
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  telesklad_users   telesklad_users @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
 model active_storage_attachments {
   id                   BigInt               @id @default(autoincrement())
   name                 String               @db.VarChar
@@ -335,6 +353,26 @@ model messages {
   data        Json?
 }
 
+model notification_jobs {
+  id           BigInt    @id @default(autoincrement())
+  job_type     String    @db.VarChar(50)
+  target_id    BigInt
+  user_id      BigInt
+  scheduled_at DateTime
+  executed_at  DateTime?
+  status       String    @default("pending") @db.VarChar(20)
+  retry_count  Int       @default(0)
+  data         Json?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime
+  users        users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([job_type])
+  @@index([scheduled_at, status])
+  @@index([target_id])
+  @@index([user_id])
+}
+
 model order_items {
   id         BigInt    @id @default(autoincrement())
   order_id   BigInt
@@ -408,6 +446,7 @@ model product_subscriptions {
   @@index([user_id], map: "index_product_subscriptions_on_user_id")
 }
 
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model products {
   id                    BigInt                  @id @default(autoincrement())
   name                  String?                 @db.VarChar
@@ -425,11 +464,11 @@ model products {
   brand                 String?                 @db.VarChar
   old_price             Decimal?                @db.Decimal(10, 2)
   is_visible            Boolean?                @default(true)
-  show_in_webapp        Boolean?                @default(true)
   prime_cost            Decimal?                @db.Decimal(10, 2)
   avgpurchasepricerub   Decimal?                @db.Decimal(10, 2)
   avgpurchasepricetry   Decimal?                @db.Decimal(10, 2)
   quantity_in_transit   Int?                    @default(0)
+  show_in_webapp        Boolean?                @default(true)
   image_url             String?                 @db.VarChar(500)
   cart_items            cart_items[]
   favorites             favorites[]
@@ -464,23 +503,23 @@ model purchase_items {
 }
 
 model purchases {
-  id              Int             @id @default(autoincrement())
-  createdat       DateTime        @default(now()) @db.Timestamp(6)
-  updatedat       DateTime        @default(now()) @db.Timestamp(6)
-  totalamount     Float?
-  status          String          @default("draft") @db.VarChar
-  isurgent        Boolean         @default(false)
-  expenses        Float?
-  userid          BigInt
-  exchangerate    Decimal?        @db.Decimal(10, 4)
-  notes           String?
-  supplier        String?
-  totalcost       Decimal?        @db.Decimal(10, 2)
-  totalcosttry    Decimal?        @db.Decimal(10, 2)
-  paiddate        DateTime?       @db.Timestamp(6)
-  paidexchangerate Decimal?       @db.Decimal(10, 4)
-  purchase_items  purchase_items[]
-  users           users           @relation(fields: [userid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_purchases_user")
+  id               Int              @id @default(autoincrement())
+  createdat        DateTime         @default(now()) @db.Timestamp(6)
+  updatedat        DateTime         @default(now()) @db.Timestamp(6)
+  totalamount      Float?
+  status           String           @default("draft") @db.VarChar
+  isurgent         Boolean          @default(false)
+  expenses         Float?
+  userid           BigInt
+  notes            String?
+  paiddate         DateTime?        @db.Timestamp(6)
+  paidexchangerate Decimal?         @db.Decimal(10, 4)
+  exchangerate     Decimal?         @db.Decimal(10, 4)
+  supplier         String?
+  totalcost        Decimal?         @db.Decimal(10, 2)
+  totalcosttry     Decimal?         @db.Decimal(10, 2)
+  purchase_items   purchase_items[]
+  users            users            @relation(fields: [userid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_purchases_user")
 
   @@index([userid], map: "idx_purchases_userid")
 }
@@ -500,10 +539,10 @@ model reviews {
   product_id BigInt
   content    String?
   rating     Int      @default(0)
-  photos     String[] @default([])
   created_at DateTime @db.Timestamp(6)
   updated_at DateTime @db.Timestamp(6)
   approved   Boolean  @default(false)
+  photos     String[] @default([])
   users      users    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rails_74a66bd6c5")
   products   products @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rails_bedd9094d4")
 
@@ -514,6 +553,14 @@ model reviews {
 
 model schema_migrations {
   version String @id @db.VarChar
+}
+
+model sessions {
+  id              String          @id
+  sessionToken    String          @unique
+  userId          String
+  expires         DateTime
+  telesklad_users telesklad_users @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model settings {
@@ -545,6 +592,22 @@ model support_entries {
   answer     String?
   created_at DateTime @db.Timestamp(6)
   updated_at DateTime @db.Timestamp(6)
+}
+
+model telesklad_users {
+  id                   String     @id
+  name                 String?
+  email                String     @unique
+  emailVerified        DateTime?
+  image                String?
+  password             String?
+  role                 String     @default("USER")
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime
+  resetPasswordExpires DateTime?
+  resetPasswordToken   String?    @unique
+  accounts             accounts[]
+  sessions             sessions[]
 }
 
 model tg_media_files {
@@ -596,112 +659,20 @@ model users {
   expenses               expenses[]
   favorites              favorites[]
   mailings               mailings[]
+  notification_jobs      notification_jobs[]
   orders                 orders[]
   product_subscriptions  product_subscriptions[]
   purchases              purchases[]
   reviews                reviews[]
-  notification_jobs      notification_jobs[]
   account_tiers          account_tiers?          @relation(fields: [account_tier_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_rails_f4512aba16")
 
   @@index([account_tier_id], map: "index_users_on_account_tier_id")
 }
 
-model telesklad_user {
-  id                     String    @id @default(cuid())
-  name                   String?
-  email                  String    @unique
-  emailVerified          DateTime?
-  image                  String?
-  password               String?
-  role                   String    @default("USER")
-  resetPasswordToken     String?   @unique
-  resetPasswordExpires   DateTime?
-  createdAt              DateTime  @default(now())
-  updatedAt              DateTime  @updatedAt
-
-  accounts Account[]
-  sessions Session[]
-  auditLogs AuditLog[]
-
-  @@map("telesklad_users")
-}
-
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? @db.Text
-  session_state     String?
-
-  user telesklad_user @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-  @@map("accounts")
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-
-  user telesklad_user @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("sessions")
-}
-
-model VerificationToken {
+model verificationtokens {
   identifier String
   token      String   @unique
   expires    DateTime
 
   @@unique([identifier, token])
-  @@map("verificationtokens")
-}
-
-model notification_jobs {
-  id            BigInt   @id @default(autoincrement())
-  job_type      String   @db.VarChar(50)  // 'payment_reminder_first', 'payment_reminder_final', 'payment_reminder_cancel', 'bonus_notice', 'restock_notice'
-  target_id     BigInt   // order_id, product_id, etc.
-  user_id       BigInt
-  scheduled_at  DateTime
-  executed_at   DateTime?
-  status        String   @default("pending") @db.VarChar(20) // pending, executing, executed, failed, cancelled
-  retry_count   Int      @default(0)
-  data          Json?    // дополнительные данные для задачи
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
-
-  users         users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
-
-  @@index([scheduled_at, status])
-  @@index([job_type])
-  @@index([user_id])
-  @@index([target_id])
-}
-
-model AuditLog {
-  id          String   @id @default(cuid())
-  userId      String
-  action      String
-  resource    String
-  resourceId  String?
-  details     Json?
-  ip          String?
-  userAgent   String?
-  createdAt   DateTime @default(now())
-  
-  user        telesklad_user @relation(fields: [userId], references: [id])
-  
-  @@index([userId])
-  @@index([resource])
-  @@index([createdAt])
-  @@map("audit_logs")
 }

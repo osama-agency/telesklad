@@ -2,15 +2,23 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Bot, Package, ClipboardList, ShoppingCart, DollarSign, MessageCircle, Star } from "lucide-react";
+import { ComponentType } from "react";
 
-const tabs = [
-  { name: "AI Аналитика", href: "/ai", icon: "🤖" },
-  { name: "Товары", href: "/products", icon: "📦" },
-  { name: "Заказы", href: "/orders-analytics", icon: "📋" },
-  { name: "Закупки", href: "/purchases", icon: "🛒" },
-  { name: "Расходы", href: "/expenses-analytics", icon: "💰" },
-  { name: "Сообщения", href: "/messages", icon: "💬" },
-  { name: "Отзывы", href: "/reviews", icon: "⭐" },
+interface Tab {
+  name: string;
+  href: string;
+  icon: ComponentType<{ className?: string }>;
+}
+
+const tabs: Tab[] = [
+  { name: "AI Аналитика", href: "/ai", icon: Bot },
+  { name: "Товары", href: "/products", icon: Package },
+  { name: "Заказы", href: "/orders-analytics", icon: ClipboardList },
+  { name: "Закупки", href: "/purchases", icon: ShoppingCart },
+  { name: "Расходы", href: "/expenses-analytics", icon: DollarSign },
+  { name: "Сообщения", href: "/messages", icon: MessageCircle },
+  { name: "Отзывы", href: "/reviews", icon: Star },
 ];
 
 export default function AnalyticsTabs() {
@@ -22,6 +30,7 @@ export default function AnalyticsTabs() {
         <nav className="flex space-x-8 overflow-x-auto">
           {tabs.map((tab) => {
             const isActive = pathname === tab.href;
+            const IconComponent = tab.icon;
             return (
               <Link
                 key={tab.name}
@@ -35,7 +44,7 @@ export default function AnalyticsTabs() {
                   }
                 `}
               >
-                <span className="text-lg">{tab.icon}</span>
+                <IconComponent className="h-5 w-5" />
                 {tab.name}
               </Link>
             );

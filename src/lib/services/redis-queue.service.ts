@@ -123,6 +123,10 @@ export class RedisQueueService {
         await this.handleOrderStatusUpdate(data);
         break;
         
+      case 'order_status_change':
+        await this.handleOrderStatusChange(data);
+        break;
+        
       default:
         console.warn(`⚠️ Unknown notification type: ${type}`);
     }
@@ -183,6 +187,29 @@ export class RedisQueueService {
     }
     
     console.log(`📋 Order ${orderId} status updated to ${status}`);
+  }
+
+  /**
+   * ИСПРАВЛЕНО: Обработка изменения статуса заказа через ReportService
+   */
+  private static async handleOrderStatusChange(data: any): Promise<void> {
+    try {
+      const { order, previousStatus } = data;
+      
+      console.log(`📋 Processing order status change: ${order.id} (${previousStatus} -> ${order.status})`);
+      
+      // Импортируем ReportService динамически для избежания циклических зависимостей
+      const { ReportService } = await import('./ReportService');
+      
+      // Вызываем ReportService.handleOrderStatusChange
+      await ReportService.handleOrderStatusChange(order, previousStatus);
+      
+      console.log(`✅ Order status change processed for order ${order.id}`);
+      
+    } catch (error) {
+      console.error('❌ Error handling order status change:', error);
+      throw error;
+    }
   }
 
   /**
@@ -321,5 +348,12 @@ export class RedisQueueService {
     } catch (error) {
       console.error('❌ Error clearing queues:', error);
     }
+  }
+
+  /**
+   * Добавить задачу уведомления в очередь (упрощенный метод)
+   */
+  static async addNotificationJob(type: string, data: any): Promise<void> {
+    await this.addNotification(type, data);
   }
 } 

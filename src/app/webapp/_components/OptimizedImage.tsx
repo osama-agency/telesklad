@@ -106,7 +106,30 @@ export const OptimizedImage = memo(function OptimizedImage({
       {/* Индикатор загрузки для критических изображений */}
       {priority && imageLoading && (
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-6 h-6 border-2 border-gray-300 border-t-green-500 rounded-full animate-spin"></div>
+          <div className="image-skeleton">
+        <div className="skeleton-placeholder"></div>
+        <style jsx>{`
+          .image-skeleton {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .skeleton-placeholder {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 50%;
+          }
+          @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+          }
+        `}</style>
+      </div>
         </div>
       )}
     </div>

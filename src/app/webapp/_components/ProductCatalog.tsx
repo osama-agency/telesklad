@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { ProductGrid } from './ProductGrid';
 import { CategoryNavigation } from './CategoryNavigation';
-import LoadingSpinner from './LoadingSpinner';
+import SkeletonLoading from './SkeletonLoading';
 import { webAppFetch } from '@/lib/utils/webapp-fetch';
 import { ProductGridSkeleton } from "./ProductSkeleton";
 

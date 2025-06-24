@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import Sheet from '@/components/ui/sheet';
 import { IconComponent } from '@/components/webapp/IconComponent';
 import DaDataInput from './DaDataInput';
+import { useToast, ToastContainer } from '@/components/ui/toastNotification';
+import { useTelegramAuth } from '@/context/TelegramAuthContext';
 
 interface User {
   first_name: string;
@@ -44,6 +46,8 @@ const DeliveryDataSheet: React.FC<DeliveryDataSheetProps> = ({
   user,
   onSave
 }) => {
+  const { user: authUser } = useTelegramAuth();
+  const { toasts, success, error, removeToast } = useToast();
   const [formData, setFormData] = useState<DeliveryFormData>({
     first_name: '',
     last_name: '',
@@ -84,7 +88,7 @@ const DeliveryDataSheet: React.FC<DeliveryDataSheetProps> = ({
         }
       }
 
-      // Загружаем данные из базы
+      // Загружаем данные из базы (API определит пользователя из Telegram initData)
       const response = await fetch('/api/webapp/profile/delivery');
       let serverData = null;
 
@@ -176,7 +180,7 @@ const DeliveryDataSheet: React.FC<DeliveryDataSheetProps> = ({
       // Сохраняем в localStorage
       localStorage.setItem('webapp_delivery_data', JSON.stringify(formData));
 
-      // Сохраняем в базу данных
+      // Сохраняем в базу данных (API определит пользователя из Telegram initData)
       const response = await fetch('/api/webapp/profile/delivery', {
         method: 'PUT',
         headers: {
@@ -188,6 +192,9 @@ const DeliveryDataSheet: React.FC<DeliveryDataSheetProps> = ({
       const result = await response.json();
 
       if (result.success) {
+        // Показываем уведомление об успешном сохранении
+        success('Успешно сохранено', 'Данные для доставки обновлены');
+        
         // Вызываем callback если он есть
         if (onSave) {
           await onSave(formData);
@@ -208,12 +215,17 @@ const DeliveryDataSheet: React.FC<DeliveryDataSheetProps> = ({
         // Уведомляем другие компоненты об обновлении
         window.dispatchEvent(new Event('profileUpdated'));
         
-        onClose();
+        // Закрываем модальное окно через небольшую задержку для показа toast
+        setTimeout(() => {
+          onClose();
+        }, 500);
       } else {
+        error('Ошибка сохранения', result.error || 'Не удалось сохранить данные');
         setErrors({ general: result.error || 'Ошибка сохранения данных' });
       }
-    } catch (error) {
-      console.error('Error saving delivery data:', error);
+    } catch (err) {
+      console.error('Error saving delivery data:', err);
+      error('Ошибка сохранения', 'Не удалось сохранить данные');
       setErrors({ general: 'Ошибка сохранения данных' });
     } finally {
       setIsLoading(false);
@@ -394,387 +406,213 @@ const DeliveryDataSheet: React.FC<DeliveryDataSheetProps> = ({
   };
 
   return (
-    <Sheet 
-      isOpen={isOpen} 
-      onClose={onClose} 
-      title="Данные для доставки"
-      className="delivery-data-sheet"
-    >
-      {isLoadingData ? (
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Загружаем ваши данные...</p>
-        </div>
-      ) : (
-        <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
-          <div className="form-sections">
-            {/* Общая ошибка */}
-            {errors.general && (
-              <div className="error-banner">
-                <IconComponent name="warning" size={16} />
-                {errors.general}
-              </div>
-            )}
+    <>
+      <Sheet 
+        isOpen={isOpen} 
+        onClose={onClose} 
+        title="Данные для доставки"
+        className="delivery-data-sheet"
+      >
+        {isLoadingData ? (
+          <div className="loading-container">
+            <div className="loading-spinner"></div>
+            <p>Загружаем ваши данные...</p>
+          </div>
+        ) : (
+          <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
+            <div className="form-sections">
+              {/* Общая ошибка */}
+              {errors.general && (
+                <div className="error-banner">
+                  <IconComponent name="warning" size={16} />
+                  {errors.general}
+                </div>
+              )}
 
-            {/* Личные данные */}
-            <div className="form-section">
-              <h4 className="section-title">
-                <IconComponent name="profile" size={18} />
-                Личные данные
-              </h4>
-              
-              <div className="form-group">
-                <label htmlFor="middle_name">Фамилия *</label>
-                <DaDataInput
-                  type="fio"
-                  fioType="surname"
-                  value={formData.middle_name}
-                  onChange={(value: string) => handleInputChange('middle_name', value)}
-                  placeholder="Введите фамилию"
-                  id="middle_name"
-                  className={errors.middle_name ? 'error' : ''}
-                />
-                {errors.middle_name && <span className="error-text">{errors.middle_name}</span>}
+              {/* Личные данные */}
+              <div className="form-section">
+                <h4 className="section-title">
+                  <IconComponent name="profile" size={18} />
+                  Личные данные
+                </h4>
+                
+                <div className="form-group">
+                  <label htmlFor="middle_name">Фамилия *</label>
+                  <DaDataInput
+                    type="fio"
+                    fioType="surname"
+                    value={formData.middle_name}
+                    onChange={(value: string) => handleInputChange('middle_name', value)}
+                    placeholder="Введите фамилию"
+                    id="middle_name"
+                    className={errors.middle_name ? 'error' : ''}
+                  />
+                  {errors.middle_name && <span className="error-text">{errors.middle_name}</span>}
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="first_name">Имя *</label>
+                  <DaDataInput
+                    type="fio"
+                    fioType="name"
+                    value={formData.first_name}
+                    onChange={(value: string) => handleInputChange('first_name', value)}
+                    placeholder="Введите имя"
+                    id="first_name"
+                    className={errors.first_name ? 'error' : ''}
+                  />
+                  {errors.first_name && <span className="error-text">{errors.first_name}</span>}
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="last_name">Отчество</label>
+                  <DaDataInput
+                    type="fio"
+                    fioType="patronymic"
+                    value={formData.last_name}
+                    onChange={(value: string) => handleInputChange('last_name', value)}
+                    placeholder="Введите отчество (необязательно)"
+                    id="last_name"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="phone_number">Телефон *</label>
+                  <input
+                    id="phone_number"
+                    type="tel"
+                    value={formData.phone_number}
+                    onChange={(e) => handleInputChange('phone_number', e.target.value)}
+                    className={`form-input ${errors.phone_number ? 'error' : ''}`}
+                    placeholder="+7 999 999 99 99"
+                  />
+                  {errors.phone_number && <span className="error-text">{errors.phone_number}</span>}
+                </div>
               </div>
 
-              <div className="form-group">
-                <label htmlFor="first_name">Имя *</label>
-                <DaDataInput
-                  type="fio"
-                  fioType="name"
-                  value={formData.first_name}
-                  onChange={(value: string) => handleInputChange('first_name', value)}
-                  placeholder="Введите имя"
-                  id="first_name"
-                  className={errors.first_name ? 'error' : ''}
-                />
-                {errors.first_name && <span className="error-text">{errors.first_name}</span>}
-              </div>
+              {/* Адрес доставки */}
+              <div className="form-section">
+                <h4 className="section-title">
+                  <IconComponent name="right" size={18} />
+                  Адрес доставки
+                </h4>
 
-              <div className="form-group">
-                <label htmlFor="last_name">Отчество</label>
-                <DaDataInput
-                  type="fio"
-                  fioType="patronymic"
-                  value={formData.last_name}
-                  onChange={(value: string) => handleInputChange('last_name', value)}
-                  placeholder="Введите отчество (необязательно)"
-                  id="last_name"
-                />
-              </div>
+                <div className="form-group">
+                  <label htmlFor="address">Город</label>
+                  <DaDataInput
+                    type="address"
+                    addressType="city"
+                    value={formData.address}
+                    onChange={(value: string, data?: any) => handleCityChange(value, data)}
+                    placeholder="Введите город"
+                    id="address"
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="street">Улица *</label>
+                  <DaDataInput
+                    type="address"
+                    addressType="street"
+                    cityContext={formData.address}
+                    value={formData.street}
+                    onChange={(value: string, data?: any) => handleStreetChange(value, data)}
+                    placeholder="Название улицы"
+                    id="street"
+                    className={errors.street ? 'error' : ''}
+                  />
+                  {errors.street && <span className="error-text">{errors.street}</span>}
+                </div>
 
-              <div className="form-group">
-                <label htmlFor="phone_number">Телефон *</label>
-                <input
-                  id="phone_number"
-                  type="tel"
-                  value={formData.phone_number}
-                  onChange={(e) => handleInputChange('phone_number', e.target.value)}
-                  className={`form-input ${errors.phone_number ? 'error' : ''}`}
-                  placeholder="+7 999 999 99 99"
-                />
-                {errors.phone_number && <span className="error-text">{errors.phone_number}</span>}
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="home">Дом *</label>
+                    <input
+                      id="home"
+                      type="text"
+                      value={formData.home}
+                      onChange={(e) => handleHouseChange(e.target.value)}
+                      className={`form-input ${errors.home ? 'error' : ''}`}
+                      placeholder="№ дома"
+                    />
+                    {errors.home && <span className="error-text">{errors.home}</span>}
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="apartment">Квартира</label>
+                    <input
+                      id="apartment"
+                      type="text"
+                      value={formData.apartment}
+                      onChange={(e) => handleInputChange('apartment', e.target.value)}
+                      className="form-input"
+                      placeholder="№ кв."
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="build">Корпус</label>
+                    <input
+                      id="build"
+                      type="text"
+                      value={formData.build}
+                      onChange={(e) => handleInputChange('build', e.target.value)}
+                      className="form-input"
+                      placeholder="№ корпуса"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="postal_code">Индекс</label>
+                    <input
+                      id="postal_code"
+                      type="text"
+                      value={formData.postal_code || ''}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '');
+                        handleInputChange('postal_code', value ? parseInt(value) : 0);
+                      }}
+                      className="form-input"
+                      placeholder="123456"
+                      maxLength={6}
+                    />
+                    {(!formData.postal_code || formData.postal_code === 0) && (
+                      <div className="postal-code-hint">
+                        💡 Индекс определится автоматически при вводе полного адреса
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Адрес доставки */}
-            <div className="form-section">
-              <h4 className="section-title">
-                <IconComponent name="right" size={18} />
-                Адрес доставки
-              </h4>
-
-              <div className="form-group">
-                <label htmlFor="address">Город</label>
-                <DaDataInput
-                  type="address"
-                  addressType="city"
-                  value={formData.address}
-                  onChange={(value: string, data?: any) => handleCityChange(value, data)}
-                  placeholder="Введите город"
-                  id="address"
-                />
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="street">Улица *</label>
-                <DaDataInput
-                  type="address"
-                  addressType="street"
-                  cityContext={formData.address}
-                  value={formData.street}
-                  onChange={(value: string, data?: any) => handleStreetChange(value, data)}
-                  placeholder="Название улицы"
-                  id="street"
-                  className={errors.street ? 'error' : ''}
-                />
-                {errors.street && <span className="error-text">{errors.street}</span>}
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="home">Дом *</label>
-                  <input
-                    id="home"
-                    type="text"
-                    value={formData.home}
-                    onChange={(e) => handleHouseChange(e.target.value)}
-                    className={`form-input ${errors.home ? 'error' : ''}`}
-                    placeholder="№ дома"
-                  />
-                  {errors.home && <span className="error-text">{errors.home}</span>}
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="apartment">Квартира</label>
-                  <input
-                    id="apartment"
-                    type="text"
-                    value={formData.apartment}
-                    onChange={(e) => handleInputChange('apartment', e.target.value)}
-                    className="form-input"
-                    placeholder="№ кв."
-                  />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="build">Корпус</label>
-                  <input
-                    id="build"
-                    type="text"
-                    value={formData.build}
-                    onChange={(e) => handleInputChange('build', e.target.value)}
-                    className="form-input"
-                    placeholder="№ корпуса"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="postal_code">Индекс</label>
-                  <input
-                    id="postal_code"
-                    type="text"
-                    value={formData.postal_code || ''}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, '');
-                      handleInputChange('postal_code', value ? parseInt(value) : 0);
-                    }}
-                    className="form-input"
-                    placeholder="123456"
-                    maxLength={6}
-                  />
-                  {(!formData.postal_code || formData.postal_code === 0) && (
-                    <div className="postal-code-hint">
-                      💡 Индекс определится автоматически при вводе полного адреса
-                    </div>
-                  )}
-                </div>
-              </div>
+            {/* Кнопки действий */}
+            <div className="form-actions">
+              <button
+                type="button"
+                onClick={onClose}
+                className="btn-secondary"
+                disabled={isLoading}
+              >
+                Отмена
+              </button>
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Сохранение...' : 'Сохранить'}
+              </button>
             </div>
-          </div>
-
-          {/* Кнопки действий */}
-          <div className="form-actions">
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-secondary"
-              disabled={isLoading}
-            >
-              Отмена
-            </button>
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Сохранение...' : 'Сохранить'}
-            </button>
-          </div>
-        </form>
-      )}
-
-      <style jsx>{`
-        .loading-container {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 40px 20px;
-          text-align: center;
-        }
-
-        .loading-spinner {
-          width: 32px;
-          height: 32px;
-          border: 3px solid #f3f3f3;
-          border-top: 3px solid #48C928;
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-          margin-bottom: 16px;
-        }
-
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-
-        .error-banner {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          background: #FEF2F2;
-          border: 1px solid #FECACA;
-          color: #DC2626;
-          padding: 12px 16px;
-          border-radius: 8px;
-          margin-bottom: 16px;
-          font-size: 14px;
-        }
-
-        .form-sections {
-          display: flex;
-          flex-direction: column;
-          gap: 24px;
-        }
-
-        .form-section {
-          background: #F9FAFB;
-          border-radius: 12px;
-          padding: 16px;
-        }
-
-        .section-title {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 16px;
-          font-weight: 600;
-          color: #374151;
-          margin-bottom: 16px;
-        }
-
-        .form-group {
-          margin-bottom: 16px;
-        }
-
-        .form-group:last-child {
-          margin-bottom: 0;
-        }
-
-        .form-row {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 12px;
-        }
-
-        label {
-          display: block;
-          font-size: 14px;
-          font-weight: 500;
-          color: #374151;
-          margin-bottom: 6px;
-        }
-
-        .form-input {
-          width: 100%;
-          padding: 12px 16px;
-          border: 1px solid #D1D5DB;
-          border-radius: 8px;
-          font-size: 16px;
-          background: white;
-          transition: border-color 0.2s;
-        }
-
-        .form-input:focus {
-          outline: none;
-          border-color: #48C928;
-          box-shadow: 0 0 0 3px rgba(72, 201, 40, 0.1);
-        }
-
-        .form-input.error {
-          border-color: #EF4444;
-        }
-
-          .error-text {
-    display: block;
-    color: #EF4444;
-    font-size: 12px;
-    margin-top: 4px;
-  }
-
-  .postal-code-hint {
-    font-size: 12px;
-    color: #6B7280;
-    margin-top: 4px;
-    font-style: italic;
-  }
-
-        .form-actions {
-          display: flex;
-          gap: 12px;
-          margin-top: 24px;
-          padding-top: 16px;
-          border-top: 1px solid #F3F4F6;
-        }
-
-        .btn-secondary {
-          flex: 1;
-          padding: 12px 16px;
-          border: 1px solid #D1D5DB;
-          background: white;
-          color: #374151;
-          border-radius: 8px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .btn-secondary:hover:not(:disabled) {
-          background: #F9FAFB;
-          border-color: #9CA3AF;
-        }
-
-        .btn-primary {
-          flex: 1;
-          padding: 12px 16px;
-          border: none;
-          background: #48C928;
-          color: white;
-          border-radius: 8px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .btn-primary:hover:not(:disabled) {
-          background: #3AA120;
-        }
-
-        .btn-primary:disabled,
-        .btn-secondary:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        /* Адаптивность */
-        @media (max-width: 640px) {
-          .form-row {
-            grid-template-columns: 1fr;
-          }
-          
-          .form-section {
-            padding: 12px;
-          }
-          
-          .form-actions {
-            flex-direction: column;
-          }
-        }
-      `}</style>
-    </Sheet>
+          </form>
+        )}
+      </Sheet>
+      
+      {/* Toast уведомления */}
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+    </>
   );
 };
 

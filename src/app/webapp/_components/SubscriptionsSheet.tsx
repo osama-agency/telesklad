@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Sheet from '@/components/ui/sheet';
 import { IconComponent } from '@/components/webapp/IconComponent';
-import LoadingSpinner from './LoadingSpinner';
+import SkeletonLoading from './SkeletonLoading';
 import toast from 'react-hot-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 
@@ -190,8 +190,7 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
         </div>
       ) : isLoading ? (
         <div className="loading-container">
-          <LoadingSpinner variant="default" size="lg" />
-          <p>Загружаем ваши подписки...</p>
+          <SkeletonLoading type="subscription" count={3} />
         </div>
       ) : error ? (
         <div className="error-container">

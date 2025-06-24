@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { CartItemComponent } from "../_components/CartItemComponent";
 import { IconComponent } from "@/components/webapp/IconComponent";
-import LoadingSpinner from "../_components/LoadingSpinner";
+import SkeletonLoading from "../_components/SkeletonLoading";
 import DeliveryForm from "../_components/DeliveryForm";
 import CartCheckoutSummary from "../_components/CartCheckoutSummary";
 import { useTelegramBackButton } from "../_components/TelegramBackButton";
@@ -390,8 +390,7 @@ export default function CartPage() {
   if (isLoading) {
     return (
       <div className="webapp-container cart-page">
-        <h1>Корзина</h1>
-        <LoadingSpinner variant="page" size="lg" />
+        <SkeletonLoading type="cart" />
       </div>
     );
   }

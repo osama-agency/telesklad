@@ -10,9 +10,12 @@ import { CartSummary } from "./_components/CartSummary";
 import { BottomNavigation } from "./_components/BottomNavigation";
 import { SearchComponent } from "./_components/SearchComponent";
 import { TelegramAuthProvider } from "@/context/TelegramAuthContext";
+import { FavoritesProvider, useFavorites } from "@/context/FavoritesContext";
+import { TelegramBackButton } from "./_components/TelegramBackButton";
 
-export default function WebappLayout({ children }: PropsWithChildren) {
+function WebappLayoutInner({ children }: PropsWithChildren) {
   const pathname = usePathname();
+  const { hasFavorites } = useFavorites();
   
   // Определяем класс страницы на основе пути
   const getPageClass = () => {
@@ -26,8 +29,15 @@ export default function WebappLayout({ children }: PropsWithChildren) {
   // Определяем нужно ли показывать нижнее меню (скрываем на странице корзины)
   const shouldShowBottomNavigation = !pathname.startsWith("/webapp/cart");
   
-  // Определяем нужно ли показывать поиск (скрываем на странице корзины)
-  const shouldShowSearch = !pathname.startsWith("/webapp/cart");
+  // Определяем нужно ли показывать поиск
+  const shouldShowSearch = pathname === "/webapp" || 
+    (pathname.startsWith("/webapp/favorites") && hasFavorites);
+  
+  console.log('🔍 Layout search logic:', { 
+    pathname, 
+    hasFavorites, 
+    shouldShowSearch 
+  });
 
   return (
     <>
@@ -48,7 +58,10 @@ export default function WebappLayout({ children }: PropsWithChildren) {
         }}
       />
       
-      <TelegramAuthProvider>
+      <>
+        {/* Глобальная кнопка "Назад" от Telegram SDK */}
+        <TelegramBackButton />
+        
         <div className={`webapp-container ${getPageClass()}`} style={{
           minHeight: '100vh',
           backgroundColor: '#f9f9f9'
@@ -71,7 +84,17 @@ export default function WebappLayout({ children }: PropsWithChildren) {
           {/* Fixed bottom navigation - скрываем на странице корзины */}
           {shouldShowBottomNavigation && <BottomNavigation />}
         </div>
-      </TelegramAuthProvider>
+      </>
     </>
   );
-} 
+}
+
+export default function WebappLayout({ children }: PropsWithChildren) {
+  return (
+    <TelegramAuthProvider>
+      <FavoritesProvider>
+        <WebappLayoutInner>{children}</WebappLayoutInner>
+      </FavoritesProvider>
+    </TelegramAuthProvider>
+  );
+}

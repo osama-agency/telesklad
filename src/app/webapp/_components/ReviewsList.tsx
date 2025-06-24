@@ -112,7 +112,60 @@ export function ReviewsList({ productId, onReviewCreate }: ReviewsListProps) {
       <div className="card-block">
         <div className="title-card">Отзывы</div>
         <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#48C928]"></div>
+                      <div className="skeleton-loading-reviews">
+              <div className="skeleton-review-item">
+                <div className="skeleton-review-avatar"></div>
+                <div className="skeleton-review-content">
+                  <div className="skeleton-review-name"></div>
+                  <div className="skeleton-review-text"></div>
+                </div>
+              </div>
+            </div>
+            <style jsx>{`
+              .skeleton-loading-reviews {
+                padding: 16px;
+              }
+              .skeleton-review-item {
+                display: flex;
+                gap: 12px;
+                margin-bottom: 16px;
+              }
+              .skeleton-review-avatar {
+                width: 40px;
+                height: 40px;
+                background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+                background-size: 200% 100%;
+                animation: shimmer 1.5s infinite;
+                border-radius: 50%;
+                flex-shrink: 0;
+              }
+              .skeleton-review-content {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+              }
+              .skeleton-review-name {
+                height: 14px;
+                width: 100px;
+                background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+                background-size: 200% 100%;
+                animation: shimmer 1.5s infinite;
+                border-radius: 4px;
+              }
+              .skeleton-review-text {
+                height: 12px;
+                width: 80%;
+                background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+                background-size: 200% 100%;
+                animation: shimmer 1.5s infinite;
+                border-radius: 4px;
+              }
+              @keyframes shimmer {
+                0% { background-position: -200% 0; }
+                100% { background-position: 200% 0; }
+              }
+            `}</style>
         </div>
       </div>
     )

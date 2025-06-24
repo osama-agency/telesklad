@@ -13,13 +13,44 @@ export interface ToastProps {
 }
 
 const Toast = ({ id, type, title, message, duration = 5000, onClose }: ToastProps) => {
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose(id);
-    }, duration);
+  const [isMobile, setIsMobile] = useState(false);
+  const [progress, setProgress] = useState(100);
+  const [isPaused, setIsPaused] = useState(false);
+  const [dragX, setDragX] = useState(0);
 
-    return () => clearTimeout(timer);
-  }, [id, duration, onClose]);
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    let progressTimer: NodeJS.Timeout;
+
+    if (!isPaused) {
+      timer = setTimeout(() => {
+        onClose(id);
+      }, duration * (progress / 100));
+
+      // Прогресс-бар анимация
+      progressTimer = setInterval(() => {
+        setProgress(prev => {
+          const newProgress = prev - (100 / (duration / 100));
+          return newProgress <= 0 ? 0 : newProgress;
+        });
+      }, 100);
+    }
+
+    return () => {
+      if (timer) clearTimeout(timer);
+      if (progressTimer) clearInterval(progressTimer);
+    };
+  }, [id, duration, onClose, isPaused, progress]);
 
   const getIcon = () => {
     switch (type) {
@@ -55,36 +86,36 @@ const Toast = ({ id, type, title, message, duration = 5000, onClose }: ToastProp
     switch (type) {
       case 'success':
         return {
-          bg: 'bg-green-50 dark:bg-green-900/20',
-          border: 'border-green-200 dark:border-green-800',
-          icon: 'text-green-600 dark:text-green-400',
-          title: 'text-green-800 dark:text-green-200',
-          message: 'text-green-600 dark:text-green-300'
+          bg: 'bg-emerald-50/90 dark:bg-emerald-900/30',
+          border: 'border-emerald-200/60 dark:border-emerald-700/50',
+          icon: 'text-emerald-600 dark:text-emerald-400',
+          title: 'text-emerald-900 dark:text-emerald-100',
+          message: 'text-emerald-700 dark:text-emerald-200'
         };
       case 'error':
         return {
-          bg: 'bg-red-50 dark:bg-red-900/20',
-          border: 'border-red-200 dark:border-red-800',
-          icon: 'text-red-600 dark:text-red-400',
-          title: 'text-red-800 dark:text-red-200',
-          message: 'text-red-600 dark:text-red-300'
+          bg: 'bg-rose-50/90 dark:bg-rose-900/30',
+          border: 'border-rose-200/60 dark:border-rose-700/50',
+          icon: 'text-rose-600 dark:text-rose-400',
+          title: 'text-rose-900 dark:text-rose-100',
+          message: 'text-rose-700 dark:text-rose-200'
         };
       case 'warning':
         return {
-          bg: 'bg-yellow-50 dark:bg-yellow-900/20',
-          border: 'border-yellow-200 dark:border-yellow-800',
-          icon: 'text-yellow-600 dark:text-yellow-400',
-          title: 'text-yellow-800 dark:text-yellow-200',
-          message: 'text-yellow-600 dark:text-yellow-300'
+          bg: 'bg-amber-50/90 dark:bg-amber-900/30',
+          border: 'border-amber-200/60 dark:border-amber-700/50',
+          icon: 'text-amber-600 dark:text-amber-400',
+          title: 'text-amber-900 dark:text-amber-100',
+          message: 'text-amber-700 dark:text-amber-200'
         };
       case 'info':
       default:
         return {
-          bg: 'bg-blue-50 dark:bg-blue-900/20',
-          border: 'border-blue-200 dark:border-blue-800',
-          icon: 'text-blue-600 dark:text-blue-400',
-          title: 'text-blue-800 dark:text-blue-200',
-          message: 'text-blue-600 dark:text-blue-300'
+          bg: 'bg-sky-50/90 dark:bg-sky-900/30',
+          border: 'border-sky-200/60 dark:border-sky-700/50',
+          icon: 'text-sky-600 dark:text-sky-400',
+          title: 'text-sky-900 dark:text-sky-100',
+          message: 'text-sky-700 dark:text-sky-200'
         };
     }
   };
@@ -93,38 +124,91 @@ const Toast = ({ id, type, title, message, duration = 5000, onClose }: ToastProp
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -50, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -50, scale: 0.95 }}
-      transition={{ type: "spring", duration: 0.3 }}
-      className={`max-w-sm w-full ${styles.bg} ${styles.border} border rounded-lg shadow-lg p-4`}
-    >
-      <div className="flex items-start">
-        <div className={`flex-shrink-0 ${styles.icon}`}>
-      {getIcon()}
-        </div>
-        <div className="ml-3 w-0 flex-1">
-          <p className={`text-sm font-medium ${styles.title}`}>
-            {title}
-          </p>
-          {message && (
-            <p className={`mt-1 text-sm ${styles.message}`}>
-              {message}
-            </p>
-          )}
-        </div>
-        <div className="ml-4 flex-shrink-0 flex">
-      <button
-            onClick={() => onClose(id)}
-            className={`inline-flex ${styles.icon} hover:opacity-75 transition-opacity`}
+      initial={{ 
+        opacity: 0, 
+        x: isMobile ? 0 : 100, 
+        y: isMobile ? -50 : 0, 
+        scale: 0.95 
+      }}
+      animate={{ 
+        opacity: 1, 
+        x: 0, 
+        y: 0, 
+        scale: 1 
+      }}
+      exit={{ 
+        opacity: 0, 
+        x: isMobile ? 0 : 100, 
+        y: isMobile ? -50 : 0, 
+        scale: 0.95 
+      }}
+            transition={{ 
+        type: "spring", 
+        duration: 0.4, 
+        bounce: 0.3 
+      }}
+      drag={isMobile ? "x" : false}
+      dragConstraints={{ left: -100, right: 100 }}
+      onDrag={(event, info) => {
+        setDragX(info.offset.x);
+        if (Math.abs(info.offset.x) > 50) {
+          setIsPaused(true);
+        }
+      }}
+      onDragEnd={(event, info) => {
+        if (Math.abs(info.offset.x) > 100) {
+          onClose(id);
+        } else {
+          setDragX(0);
+          setIsPaused(false);
+        }
+      }}
+      style={{ x: dragX }}
+      className={`relative w-full ${styles.bg} ${styles.border} border rounded-xl shadow-xl backdrop-blur-sm p-4 pointer-events-auto overflow-hidden cursor-pointer select-none`}
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
       >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-    </div>
-      </div>
-    </motion.div>
+        <div className="flex items-start gap-3">
+          <div className={`flex-shrink-0 ${styles.icon} mt-0.5`}>
+            {getIcon()}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className={`text-sm font-semibold ${styles.title} leading-tight`}>
+              {title}
+            </p>
+            {message && (
+              <p className={`mt-1 text-sm ${styles.message} leading-relaxed break-words`}>
+                {message}
+              </p>
+            )}
+          </div>
+          <div className="flex-shrink-0">
+            <button
+              onClick={() => onClose(id)}
+              className={`inline-flex items-center justify-center w-6 h-6 rounded-md ${styles.icon} hover:opacity-75 hover:bg-black/5 dark:hover:bg-white/10 transition-all duration-200`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        
+        {/* Прогресс-бар */}
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/10 dark:bg-white/10 rounded-b-xl overflow-hidden">
+          <motion.div
+            className={`h-full ${
+              type === 'success' ? 'bg-emerald-500 dark:bg-emerald-400' :
+              type === 'error' ? 'bg-rose-500 dark:bg-rose-400' :
+              type === 'warning' ? 'bg-amber-500 dark:bg-amber-400' :
+              'bg-sky-500 dark:bg-sky-400'
+            }`}
+            initial={{ width: '100%' }}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.1, ease: 'linear' }}
+          />
+        </div>
+      </motion.div>
   );
 };
 
@@ -136,13 +220,25 @@ interface ToastContainerProps {
 
 export const ToastContainer = ({ toasts, onClose }: ToastContainerProps) => {
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-2">
-      <AnimatePresence>
-        {toasts.map((toast) => (
-          <Toast key={toast.id} {...toast} onClose={onClose} />
-        ))}
-      </AnimatePresence>
-    </div>
+    <>
+      {/* Desktop и Tablet версия - справа */}
+      <div className="hidden sm:block fixed top-4 right-4 z-[9999] space-y-3 w-80 max-w-sm pointer-events-none">
+        <AnimatePresence mode="popLayout">
+          {toasts.map((toast) => (
+            <Toast key={toast.id} {...toast} onClose={onClose} />
+          ))}
+        </AnimatePresence>
+      </div>
+
+      {/* Mobile версия - сверху по центру */}
+      <div className="sm:hidden fixed top-4 left-4 right-4 z-[9999] space-y-3 pointer-events-none">
+        <AnimatePresence mode="popLayout">
+          {toasts.map((toast) => (
+            <Toast key={toast.id} {...toast} onClose={onClose} />
+          ))}
+        </AnimatePresence>
+      </div>
+    </>
   );
 };
 

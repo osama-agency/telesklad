@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Settings, Mail, Bell, Globe, Star, FileText, Package, User } from "lucide-react";
+import { Settings, Mail, Bell, Globe, Star, FileText, Package, User, Check, Info, AlertTriangle } from "lucide-react";
 import BonusLogsTable from '@/components/BonusLogs/BonusLogsTable';
 import StockLogsTable from '@/components/StockLogs/StockLogsTable';
 import ManageFAQModal from '@/components/Modals/ManageFAQModal';
 import PageSkeleton from '@/components/common/PageSkeleton';
+import { useToast, ToastContainer } from '@/components/ui/toastNotification';
 
 interface SettingsData {
   settings: Record<string, string>;
@@ -43,6 +44,7 @@ export default function SettingsPage() {
   const [settingsData, setSettingsData] = useState<SettingsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const { toasts, success, error: showError, removeToast } = useToast();
 
   // Загружаем настройки при монтировании
   useEffect(() => {
@@ -80,13 +82,22 @@ export default function SettingsPage() {
           ...prev!,
           ...newSettings
         }));
-        alert('Настройки успешно сохранены!');
+        success(
+          'Настройки сохранены!',
+          'Все изменения успешно применены и вступили в силу'
+        );
       } else {
-        alert('Ошибка сохранения настроек');
+        showError(
+          'Ошибка сохранения',
+          'Не удалось сохранить настройки. Попробуйте еще раз'
+        );
       }
-    } catch (error) {
-      console.error('Ошибка сохранения настроек:', error);
-      alert('Ошибка сохранения настроек');
+    } catch (err) {
+      console.error('Ошибка сохранения настроек:', err);
+      showError(
+        'Ошибка соединения',
+        'Проверьте подключение к интернету и попробуйте снова'
+      );
     } finally {
       setSaving(false);
     }
@@ -166,48 +177,70 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#1E293B] dark:text-white mb-2">Настройки</h1>
-          <p className="text-[#64748B] dark:text-gray-400">Управление настройками системы и конфигурацией</p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Улучшенный Header */}
+        <div className="mb-8 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 backdrop-blur-xl bg-opacity-80">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] text-transparent bg-clip-text mb-2">
+                Настройки
+              </h1>
+              <p className="text-[#64748B] dark:text-gray-400 max-w-2xl">
+                Управление настройками системы и конфигурацией. Здесь вы можете настроить все аспекты работы платформы.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-r from-[#1A6DFF]/10 to-[#00C5FF]/10 flex items-center justify-center">
+                <Settings className="h-6 w-6 text-[#1A6DFF] dark:text-[#00C5FF]" />
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="flex gap-8">
-          {/* Sidebar */}
-          <div className="w-64 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 h-fit">
-            <nav className="space-y-2">
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Улучшенный Sidebar */}
+          <div className="lg:w-72 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 h-fit backdrop-blur-xl bg-opacity-80">
+            <nav className="space-y-1.5">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-all duration-300 ${
-                      activeTab === tab.id
-                        ? "bg-gradient-to-r from-[#1A6DFF]/10 to-[#00C5FF]/10 text-[#1A6DFF] dark:text-[#00C5FF] border border-[#1A6DFF]/30 dark:border-[#00C5FF]/30"
-                        : "text-[#374151] dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 hover:border-[#1A6DFF]/20 dark:hover:border-[#1A6DFF]/30"
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-300 group relative ${
+                      isActive
+                        ? "bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] text-white shadow-lg shadow-blue-500/20"
+                        : "text-[#374151] dark:text-gray-300 hover:bg-gradient-to-r hover:from-[#1A6DFF]/5 hover:to-[#00C5FF]/5"
                     }`}
                   >
-                    <Icon size={20} />
+                    <Icon size={20} className={`transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} />
                     <span className="font-medium">{tab.label}</span>
+                    {isActive && (
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                    )}
                   </button>
                 );
               })}
             </nav>
           </div>
 
-          {/* Content */}
-          <div className="flex-1">
-            {renderTabContent()}
+          {/* Улучшенный Content */}
+          <div className="flex-1 min-w-0">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 backdrop-blur-xl bg-opacity-80 transition-all duration-300">
+              {renderTabContent()}
+            </div>
           </div>
         </div>
       </div>
+      
+      {/* Toast Container */}
+      <ToastContainer toasts={toasts} onClose={removeToast} />
     </div>
   );
 }
 
-// Компонент системных настроек
+// Улучшенный компонент системных настроек
 function SystemSettings({ data, onSave, saving }: { 
   data: SettingsData; 
   onSave: (newSettings: Partial<SettingsData>) => Promise<void>; 
@@ -234,85 +267,92 @@ function SystemSettings({ data, onSave, saving }: {
 
     await onSave({ settings });
   };
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-      <h2 className="text-xl font-semibold text-[#1E293B] dark:text-white mb-6">Системные настройки</h2>
-      
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-[#374151] dark:text-gray-300 mb-2">
-            Название магазина
-          </label>
-          <input
-            type="text"
-            value={formData.shop_name}
-            onChange={(e) => setFormData(prev => ({ ...prev, shop_name: e.target.value }))}
-            className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-[#1E293B] dark:text-white focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20 transition-all"
-          />
-        </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-[#374151] dark:text-gray-300 mb-2">
-              Минимальная сумма заказа (₽)
-            </label>
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <label className="block">
+            <span className="text-[#1E293B] dark:text-white font-medium">Название магазина</span>
             <input
-              type="number"
-              value={formData.min_order_amount}
-              onChange={(e) => setFormData(prev => ({ ...prev, min_order_amount: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-[#1E293B] dark:text-white focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20 transition-all"
+              type="text"
+              value={formData.shop_name}
+              onChange={(e) => setFormData(prev => ({ ...prev, shop_name: e.target.value }))}
+              className="mt-1 block w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-[#1E293B] dark:text-white focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20 transition-all duration-300"
+              placeholder="Введите название магазина"
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-[#374151] dark:text-gray-300 mb-2">
-              Стоимость доставки (₽)
-            </label>
-            <input
-              type="number"
-              value={formData.delivery_price}
-              onChange={(e) => setFormData(prev => ({ ...prev, delivery_price: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-[#1E293B] dark:text-white focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20 transition-all"
-            />
-          </div>
+          </label>
+
+          <label className="block">
+            <span className="text-[#1E293B] dark:text-white font-medium">Минимальная сумма заказа</span>
+            <div className="mt-1 relative">
+              <input
+                type="number"
+                value={formData.min_order_amount}
+                onChange={(e) => setFormData(prev => ({ ...prev, min_order_amount: e.target.value }))}
+                className="block w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 pl-4 pr-12 py-3 text-[#1E293B] dark:text-white focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20 transition-all duration-300"
+                placeholder="1000"
+              />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#64748B] dark:text-gray-400">₽</span>
+            </div>
+          </label>
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-medium text-[#1E293B] dark:text-white">Режим технического обслуживания</h3>
-              <p className="text-sm text-[#64748B] dark:text-gray-400">Временно закрыть доступ к веб-приложению</p>
+          <label className="block">
+            <span className="text-[#1E293B] dark:text-white font-medium">Стоимость доставки</span>
+            <div className="mt-1 relative">
+              <input
+                type="number"
+                value={formData.delivery_price}
+                onChange={(e) => setFormData(prev => ({ ...prev, delivery_price: e.target.value }))}
+                className="block w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 pl-4 pr-12 py-3 text-[#1E293B] dark:text-white focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20 transition-all duration-300"
+                placeholder="500"
+              />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#64748B] dark:text-gray-400">₽</span>
             </div>
-            <input
-              type="checkbox"
-              checked={formData.maintenance_mode}
-              onChange={(e) => setFormData(prev => ({ ...prev, maintenance_mode: e.target.checked }))}
-              className="w-4 h-4 text-[#1A6DFF] border-gray-300 dark:border-gray-600 rounded focus:ring-[#1A6DFF] dark:bg-gray-700"
-            />
-          </div>
+          </label>
 
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-medium text-[#1E293B] dark:text-white">Автоматическое обновление остатков</h3>
-              <p className="text-sm text-[#64748B] dark:text-gray-400">Синхронизация с внешними системами</p>
-            </div>
-            <input
-              type="checkbox"
-              checked={formData.auto_update_stock}
-              onChange={(e) => setFormData(prev => ({ ...prev, auto_update_stock: e.target.checked }))}
-              className="w-4 h-4 text-[#1A6DFF] border-gray-300 dark:border-gray-600 rounded focus:ring-[#1A6DFF] dark:bg-gray-700"
-            />
+          <div className="space-y-3">
+            <label className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-[#1A6DFF]/30 transition-all duration-300 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.maintenance_mode}
+                onChange={(e) => setFormData(prev => ({ ...prev, maintenance_mode: e.target.checked }))}
+                className="rounded-lg border-gray-300 text-[#1A6DFF] focus:ring-[#1A6DFF]/20 transition-all duration-300"
+              />
+              <div>
+                <span className="block text-[#1E293B] dark:text-white font-medium">Режим обслуживания</span>
+                <span className="text-sm text-[#64748B] dark:text-gray-400">Сайт будет недоступен для пользователей</span>
+              </div>
+            </label>
+
+            <label className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-[#1A6DFF]/30 transition-all duration-300 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.auto_update_stock}
+                onChange={(e) => setFormData(prev => ({ ...prev, auto_update_stock: e.target.checked }))}
+                className="rounded-lg border-gray-300 text-[#1A6DFF] focus:ring-[#1A6DFF]/20 transition-all duration-300"
+              />
+              <div>
+                <span className="block text-[#1E293B] dark:text-white font-medium">Автообновление остатков</span>
+                <span className="text-sm text-[#64748B] dark:text-gray-400">Автоматическая синхронизация с поставщиками</span>
+              </div>
+            </label>
           </div>
         </div>
+      </div>
 
-        <button 
+      <div className="flex justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
+        <button
           type="submit"
           disabled={saving}
-          className="bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] text-white px-6 py-2 rounded-lg hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] text-white font-medium hover:shadow-lg hover:shadow-blue-500/20 focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {saving ? 'Сохранение...' : 'Сохранить настройки'}
+          {saving ? 'Сохранение...' : 'Сохранить изменения'}
         </button>
-      </form>
-    </div>
+      </div>
+    </form>
   );
 }
 
@@ -326,6 +366,7 @@ function LoyaltySettings({ data, onSave, saving }: SettingsComponentProps) {
       order_threshold: tier.order_threshold
     }))
   });
+  const { success, error: showError } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -374,13 +415,13 @@ function LoyaltySettings({ data, onSave, saving }: SettingsComponentProps) {
 
       if (response.ok) {
         const result = await response.json();
-        alert(result.message);
+        success('Пересчет завершен!', result.message);
       } else {
-        alert('Ошибка пересчета уровней');
+        showError('Ошибка пересчета', 'Не удалось пересчитать уровни лояльности');
       }
     } catch (error) {
       console.error('Ошибка пересчета уровней:', error);
-      alert('Ошибка пересчета уровней');
+      showError('Ошибка соединения', 'Проверьте подключение к интернету');
     }
   };
 
@@ -508,6 +549,7 @@ function WebappSettings({ data, onSave, saving }: SettingsComponentProps) {
     support_working_hours: data.settings.support_working_hours || 'Пн-Пт 9:00-18:00 МСК',
     support_response_time: data.settings.support_response_time || 'В течение 15 минут'
   });
+  const { success, error: showError } = useToast();
 
   useEffect(() => {
     fetchFAQStats();
@@ -570,15 +612,15 @@ function WebappSettings({ data, onSave, saving }: SettingsComponentProps) {
 
       if (response.ok) {
         const result = await response.json();
-        alert(result.message);
+        success('Тестовые данные созданы!', result.message);
         fetchFAQStats();
       } else {
         const error = await response.json();
-        alert(error.message || "Ошибка создания тестовых данных");
+        showError('Ошибка создания', error.message || "Не удалось создать тестовые данные");
       }
     } catch (error) {
       console.error("Ошибка создания тестовых данных:", error);
-      alert("Ошибка создания тестовых данных");
+      showError('Ошибка соединения', 'Проверьте подключение к интернету');
     }
   };
 
@@ -609,9 +651,7 @@ function WebappSettings({ data, onSave, saving }: SettingsComponentProps) {
                   onClick={() => setShowFAQModal(true)}
                   className="bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] text-white px-4 py-2 rounded-lg hover:scale-105 transition-all duration-300 flex items-center gap-2"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/>
-                  </svg>
+                  <Check className="h-4 w-4" />
                   Управлять FAQ
                 </button>
                 {faqStats.total === 0 && (
@@ -730,511 +770,211 @@ function WebappSettings({ data, onSave, saving }: SettingsComponentProps) {
 }
 
 function TelegramSettings({ data, onSave, saving }: SettingsComponentProps) {
-  const [formData, setFormData] = useState({
-    telegram_bot_token: data.settings.telegram_bot_token || '',
-    webapp_telegram_bot_token: data.settings.webapp_telegram_bot_token || ''
+  const [activeTab, setActiveTab] = useState<'templates' | 'chats'>('templates');
+  const [templates, setTemplates] = useState<Array<{ key: string; template: string; description?: string }>>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(true);
+  const [chatSettings, setChatSettings] = useState({
+    admin_chat_id: data.settings.admin_chat_id || '125861752',
+    courier_chat_id: data.settings.courier_chat_id || '7828956680', 
+    group_chat_id: data.settings.group_chat_id || '-4729817036'
   });
-
-  const [botStatus, setBotStatus] = useState<{
-    telegram_bot: { valid: boolean; username?: string; loading: boolean };
-    webapp_bot: { valid: boolean; username?: string; loading: boolean };
-  }>({
-    telegram_bot: { valid: false, loading: false },
-    webapp_bot: { valid: false, loading: false }
-  });
+  const { success, error: showError } = useToast();
 
   useEffect(() => {
-    getTokensStatus();
+    loadTemplates();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const settings = {
-      telegram_bot_token: formData.telegram_bot_token,
-      webapp_telegram_bot_token: formData.webapp_telegram_bot_token
-    };
-
-    await onSave({ settings });
-  };
-
-  const testBotToken = async (type: 'telegram' | 'webapp') => {
-    const token = type === 'telegram' ? formData.telegram_bot_token : formData.webapp_telegram_bot_token;
-    
-    if (!token) {
-      alert('Введите токен бота для проверки');
-      return;
-    }
-
-    setBotStatus(prev => ({
-      ...prev,
-      [`${type}_bot`]: { ...prev[`${type}_bot` as keyof typeof prev], loading: true }
-    }));
-
+  const loadTemplates = async () => {
     try {
-      const response = await fetch(`https://api.telegram.org/bot${token}/getMe`);
-      const result = await response.json();
-
-      if (result.ok) {
-        setBotStatus(prev => ({
-          ...prev,
-          [`${type}_bot`]: { 
-            valid: true, 
-            username: result.result.username, 
-            loading: false 
-          }
-        }));
-        alert(`✅ Бот @${result.result.username} работает корректно!`);
-      } else {
-        setBotStatus(prev => ({
-          ...prev,
-          [`${type}_bot`]: { valid: false, loading: false }
-        }));
-        alert(`❌ Ошибка: ${result.description || 'Неверный токен'}`);
+      const response = await fetch('/api/telegram/templates');
+      if (response.ok) {
+        const data = await response.json();
+        setTemplates(data.templates || []);
       }
     } catch (error) {
-      setBotStatus(prev => ({
-        ...prev,
-        [`${type}_bot`]: { valid: false, loading: false }
-      }));
-      alert('❌ Ошибка проверки токена. Проверьте подключение к интернету.');
+      console.error('Ошибка загрузки шаблонов:', error);
+    } finally {
+      setLoadingTemplates(false);
     }
   };
 
-  const getTokensStatus = async () => {
+  const handleTemplateChange = (key: string, value: string) => {
+    setTemplates(prev => prev.map(t => 
+      t.key === key ? { ...t, template: value } : t
+    ));
+  };
+
+  const saveTemplates = async () => {
     try {
-      console.log('🔍 Getting tokens status...');
-      const response = await fetch('/api/telegram/tokens/status');
+      const response = await fetch('/api/telegram/templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ templates })
+      });
       
       if (response.ok) {
-        const result = await response.json();
-        console.log('📊 Tokens status:', result.data);
-        
-        setBotStatus({
-          telegram_bot: {
-            valid: result.data.telegram_bot.valid,
-            username: result.data.telegram_bot.botInfo?.username,
-            loading: false
-          },
-          webapp_bot: {
-            valid: result.data.webapp_bot.valid,
-            username: result.data.webapp_bot.botInfo?.username,
-            loading: false
-          }
-        });
-        
-        return result.data;
+        success('Шаблоны сохранены!', 'Все шаблоны сообщений успешно обновлены');
       } else {
-        console.error('❌ Failed to get tokens status');
-        return null;
+        showError('Ошибка сохранения', 'Не удалось сохранить шаблоны сообщений');
       }
     } catch (error) {
-      console.error('❌ Error getting tokens status:', error);
-      return null;
+      showError('Ошибка соединения', 'Проверьте подключение к интернету');
     }
+  };
+
+  const saveChatSettings = async () => {
+    await onSave({ 
+      settings: {
+        admin_chat_id: chatSettings.admin_chat_id,
+        courier_chat_id: chatSettings.courier_chat_id,
+        group_chat_id: chatSettings.group_chat_id
+      }
+    });
   };
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-      <h2 className="text-xl font-semibold text-[#1E293B] dark:text-white mb-6">Бот Telegram</h2>
+      <h2 className="text-xl font-semibold text-[#1E293B] dark:text-white mb-6">Настройки Telegram</h2>
       
-      {/* Описание системы ботов */}
-      <div className="mb-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
-        <h3 className="text-lg font-medium text-blue-900 dark:text-blue-100 mb-4">
-          🤖 Архитектура системы Telegram ботов
-        </h3>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Основной бот */}
-          <div className="bg-white dark:bg-gray-800 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold">🛒</span>
-              </div>
-              <div>
-                <h4 className="font-semibold text-[#1E293B] dark:text-white">Основной бот (Закупки)</h4>
-                <p className="text-sm text-[#64748B] dark:text-gray-400">@teleskald_bot</p>
-              </div>
-            </div>
-            
-            <div className="space-y-2 text-sm">
-              <div className="flex items-start gap-2">
-                <span className="text-green-600 dark:text-green-400">✅</span>
-                <span className="text-[#374151] dark:text-gray-300">
-                  <strong>Отправка закупок в группу:</strong> При нажатии &quot;Отправить поставщику&quot; отправляет детальную информацию о закупке в групповой чат закупщика с себестоимостью в ₺
-                </span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-green-600 dark:text-green-400">✅</span>
-                <span className="text-[#374151] dark:text-gray-300">
-                  <strong>Формат сообщения:</strong> Номер закупки, список товаров с артикулами и количеством, общая стоимость в ₺, статус &quot;sent_to_supplier&quot;
-                </span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-green-600 dark:text-green-400">✅</span>
-                <span className="text-[#374151] dark:text-gray-300">
-                  <strong>Только информационные сообщения:</strong> Без интерактивных кнопок, без callback обработки, только уведомления
-                </span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-green-600 dark:text-green-400">✅</span>
-                <span className="text-[#374151] dark:text-gray-300">
-                  <strong>Статусы закупок:</strong> draft → sent_to_supplier → awaiting_payment → paid → in_transit → received
-                </span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-blue-600 dark:text-blue-400">📍</span>
-                <span className="text-[#374151] dark:text-gray-300">
-                  <strong>Группа:</strong> {process.env.TELEGRAM_GROUP_CHAT_ID || '-4729817036'}
-                </span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-orange-600 dark:text-orange-400">🔧</span>
-                <span className="text-[#374151] dark:text-gray-300">
-                  <strong>Webhook:</strong> /api/telegram/webhook - обрабатывает только входящие сообщения, игнорирует callback_query
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* WebApp бот */}
-          <div className="bg-white dark:bg-gray-800 border border-green-200 dark:border-green-700 rounded-lg p-4">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold">📱</span>
-              </div>
-              <div>
-                <h4 className="font-semibold text-[#1E293B] dark:text-white">WebApp бот (Клиенты)</h4>
-                <p className="text-sm text-[#64748B] dark:text-gray-400">@strattera_test_bot</p>
-              </div>
-            </div>
-            
-            <div className="space-y-2 text-sm">
-              <div className="flex items-start gap-2">
-                <span className="text-green-600 dark:text-green-400">✅</span>
-                <span className="text-[#374151] dark:text-gray-300">
-                  <strong>Полный цикл заказов:</strong> UNPAID → PAID → PROCESSING → SHIPPED → CANCELLED с интерактивными кнопками
-                </span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-green-600 dark:text-green-400">✅</span>
-                <span className="text-[#374151] dark:text-gray-300">
-                  <strong>Интерактивные функции:</strong> Кнопка &quot;Я оплатил&quot;, подтверждение админом, привязка трек-номеров, отмена заказов
-                </span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-green-600 dark:text-green-400">✅</span>
-                <span className="text-[#374151] dark:text-gray-300">
-                  <strong>CRON уведомления:</strong> Напоминания об оплате (48ч, 51ч), автоотмена (72ч), запросы отзывов (10 дней после доставки)
-                </span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-green-600 dark:text-green-400">✅</span>
-                <span className="text-[#374151] dark:text-gray-300">
-                  <strong>Система лояльности:</strong> Уведомления о бонусах, кэшбеке, повышении уровня, поступлении товаров
-                </span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-green-600 dark:text-green-400">✅</span>
-                <span className="text-[#374151] dark:text-gray-300">
-                  <strong>WebApp интерфейс:</strong> Полнофункциональное веб-приложение для клиентов (/src/app/webapp/) с каталогом, корзиной, заказами
-                </span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-blue-600 dark:text-blue-400">👥</span>
-                <span className="text-[#374151] dark:text-gray-300">
-                  <strong>Участники:</strong> Клиенты, Админ ({process.env.WEBAPP_ADMIN_CHAT_ID || '125861752'}), Курьер ({process.env.WEBAPP_COURIER_CHAT_ID || '7828956680'})
-                </span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-orange-600 dark:text-orange-400">🔧</span>
-                <span className="text-[#374151] dark:text-gray-300">
-                  <strong>Webhook:</strong> /api/webapp-telegram/webhook - полная обработка callback_query, команд, сообщений
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Детальное описание механизмов */}
-        <div className="mt-6 space-y-4">
-          <h4 className="font-medium text-blue-900 dark:text-blue-100">🔍 Механизмы работы системы:</h4>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-              <h5 className="font-medium text-[#1E293B] dark:text-white mb-2">📋 Закупки (Основной бот)</h5>
-              <ul className="text-sm text-[#374151] dark:text-gray-300 space-y-1">
-                <li>• <strong>Триггер:</strong> API /api/purchases/[id]/send-to-supplier</li>
-                <li>• <strong>Сервис:</strong> TelegramBotService.sendPurchaseToSupplier()</li>
-                <li>• <strong>Условие:</strong> Статус purchase = &quot;draft&quot;</li>
-                <li>• <strong>Действие:</strong> Отправка в GROUP_CHAT_ID, смена статуса на &quot;sent_to_supplier&quot;</li>
-                <li>• <strong>Формат:</strong> Детали товаров + общая стоимость в ₺</li>
-              </ul>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-              <h5 className="font-medium text-[#1E293B] dark:text-white mb-2">🛍️ Заказы клиентов (WebApp бот)</h5>
-              <ul className="text-sm text-[#374151] dark:text-gray-300 space-y-1">
-                <li>• <strong>Создание:</strong> API /api/webapp/orders/create</li>
-                <li>• <strong>Сервис:</strong> WebAppTelegramBotService</li>
-                <li>• <strong>Уведомления:</strong> Клиенту, админу, курьеру</li>
-                <li>• <strong>Интерактив:</strong> Кнопки &quot;Я оплатил&quot;, &quot;Подтвердить&quot;, &quot;Отменить&quot;</li>
-                <li>• <strong>CRON:</strong> Напоминания, автоотмена, запросы отзывов</li>
-              </ul>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-              <h5 className="font-medium text-[#1E293B] dark:text-white mb-2">⏰ CRON задачи</h5>
-              <ul className="text-sm text-[#374151] dark:text-gray-300 space-y-1">
-                <li>• <strong>Файл:</strong> /src/lib/cron/notification-cron.ts</li>
-                <li>• <strong>API:</strong> /api/cron/run - запуск по расписанию</li>
-                <li>• <strong>Типы:</strong> payment_reminder, auto_cancel, review_request</li>
-                <li>• <strong>Логика:</strong> Проверка времени создания заказа + настройки таймингов</li>
-                <li>• <strong>Повторы:</strong> Система retry при ошибках отправки</li>
-              </ul>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-              <h5 className="font-medium text-[#1E293B] dark:text-white mb-2">🎯 Система лояльности</h5>
-              <ul className="text-sm text-[#374151] dark:text-gray-300 space-y-1">
-                <li>• <strong>Бонусы:</strong> Автоначисление при смене статуса на SHIPPED</li>
-                <li>• <strong>Уровни:</strong> Автоповышение при достижении порогов</li>
-                <li>• <strong>Кэшбек:</strong> Процент от суммы заказа</li>
-                <li>• <strong>Уведомления:</strong> О начислениях, повышениях, поступлениях</li>
-                <li>• <strong>API:</strong> /api/webapp/loyalty/* для управления</li>
-              </ul>
-            </div>
-          </div>
-        </div>
+      {/* Переключатель вкладок */}
+      <div className="flex border-b border-gray-200 dark:border-gray-600 mb-6">
+        <button
+          onClick={() => setActiveTab('templates')}
+          className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${
+            activeTab === 'templates'
+              ? 'border-[#1A6DFF] text-[#1A6DFF] dark:text-[#00C5FF]'
+              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+          }`}
+        >
+          📝 Шаблоны сообщений
+        </button>
+        <button
+          onClick={() => setActiveTab('chats')}
+          className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${
+            activeTab === 'chats'
+              ? 'border-[#1A6DFF] text-[#1A6DFF] dark:text-[#00C5FF]'
+              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+          }`}
+        >
+          👥 ID чатов
+        </button>
       </div>
 
-      {/* Настройка токенов */}
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <h3 className="text-lg font-medium text-[#1E293B] dark:text-white mb-4">
-            🔑 Настройка токенов ботов
-          </h3>
-          
-          <div className="space-y-6">
-            {/* Основной бот для закупок */}
-            <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <h4 className="font-medium text-[#1E293B] dark:text-white">
-                    🛒 Основной бот (закупки и админ)
-                  </h4>
-                  <p className="text-sm text-[#64748B] dark:text-gray-400">
-                    Используется для уведомлений о закупках в групповой чат
-                  </p>
-                </div>
-                {botStatus.telegram_bot.valid && (
-                  <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-sm">@{botStatus.telegram_bot.username}</span>
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex gap-3">
-                <input
-                  type="password"
-                  value={formData.telegram_bot_token}
-                  onChange={(e) => setFormData(prev => ({ ...prev, telegram_bot_token: e.target.value }))}
-                  placeholder="123456789:ABCdefGHijklmnopQRStuVWXyz"
-                  className="flex-1 px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-[#1E293B] dark:text-white focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20 transition-all"
-                />
-                <button
-                  type="button"
-                  onClick={() => testBotToken('telegram')}
-                  disabled={botStatus.telegram_bot.loading || !formData.telegram_bot_token}
-                  className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {botStatus.telegram_bot.loading ? '🔄' : '🧪 Тест'}
-                </button>
-              </div>
-              
-              <p className="text-xs text-[#64748B] dark:text-gray-400 mt-2">
-                Получите токен у @BotFather в Telegram
-              </p>
-            </div>
-
-            {/* WebApp бот для клиентов */}
-            <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <h4 className="font-medium text-[#1E293B] dark:text-white">
-                    📱 WebApp бот (клиенты)
-                  </h4>
-                  <p className="text-sm text-[#64748B] dark:text-gray-400">
-                    Используется для уведомлений клиентам, CRON задач и интерактивных функций
-                  </p>
-                </div>
-                {botStatus.webapp_bot.valid && (
-                  <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-sm">@{botStatus.webapp_bot.username}</span>
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex gap-3">
-                <input
-                  type="password"
-                  value={formData.webapp_telegram_bot_token}
-                  onChange={(e) => setFormData(prev => ({ ...prev, webapp_telegram_bot_token: e.target.value }))}
-                  placeholder="987654321:ZYXwvuTSrqponMLKjihgfEDcbA"
-                  className="flex-1 px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-[#1E293B] dark:text-white focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20 transition-all"
-                />
-                <button
-                  type="button"
-                  onClick={() => testBotToken('webapp')}
-                  disabled={botStatus.webapp_bot.loading || !formData.webapp_telegram_bot_token}
-                  className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {botStatus.webapp_bot.loading ? '🔄' : '🧪 Тест'}
-                </button>
-              </div>
-              
-              <p className="text-xs text-[#64748B] dark:text-gray-400 mt-2">
-                Этот бот должен поддерживать WebApp для работы с клиентами
-              </p>
-            </div>
+      {/* Контент вкладок */}
+      {activeTab === 'templates' && (
+        <div className="space-y-6">
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Шаблоны сообщений</h3>
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              Настройте тексты уведомлений для клиентов, админа и курьера. Используйте переменные: %{'{order}'}, %{'{price}'}, %{'{items}'}, %{'{fio}'}, %{'{address}'}, %{'{phone}'}, %{'{card}'}, %{'{track}'}
+            </p>
           </div>
 
-          {/* Предупреждение о безопасности */}
-          <div className="mt-4 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
-            <div className="flex items-start gap-3">
-              <svg className="w-5 h-5 text-orange-600 dark:text-orange-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-              <div>
-                <h4 className="font-medium text-orange-800 dark:text-orange-200">Безопасность</h4>
-                <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
-                  Токены ботов хранятся в зашифрованном виде. Не передавайте их третьим лицам. При компрометации токена создайте нового бота у @BotFather.
-                </p>
-              </div>
+          {loadingTemplates ? (
+            <div className="text-center py-8">
+              <div className="animate-spin w-8 h-8 border-2 border-[#1A6DFF] border-t-transparent rounded-full mx-auto"></div>
+              <p className="mt-2 text-gray-500">Загрузка шаблонов...</p>
             </div>
-          </div>
+          ) : (
+            <div className="space-y-4">
+              {templates.map((template) => (
+                <div key={template.key} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium text-[#1E293B] dark:text-white">{template.key}</h4>
+                    {template.description && (
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{template.description}</span>
+                    )}
+                  </div>
+                  <textarea
+                    value={template.template}
+                    onChange={(e) => handleTemplateChange(template.key, e.target.value)}
+                    className="w-full h-24 px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-[#1E293B] dark:text-white focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20 transition-all resize-none"
+                    placeholder="Введите текст шаблона..."
+                  />
+                </div>
+              ))}
+              
+              <button
+                onClick={saveTemplates}
+                disabled={saving}
+                className="bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] text-white px-6 py-2 rounded-lg hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {saving ? 'Сохранение...' : 'Сохранить шаблоны'}
+              </button>
+            </div>
+          )}
         </div>
+      )}
 
-        {/* Кнопки управления */}
-        <div className="flex flex-wrap gap-3 pt-4">
-          <button 
-            type="submit"
+      {activeTab === 'chats' && (
+        <div className="space-y-6">
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">ID чатов для уведомлений</h3>
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              Укажите ID чатов для отправки уведомлений. Для получения ID чата отправьте сообщение @userinfobot
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-[#374151] dark:text-gray-300 mb-2">
+                ID админа для проверки оплат
+              </label>
+              <input
+                type="text"
+                value={chatSettings.admin_chat_id}
+                onChange={(e) => setChatSettings(prev => ({ ...prev, admin_chat_id: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-[#1E293B] dark:text-white focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20 transition-all"
+                placeholder="125861752"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[#374151] dark:text-gray-300 mb-2">
+                ID курьера для отправки заказов
+              </label>
+              <input
+                type="text"
+                value={chatSettings.courier_chat_id}
+                onChange={(e) => setChatSettings(prev => ({ ...prev, courier_chat_id: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-[#1E293B] dark:text-white focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20 transition-all"
+                placeholder="7828956680"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[#374151] dark:text-gray-300 mb-2">
+                ID группы для закупок
+              </label>
+              <input
+                type="text"
+                value={chatSettings.group_chat_id}
+                onChange={(e) => setChatSettings(prev => ({ ...prev, group_chat_id: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-[#1E293B] dark:text-white focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20 transition-all"
+                placeholder="-4729817036"
+              />
+            </div>
+          </div>
+
+          <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <h4 className="font-medium text-[#1E293B] dark:text-white mb-2">Как получить ID чата:</h4>
+            <ul className="text-sm text-[#64748B] dark:text-gray-400 space-y-1">
+              <li>• Для личного чата: отправьте сообщение @userinfobot</li>
+              <li>• Для группы: добавьте @userinfobot в группу и отправьте команду /start</li>
+              <li>• ID группы начинается с минуса (например: -4729817036)</li>
+              <li>• ID пользователя - положительное число (например: 125861752)</li>
+            </ul>
+          </div>
+
+          <button
+            onClick={saveChatSettings}
             disabled={saving}
             className="bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] text-white px-6 py-2 rounded-lg hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {saving ? 'Сохранение...' : 'Сохранить токены'}
-          </button>
-
-          <button
-            type="button"
-            onClick={async () => {
-              const status = await getTokensStatus();
-              if (status) {
-                const statusText = `📊 СТАТУС ТОКЕНОВ БОТОВ
-
-🤖 Основной бот (закупки):
-   Источник: ${status.telegram_bot.source === 'database' ? '🗄️ База данных' : status.telegram_bot.source === 'environment' ? '🌐 Переменные окружения' : '❌ Не найден'}
-   Статус: ${status.telegram_bot.valid ? '✅ Действителен' : '❌ Недействителен'}
-   ${status.telegram_bot.botInfo?.username ? `Бот: @${status.telegram_bot.botInfo.username}` : ''}
-
-📱 WebApp бот (клиенты):
-   Источник: ${status.webapp_bot.source === 'database' ? '🗄️ База данных' : status.webapp_bot.source === 'environment' ? '🌐 Переменные окружения' : '❌ Не найден'}
-   Статус: ${status.webapp_bot.valid ? '✅ Действителен' : '❌ Недействителен'}
-   ${status.webapp_bot.botInfo?.username ? `Бот: @${status.webapp_bot.botInfo.username}` : ''}`;
-                
-                alert(statusText);
-              }
-            }}
-            disabled={saving}
-            className="bg-indigo-600 dark:bg-indigo-500 text-white px-6 py-2 rounded-lg hover:scale-105 hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            🔍 Диагностика токенов
-          </button>
-
-          <button
-            type="button"
-            onClick={async () => {
-              try {
-                console.log('🧪 Running test notification: quick_test');
-                const response = await fetch('/api/webapp/notifications/test', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ type: 'quick_test', test_data: {} })
-                });
-
-                const result = await response.json();
-                console.log('📄 Response:', result);
-
-                if (response.ok) {
-                  alert(`✅ ${result.message}\n${result.details || ''}`);
-                } else {
-                  const errorDetails = result.details ? `\nДетали: ${result.details}` : '';
-                  alert(`❌ Ошибка отправки тестового уведомления${errorDetails}`);
-                  console.error('❌ Test notification failed:', result);
-                }
-              } catch (error) {
-                console.error('❌ Ошибка тестового уведомления:', error);
-                alert(`❌ Ошибка отправки тестового уведомления\nПроверьте консоль для деталей`);
-              }
-            }}
-            disabled={saving}
-            className="bg-green-600 dark:bg-green-500 text-white px-6 py-2 rounded-lg hover:scale-105 hover:bg-green-700 dark:hover:bg-green-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            🧪 Тестовые уведомления
-          </button>
-
-          <button
-            type="button"
-            onClick={async () => {
-              try {
-                const response = await fetch('/api/cron/init', { method: 'POST' });
-                const result = await response.json();
-                
-                if (response.ok) {
-                  alert(`✅ ${result.message}`);
-                } else {
-                  alert(`❌ Ошибка: ${result.error}`);
-                }
-              } catch (error) {
-                alert('❌ Ошибка инициализации CRON задач');
-                console.error('Error:', error);
-              }
-            }}
-            disabled={saving}
-            className="bg-purple-600 dark:bg-purple-500 text-white px-6 py-2 rounded-lg hover:scale-105 hover:bg-purple-700 dark:hover:bg-purple-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            ⚙️ Запустить CRON задачи
+            {saving ? 'Сохранение...' : 'Сохранить настройки чатов'}
           </button>
         </div>
-      </form>
-
-      {/* Техническая информация */}
-      <div className="mt-8 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-        <h4 className="font-medium text-[#1E293B] dark:text-white mb-3">🔧 Техническая информация</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div>
-            <h5 className="font-medium text-[#374151] dark:text-gray-300 mb-2">Webhook URL&apos;ы:</h5>
-            <ul className="space-y-1 text-[#64748B] dark:text-gray-400">
-              <li>• Основной бот: <code>/api/telegram/webhook</code></li>
-              <li>• WebApp бот: <code>/api/telegram/webapp-webhook</code></li>
-            </ul>
-          </div>
-          <div>
-            <h5 className="font-medium text-[#374151] dark:text-gray-300 mb-2">API эндпоинты:</h5>
-            <ul className="space-y-1 text-[#64748B] dark:text-gray-400">
-              <li>• Статус токенов: <code>/api/telegram/tokens/status</code></li>
-              <li>• Заказы WebApp: <code>/api/webapp/orders</code></li>
-              <li>• Уведомления: <code>/api/webapp/notifications</code></li>
-            </ul>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -1555,6 +1295,7 @@ function UserSettings({ data, onSave, saving }: SettingsComponentProps) {
   const [avatarPreview, setAvatarPreview] = useState<string>('');
   const [passwordChanging, setPasswordChanging] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const { success, error: showError } = useToast();
   const [avatarLoading, setAvatarLoading] = useState(false);
 
   // Проверяем, что пользователь - администратор go@osama.agency
@@ -1593,12 +1334,12 @@ function UserSettings({ data, onSave, saving }: SettingsComponentProps) {
     e.preventDefault();
     
     if (formData.newPassword !== formData.confirmPassword) {
-      alert('Пароли не совпадают');
+      showError('Ошибка валидации', 'Пароли не совпадают');
       return;
     }
 
     if (formData.newPassword.length < 8) {
-      alert('Пароль должен содержать минимум 8 символов');
+      showError('Ошибка валидации', 'Пароль должен содержать минимум 8 символов');
       return;
     }
 
@@ -1617,7 +1358,7 @@ function UserSettings({ data, onSave, saving }: SettingsComponentProps) {
       });
 
       if (response.ok) {
-        alert('Пароль успешно изменен');
+        success('Пароль изменен!', 'Новый пароль успешно установлен');
         setFormData({
           currentPassword: '',
           newPassword: '',
@@ -1625,11 +1366,11 @@ function UserSettings({ data, onSave, saving }: SettingsComponentProps) {
         });
       } else {
         const errorText = await response.text();
-        alert(`Ошибка: ${errorText}`);
+        showError('Ошибка изменения пароля', errorText);
       }
     } catch (error) {
       console.error('Ошибка смены пароля:', error);
-      alert('Ошибка при смене пароля');
+      showError('Ошибка соединения', 'Не удалось изменить пароль');
     } finally {
       setPasswordChanging(false);
     }
@@ -1639,12 +1380,12 @@ function UserSettings({ data, onSave, saving }: SettingsComponentProps) {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) { // 5MB
-        alert('Размер файла не должен превышать 5MB');
+        showError('Файл слишком большой', 'Размер файла не должен превышать 5MB');
         return;
       }
       
       if (!file.type.startsWith('image/')) {
-        alert('Можно загружать только изображения');
+        showError('Неверный тип файла', 'Можно загружать только изображения');
         return;
       }
 
@@ -1670,7 +1411,7 @@ function UserSettings({ data, onSave, saving }: SettingsComponentProps) {
 
       if (response.ok) {
         const result = await response.json();
-        alert('Аватар успешно обновлен');
+        success('Аватар обновлен!', 'Изображение профиля успешно изменено');
         setAvatarFile(null);
         // Обновляем превью с новым URL
         setAvatarPreview(result.avatarUrl);
@@ -1678,11 +1419,11 @@ function UserSettings({ data, onSave, saving }: SettingsComponentProps) {
         window.location.reload();
       } else {
         const errorText = await response.text();
-        alert(`Ошибка: ${errorText}`);
+        showError('Ошибка загрузки', errorText);
       }
     } catch (error) {
       console.error('Ошибка загрузки аватара:', error);
-      alert('Ошибка при загрузке аватара');
+      showError('Ошибка соединения', 'Не удалось загрузить аватар');
     } finally {
       setAvatarUploading(false);
     }

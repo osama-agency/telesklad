@@ -22,24 +22,33 @@ import TableSkeleton from "@/components/common/TableSkeleton";
 
 const statusOptions = [
   { value: 0, label: "Все статусы" },
-  { value: 1, label: "Ожидает" },
-  { value: 2, label: "На отправке" },
-  { value: 3, label: "Готовим к отправке" },
-  { value: 4, label: "Отправлен" },
-  { value: 5, label: "Отменён" },
-  { value: 6, label: "Возврат" },
-  { value: 7, label: "Просрочен" },
+  { value: 1, label: "Ожидает оплаты" },  // статус 0 в БД
+  { value: 2, label: "Проверка оплаты" },  // статус 1 в БД 
+  { value: 3, label: "На отправке" },       // статус 2 в БД
+  { value: 4, label: "Готовим к отправке" }, // статус 3 в БД
+  { value: 5, label: "Отправлен" },         // статус 4 в БД
+  { value: 6, label: "Отменён" },           // статус 5 в БД
+  { value: 7, label: "Возврат" },           // статус 6 в БД
+  { value: 8, label: "Просрочен" },         // статус 7 в БД
 ];
 
 const getStatusBadge = (status: number) => {
   // Цвета и иконки для статусов
   const config: Record<number, { bg: string; text: string; icon?: JSX.Element; label: string }> = {
-    1: {
-      bg: 'bg-gradient-to-r from-gray-200/70 to-gray-300/60 dark:from-gray-700/60 dark:to-gray-800/60',
-      text: 'text-gray-700 dark:text-gray-200',
-      label: 'Ожидает',
+    0: {
+      bg: 'bg-gradient-to-r from-orange-200/70 to-orange-300/60 dark:from-orange-700/60 dark:to-orange-800/60',
+      text: 'text-orange-700 dark:text-orange-200',
+      label: 'Ожидает оплаты',
       icon: (
-        <svg className="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeWidth="2" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6l4 2" /></svg>
+        <svg className="w-4 h-4 mr-1 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeWidth="2" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6l4 2" /></svg>
+      ),
+    },
+    1: {
+      bg: 'bg-gradient-to-r from-blue-200/70 to-blue-300/60 dark:from-blue-700/60 dark:to-blue-800/60',
+      text: 'text-blue-700 dark:text-blue-200',
+      label: 'Проверка оплаты',
+      icon: (
+        <svg className="w-4 h-4 mr-1 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeWidth="2" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4" /></svg>
       ),
     },
     2: {
@@ -125,12 +134,18 @@ export function OrdersTable() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [orderToEdit, setOrderToEdit] = useState<OrderEntity | null>(null);
 
+  // Маппинг значений dropdown в значения БД
+  const mapFilterToDbStatus = (filterValue: number): number | undefined => {
+    if (filterValue === 0) return undefined; // Все статусы
+    return filterValue - 1; // Сдвиг на -1 (dropdown 1->БД 0, dropdown 2->БД 1, и т.д.)
+  };
+
   // React Query hook
   const queryParams: OrdersParams = {
     page: currentPage,
     limit: 25,
     search: debouncedSearchTerm || undefined,
-    status: statusFilter === 0 ? undefined : statusFilter,
+    status: mapFilterToDbStatus(statusFilter),
     sortBy: sortField === "orderdate" ? "created_at" : sortField,
     sortOrder: sortDirection,
   };

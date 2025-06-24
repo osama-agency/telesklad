@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { IconComponent } from '@/components/webapp/IconComponent';
 import DeliveryDataSheet from './DeliveryDataSheet';
-import LoadingSpinner from './LoadingSpinner';
+import SkeletonLoading from './SkeletonLoading';
 import SubscriptionsSheet from './SubscriptionsSheet';
 import toast from 'react-hot-toast';
 
@@ -84,8 +84,8 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
       // Данные уже сохранены в DeliveryDataSheet через API
       console.log('Delivery data saved:', data);
       
-      // Принудительно обновляем профиль на странице
-      window.location.reload();
+      // Обновляем данные пользователя в состоянии без перезагрузки страницы
+      // Данные автоматически обновятся через событие 'profileUpdated'
       
     } catch (error) {
       console.error('Error handling delivery data save:', error);
@@ -328,7 +328,7 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
 
   // Показываем preloader если идет навигация
   if (isNavigating) {
-    return <LoadingSpinner variant="page" size="lg" />;
+    return <SkeletonLoading type="page" />;
   }
 
   return (

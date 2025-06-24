@@ -6,7 +6,7 @@ import { IconComponent } from "@/components/webapp/IconComponent";
 import { AddToCartButton } from "./AddToCartButton";
 import { AnimatedFavoriteButton } from "./AnimatedFavoriteButton";
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
-import LoadingSpinner from './LoadingSpinner';
+import SkeletonLoading from './SkeletonLoading';
 import { webAppFetch } from '@/lib/utils/webapp-fetch';
 import { useTelegramHaptic } from '@/hooks/useTelegramHaptic';
 

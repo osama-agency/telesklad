@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { IconComponent } from '@/components/webapp/IconComponent';
 import BonusBlock from '../_components/BonusBlock';
 import ActionCards from '../_components/ActionCards';
-import LoadingSpinner from '../_components/LoadingSpinner';
+import SkeletonLoading from '../_components/SkeletonLoading';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { webAppFetch } from '@/lib/utils/webapp-fetch';
 
@@ -118,7 +118,7 @@ const ProfilePage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="webapp-container profile-page">
-        <LoadingSpinner variant="page" size="lg" />
+        <SkeletonLoading type="profile" />
       </div>
     );
   }
