@@ -2439,9 +2439,55 @@ html, body {
   }
 }
 
-/* Support Page & FAQ Styles - Based on Rails Project */
+/* Support Page & FAQ Styles */
 .support-page {
-  padding-bottom: 80px; /* Отступ для нижнего меню */
+  /* Базовые отступы */
+  padding-bottom: 0;
+  min-height: calc(100vh - 60px); /* Высота экрана минус высота нижнего меню */
+  display: flex;
+  flex-direction: column;
+
+  /* Основной контент */
+  .container-adaptive {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 16px;
+  }
+
+  /* FAQ секция */
+  .faq-container {
+    margin-bottom: 16px;
+    
+    .main-block {
+      margin-bottom: 12px;
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+
+  /* Контакты */
+  .support-contacts {
+    margin-top: auto;
+    padding-bottom: 16px;
+
+    h4 {
+      margin-bottom: 12px;
+    }
+    
+    .support-contact-item {
+      padding: 8px 0;
+    }
+  }
+
+  /* Адаптация под плашку корзины */
+  &.has-cart-bar {
+    .container-adaptive {
+      padding-bottom: 80px;
+    }
+  }
 }
 
 /* FAQ Styles - точная копия из Rails */

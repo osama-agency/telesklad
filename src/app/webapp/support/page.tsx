@@ -1,27 +1,27 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from 'react';
+import { useTelegramAuth } from '@/hooks/useTelegramAuth';
+import { useCart } from '@/hooks/useCart';
 import Link from "next/link";
 import { IconComponent } from "@/components/webapp/IconComponent";
 import SkeletonLoading from "../_components/SkeletonLoading";
 
 interface FAQItem {
-  id: number;
   question: string;
   answer: string;
 }
 
 interface SupportContacts {
   telegram: string;
-  telegram_url: string;
-  working_hours: string;
-  response_time: string;
+  workingHours: string;
+  responseTime: string;
 }
 
 interface SupportApiResponse {
   success: boolean;
-  faq_items: FAQItem[];
-  support_contacts: SupportContacts;
+  faq: FAQItem[];
+  contacts: SupportContacts | null;
   error?: string;
 }
 
@@ -31,6 +31,7 @@ export default function SupportPage() {
   const [openItems, setOpenItems] = useState<Set<number>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { cart } = useCart();
 
   useEffect(() => {
     // Set document title for Telegram Web App
@@ -52,8 +53,8 @@ export default function SupportPage() {
         const data: SupportApiResponse = await response.json();
         
         if (data.success) {
-          setFaqItems(data.faq_items);
-          setSupportContacts(data.support_contacts);
+          setFaqItems(data.faq);
+          setSupportContacts(data.contacts);
         } else {
           setError(data.error || 'Ошибка загрузки данных');
         }
@@ -68,16 +69,14 @@ export default function SupportPage() {
     loadFAQ();
   }, []);
 
-  const toggleFAQ = (id: number) => {
-    setOpenItems(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
+  const toggleItem = (index: number) => {
+    const newOpenItems = new Set(openItems);
+    if (newOpenItems.has(index)) {
+      newOpenItems.delete(index);
+    } else {
+      newOpenItems.add(index);
+    }
+    setOpenItems(newOpenItems);
   };
 
   if (isLoading) {
@@ -108,86 +107,65 @@ export default function SupportPage() {
   }
 
   return (
-    <div className="webapp-container support-page">
-      <h1>Поддержка</h1>
-      
-      {/* Кнопка связи с поддержкой */}
-      <div className="mb-6">
-        <a 
-          href={supportContacts?.telegram_url || "https://t.me/your_support_bot"}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="webapp-btn-secondary webapp-btn-big block text-center"
-        >
-          Задать вопрос
-        </a>
-      </div>
+    <div className={`support-page webapp-container ${cart.items.length > 0 ? 'has-cart-bar' : ''}`}>
+      <div className="container-adaptive">
+        <h1>Поддержка</h1>
+        
+        {/* Кнопка связи с поддержкой */}
+        <div className="mb-6">
+          <a 
+            href={supportContacts?.telegram || "https://t.me/your_support_bot"}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="webapp-btn-secondary webapp-btn-big block text-center"
+          >
+            Задать вопрос
+          </a>
+        </div>
 
-      {/* FAQ список */}
-      {faqItems.length > 0 && (
-        <>
-          <h3 className="mb-4">Часто задаваемые вопросы</h3>
-          <div className="faq-container">
-            {faqItems.map((item) => (
-              <div key={item.id} className="main-block">
-                <div className="faq-question">
-                  <div 
-                    className="faq-question-header"
-                    onClick={() => toggleFAQ(item.id)}
-                  >
-                    <div className="faq-question-text">
-                      {item.question}
-                    </div>
-                    <button 
-                      className={`faq-toggle-icon ${openItems.has(item.id) ? 'open' : ''}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleFAQ(item.id);
-                      }}
-                    >
-                      <IconComponent name="down" size={16} />
-                    </button>
-                  </div>
-                  
-                  <div className={`faq-answer ${openItems.has(item.id) ? 'open' : ''}`}>
-                    <div className="faq-answer-content">
-                      {item.answer}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* Дополнительная информация */}
-      {supportContacts && (
-        <div className="main-block mt-6">
-          <div className="support-contacts">
-            <h4>Контакты поддержки</h4>
-            <div className="support-contact-item">
-              <div className="support-contact-label">Telegram:</div>
-              <a 
-                href={supportContacts.telegram_url} 
-                className="support-contact-value" 
-                target="_blank" 
-                rel="noopener noreferrer"
+        {/* FAQ секция */}
+        <div className="faq-container">
+          {faqItems.map((item, index) => (
+            <div key={index} className="main-block bg-white rounded-xl overflow-hidden">
+              <button
+                className="w-full text-left p-4 flex justify-between items-center"
+                onClick={() => toggleItem(index)}
               >
-                {supportContacts.telegram}
+                <span className="text-base font-medium">{item.question}</span>
+                <span className={`transform transition-transform ${openItems.has(index) ? 'rotate-180' : ''}`}>
+                  ▼
+                </span>
+              </button>
+              {openItems.has(index) && (
+                <div className="p-4 pt-0 text-gray-600">
+                  {item.answer}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Контакты поддержки */}
+        {supportContacts && (
+          <div className="support-contacts">
+            <h4 className="text-lg font-medium mb-4">Контакты поддержки</h4>
+            <div className="support-contact-item">
+              <span className="text-gray-600">Telegram:</span>
+              <a href={supportContacts.telegram} className="text-green-500 ml-2">
+                {supportContacts.telegram.replace('https://t.me/', '@')}
               </a>
             </div>
             <div className="support-contact-item">
-              <div className="support-contact-label">Время работы:</div>
-              <div className="support-contact-value">{supportContacts.working_hours}</div>
+              <span className="text-gray-600">Время работы:</span>
+              <span className="ml-2">{supportContacts.workingHours}</span>
             </div>
             <div className="support-contact-item">
-              <div className="support-contact-label">Время ответа:</div>
-              <div className="support-contact-value">{supportContacts.response_time}</div>
+              <span className="text-gray-600">Время ответа:</span>
+              <span className="ml-2">{supportContacts.responseTime}</span>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 } 
