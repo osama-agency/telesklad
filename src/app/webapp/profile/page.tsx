@@ -146,9 +146,9 @@ const ProfilePage: React.FC = () => {
       {/* Заголовок профиля */}
       <div className="flex items-center gap-3 mb-2">
         <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center profile-avatar">
-          {user.photo_url ? (
+          {authUser?.photo_url ? (
             <img 
-              src={user.photo_url} 
+              src={authUser.photo_url} 
               alt="Аватар"
               className="w-full h-full object-cover"
             />

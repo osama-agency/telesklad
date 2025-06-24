@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { IconComponent } from '@/components/webapp/IconComponent'
 import { PhotoUploader } from './PhotoUploader'
+import StarRating from '@/components/ui/star-rating'
 
 interface ReviewFormProps {
   productId: number
@@ -17,7 +17,6 @@ export function ReviewForm({ productId, productName, onSuccess, onCancel }: Revi
   const [photos, setPhotos] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const [hoverRating, setHoverRating] = useState(0)
 
   // Haptic feedback (только для мобильных устройств)
   const triggerHaptic = (type: 'light' | 'medium' | 'heavy' = 'medium') => {
@@ -88,27 +87,9 @@ export function ReviewForm({ productId, productName, onSuccess, onCancel }: Revi
     }
   }
 
-  const handleRatingClick = (newRating: number) => {
+  const handleRatingChange = (newRating: number) => {
     setRating(newRating)
     triggerHaptic('light')
-  }
-
-  const renderStars = () => {
-    return (
-      <div className="rating-stars">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <span
-            key={star}
-            className={`${star <= (hoverRating || rating) ? 'filled-star' : ''}`}
-            onClick={() => handleRatingClick(star)}
-            onMouseEnter={() => setHoverRating(star)}
-            onMouseLeave={() => setHoverRating(0)}
-          >
-            <IconComponent name="star" size={32} />
-          </span>
-        ))}
-      </div>
-    )
   }
 
   return (
@@ -124,7 +105,14 @@ export function ReviewForm({ productId, productName, onSuccess, onCancel }: Revi
         {/* Рейтинг */}
         <div className="input-container mt-4 !mb-4">
           <label className="text-center !mb-2">Рейтинг</label>
-          {renderStars()}
+          <div className="flex justify-center">
+            <StarRating
+              rating={rating}
+              onRatingChange={handleRatingChange}
+              size="lg"
+              disabled={isSubmitting}
+            />
+          </div>
         </div>
 
         {/* Текст отзыва */}
