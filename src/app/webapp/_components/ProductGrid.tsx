@@ -277,13 +277,18 @@ function ProductCard({ product, isSubscribed = false, onSubscriptionChange, onPr
           </Link>
         </div>
 
-        {/* Product Footer - точно как в Rails */}
+        {/* Product Footer - современный дизайн цен */}
         <div className="product-footer">
           {hasStock ? (
             <>
               {product.old_price ? (
-                <div className="flex gap-1 items-center">
-                  <div className="price">{Math.floor(product.price)}₽</div>
+                <div className="price-block">
+                  <div className="price-row">
+                    <div className="price">{Math.floor(product.price)}₽</div>
+                    <div className="discount-badge">
+                      -{Math.round(((product.old_price - product.price) / product.old_price) * 100)}%
+                    </div>
+                  </div>
                   <div className="old-price">{Math.floor(product.old_price)}₽</div>
                 </div>
               ) : (
@@ -302,8 +307,13 @@ function ProductCard({ product, isSubscribed = false, onSubscriptionChange, onPr
             <>
               {/* Показываем цену даже для товаров не в наличии */}
               {product.old_price ? (
-                <div className="flex gap-1 items-center">
-                  <div className="price-unavailable">{Math.floor(product.price)}₽</div>
+                <div className="price-block">
+                  <div className="price-row">
+                    <div className="price-unavailable">{Math.floor(product.price)}₽</div>
+                    <div className="discount-badge">
+                      -{Math.round(((product.old_price - product.price) / product.old_price) * 100)}%
+                    </div>
+                  </div>
                   <div className="old-price">{Math.floor(product.old_price)}₽</div>
                 </div>
               ) : (
