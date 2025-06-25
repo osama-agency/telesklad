@@ -540,8 +540,8 @@ html, body {
   justify-content: center;
   font-weight: 500;
   font-size: clamp(12px, 2.8vw, 13px);
-  border: none;
-  color: white;
+  border: 2px solid transparent;
+  color: #3D4453;
   border-radius: clamp(6px, 1.5vw, 8px);
   padding: clamp(4px, 1vw, 6px) clamp(10px, 2.5vw, 14px);
   min-height: 28px;
@@ -551,8 +551,9 @@ html, body {
   cursor: pointer;
   transition: all 0.2s ease;
   
-  /* Зеленый фон для всех кнопок */
-  background: rgba(72, 201, 40, 0.8);
+  /* Белый фон с градиентной обводкой */
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(135deg, rgba(72, 201, 40, 0.6) 0%, rgba(58, 161, 32, 0.6) 100%) border-box;
   
   /* Минимальная ширина для предотвращения обрезания */
   min-width: max-content;
@@ -564,10 +565,12 @@ html, body {
   }
 }
 
-/* Активное состояние - более насыщенный зеленый */
+/* Активное состояние - яркая градиентная обводка */
 .catalog-nav li button.active {
-  background: #48C928;
-  color: white;
+  border: 2px solid transparent;
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(135deg, #48C928 0%, #3AA120 100%) border-box;
+  color: #48C928;
   font-weight: 600;
   box-shadow: 0 2px 8px rgba(72, 201, 40, 0.3);
   
@@ -578,8 +581,10 @@ html, body {
 
 /* Hover эффект для неактивных кнопок */
 .catalog-nav li button:not(.active):hover {
-  background: rgba(72, 201, 40, 0.9);
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(135deg, rgba(72, 201, 40, 0.8) 0%, rgba(58, 161, 32, 0.8) 100%) border-box;
   transform: translateY(-1px);
+  color: #3AA120;
 }
 
 /* Мобильная адаптация */
