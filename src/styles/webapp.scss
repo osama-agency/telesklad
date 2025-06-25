@@ -506,12 +506,15 @@ html, body {
 .catalog-nav {
   white-space: nowrap;
   margin: 0;
-  /* Отступы для первой и последней кнопки с начальным отступом слева */
-  padding-left: max(env(safe-area-inset-left), calc(clamp(16px, 4vw, 20px) + 8px));
+  /* Отступы для первой и последней кнопки */
+  padding-left: max(env(safe-area-inset-left), clamp(16px, 4vw, 20px));
   padding-right: max(env(safe-area-inset-right), clamp(16px, 4vw, 20px));
   display: flex;
   gap: clamp(4px, 1vw, 6px);
   overflow-x: auto;
+  
+  /* Смещение всего меню вправо */
+  transform: translateX(12px);
   
   /* Полностью убираем фон и все декоративные элементы */
   background: none;
@@ -579,10 +582,7 @@ html, body {
   scroll-margin-right: clamp(16px, 4vw, 20px);
 }
 
-/* Дополнительный отступ для первой кнопки */
-.catalog-nav li:first-child button {
-  margin-left: 8px;
-}
+/* Убираем дополнительный margin для первой кнопки - используем transform */
 
 /* Hover эффект для неактивных кнопок */
 .catalog-nav li button:not(.active):hover {
@@ -595,13 +595,11 @@ html, body {
 /* Мобильная адаптация */
 @media (max-width: 480px) {
   .catalog-nav {
-    padding-left: max(env(safe-area-inset-left), calc(clamp(12px, 3vw, 16px) + 8px));
+    padding-left: max(env(safe-area-inset-left), clamp(12px, 3vw, 16px));
     padding-right: max(env(safe-area-inset-right), clamp(12px, 3vw, 16px));
-  }
-  
-  /* Дополнительный отступ для первой кнопки на мобильных */
-  .catalog-nav li:first-child button {
-    margin-left: 6px;
+    
+    /* Меньшее смещение на мобильных */
+    transform: translateX(8px);
   }
 }
 
@@ -631,11 +629,14 @@ html, body {
     display: flex;
     gap: 8px;
     overflow-x: auto;
-    padding-left: max(env(safe-area-inset-left), calc(16px + 8px));
+    padding-left: max(env(safe-area-inset-left), 16px);
     padding-right: max(env(safe-area-inset-right), 16px);
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
     margin: 0;
+    
+    /* Смещение фильтра категорий вправо */
+    transform: translateX(12px);
     
     /* Скрываем скроллбар */
     scrollbar-width: none;
@@ -728,9 +729,12 @@ html, body {
     padding: 10px 0;
     
     .category-filter-list {
-      padding-left: max(env(safe-area-inset-left), calc(12px + 8px));
+      padding-left: max(env(safe-area-inset-left), 12px);
       padding-right: max(env(safe-area-inset-right), 12px);
       gap: 6px;
+      
+      /* Меньшее смещение фильтра на мобильных */
+      transform: translateX(8px);
     }
     
     .category-filter-item {
