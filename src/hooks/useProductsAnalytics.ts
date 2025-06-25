@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 
 // Типы для продуктовой аналитики
 export interface ProductAnalytics {
-  id: number;
+  id: string;
   name: string;
   brand: string;
   
@@ -73,7 +73,7 @@ export interface AnalyticsResponse {
 }
 
 export interface CartItem {
-  id: number;
+  id: string;
   name: string;
   brand: string;
   quantity: number;
@@ -82,7 +82,7 @@ export interface CartItem {
 }
 
 export interface SimpleProduct {
-  id: number;
+  id: string;
   name: string;
   prime_cost?: number;
   avgpurchasepricerub?: number;
@@ -118,7 +118,7 @@ export function useProductsAnalytics(
         // Преобразуем данные в формат аналитики
         const analyticsData: AnalyticsResponse = {
           products: response.data.products.map((product: any) => ({
-            id: product.id,
+            id: product.id.toString(),
             name: product.name,
             brand: product.brand || 'Не указан',
             currentStock: product.stock_quantity || 0,
@@ -305,7 +305,7 @@ export function useExchangeRate(currency: string = 'TRY'): UseExchangeRateResult
 
 // Хук для обновления товара (остатки, цены)
 export function useUpdateProduct(): UseMutationResult<void, {
-  id: number;
+  id: string;
   data: Partial<Pick<ProductAnalytics, 'currentStock' | 'avgSalePrice' | 'oldPrice'>> & Record<string, any>;
   period?: number;
 }> {
@@ -313,7 +313,7 @@ export function useUpdateProduct(): UseMutationResult<void, {
   const [error, setError] = useState<string | null>(null);
 
   const mutate = useCallback(async ({ id, data }: {
-    id: number;
+    id: string;
     data: Partial<Pick<ProductAnalytics, 'currentStock' | 'avgSalePrice' | 'oldPrice'>> & Record<string, any>;
     period?: number;
   }): Promise<void> => {

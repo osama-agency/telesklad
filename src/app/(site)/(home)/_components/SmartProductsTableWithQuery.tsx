@@ -9,60 +9,10 @@ import { EditableField } from "@/components/ui/EditableField";
 import { EditProductModal } from "@/components/Modals/EditProductModal";
 import AddProductModal from "@/components/Modals/AddProductModal";
 import toast from 'react-hot-toast';
-
-interface ProductAnalytics {
-  id: string;
-  name: string;
-  brand: string;
-  
-  // ОСТАТКИ И ЗАПАСЫ
-  currentStock: number;
-  inTransitQuantity: number;
-  totalAvailable: number;
-  
-  // СКОРОСТЬ ПРОДАЖ
-  avgDailySales: number;
-  daysUntilZero: number;
-  stockStatus: 'critical' | 'low' | 'normal' | 'excess';
-  
-  // РЕКОМЕНДАЦИИ ПО ЗАКУПКАМ
-  recommendedOrderQuantity: number;
-  optimalStockLevel: number;
-  
-  // ФИНАНСОВЫЕ ПОКАЗАТЕЛИ
-  avgPurchasePrice: number;
-  avgpurchasepricetry: number;
-  prime_cost: number;
-  avgSalePrice: number;
-  oldPrice?: number; // старая цена для отображения скидки
-  profitMargin: number;
-  profitMarginBasic: number;
-  deliveryCostPerUnit: number;
-  allocatedExpensesPerUnit: number;
-  profitPerUnit: number;
-  totalRealProfit: number;
-  roi: number;
-  
-  // ДИНАМИКА И ТРЕНДЫ
-  salesTrend: 'growing' | 'stable' | 'declining';
-  salesVariability: 'stable' | 'moderate' | 'volatile';
-  seasonalityFactor: number;
-  
-  // ABC/XYZ КЛАССИФИКАЦИЯ
-  abcClass: 'A' | 'B' | 'C';
-  xyzClass: 'X' | 'Y' | 'Z';
-  
-  // ПОКАЗАТЕЛИ ОБОРАЧИВАЕМОСТИ
-  inventoryTurnover: number;
-  avgInventoryValue: number;
-  daysInInventory: number;
-  
-  // ВИДИМОСТЬ В WEBAPP
-  show_in_webapp?: boolean;
-}
+import { ProductAnalytics } from '@/hooks/useProductsAnalytics';
 
 interface CartItem {
-  id: string;
+  id: number;
   name: string;
   brand: string;
   quantity: number;
@@ -160,8 +110,8 @@ interface ProductCartActionsProps {
   product: ProductAnalytics;
   cartItems: CartItem[];
   onAddToCart: (product: ProductAnalytics, quantity: number) => void;
-  onUpdateQuantity: (id: number, quantity: number) => void;
-  onRemoveFromCart: (id: number) => void;
+  onUpdateQuantity: (id: string, quantity: number) => void;
+  onRemoveFromCart: (id: string) => void;
   onEditProduct: (product: ProductAnalytics) => void;
 }
 
@@ -488,19 +438,19 @@ function SmartProductsTableContent() {
     }
   };
 
-  const updateCartQuantity = (id: number, quantity: number) => {
+  const updateCartQuantity = (id: string, quantity: number) => {
     setCartItems(prev => prev.map(item => 
-      Number(item.id) === id ? { ...item, quantity } : item
+      item.id === id ? { ...item, quantity } : item
     ));
   };
 
-  const updateCartCostPrice = (id: number, costPrice: number) => {
+  const updateCartCostPrice = (id: string, costPrice: number) => {
     setCartItems(prev => prev.map(item => 
-      item.id === id.toString() ? { ...item, costPrice } : item
+      item.id === id ? { ...item, costPrice } : item
     ));
   };
 
-  const removeFromCart = (id: number) => {
+  const removeFromCart = (id: string) => {
     setCartItems(prev => prev.filter(item => item.id !== id.toString()));
   };
 
@@ -536,7 +486,7 @@ function SmartProductsTableContent() {
   };
 
   // Функции для обновления товара
-  const handleUpdateStock = async (productId: number, newStock: number) => {
+  const handleUpdateStock = async (productId: string, newStock: number) => {
     try {
       await updateProductMutation.mutate({
         id: productId,
@@ -550,7 +500,7 @@ function SmartProductsTableContent() {
     }
   };
 
-  const handleUpdatePrice = async (productId: number, newPrice: number) => {
+  const handleUpdatePrice = async (productId: string, newPrice: number) => {
     try {
       await updateProductMutation.mutate({
         id: productId,
@@ -564,7 +514,7 @@ function SmartProductsTableContent() {
     }
   };
 
-  const handleUpdateOldPrice = async (productId: number, newOldPrice: number) => {
+  const handleUpdateOldPrice = async (productId: string, newOldPrice: number) => {
     try {
       await updateProductMutation.mutate({
         id: productId,
@@ -578,7 +528,7 @@ function SmartProductsTableContent() {
     }
   };
 
-  const handleUpdatePrimeCost = async (productId: number, newPrimeCost: number) => {
+  const handleUpdatePrimeCost = async (productId: string, newPrimeCost: number) => {
     try {
       await updateProductMutation.mutate({
         id: productId,
