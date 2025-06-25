@@ -513,9 +513,6 @@ html, body {
   gap: clamp(4px, 1vw, 6px);
   overflow-x: auto;
   
-  /* Смещение всего меню вправо */
-  transform: translateX(12px);
-  
   /* Полностью убираем фон и все декоративные элементы */
   background: none;
   
@@ -524,6 +521,13 @@ html, body {
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
   scrollbar-width: none;
+  
+  /* Добавляем отступ слева через псевдоэлемент */
+  &::before {
+    content: '';
+    flex-shrink: 0;
+    width: 8px;
+  }
 }
 
 /* Скрываем скроллбар для всех браузеров */
@@ -598,8 +602,10 @@ html, body {
     padding-left: max(env(safe-area-inset-left), clamp(12px, 3vw, 16px));
     padding-right: max(env(safe-area-inset-right), clamp(12px, 3vw, 16px));
     
-    /* Меньшее смещение на мобильных */
-    transform: translateX(8px);
+    /* Меньший отступ на мобильных */
+    &::before {
+      width: 6px;
+    }
   }
 }
 
@@ -635,8 +641,12 @@ html, body {
     -webkit-overflow-scrolling: touch;
     margin: 0;
     
-    /* Смещение фильтра категорий вправо */
-    transform: translateX(12px);
+    /* Добавляем отступ слева через псевдоэлемент */
+    &::before {
+      content: '';
+      flex-shrink: 0;
+      width: 8px;
+    }
     
     /* Скрываем скроллбар */
     scrollbar-width: none;
@@ -733,8 +743,10 @@ html, body {
       padding-right: max(env(safe-area-inset-right), 12px);
       gap: 6px;
       
-      /* Меньшее смещение фильтра на мобильных */
-      transform: translateX(8px);
+      /* Меньший отступ фильтра на мобильных */
+      &::before {
+        width: 6px;
+      }
     }
     
     .category-filter-item {
