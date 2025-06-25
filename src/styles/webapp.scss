@@ -1,84 +1,146 @@
 /* Точная копия стилей из Rails приложения */
 
+/* ===============================================
+   ЕДИНАЯ СИСТЕМА ВЕРТИКАЛЬНЫХ ОТСТУПОВ
+   =============================================== */
+:root {
+  /* Единая шкала вертикальных отступов */
+  --space-4: clamp(4px, 1vw, 4px);
+  --space-8: clamp(6px, 1.5vw, 8px);
+  --space-12: clamp(8px, 2vw, 12px);
+  --space-16: clamp(12px, 3vw, 16px);
+  --space-20: clamp(16px, 4vw, 20px);
+  --space-24: clamp(18px, 4.5vw, 24px);
+  --space-32: clamp(24px, 6vw, 32px);
+  
+  /* Отступы для разных контекстов */
+  --profile-container-padding: var(--space-16);
+  --profile-header-bottom: var(--space-20);
+  --profile-section-gap: var(--space-24);
+  
+  /* Адаптивные отступы для нижнего меню */
+  --bottom-menu-height: 60px;
+  --bottom-menu-padding: var(--space-20);
+  --bottom-total: calc(var(--bottom-menu-height) + var(--bottom-menu-padding));
+}
+
 /* Убираем горизонтальный скролл глобально */
 html, body {
   overflow-x: hidden;
   max-width: 100vw;
-  font-family: system-ui, -apple-system, "SF Pro Text", Roboto, "Segoe UI", sans-serif;
+  font-family: "Inter", -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 * {
   box-sizing: border-box;
 }
 
-/* Используем системные шрифты для нативного вида на каждой платформе:
-   - На iOS: San Francisco (SF Pro Text)
-   - На Android: Roboto
-   - На Windows: Segoe UI
-   - Fallback: system-ui и sans-serif
+/* Используем Inter для современного дизайна:
+   - Везде: Inter (основной шрифт из Google Fonts)
+   - Fallback iOS/macOS: system-ui (нативный шрифт Apple)
+   - Fallback Android: Roboto
+   - Fallback Windows: Segoe UI
+   - Универсальный fallback: sans-serif
 */
 
-/* Глобальные стили webapp */
+/* Глобальные стили webapp с улучшенной системой отступов */
 .webapp-container {
-  font-family: system-ui, -apple-system, "SF Pro Text", Roboto, "Segoe UI", sans-serif;
+  font-family: "Inter", -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-weight: 400;
   font-size: clamp(13px, 2.5vw, 14px);
   line-height: 1.5;
   color: #3D4453;
   background-color: #f9f9f9;
   
-  /* Убираем проблемные min-height */
-  min-height: 0;
-  height: auto;
+  /* Фиксируем ширину контейнера */
+  width: 100%;
+  max-width: 100%;
+  min-height: 100vh;
   
   /* Убираем горизонтальный скролл */
   overflow-x: hidden;
-  max-width: 100vw;
   
-  /* Safe Area Support для iPhone */
-  padding-top: env(safe-area-inset-top);
+  /* Safe Area Support для iPhone без дублирующих отступов */
+  padding-top: calc(env(safe-area-inset-top) + var(--profile-container-padding));
   padding-left: max(env(safe-area-inset-left), 0);
   padding-right: max(env(safe-area-inset-right), 0);
   
-  /* Базовый отступ снизу только для нижнего меню */
-  padding-bottom: 80px; /* Фиксированное меню 60px + отступ 20px */
+  /* Адаптивный отступ снизу для разных страниц */
+  padding-bottom: var(--bottom-total);
 }
 
 /* Страницы с корзиной нужен больший отступ */
 .webapp-container.catalog-page,
 .webapp-container.favorites-page {
-  padding-bottom: 140px; /* Меню 60px + корзина 60px + отступ 20px */
+  padding-bottom: calc(var(--bottom-total) + 60px); /* +60px для floating cart */
 }
 
-/* Страница корзины - только меню */
+/* Страница корзины - максимально широкий контент с минимальными отступами */
 .webapp-container.cart-page {
-  padding-bottom: 80px; /* Только меню 60px + отступ 20px */
+  padding-bottom: var(--bottom-total);
+  /* Максимально минимальные отступы для самого широкого контента */
+  padding-left: clamp(4px, 1vw, 6px);
+  padding-right: clamp(4px, 1vw, 6px);
 }
 
-/* Страница профиля - минимальный отступ */
+/* Полное скрытие скроллбара на странице Каталог */
+.webapp-container.catalog-page,
+.webapp-container.catalog-page * {
+  scrollbar-width: none !important; /* Firefox - скрываем скроллбар */
+  -ms-overflow-style: none !important; /* IE 10+ - скрываем скроллбар */
+}
+.webapp-container.catalog-page::-webkit-scrollbar,
+.webapp-container.catalog-page *::-webkit-scrollbar {
+  display: none !important; /* Safari и Chrome - полностью скрываем */
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Страница профиля - НЕТ нижнего меню, только безопасный отступ */
 .webapp-container.profile-page {
-  padding-bottom: 80px; /* Только меню 60px + отступ 20px */
+  padding: 0;
+  height: 100vh;
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
 }
-
+/* ===============================================
+   CONTAINER STACK SYSTEM - Единый вертикальный ритм
+   =============================================== */
+.profile-content-stack {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(12px, 3vw, 16px);
+  width: 100%;
+  flex: 1;
+  overflow-y: auto;
+  padding: calc(env(safe-area-inset-top) + 16px) clamp(16px, 4vw, 20px) 0 clamp(16px, 4vw, 20px);
+  /* Отступ снизу: BottomNav (60px) + CartSummary (60px) + gap (20px) = 140px */
+  padding-bottom: calc(140px + env(safe-area-inset-bottom));
+}
 .webapp-container h1 {
   font-weight: 700;
   font-size: clamp(20px, 6vw, 32px);
   line-height: 1.2;
-  margin-bottom: clamp(12px, 3vw, 16px);
-  margin-top: 4px;
+  margin: 0; /* убираем margin, используем gap родителя */
 }
 
 .webapp-container h2 {
   font-weight: 700;
   font-size: clamp(18px, 4.5vw, 24px);
   line-height: 1.3;
+  margin: 0; /* убираем margin, используем gap родителя */
 }
 
 .webapp-container h3 {
   font-weight: 600;
   font-size: clamp(15px, 3.5vw, 17px);
   line-height: 1.4;
-  margin-bottom: clamp(8px, 2vw, 12px);
+  margin: 0; /* убираем margin, используем gap родителя */
 }
 
 /* Modern Header стили */
@@ -99,6 +161,67 @@ html, body {
   align-items: center;
   padding: 12px 0;
   min-height: 56px;
+}
+
+/* Container Adaptive - адаптивный контейнер */
+.container-adaptive {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding-left: clamp(16px, 4vw, 20px);
+  padding-right: clamp(16px, 4vw, 20px);
+}
+
+/* ========================================
+   ЕДИНАЯ СИСТЕМА ВИЗУАЛЬНОГО РИТМА КАТАЛОГА
+   Стандартный отступ: 16px между основными блоками
+   ======================================== */
+
+/* Минимальные отступы для страницы каталога */
+.webapp-container.catalog-page .container-adaptive {
+  padding-left: clamp(8px, 2vw, 12px) !important;
+  padding-right: clamp(8px, 2vw, 12px) !important;
+}
+
+/* Catalog Header - для страницы каталога с поиском (Telegram WebApp) */
+.catalog-header {
+  background-color: transparent;
+  margin-bottom: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  
+  /* Safe area для notch iPhone - только для безопасной зоны */
+  padding-top: env(safe-area-inset-top, 0);
+  
+  /* Базовые отступы */
+  padding-left: clamp(16px, 4vw, 20px);
+  padding-right: clamp(16px, 4vw, 20px);
+  padding-bottom: 0;
+  
+  /* Модификатор для полной ширины экрана */
+  &.full-width {
+    /* Убираем все отступы родителя */
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+    width: 100vw;
+    
+    /* Внутренние отступы для контента */
+    padding-left: max(env(safe-area-inset-left), clamp(16px, 4vw, 20px));
+    padding-right: max(env(safe-area-inset-right), clamp(16px, 4vw, 20px));
+    
+    /* Убираем margin снизу для плотного дизайна */
+    margin-bottom: 0;
+    
+    /* Минимальные отступы для страницы каталога */
+    .webapp-container.catalog-page & {
+      padding-left: max(env(safe-area-inset-left), clamp(8px, 2vw, 12px));
+      padding-right: max(env(safe-area-inset-right), clamp(8px, 2vw, 12px));
+    }
+  }
 }
 
 /* Original Rails header search styles */
@@ -322,14 +445,36 @@ html, body {
   }
 }
 
-/* Minimalist Category Navigation */
+/* Category Navigation Wrapper - только для категорий за края экрана */
+.category-navigation-wrapper {
+  /* Выходим за границы родительского контейнера */
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  width: 100vw;
+  
+  /* Предотвращаем горизонтальную прокрутку */
+  max-width: 100%;
+  overflow-x: hidden;
+  
+  /* Вертикальные отступы */
+  margin-top: 16px;
+  margin-bottom: 16px;
+  padding: 0;
+  
+  /* Мягкая тень слева */
+  box-shadow: inset 6px 0 10px -6px rgba(0, 0, 0, 0.08);
+}
+
+/* Minimalist Category Navigation - полная ширина экрана */
 .catalog-nav {
   white-space: nowrap;
-  margin-left: clamp(-16px, -4vw, -20px);
-  margin-right: clamp(-16px, -4vw, -20px);
-  margin-top: clamp(16px, 4vw, 24px);
-  margin-bottom: clamp(20px, 5vw, 28px);
-  padding: 0 clamp(16px, 4vw, 20px);
+  margin: 0;
+  /* Отступы для первой и последней кнопки */
+  padding-left: max(env(safe-area-inset-left), clamp(16px, 4vw, 20px));
+  padding-right: max(env(safe-area-inset-right), clamp(16px, 4vw, 20px));
   display: flex;
   gap: clamp(4px, 1vw, 6px);
   overflow-x: auto;
@@ -359,10 +504,10 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 400;
+  font-weight: 500;
   font-size: clamp(13px, 3vw, 14px);
   border: none;
-  color: #64748B;
+  color: white;
   border-radius: clamp(8px, 2vw, 10px);
   padding: clamp(6px, 1.5vw, 8px) clamp(12px, 3vw, 16px);
   min-height: 32px;
@@ -370,26 +515,192 @@ html, body {
   white-space: nowrap;
   scroll-snap-align: start;
   cursor: pointer;
+  transition: all 0.2s ease;
   
-  /* Полностью прозрачный фон без подложки */
-  background: transparent;
+  /* Зеленый фон для всех кнопок */
+  background: rgba(72, 201, 40, 0.8);
+  
+  /* Минимальная ширина для предотвращения обрезания */
+  min-width: max-content;
+  
+  /* Touch feedback */
+  &:active {
+    transform: scale(0.95);
+    transition-duration: 0.1s;
+  }
 }
 
-/* Активное состояние - минималистичный стиль */
+/* Активное состояние - более насыщенный зеленый */
 .catalog-nav li button.active {
   background: #48C928;
   color: white;
-  font-weight: 500;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(72, 201, 40, 0.3);
+  
+  /* Активная кнопка не обрезается */
+  scroll-margin-left: clamp(16px, 4vw, 20px);
+  scroll-margin-right: clamp(16px, 4vw, 20px);
+}
+
+/* Hover эффект для неактивных кнопок */
+.catalog-nav li button:not(.active):hover {
+  background: rgba(72, 201, 40, 0.9);
+  transform: translateY(-1px);
+}
+
+/* Мобильная адаптация */
+@media (max-width: 480px) {
+  .catalog-nav {
+    padding-left: max(env(safe-area-inset-left), clamp(12px, 3vw, 16px));
+    padding-right: max(env(safe-area-inset-right), clamp(12px, 3vw, 16px));
+  }
 }
 
 
+
+/* Современный фильтр категорий для Telegram WebApp - на всю ширину экрана */
+.category-filter {
+  width: 100%;
+  margin-bottom: 16px;
+  margin-top: 16px;
+  
+  /* Выходим за границы родительского контейнера на всю ширину экрана */
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  width: 100vw;
+  
+  /* Современный фон для всей секции категорий */
+  background: linear-gradient(135deg, rgba(248, 249, 250, 0.95) 0%, rgba(255, 255, 255, 0.98) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 12px 0;
+  
+  .category-filter-list {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-left: max(env(safe-area-inset-left), 16px);
+    padding-right: max(env(safe-area-inset-right), 16px);
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    margin: 0;
+    
+    /* Скрываем скроллбар */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+  
+  .category-filter-item {
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1.5px solid rgba(0, 0, 0, 0.08);
+    border-radius: 20px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #3D4453;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    scroll-snap-align: start;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    
+    /* Touch feedback */
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.95);
+      border-color: rgba(72, 201, 40, 0.2);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    
+    &:active {
+      transform: translateY(0) scale(0.98);
+      transition-duration: 0.1s;
+    }
+    
+    &.active {
+      background: #48C928;
+      border-color: #48C928;
+      color: white;
+      font-weight: 600;
+      box-shadow: 0 4px 16px rgba(72, 201, 40, 0.3);
+      
+      &:hover {
+        background: #3ba220;
+        border-color: #3ba220;
+        transform: translateY(-1px);
+      }
+    }
+    
+    /* Skeleton загрузка */
+    &.skeleton {
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      animation: skeleton-loading 1.5s infinite;
+      border: none;
+      width: 80px;
+      
+      &:nth-child(2) { width: 100px; }
+      &:nth-child(3) { width: 120px; }
+      &:nth-child(4) { width: 90px; }
+    }
+  }
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Мобильная адаптация для фильтра */
+@media (max-width: 480px) {
+  .category-filter {
+    margin-top: 16px;
+    margin-bottom: 16px;
+    padding: 10px 0;
+    
+    .category-filter-list {
+      padding-left: max(env(safe-area-inset-left), 12px);
+      padding-right: max(env(safe-area-inset-right), 12px);
+      gap: 6px;
+    }
+    
+    .category-filter-item {
+      padding: 8px 12px;
+      font-size: 13px;
+      border-radius: 16px;
+      min-height: 36px;
+    }
+  }
+}
 
 /* Адаптивная сетка товаров */
 .product-grid {
   display: grid;
   gap: clamp(8px, 2vw, 16px);
   grid-template-columns: repeat(2, 1fr); /* 2 колонки на телефонах */
-  margin-bottom: 20px; /* Уменьшенный отступ */
+  margin-top: 16px;
+  margin-bottom: 16px;
   
   @media (min-width: 375px) {
     gap: clamp(12px, 2.5vw, 16px);
@@ -494,8 +805,8 @@ html, body {
   font-size: clamp(13px, 3vw, 14px);
   line-height: 1.4;
   height: clamp(36px, 8vw, 40px);
-  margin-top: clamp(10px, 2.5vw, 14px);
-  margin-bottom: clamp(8px, 2vw, 10px);
+  margin-top: 12px;
+  margin-bottom: 8px;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
@@ -536,7 +847,7 @@ html, body {
 
 .product-wrapper .title-has {
   text-align: center;
-  margin-bottom: clamp(8px, 2vw, 12px);
+  margin-bottom: 8px;
   font-weight: 600;
   font-size: clamp(12px, 2.8vw, 13px);
   color: #FF6B6B;
@@ -551,7 +862,7 @@ html, body {
   font-weight: 700;
   font-size: clamp(15px, 4vw, 17px);
   color: #48C928;
-  margin-bottom: clamp(4px, 1vw, 6px);
+  margin-bottom: 4px;
 }
 
 .product-wrapper .old-price {
@@ -566,7 +877,7 @@ html, body {
   font-weight: 700;
   font-size: clamp(15px, 4vw, 17px);
   color: #48C928;
-  margin-bottom: clamp(4px, 1vw, 6px);
+  margin-bottom: 4px;
 }
 
 .product-wrapper .price-unavailable {
@@ -574,7 +885,7 @@ html, body {
   font-size: clamp(15px, 4vw, 17px);
   color: #999999;
   opacity: 0.7;
-  margin-bottom: clamp(4px, 1vw, 6px);
+  margin-bottom: 4px;
 }
 
 .product-wrapper .price-unavailable-without-old {
@@ -582,7 +893,7 @@ html, body {
   font-size: clamp(15px, 4vw, 17px);
   color: #999999;
   opacity: 0.7;
-  margin-bottom: clamp(4px, 1vw, 6px);
+  margin-bottom: 4px;
 }
 
 /* Бейдж "нет в наличии" */
@@ -2087,7 +2398,7 @@ html, body {
 
 /* Button styles - Rails exact copy */
 .btn {
-  border-radius: 16px;
+  border-radius: 20px;
   padding: 16px 20px;
   min-height: 48px;
   font-size: 16px;
@@ -2164,9 +2475,10 @@ html, body {
     gap: 12px; /* Увеличенный gap между карточками */
   }
   
-  /* Уменьшаем отступы в заголовке профиля */
+  /* Выравниваем отступы в заголовке профиля */
   .flex.items-center.gap-3 {
-    margin-bottom: 10px; /* Увеличенный отступ для заголовка */
+    margin-top: 12px; /* Верхний отступ для симметрии */
+    margin-bottom: 12px; /* Нижний отступ для заголовка */
   }
 }
 
@@ -2186,7 +2498,7 @@ html, body {
 
 .action-card {
   background: white;
-  border-radius: 16px;
+  border-radius: 20px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
   border: 1px solid #f0f0f0;
   overflow: hidden;
@@ -2785,7 +3097,7 @@ html, body {
    LOYALTY SYSTEM STYLES - Based on Rails Project
    =============================================== */
 
-/* Bonus Block - Главная страница */
+/* Bonus Block - Главная страница (старый) */
 .bonus-block {
   border-radius: 20px;
   background-color: white;
@@ -2823,6 +3135,691 @@ html, body {
   }
 }
 
+/* ===============================================
+   MODERN BONUS BLOCK - Современный дизайн
+   =============================================== */
+
+/* Основной контейнер современного бонусного блока */
+.modern-bonus-block {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fff8 100%);
+  border: 1px solid rgba(72, 201, 40, 0.1);
+  border-radius: 20px;
+  padding: var(--space-20);
+  margin: 0; /* убираем margin, используем gap родителя */
+  box-shadow: 
+    0px 4px 16px rgba(61, 68, 83, 0.06),
+    0px 2px 8px rgba(72, 201, 40, 0.04);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  
+  /* Subtle animated gradient */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(72, 201, 40, 0.02) 50%,
+      transparent 100%
+    );
+    animation: shimmer-bonus 4s ease-in-out infinite;
+    pointer-events: none;
+  }
+  
+  /* Hover effect */
+  @media (hover: hover) {
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 
+        0px 8px 25px rgba(61, 68, 83, 0.08),
+        0px 4px 16px rgba(72, 201, 40, 0.08);
+      border-color: rgba(72, 201, 40, 0.15);
+    }
+  }
+}
+
+/* Заголовок блока */
+.bonus-header {
+  position: relative;
+  z-index: 1;
+  margin-bottom: var(--space-20);
+}
+
+.bonus-title-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin-bottom: var(--space-16);
+}
+
+.bonus-title {
+  font-size: clamp(16px, 4vw, 18px);
+  font-weight: 600;
+  color: #3D4453;
+  margin: 0;
+}
+
+.info-button {
+  background: rgba(72, 201, 40, 0.1);
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #48C928;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: rgba(72, 201, 40, 0.15);
+    transform: scale(1.1);
+  }
+  
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.bonus-balance-group {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-12);
+}
+
+.bonus-balance-label {
+  font-size: clamp(12px, 3vw, 14px);
+  color: #777777;
+  font-weight: 500;
+}
+
+.bonus-balance-amount {
+  font-size: clamp(28px, 7vw, 36px);
+  font-weight: 700;
+  color: #48C928;
+  line-height: 1;
+  background: linear-gradient(135deg, #48C928 0%, #3AA120 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Секция информации об уровне */
+.bonus-tier-section {
+  position: relative;
+  z-index: 1;
+}
+
+.current-tier-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-20);
+  padding: var(--space-16);
+  background: linear-gradient(135deg, #f8fff8 0%, #ffffff 100%);
+  border: 1px solid rgba(72, 201, 40, 0.15);
+  border-radius: 20px;
+}
+
+.tier-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+}
+
+.tier-icon {
+  font-size: clamp(20px, 5vw, 24px);
+  filter: drop-shadow(0 2px 4px rgba(72, 201, 40, 0.2));
+}
+
+.tier-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.tier-name {
+  font-size: clamp(14px, 3.5vw, 16px);
+  font-weight: 600;
+  color: #3D4453;
+}
+
+.tier-benefit {
+  font-size: clamp(12px, 3vw, 13px);
+  color: #48C928;
+  font-weight: 500;
+}
+
+.view-all-tiers {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  background: none;
+  border: none;
+  color: #48C928;
+  font-size: clamp(12px, 3vw, 13px);
+  font-weight: 500;
+  cursor: pointer;
+  padding: var(--space-8);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: rgba(72, 201, 40, 0.1);
+    transform: translateX(4px);
+  }
+  
+  &:active {
+    transform: translateX(2px);
+  }
+}
+
+/* Секция прогресса */
+.progress-section {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fff8 100%);
+  border: 1px solid rgba(72, 201, 40, 0.1);
+  border-radius: 20px;
+  padding: var(--space-16);
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-12);
+}
+
+.progress-label {
+  font-size: clamp(13px, 3.2vw, 14px);
+  color: #3D4453;
+  font-weight: 500;
+}
+
+.progress-counter {
+  font-size: clamp(12px, 3vw, 13px);
+  color: #48C928;
+  font-weight: 600;
+  background: rgba(72, 201, 40, 0.1);
+  padding: var(--space-4) var(--space-8);
+  border-radius: 12px;
+}
+
+.progress-bar-container {
+  width: 100%;
+  height: 8px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: var(--space-8);
+  position: relative;
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.3) 0%, transparent 100%);
+    border-radius: 4px 4px 0 0;
+  }
+}
+
+.progress-milestones {
+  display: flex;
+  justify-content: space-between;
+  font-size: clamp(10px, 2.5vw, 11px);
+  color: #777777;
+  font-weight: 500;
+}
+
+.milestone {
+  &.current {
+    color: #48C928;
+    font-weight: 600;
+  }
+  
+  &.target {
+    color: #999999;
+  }
+}
+
+/* Приветственная секция для новых пользователей */
+.welcome-section {
+  text-align: center;
+  padding: var(--space-24) var(--space-16);
+  background: linear-gradient(135deg, #f8fff8 0%, #ffffff 100%);
+  border: 1px solid rgba(72, 201, 40, 0.15);
+  border-radius: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.welcome-icon {
+  font-size: clamp(32px, 8vw, 40px);
+  margin-bottom: var(--space-16);
+  animation: bounce-welcome 2s ease-in-out infinite;
+}
+
+.welcome-content {
+  h4 {
+    font-size: clamp(16px, 4vw, 18px);
+    font-weight: 600;
+    color: #3D4453;
+    margin: 0 0 var(--space-8) 0;
+  }
+  
+  p {
+    font-size: clamp(13px, 3.2vw, 14px);
+    color: #777777;
+    line-height: 1.5;
+    margin: 0 0 var(--space-16) 0;
+    max-width: 280px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+.learn-more-btn {
+  background: linear-gradient(135deg, #48C928 0%, #3AA120 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: var(--space-12) var(--space-20);
+  font-size: clamp(13px, 3.2vw, 14px);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(72, 201, 40, 0.2);
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(72, 201, 40, 0.3);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+/* Скелетон для загрузки */
+.bonus-skeleton {
+  padding: var(--space-20);
+  
+  .skeleton-line {
+    height: 16px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 8px;
+    margin-bottom: var(--space-12);
+    
+    &.short {
+      width: 40%;
+    }
+    
+    &.medium {
+      width: 60%;
+      height: 20px;
+    }
+    
+    &.long {
+      width: 80%;
+    }
+  }
+  
+  .skeleton-progress {
+    width: 100%;
+    height: 8px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 4px;
+    margin-top: var(--space-16);
+  }
+}
+
+/* Модальные окна */
+.bonus-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--space-20);
+  backdrop-filter: blur(4px);
+}
+
+.bonus-modal {
+  background: white;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 80vh;
+  overflow: hidden;
+  animation: modal-appear 0.3s ease-out;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-20);
+  border-bottom: 1px solid #f0f0f0;
+  
+  h3 {
+    font-size: clamp(16px, 4vw, 18px);
+    font-weight: 600;
+    color: #3D4453;
+    margin: 0;
+  }
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: #777777;
+  cursor: pointer;
+  padding: var(--space-8);
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: #f0f0f0;
+    color: #3D4453;
+  }
+}
+
+.modal-content {
+  padding: var(--space-20);
+  overflow-y: auto;
+  max-height: calc(80vh - 80px);
+}
+
+/* Информационные секции */
+.info-section {
+  display: flex;
+  gap: var(--space-16);
+  margin-bottom: var(--space-20);
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.info-icon {
+  font-size: clamp(20px, 5vw, 24px);
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 4px rgba(72, 201, 40, 0.2));
+}
+
+.info-text {
+  flex: 1;
+  
+  h4 {
+    font-size: clamp(14px, 3.5vw, 16px);
+    font-weight: 600;
+    color: #3D4453;
+    margin: 0 0 var(--space-8) 0;
+  }
+  
+  p {
+    font-size: clamp(13px, 3.2vw, 14px);
+    color: #777777;
+    line-height: 1.5;
+    margin: 0;
+  }
+}
+
+/* Список уровней в модальном окне */
+.tiers-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.tier-card {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 20px;
+  padding: var(--space-16);
+  transition: all 0.2s ease;
+  
+  &.current {
+    background: linear-gradient(135deg, #f8fff8 0%, #ffffff 100%);
+    border-color: #48C928;
+    box-shadow: 0 4px 16px rgba(72, 201, 40, 0.1);
+  }
+  
+  &.achieved {
+    background: #f8fff8;
+    border-color: rgba(72, 201, 40, 0.3);
+  }
+  
+  &.locked {
+    background: #f8f9fa;
+    border-color: #e9ecef;
+    opacity: 0.7;
+  }
+}
+
+.tier-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  margin-bottom: var(--space-8);
+}
+
+.tier-card-icon {
+  font-size: clamp(18px, 4.5vw, 20px);
+  filter: drop-shadow(0 2px 4px rgba(72, 201, 40, 0.2));
+}
+
+.tier-card-info {
+  flex: 1;
+}
+
+.tier-card-name {
+  font-size: clamp(14px, 3.5vw, 16px);
+  font-weight: 600;
+  color: #3D4453;
+  margin-bottom: var(--space-4);
+}
+
+.tier-card-benefit {
+  font-size: clamp(12px, 3vw, 13px);
+  color: #48C928;
+  font-weight: 500;
+}
+
+.tier-card-status {
+  flex-shrink: 0;
+}
+
+.status-badge {
+  font-size: clamp(10px, 2.5vw, 11px);
+  font-weight: 600;
+  padding: var(--space-4) var(--space-8);
+  border-radius: 12px;
+  
+  &.current {
+    background: #48C928;
+    color: white;
+  }
+  
+  &.achieved {
+    background: rgba(72, 201, 40, 0.1);
+    color: #48C928;
+  }
+  
+  &.locked {
+    background: #e9ecef;
+    color: #777777;
+  }
+}
+
+.tier-card-requirement {
+  font-size: clamp(11px, 2.8vw, 12px);
+  color: #777777;
+  margin-bottom: var(--space-8);
+}
+
+.tier-card-progress {
+  background: rgba(72, 201, 40, 0.1);
+  border-radius: 8px;
+  padding: var(--space-8);
+}
+
+.progress-info {
+  font-size: clamp(11px, 2.8vw, 12px);
+  color: #48C928;
+  font-weight: 600;
+  margin-bottom: var(--space-4);
+}
+
+.mini-progress-bar {
+  width: 100%;
+  height: 4px;
+  background: rgba(72, 201, 40, 0.2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.mini-progress-fill {
+  height: 100%;
+  background: #48C928;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+/* Анимации */
+@keyframes shimmer-bonus {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+@keyframes bounce-welcome {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-8px);
+  }
+  60% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes modal-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Адаптивность для современного bonus block */
+@media (max-width: 640px) {
+  .modern-bonus-block {
+    padding: var(--space-16);
+  }
+  
+  .bonus-header {
+    margin-bottom: var(--space-16);
+  }
+  
+  .bonus-balance-amount {
+    font-size: clamp(24px, 6vw, 28px);
+  }
+  
+  .current-tier-info {
+    padding: var(--space-12);
+    margin-bottom: var(--space-16);
+  }
+  
+  .progress-section {
+    padding: var(--space-12);
+  }
+  
+  .welcome-section {
+    padding: var(--space-20) var(--space-12);
+  }
+  
+  .bonus-modal {
+    margin: var(--space-16);
+    max-width: none;
+  }
+  
+  .modal-header {
+    padding: var(--space-16);
+  }
+  
+  .modal-content {
+    padding: var(--space-16);
+  }
+}
+
+@media (max-width: 374px) {
+  .modern-bonus-block {
+    padding: var(--space-12);
+  }
+  
+  .bonus-balance-amount {
+    font-size: clamp(20px, 5vw, 24px);
+  }
+  
+  .current-tier-info {
+    padding: var(--space-8);
+  }
+  
+  .progress-section {
+    padding: var(--space-8);
+  }
+  
+  .welcome-section {
+    padding: var(--space-16) var(--space-8);
+  }
+  
+  .tier-card {
+    padding: var(--space-12);
+  }
+}
+
 /* Bonus Selector - Корзина */
 .bonus-block-cart {
   /* Glassmorphism эффект */
@@ -2836,7 +3833,7 @@ html, body {
     inset 0 -1px 0 rgba(255, 255, 255, 0.1);
   position: relative;
   overflow: hidden;
-  border-radius: 16px;
+  border-radius: 20px;
   
   /* Анимированный градиентный фон */
   &::before {
@@ -3021,7 +4018,7 @@ html, body {
     background: rgba(255, 255, 255, 0.4);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    border-radius: 16px;
+    border-radius: 20px;
     padding: 16px 20px;
     border: 1px solid rgba(255, 255, 255, 0.3);
     margin-top: 20px !important;
@@ -6123,7 +7120,7 @@ body,
 .search-suggestion-item {
   background: #f8f9fa;
   border: none;
-  border-radius: 16px;
+  border-radius: 20px;
   padding: 8px 16px;
   font-size: 14px;
   color: #3D4453;
@@ -6931,7 +7928,7 @@ body,
   background: linear-gradient(135deg, #48C928 0%, #3AA120 100%);
   color: white;
   border: none;
-  border-radius: 16px;
+  border-radius: 20px;
   padding: 18px 24px;
   font-size: 16px;
   font-weight: 600;
@@ -6997,9 +7994,9 @@ body,
   to { transform: rotate(360deg); }
 }
 
-/* Добавляем отступ снизу для контента чтобы кнопка не перекрывала */
+/* Уменьшенный отступ снизу для компактного дизайна */
 .cart-page {
-  padding-bottom: 100px !important;
+  padding-bottom: 60px !important;
 }
 
 /* Адаптивность */
@@ -7183,6 +8180,8 @@ body,
 // Компоненты
 @import './loader.scss';
 @import './photo-uploader.scss';
+@import './webapp-algolia.scss';
+@import './modern-search.scss';
 
 /* Страница поддержки */
 .support-page {
@@ -7408,7 +8407,7 @@ body,
 }
 
 .support-faq-section {
-  margin-top: clamp(24px, 6vw, 32px);
+  margin-top: clamp(4px, 2vw, 12px);
   margin-bottom: clamp(24px, 6vw, 32px);
 }
 
@@ -7418,10 +8417,17 @@ body,
 }
 
 .section-title {
-  font-size: clamp(16px, 4vw, 18px);
-  font-weight: 600;
-  margin-bottom: clamp(16px, 4vw, 20px);
-  color: #3D4453;
+  font-size: clamp(18px, 4.5vw, 22px);
+  font-weight: 700;
+  margin-top: clamp(24px, 6vw, 32px);
+  margin-bottom: clamp(24px, 6vw, 32px);
+  color: #23272F;
+  letter-spacing: -0.01em;
+}
+
+/* Специфичный стиль для заголовка FAQ на странице поддержки */
+.support-faq-section .section-title {
+  margin-top: clamp(4px, 1vw, 12px) !important;
 }
 
 /* FAQ стили */
@@ -7533,5 +8539,100 @@ body,
       }
     }
   }
+}
+
+@import './algolia-modern-search-light.scss';
+
+/* Исправления для main контейнера на странице профиля */
+.webapp-container.profile-page .container-adaptive {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Заголовок профиля - фиксированный */
+.profile-header {
+  flex-shrink: 0;
+  padding: 0 0 clamp(12px, 3vw, 16px) 0;
+  border-bottom: 1px solid rgba(72, 201, 40, 0.1);
+  margin-bottom: clamp(12px, 3vw, 16px);
+}
+
+/* Исправления для профиля - убираем конфликты overflow */
+.webapp-container.profile-page .container-adaptive {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Заголовок профиля - фиксированный */
+.profile-header {
+  flex-shrink: 0;
+  padding: 0 0 clamp(12px, 3vw, 16px) 0;
+  border-bottom: 1px solid rgba(72, 201, 40, 0.1);
+  margin-bottom: clamp(12px, 3vw, 16px);
+}
+
+/* Адаптация бонусного блока для профиля */
+.profile-page .modern-bonus-block {
+  margin-bottom: clamp(12px, 3vw, 16px);
+  flex-shrink: 0;
+}
+
+/* Убираем конфликтующие стили отступов */
+.profile-page .profile-content-stack > * {
+  margin-bottom: 0 !important;
+}
+
+/* Action cards должны отображаться без скроллов */
+.profile-page .action-cards-container {
+  overflow: visible;
+}
+
+.profile-page .action-card {
+  overflow: visible;
+}
+
+.profile-page .action-card-footer {
+  overflow: visible;
+}
+
+/* Основной контейнер профиля - точечный подход к overflow */
+.webapp-container.profile-page {
+  overflow-x: hidden;
+  overflow-y: hidden;
+}
+
+.profile-content-stack {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Минимальные отступы для страницы Каталог - более широкий контент */
+.webapp-container.catalog-page .container-adaptive {
+  /* Минимальные отступы для максимальной ширины контента */
+  padding-left: clamp(8px, 2vw, 12px) !important;
+  padding-right: clamp(8px, 2vw, 12px) !important;
+  
+  /* Убираем верхний отступ для экономии места */
+  padding-top: 0;
+}
+
+/* Убираем дополнительные отступы у дочерних элементов каталога */
+.webapp-container.catalog-page .product-catalog {
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Убираем лишние отступы у сетки товаров */
+.webapp-container.catalog-page .product-grid {
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 0;
+  padding-right: 0;
 }
 

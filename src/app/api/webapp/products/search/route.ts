@@ -6,30 +6,34 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q');
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const limitParam = searchParams.get('limit');
+    const limit = limitParam ? parseInt(limitParam, 10) : 10;
 
     if (!query || query.trim().length < 2) {
       return NextResponse.json({
         products: [],
-        total: 0,
-        query: query || ''
+        message: 'Query too short'
       });
     }
 
-    console.log('🔍 Search query:', query, 'limit:', limit);
-
-    // Search products by name (case-insensitive)
+    const searchQuery = query.trim();
+    
+    // Поиск товаров по названию с учетом показа в webapp
     const products = await prisma.products.findMany({
       where: {
         AND: [
           {
             name: {
-              contains: query.trim(),
+              contains: searchQuery,
               mode: 'insensitive'
             }
           },
-          { deleted_at: null },
-          { show_in_webapp: true }
+          {
+            show_in_webapp: true
+          },
+          {
+            deleted_at: null
+          }
         ]
       },
       select: {
@@ -42,15 +46,19 @@ export async function GET(request: NextRequest) {
         image_url: true
       },
       orderBy: [
-        { stock_quantity: 'desc' },
-        { name: 'asc' }
+        {
+          // Сначала товары в наличии
+          stock_quantity: 'desc'
+        },
+        {
+          // Затем по релевантности (точные совпадения вначале)
+          name: 'asc'
+        }
       ],
       take: limit
     });
 
-    console.log('🔍 Found products:', products.length);
-
-    // Get images for all products if they don't have direct image_url
+    // Получаем изображения для всех найденных товаров
     const productIds = products.map(p => Number(p.id));
     const attachments = await prisma.active_storage_attachments.findMany({
       where: {
@@ -63,13 +71,13 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // Create image map
+    // Создаем карту изображений
     const imageMap = new Map<number, string>();
     attachments.forEach(attachment => {
       imageMap.set(Number(attachment.record_id), attachment.active_storage_blobs.key);
     });
 
-    // Get category names for products
+    // Получаем названия категорий для товаров
     const categoryIds = products
       .map(p => p.ancestry?.split('/').pop())
       .filter((id): id is string => Boolean(id))
@@ -91,8 +99,8 @@ export async function GET(request: NextRequest) {
       categoryMap.set(Number(cat.id), cat.name || '');
     });
 
-    // Transform products
-    const transformedProducts = products.map((product: any) => {
+    // Преобразуем результаты в формат, ожидаемый фронтендом
+    const formattedProducts = products.map((product: any) => {
       const productId = Number(product.id);
       const blobKey = imageMap.get(productId);
       const categoryIdStr = product.ancestry?.split('/').pop();
@@ -117,19 +125,18 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({
-      products: transformedProducts,
-      total: transformedProducts.length,
-      query: query
+      products: formattedProducts,
+      query: searchQuery,
+      total: formattedProducts.length
     });
 
   } catch (error) {
-    console.error('❌ Error searching products:', error);
+    console.error('❌ Search API Error:', error);
     return NextResponse.json(
       { 
-        error: 'Failed to search products', 
-        details: error instanceof Error ? error.message : String(error),
+        error: 'Search failed',
         products: [],
-        total: 0
+        message: 'Internal server error'
       },
       { status: 500 }
     );

@@ -146,34 +146,41 @@ const ProfilePage: React.FC = () => {
 
   return (
     <div className="webapp-container profile-page">
-      {/* Заголовок профиля */}
-      <div className="flex items-center gap-3 mb-2">
-        <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center profile-avatar">
-          {user.photo_url ? (
-            <img 
-              src={user.photo_url} 
-              alt="Аватар"
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <IconComponent name="profile" size={20} />
-          )}
+      {/* Единый контейнер с фиксированными отступами */}
+      <div className="profile-content-stack">
+        
+        {/* Заголовок профиля */}
+        <div className="profile-header">
+          <div className="flex items-center gap-3">
+            <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center profile-avatar">
+              {user.photo_url ? (
+                <img 
+                  src={user.photo_url} 
+                  alt="Аватар"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <IconComponent name="profile" size={20} />
+              )}
+            </div>
+            <h2 className="text-xl font-semibold">
+              Привет, {user.first_name || user.first_name_raw} <span key={animationKey} className="waving-hand">👋</span>
+            </h2>
+          </div>
         </div>
-        <h2 className="!mb-0 text-xl font-semibold">
-          Привет, {user.first_name || user.first_name_raw} <span key={animationKey} className="waving-hand">👋</span>
-        </h2>
+
+        {/* Блок бонусной программы */}
+        <BonusBlock />
+
+        {/* Меню действий */}
+        <ActionCards 
+          isAdmin={isAdminOrManagerOrModerator(user.role)} 
+          user={user}
+          subscriptionsCount={subscriptions.length}
+          ordersCount={user.order_count}
+        />
+        
       </div>
-
-      {/* Блок бонусной программы */}
-      <BonusBlock />
-
-      {/* Меню действий */}
-      <ActionCards 
-        isAdmin={isAdminOrManagerOrModerator(user.role)} 
-        user={user}
-        subscriptionsCount={subscriptions.length}
-        ordersCount={user.order_count}
-      />
     </div>
   );
 };

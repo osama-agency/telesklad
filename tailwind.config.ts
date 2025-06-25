@@ -13,8 +13,8 @@ const config: Config = {
     },
     extend: {
       fontFamily: {
-        sans: ['"Golos Text"', '"GOLOS"', '"Arial"', 'sans-serif'],
-        golos: ['"Golos Text"', '"GOLOS"', '"Arial"', 'sans-serif'],
+        sans: ['"Inter"', '-apple-system', 'system-ui', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+        inter: ['"Inter"', '-apple-system', 'system-ui', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
       },
       colors: {
         current: "currentColor",

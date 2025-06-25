@@ -1,4 +1,4 @@
-import "@/css/golos.css";
+import "@/css/inter.css";
 import "@/css/simple-datatables.css";
 import "dropzone/dist/dropzone.css";
 import "flatpickr/dist/flatpickr.min.css";

@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from "next/navigation";
+import { AlgoliaSearchPage } from "../_components/AlgoliaSearchPage";
 import { ProductGrid } from "../_components/ProductGrid";
 import { ProductGridSkeleton } from "../_components/ProductSkeleton";
 import { webAppFetch } from '@/lib/utils/webapp-fetch';
@@ -16,27 +18,16 @@ interface Product {
   category_name?: string;
 }
 
-interface Subscription {
-  id: number;
-  product_id: number;
-  product: Product;
-  created_at: string;
-  updated_at: string;
-}
-
-export default function SearchPage() {
+// Fallback страница поиска с использованием стандартного API
+function FallbackSearchPage({ query }: { query: string }) {
   const [products, setProducts] = useState<Product[]>([]);
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [subscribedProductIds, setSubscribedProductIds] = useState<number[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
-  
-  const searchParams = useSearchParams();
+  const [subscribedProductIds, setSubscribedProductIds] = useState<number[]>([]);
   const router = useRouter();
-  const query = searchParams.get('q') || '';
 
-  // Fetch subscriptions
+  // Загрузка подписок пользователя
   const loadSubscriptions = async () => {
     try {
       const response = await webAppFetch('/api/webapp/subscriptions');
@@ -50,7 +41,7 @@ export default function SearchPage() {
     }
   };
 
-  // Search products
+  // Поиск товаров
   const handleSearch = async (searchQuery: string) => {
     if (!searchQuery.trim()) {
       setProducts([]);
@@ -61,8 +52,10 @@ export default function SearchPage() {
 
     setLoading(true);
     setError(null);
+    setHasSearched(true);
+    
     try {
-      console.log('🔍 Searching for:', searchQuery);
+      console.log('🔍 Fallback search for:', searchQuery);
       
       const [searchResponse, subscriptionsResponse] = await Promise.all([
         webAppFetch(`/api/webapp/products/search?q=${encodeURIComponent(searchQuery)}`),
@@ -71,12 +64,13 @@ export default function SearchPage() {
 
       if (searchResponse.ok) {
         const searchData = await searchResponse.json();
-        console.log('🔍 Search results:', searchData);
+        console.log('🔍 Fallback search results:', searchData);
         setProducts(searchData.products || []);
       } else {
         const errorData = await searchResponse.json();
         console.error('🔍 Search API error:', errorData);
         setError('Ошибка поиска товаров');
+        setProducts([]);
       }
 
       if (subscriptionsResponse.ok) {
@@ -84,17 +78,16 @@ export default function SearchPage() {
         const subscriptions = subscriptionsData.subscriptions || [];
         setSubscribedProductIds(subscriptions.map((sub: any) => sub.product_id));
       }
-
-      setHasSearched(true);
     } catch (error) {
       console.error('Search error:', error);
       setError('Ошибка соединения');
+      setProducts([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Выполняем поиск при изменении query параметра
+  // Выполняем поиск при изменении query
   useEffect(() => {
     if (query.trim()) {
       handleSearch(query);
@@ -104,6 +97,11 @@ export default function SearchPage() {
       setLoading(false);
     }
   }, [query]);
+
+  // Загружаем подписки при первом рендере
+  useEffect(() => {
+    loadSubscriptions();
+  }, []);
 
   // Set document title
   useEffect(() => {
@@ -119,7 +117,7 @@ export default function SearchPage() {
     }
   }, [query]);
 
-  // Handle subscription changes
+  // Обработчик изменения подписок
   const handleSubscriptionChange = () => {
     loadSubscriptions();
   };
@@ -135,12 +133,17 @@ export default function SearchPage() {
         </div>
 
         <div className="text-center py-8">
-          <p className="text-red-600">{error}</p>
+          <div className="search-error-icon mb-4">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" className="text-red-400">
+              <path d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          <p className="text-red-600 mb-4">{error}</p>
           <button 
             onClick={() => handleSearch(query)} 
-            className="mt-2 px-4 py-2 bg-blue-600 text-white rounded"
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
           >
-            Повторить
+            Повторить поиск
           </button>
         </div>
       </div>
@@ -194,5 +197,40 @@ export default function SearchPage() {
         </div>
       ) : null}
     </div>
+  );
+}
+
+// Компонент-обертка для использования useSearchParams
+function SearchPageContent() {
+  const searchParams = useSearchParams();
+  const query = searchParams.get('q') || '';
+
+  // Проверяем доступность Algolia
+  const hasAlgolia = process.env.NEXT_PUBLIC_ALGOLIA_APP_ID && 
+                     process.env.NEXT_PUBLIC_ALGOLIA_SEARCH_KEY;
+
+  if (hasAlgolia) {
+    // Используем Algolia InstantSearch
+    return <AlgoliaSearchPage initialQuery={query} />;
+  } else {
+    // Используем fallback поиск с улучшенным дизайном
+    return <FallbackSearchPage query={query} />;
+  }
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <div className="webapp-container search-page">
+        <div className="search-header-section">
+          <div className="search-query-info">
+            <h1>Поиск товаров</h1>
+          </div>
+        </div>
+        <ProductGridSkeleton count={8} />
+      </div>
+    }>
+      <SearchPageContent />
+    </Suspense>
   );
 } 

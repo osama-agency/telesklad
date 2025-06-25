@@ -738,7 +738,7 @@ const OrdersPage: React.FC = () => {
             background: rgba(255, 255, 255, 0.8);
             border-radius: 8px;
             border: 1px dashed #48C928;
-            font-family: 'Golos Text', 'GOLOS', monospace;
+            font-family: 'Inter', monospace;
             font-weight: 600;
             letter-spacing: 0.5px;
             color: #1F2937;

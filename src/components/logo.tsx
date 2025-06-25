@@ -22,12 +22,12 @@ export function Logo() {
       
       {/* Текст telesklad - адаптивный */}
       {/* Полное название на больших экранах */}
-      <span className="hidden lg:block text-2xl font-bold font-golos text-dark dark:text-white">
+      <span className="hidden lg:block text-2xl font-bold font-inter text-dark dark:text-white">
         telesklad
       </span>
       
       {/* Сокращенное название на планшетах */}
-      <span className="hidden sm:block lg:hidden text-xl font-bold font-golos text-dark dark:text-white">
+      <span className="hidden sm:block lg:hidden text-xl font-bold font-inter text-dark dark:text-white">
         telesklad
       </span>
       

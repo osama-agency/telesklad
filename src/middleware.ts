@@ -79,9 +79,11 @@ export default withAuth(
         if (pathname.startsWith('/api/webhook') || 
             pathname.startsWith('/api/telegram') ||
             pathname.startsWith('/api/webapp') ||
+            pathname.startsWith('/api/algolia') ||
             pathname.startsWith('/api/redis') ||
             pathname.startsWith('/api/test-telegram-notifications') ||
-            pathname.startsWith('/api/test-shipped')) {
+            pathname.startsWith('/api/test-shipped') ||
+            pathname.startsWith('/api/test-search')) {
           return true;
         }
         

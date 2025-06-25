@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { ProductGrid } from './ProductGrid';
-import { CategoryNavigation } from './CategoryNavigation';
+import { AlgoliaModernSearch } from './AlgoliaModernSearch';
+import { CategoryFilter } from './CategoryFilter';
 import SkeletonLoading from './SkeletonLoading';
 import { webAppFetch } from '@/lib/utils/webapp-fetch';
 import { ProductGridSkeleton } from "./ProductSkeleton";
@@ -17,12 +18,6 @@ interface Product {
   ancestry?: string;
 }
 
-interface Category {
-  id: number;
-  name: string;
-  children?: Category[];
-}
-
 interface Subscription {
   id: number;
   product_id: number;
@@ -31,17 +26,28 @@ interface Subscription {
   updated_at: string;
 }
 
-export function ProductCatalog() {
+interface ProductCatalogProps {
+  showSearch?: boolean;
+}
+
+export function ProductCatalog({ showSearch = false }: ProductCatalogProps) {
+  console.log('🏗️ ProductCatalog render', { 
+    showSearch, 
+    timestamp: new Date().toISOString().split('T')[1].split('.')[0] 
+  });
+
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [subscribedProductIds, setSubscribedProductIds] = useState<number[]>([]);
+  
+  // Используем useRef для предотвращения двойных вызовов
+  const initializedRef = useRef(false);
 
   // Загрузка подписок пользователя
-  const loadSubscriptions = async () => {
+  const loadSubscriptions = useCallback(async () => {
     try {
       const response = await webAppFetch('/api/webapp/subscriptions');
       if (response.ok) {
@@ -52,26 +58,10 @@ export function ProductCatalog() {
     } catch (error) {
       console.error('Error loading subscriptions:', error);
     }
-  };
+  }, []);
 
-  // Загрузка категорий
-  const loadCategories = async () => {
-    try {
-      const response = await webAppFetch('/api/webapp/categories');
-      if (response.ok) {
-        const data = await response.json();
-        console.log('📂 Categories loaded:', data);
-        setCategories(data.categories || []);
-      } else {
-        console.error('❌ Categories API error:', response.status);
-      }
-    } catch (error) {
-      console.error('Error loading categories:', error);
-    }
-  };
-
-  // Загрузка товаров
-  const loadProducts = async (categoryId?: number | null) => {
+  // Загрузка товаров с поддержкой фильтрации по категориям
+  const loadProducts = useCallback(async (categoryId?: number | null) => {
     try {
       setLoading(true);
       setError(null);
@@ -105,23 +95,39 @@ export function ProductCatalog() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Обработчик изменения подписок
-  const handleSubscriptionChange = () => {
+  const handleSubscriptionChange = useCallback(() => {
     loadSubscriptions();
-  };
+  }, [loadSubscriptions]);
 
-  // Загрузка данных при изменении категории
+  // Обработчик изменения категории
+  const handleCategoryChange = useCallback((categoryId: number | null) => {
+    setSelectedCategory(categoryId);
+  }, []);
+
+  // Загрузка товаров при изменении категории
   useEffect(() => {
-    loadProducts(selectedCategory);
-  }, [selectedCategory]);
+    if (initializedRef.current) {
+      console.log('📦 Category changed:', selectedCategory);
+      loadProducts(selectedCategory);
+    }
+  }, [selectedCategory, loadProducts]);
 
   // Загрузка данных при первом рендере
   useEffect(() => {
-    loadCategories();
+    if (initializedRef.current) {
+      console.log('⏭️ ProductCatalog already initialized, skipping');
+      return;
+    }
+    
+    console.log('🚀 ProductCatalog initial effect');
+    
+    initializedRef.current = true;
+    loadProducts();
     loadSubscriptions();
-  }, []);
+  }, []); // Пустой массив зависимостей
 
   if (error) {
     return (
@@ -139,14 +145,18 @@ export function ProductCatalog() {
 
   return (
     <div className="product-catalog">
-      {/* Category Navigation */}
-      {categories.length > 0 && (
-        <CategoryNavigation 
-          categories={categories}
-          selectedCategory={selectedCategory}
-          onSelectCategory={setSelectedCategory}
-        />
+      {/* Header with Search - только на главной странице */}
+      {showSearch && (
+        <header className="catalog-header full-width">
+          <AlgoliaModernSearch />
+        </header>
       )}
+
+      {/* Category Filter - современный фильтр под поиском */}
+      <CategoryFilter 
+        selectedCategory={selectedCategory}
+        onSelectCategory={handleCategoryChange}
+      />
 
       {/* Products Grid */}
       {loading ? (

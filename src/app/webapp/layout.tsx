@@ -9,14 +9,13 @@ import "@/css/golos.css";
 import { IconComponent } from "@/components/webapp/IconComponent";
 import { CartSummary } from "./_components/CartSummary";
 import { BottomNavigation } from "./_components/BottomNavigation";
-import { SearchComponent } from "./_components/SearchComponent";
+
 import { TelegramAuthProvider } from "@/context/TelegramAuthContext";
-import { FavoritesProvider, useFavorites } from "@/context/FavoritesContext";
+import { FavoritesProvider } from "@/context/FavoritesContext";
 import { TelegramBackButton } from "./_components/TelegramBackButton";
 
 function WebappLayoutInner({ children }: PropsWithChildren) {
   const pathname = usePathname();
-  const { hasFavorites } = useFavorites();
   
   // Определяем класс страницы на основе пути
   const getPageClass = () => {
@@ -30,15 +29,7 @@ function WebappLayoutInner({ children }: PropsWithChildren) {
   // Определяем нужно ли показывать нижнее меню (скрываем на странице корзины)
   const shouldShowBottomNavigation = !pathname.startsWith("/webapp/cart");
   
-  // Определяем нужно ли показывать поиск
-  const shouldShowSearch = pathname === "/webapp" || 
-    (pathname.startsWith("/webapp/favorites") && hasFavorites);
-  
-  console.log('🔍 Layout search logic:', { 
-    pathname, 
-    hasFavorites, 
-    shouldShowSearch 
-  });
+
 
   return (
     <>
@@ -67,12 +58,7 @@ function WebappLayoutInner({ children }: PropsWithChildren) {
           minHeight: '100vh',
           backgroundColor: '#f9f9f9'
         }}>
-          {/* Header точно как в Rails */}
-          <header className="webapp-header">
-            <div className="container-adaptive py-3">
-              {shouldShowSearch && <SearchComponent />}
-            </div>
-          </header>
+
 
           {/* Main content */}
           <main className="container-adaptive">

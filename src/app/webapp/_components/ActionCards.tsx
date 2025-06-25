@@ -47,6 +47,16 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
   const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState(false);
   const [isSubscriptionsModalOpen, setIsSubscriptionsModalOpen] = useState(false);
 
+  // Уведомляем о состоянии модальных окон для скрытия плашки корзины
+  useEffect(() => {
+    const isAnyModalOpen = isDeliveryModalOpen || isSubscriptionsModalOpen;
+    
+    // Создаем кастомное событие для уведомления о состоянии модальных окон
+    window.dispatchEvent(new CustomEvent('modalStateChanged', {
+      detail: { isModalOpen: isAnyModalOpen }
+    }));
+  }, [isDeliveryModalOpen, isSubscriptionsModalOpen]);
+
   // Слушаем события обновления подписок
   const [currentSubscriptionsCount, setCurrentSubscriptionsCount] = useState(subscriptionsCount);
 

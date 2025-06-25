@@ -18,7 +18,7 @@ export function AnimatedLogo() {
       </div>
       
       {/* Название */}
-      <div className="flex text-xl font-bold font-golos text-dark dark:text-white">
+      <div className="flex text-xl font-bold font-inter text-dark dark:text-white">
         <span>tele</span>
         <span>sklad</span>
       </div>

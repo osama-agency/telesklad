@@ -17,6 +17,7 @@ export function CartSummary() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [totalPrice, setTotalPrice] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const pathname = usePathname();
 
   // Загрузка корзины и отслеживание изменений
@@ -59,8 +60,21 @@ export function CartSummary() {
     };
   }, []);
 
+  // Слушаем состояние модальных окон для скрытия плашки
+  useEffect(() => {
+    const handleModalStateChange = (event: any) => {
+      setIsModalOpen(event.detail?.isModalOpen || false);
+    };
+
+    window.addEventListener('modalStateChanged', handleModalStateChange);
+
+    return () => {
+      window.removeEventListener('modalStateChanged', handleModalStateChange);
+    };
+  }, []);
+
   // Проверяем, нужно ли показывать плашку
-  const shouldShow = cartItems.length > 0 && pathname !== '/webapp/cart';
+  const shouldShow = cartItems.length > 0 && pathname !== '/webapp/cart' && !isModalOpen;
 
   if (!shouldShow) {
     return null;

@@ -70,97 +70,108 @@ export default function SupportPage() {
 
   if (isLoading) {
     return (
-      <div className="webapp-container">
-        <SkeletonLoading type="support" />
+      <div className="webapp-container profile-page">
+        <div className="profile-content-stack">
+          <SkeletonLoading type="support" />
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="webapp-container">
-        <div className="text-center py-8">
-          <div className="text-red-600 mb-4">{error}</div>
-          <button 
-            onClick={() => window.location.reload()}
-            className="btn btn-secondary"
-          >
-            Попробовать снова
-          </button>
+      <div className="webapp-container profile-page">
+        <div className="profile-content-stack">
+          <div className="text-center py-8">
+            <div className="text-red-600 mb-4">{error}</div>
+            <button 
+              onClick={() => window.location.reload()}
+              className="btn btn-secondary"
+            >
+              Попробовать снова
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="webapp-container">
-      {/* Заголовок поддержки */}
-      <div className="flex items-center gap-3 mb-2">
-        <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center profile-avatar">
-          <IconComponent name="support" size={20} />
+    <div className="webapp-container profile-page">
+      {/* Единый контейнер с фиксированными отступами */}
+      <div className="profile-content-stack">
+        
+        {/* Заголовок поддержки */}
+        <div className="profile-header">
+          <div className="flex items-center gap-3">
+            <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center profile-avatar">
+              <IconComponent name="support" size={20} />
+            </div>
+            <h2 className="text-xl font-semibold">
+              Поддержка 💬
+            </h2>
+          </div>
         </div>
-        <h2 className="!mb-0 text-xl font-semibold">
-          Поддержка 💬
-        </h2>
-      </div>
 
-      {/* FAQ блок */}
-      {faqItems.length > 0 && (
-        <div className="support-faq-section">
-          <h3 className="section-title">Часто задаваемые вопросы</h3>
-          <div className="faq-list">
-            {faqItems.map((item) => (
-              <div key={item.id} className="faq-item">
-                <button 
-                  className="faq-question"
-                  onClick={() => toggleFAQ(item.id)}
-                >
-                  <span className="faq-question-text">{item.question}</span>
-                  <IconComponent 
-                    name="down" 
-                    size={16} 
-                    className={`faq-toggle-icon ${openItems.has(item.id) ? 'open' : ''}`}
-                  />
-                </button>
-                
-                <div className={`faq-answer ${openItems.has(item.id) ? 'open' : ''}`}>
-                  <div className="faq-answer-content">
-                    {item.answer}
+        {/* FAQ блок */}
+        {faqItems.length > 0 && (
+          <div className="support-faq-section">
+            <h3 className="section-title">Часто задаваемые вопросы</h3>
+            <div className="faq-list">
+              {faqItems.map((item) => (
+                <div key={item.id} className="faq-item">
+                  <button 
+                    className="faq-question"
+                    onClick={() => toggleFAQ(item.id)}
+                  >
+                    <span className="faq-question-text">{item.question}</span>
+                    <IconComponent 
+                      name="down" 
+                      size={16} 
+                      className={`faq-toggle-icon ${openItems.has(item.id) ? 'open' : ''}`}
+                    />
+                  </button>
+                  
+                  <div className={`faq-answer ${openItems.has(item.id) ? 'open' : ''}`}>
+                    <div className="faq-answer-content">
+                      {item.answer}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Контакты поддержки */}
-      {supportContacts && (
-        <div className="support-contacts-section">
-          <h3 className="section-title">Контакты</h3>
-          <div className="support-info">
-            <div className="support-info-item">
-              <span className="support-info-label">Telegram:</span>
-              <a 
-                href={supportContacts.telegram_url} 
-                className="support-info-value link" 
-                target="_blank" 
-                rel="noopener noreferrer"
-              >
-                {supportContacts.telegram}
-              </a>
-            </div>
-            <div className="support-info-item">
-              <span className="support-info-label">Время работы:</span>
-              <span className="support-info-value">{supportContacts.working_hours}</span>
-            </div>
-            <div className="support-info-item">
-              <span className="support-info-label">Время ответа:</span>
-              <span className="support-info-value">{supportContacts.response_time}</span>
+        {/* Контакты поддержки */}
+        {supportContacts && (
+          <div className="support-contacts-section">
+            <h3 className="section-title">Контакты</h3>
+            <div className="support-info">
+              <div className="support-info-item">
+                <span className="support-info-label">Telegram:</span>
+                <a 
+                  href={supportContacts.telegram_url} 
+                  className="support-info-value link" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                >
+                  {supportContacts.telegram}
+                </a>
+              </div>
+              <div className="support-info-item">
+                <span className="support-info-label">Время работы:</span>
+                <span className="support-info-value">{supportContacts.working_hours}</span>
+              </div>
+              <div className="support-info-item">
+                <span className="support-info-label">Время ответа:</span>
+                <span className="support-info-value">{supportContacts.response_time}</span>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+        
+      </div>
     </div>
   );
 } 

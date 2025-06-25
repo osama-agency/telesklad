@@ -14,7 +14,7 @@ export function LogoIcon() {
       </svg>
       
       {/* Текст telesklad */}
-      <span className="text-xl font-bold font-golos text-dark dark:text-white">
+      <span className="text-xl font-bold font-inter text-dark dark:text-white">
         telesklad
       </span>
     </div>

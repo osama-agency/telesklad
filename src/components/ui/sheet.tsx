@@ -194,6 +194,7 @@ const Sheet: React.FC<SheetProps> = ({
 
         .sheet-body {
           padding: 20px;
+          padding-bottom: 80px; /* Дополнительный отступ снизу для плашки корзины */
           max-height: calc(90vh - 120px);
           overflow-y: auto;
         }
@@ -226,6 +227,7 @@ const Sheet: React.FC<SheetProps> = ({
           
           .sheet-body {
             padding: 16px;
+            padding-bottom: 80px; /* Дополнительный отступ снизу для плашки корзины */
             max-height: calc(95vh - 100px);
           }
           

@@ -1,1 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800;900&display=swap'); 
+/* Golos Text Font from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;800;900&display=swap');
+
+/* Fallback font definition */
+.font-golos {
+  font-family: "Golos Text", "GOLOS", -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+} 

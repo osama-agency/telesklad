@@ -52,14 +52,16 @@ export default function WebappHomePage() {
 
   return (
     <>
-      {/* Product Catalog - показываем всегда, как в старом Rails приложении */}
-      <Suspense fallback={
-        <div className="min-h-screen bg-[#F8F9FA]">
-          <SkeletonLoading type="catalog" />
-        </div>
-      }>
-        <ProductCatalog />
-      </Suspense>
+      <main className="container-adaptive">
+        {/* Product Catalog - показываем всегда, как в старом Rails приложении */}
+        <Suspense fallback={
+          <div className="min-h-screen bg-[#F8F9FA]">
+            <SkeletonLoading type="catalog" />
+          </div>
+        }>
+          <ProductCatalog showSearch={true} />
+        </Suspense>
+      </main>
     </>
   );
 } 

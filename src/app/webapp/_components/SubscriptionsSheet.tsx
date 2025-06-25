@@ -3,9 +3,28 @@
 import React, { useState, useEffect } from 'react';
 import Sheet from '@/components/ui/sheet';
 import { IconComponent } from '@/components/webapp/IconComponent';
-import SkeletonLoading from './SkeletonLoading';
 import toast from 'react-hot-toast';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
+
+// Специальный компонент скелетона для подписок
+const SubscriptionItemsSkeleton: React.FC<{ count?: number }> = ({ count = 3 }) => {
+  return (
+    <div className="subscription-skeleton-container">
+      {Array.from({ length: count }).map((_, index) => (
+        <div key={index} className="subscription-skeleton-item">
+          <div className="skeleton-image" />
+          <div className="skeleton-content">
+            <div className="skeleton-title" />
+            <div className="skeleton-price" />
+            <div className="skeleton-availability" />
+            <div className="skeleton-date" />
+          </div>
+          <div className="skeleton-action" />
+        </div>
+      ))}
+    </div>
+  );
+};
 
 interface Product {
   id: number;
@@ -190,7 +209,7 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
         </div>
       ) : isLoading ? (
         <div className="loading-container">
-          <SkeletonLoading type="subscription" count={3} />
+          <SubscriptionItemsSkeleton count={3} />
         </div>
       ) : error ? (
         <div className="error-container">
@@ -283,22 +302,99 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
       )}
 
       <style jsx>{`
-        .loading-container {
+        /* Стили для компонента skeleton подписок */
+        .subscription-skeleton-container {
           display: flex;
           flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 40px 20px;
-          text-align: center;
+          gap: 16px;
+          padding: 16px 0;
         }
 
-        .loading-container p {
-          margin-top: 16px;
-          color: #6B7280;
+        .subscription-skeleton-item {
+          display: flex;
+          gap: 12px;
+          padding: 16px;
+          background: #F9FAFB;
+          border-radius: 12px;
+          border: 1px solid #F3F4F6;
+        }
+
+        .skeleton-image {
+          flex-shrink: 0;
+          width: 60px;
+          height: 60px;
+          background: #E5E7EB;
+          border-radius: 8px;
+          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        .skeleton-content {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          min-width: 0;
+        }
+
+        .skeleton-title {
+          height: 18px;
+          background: #E5E7EB;
+          border-radius: 4px;
+          width: 80%;
+          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        .skeleton-price {
+          height: 16px;
+          background: #E5E7EB;
+          border-radius: 4px;
+          width: 60%;
+          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        .skeleton-availability {
+          height: 14px;
+          background: #E5E7EB;
+          border-radius: 4px;
+          width: 70%;
+          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        .skeleton-date {
+          height: 12px;
+          background: #E5E7EB;
+          border-radius: 4px;
+          width: 50%;
+          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        .skeleton-action {
+          flex-shrink: 0;
+          width: 32px;
+          height: 32px;
+          background: #E5E7EB;
+          border-radius: 6px;
+          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.5;
+          }
+        }
+
+        .loading-container {
+          padding: 20px 0;
+          min-height: 200px; /* Минимальная высота для предотвращения прыжков */
+          transition: all 0.3s ease; /* Плавный переход */
         }
 
         .error-container {
           padding: 20px 0;
+          min-height: 120px; /* Минимальная высота для ошибок */
         }
 
         .error-banner {
@@ -337,6 +433,7 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
           justify-content: center;
           padding: 40px 20px;
           text-align: center;
+          min-height: 200px; /* Минимальная высота для пустого состояния */
         }
 
         .empty-state-icon {
@@ -361,6 +458,7 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
           display: flex;
           flex-direction: column;
           gap: 16px;
+          transition: all 0.3s ease; /* Плавный переход */
         }
 
         .subscriptions-header {
@@ -510,15 +608,13 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
           100% { transform: rotate(360deg); }
         }
 
-
-
         /* Адаптивность */
         @media (max-width: 640px) {
-          .subscription-item {
+          .subscription-item, .subscription-skeleton-item {
             padding: 12px;
           }
 
-          .subscription-image {
+          .subscription-image, .skeleton-image {
             width: 50px;
             height: 50px;
           }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { IconComponent } from '@/components/webapp/IconComponent';
 
 interface AccountTier {
   id: string;
@@ -34,6 +35,7 @@ export default function BonusBlock() {
   const [loyaltyData, setLoyaltyData] = useState<LoyaltyData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showTierModal, setShowTierModal] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated && authUser?.tg_id) {
@@ -41,32 +43,33 @@ export default function BonusBlock() {
     }
   }, [isAuthenticated, authUser]);
 
-  // Закрываем модальное окно при размонтировании компонента или изменении маршрута
+  // Закрываем модальные окна при размонтировании компонента
   useEffect(() => {
     const handleRouteChange = () => {
       setShowTierModal(false);
+      setShowInfoModal(false);
     };
 
-    // Слушаем изменения маршрута
     window.addEventListener('beforeunload', handleRouteChange);
     
     return () => {
       setShowTierModal(false);
+      setShowInfoModal(false);
       window.removeEventListener('beforeunload', handleRouteChange);
     };
   }, []);
 
-  // Дополнительная защита: закрываем модальное окно при клике на Escape
+  // Обработка клавиши Escape
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setShowTierModal(false);
+        setShowInfoModal(false);
       }
     };
 
-    if (showTierModal) {
+    if (showTierModal || showInfoModal) {
       document.addEventListener('keydown', handleEscape);
-      // Блокируем скролл body когда модальное окно открыто
       document.body.style.overflow = 'hidden';
     }
 
@@ -74,7 +77,7 @@ export default function BonusBlock() {
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = 'unset';
     };
-  }, [showTierModal]);
+  }, [showTierModal, showInfoModal]);
 
   const fetchLoyaltyData = async () => {
     try {
@@ -92,13 +95,43 @@ export default function BonusBlock() {
     }
   };
 
+  const calculateProgress = () => {
+    if (!loyaltyData?.user.current_tier || !loyaltyData?.user.next_tier) return 0;
+    
+    const currentOrders = loyaltyData.user.order_count;
+    const currentThreshold = loyaltyData.user.current_tier.order_threshold;
+    const nextThreshold = loyaltyData.user.next_tier.order_threshold;
+    
+    if (currentOrders >= nextThreshold) return 100;
+    
+    const progress = ((currentOrders - currentThreshold) / (nextThreshold - currentThreshold)) * 100;
+    return Math.max(0, Math.min(100, progress));
+  };
+
+  const getProgressColor = (progress: number) => {
+    if (progress >= 80) return '#48C928'; // Зеленый
+    if (progress >= 50) return '#FFA929'; // Оранжевый
+    return '#48C928'; // Зеленый по умолчанию
+  };
+
+  const getTierIcon = (tierTitle: string) => {
+    const title = tierTitle?.toLowerCase();
+    if (title?.includes('бронз') || title?.includes('bronze')) return '🥉';
+    if (title?.includes('серебр') || title?.includes('silver')) return '🥈';
+    if (title?.includes('золот') || title?.includes('gold')) return '🥇';
+    if (title?.includes('платин') || title?.includes('platinum')) return '💎';
+    if (title?.includes('алмаз') || title?.includes('diamond')) return '💍';
+    return '🏆';
+  };
+
   if (loading) {
     return (
-      <div className="bonus-block animate-pulse">
-        <div className="p-5">
-          <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
-          <div className="h-8 bg-gray-200 rounded w-32 mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded w-40"></div>
+      <div className="modern-bonus-block">
+        <div className="bonus-skeleton">
+          <div className="skeleton-line short"></div>
+          <div className="skeleton-line medium"></div>
+          <div className="skeleton-line long"></div>
+          <div className="skeleton-progress"></div>
         </div>
       </div>
     );
@@ -109,94 +142,232 @@ export default function BonusBlock() {
   const { user } = loyaltyData;
   const currentTier = user.current_tier;
   const nextTier = user.next_tier;
+  const progress = calculateProgress();
 
   return (
     <>
-      <div className="bonus-block">
-        <div className="p-5">
-          <div className="text-sm text-gray-600 mb-1">Ваши бонусы</div>
-          <div className="bonus-balance">{user.bonus_balance}₽</div>
-          
-          {currentTier && (
-            <div 
-              className="account-tier"
-              onClick={() => setShowTierModal(true)}
+      <div className="modern-bonus-block">
+        {/* Заголовок с информацией */}
+        <div className="bonus-header">
+          <div className="bonus-title-group">
+            <h3 className="bonus-title">Бонусная система</h3>
+            <button 
+              className="info-button"
+              onClick={() => setShowInfoModal(true)}
+              aria-label="Информация о бонусной системе"
             >
-              <span>Уровень: {currentTier.title}</span>
-              <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M8 12l-4-4h8l-4 4z"/>
-              </svg>
-            </div>
-          )}
+              <IconComponent name="help" size={16} />
+            </button>
+          </div>
+          
+          <div className="bonus-balance-group">
+            <div className="bonus-balance-label">Ваши бонусы</div>
+            <div className="bonus-balance-amount">{user.bonus_balance}₽</div>
+          </div>
         </div>
-        
+
+        {/* Информация об уровне */}
         {currentTier && (
-          <div className="bonus-block-footer">
-            <div className="text-sm mb-1">
-              Кэшбек с покупок: {currentTier.bonus_percentage}%
+          <div className="bonus-tier-section">
+            <div className="current-tier-info">
+              <div className="tier-badge">
+                <span className="tier-icon">{getTierIcon(currentTier.title)}</span>
+                <div className="tier-details">
+                  <div className="tier-name">{currentTier.title}</div>
+                  <div className="tier-benefit">Кэшбек {currentTier.bonus_percentage}%</div>
+                </div>
+              </div>
+              
+              <button 
+                className="view-all-tiers"
+                onClick={() => setShowTierModal(true)}
+              >
+                <span>Все уровни</span>
+                <IconComponent name="right" size={14} />
+              </button>
             </div>
+
+            {/* Прогресс до следующего уровня */}
             {nextTier && (
-              <div className="text-xs opacity-80">
-                До уровня &quot;{nextTier.title}&quot;: {nextTier.orders_to_next} заказов
+              <div className="progress-section">
+                <div className="progress-header">
+                  <div className="progress-label">
+                    До уровня "{nextTier.title}"
+                  </div>
+                  <div className="progress-counter">
+                    {nextTier.orders_to_next} {nextTier.orders_to_next === 1 ? 'заказ' : 
+                     nextTier.orders_to_next < 5 ? 'заказа' : 'заказов'}
+                  </div>
+                </div>
+                
+                <div className="progress-bar-container">
+                  <div 
+                    className="progress-bar"
+                    style={{ 
+                      width: `${progress}%`,
+                      backgroundColor: getProgressColor(progress)
+                    }}
+                  />
+                </div>
+                
+                <div className="progress-milestones">
+                  <span className="milestone current">
+                    {user.order_count} заказов
+                  </span>
+                  <span className="milestone target">
+                    {nextTier.order_threshold} заказов
+                  </span>
+                </div>
               </div>
             )}
           </div>
         )}
+
+        {/* Стартовый экран для новых пользователей */}
+        {!currentTier && (
+          <div className="welcome-section">
+            <div className="welcome-icon">🎉</div>
+            <div className="welcome-content">
+              <h4>Добро пожаловать в бонусную программу!</h4>
+              <p>Совершите первый заказ и начните получать кэшбек с каждой покупки</p>
+              <button 
+                className="learn-more-btn"
+                onClick={() => setShowTierModal(true)}
+              >
+                Узнать больше
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Модальное окно с информацией об уровнях */}
+      {/* Модальное окно с информацией о бонусной системе */}
+      {showInfoModal && (
+        <div 
+          className="bonus-modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowInfoModal(false);
+            }
+          }}
+        >
+          <div className="bonus-modal">
+            <div className="modal-header">
+              <h3>О бонусной системе</h3>
+              <button 
+                className="modal-close"
+                onClick={() => setShowInfoModal(false)}
+              >
+                <IconComponent name="close" size={20} />
+              </button>
+            </div>
+            
+            <div className="modal-content">
+              <div className="info-section">
+                <div className="info-icon">💰</div>
+                <div className="info-text">
+                  <h4>Как работают бонусы?</h4>
+                  <p>За каждую покупку вы получаете кэшбек в виде бонусных рублей. Чем выше ваш уровень, тем больше процент кэшбека.</p>
+                </div>
+              </div>
+              
+              <div className="info-section">
+                <div className="info-icon">⬆️</div>
+                <div className="info-text">
+                  <h4>Как повысить уровень?</h4>
+                  <p>Совершайте заказы! Каждый заказ приближает вас к следующему уровню и увеличивает процент кэшбека.</p>
+                </div>
+              </div>
+              
+              <div className="info-section">
+                <div className="info-icon">💎</div>
+                <div className="info-text">
+                  <h4>Как использовать бонусы?</h4>
+                  <p>Накопленные бонусы можно использовать для оплаты следующих заказов. 1 бонус = 1 рубль.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно с уровнями лояльности */}
       {showTierModal && (
         <div 
-          className="modal-account-tier open"
+          className="bonus-modal-overlay"
           onClick={(e) => {
-            // Закрываем модальное окно при клике на backdrop
             if (e.target === e.currentTarget) {
               setShowTierModal(false);
             }
           }}
         >
-          <div 
-            className="modal-wrapper"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="modal-title">
+          <div className="bonus-modal">
+            <div className="modal-header">
               <h3>Уровни лояльности</h3>
               <button 
-                className="close"
+                className="modal-close"
                 onClick={() => setShowTierModal(false)}
               >
-                <svg width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-                  <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
-                </svg>
+                <IconComponent name="close" size={20} />
               </button>
             </div>
             
-            <div className="space-y-3">
-              {loyaltyData.all_tiers?.map((tier: AccountTier) => (
-                <div 
-                  key={tier.id} 
-                  className={`modal-body ${currentTier?.id === tier.id ? 'bg-green-50 border-green-200' : ''}`}
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <div className="title">{tier.title}</div>
-                    {currentTier?.id === tier.id && (
-                      <div className="text-xs text-green-600 font-semibold">Текущий</div>
+            <div className="modal-content">
+              <div className="tiers-list">
+                {loyaltyData.all_tiers?.map((tier: AccountTier, index: number) => (
+                  <div 
+                    key={tier.id} 
+                    className={`tier-card ${currentTier?.id === tier.id ? 'current' : ''} ${
+                      user.order_count >= tier.order_threshold ? 'achieved' : 'locked'
+                    }`}
+                  >
+                    <div className="tier-card-header">
+                      <div className="tier-card-icon">
+                        {getTierIcon(tier.title)}
+                      </div>
+                      <div className="tier-card-info">
+                        <div className="tier-card-name">{tier.title}</div>
+                        <div className="tier-card-benefit">Кэшбек {tier.bonus_percentage}%</div>
+                      </div>
+                      <div className="tier-card-status">
+                        {currentTier?.id === tier.id && (
+                          <span className="status-badge current">Текущий</span>
+                        )}
+                        {user.order_count >= tier.order_threshold && currentTier?.id !== tier.id && (
+                          <span className="status-badge achieved">Достигнут</span>
+                        )}
+                        {user.order_count < tier.order_threshold && (
+                          <span className="status-badge locked">Заблокирован</span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="tier-card-requirement">
+                      От {tier.order_threshold} {tier.order_threshold === 1 ? 'заказа' : 
+                         tier.order_threshold < 5 ? 'заказов' : 'заказов'}
+                    </div>
+                    
+                    {tier.id === nextTier?.id && (
+                      <div className="tier-card-progress">
+                        <div className="progress-info">
+                          Осталось: {nextTier.orders_to_next} {nextTier.orders_to_next === 1 ? 'заказ' : 
+                                   nextTier.orders_to_next < 5 ? 'заказа' : 'заказов'}
+                        </div>
+                        <div className="mini-progress-bar">
+                          <div 
+                            className="mini-progress-fill"
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                      </div>
                     )}
                   </div>
-                  <div className="desc text-gray-600">
-                    Кэшбек: {tier.bonus_percentage}% • От {tier.order_threshold} заказов
-                  </div>
-                  {tier.id === nextTier?.id && (
-                    <div className="text-xs text-blue-600 mt-1">
-                      До этого уровня: {nextTier.orders_to_next} заказов
-                    </div>
-                  )}
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>
       )}
     </>
   );
-} 
+}
