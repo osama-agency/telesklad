@@ -506,28 +506,23 @@ html, body {
 .catalog-nav {
   white-space: nowrap;
   margin: 0;
-  /* Отступы для первой и последней кнопки */
-  padding-left: max(env(safe-area-inset-left), clamp(16px, 4vw, 20px));
-  padding-right: max(env(safe-area-inset-right), clamp(16px, 4vw, 20px));
+  /* UX Best Practice: выравниваем по контенту с peek эффектом */
+  padding-left: clamp(16px, 4vw, 20px);
+  padding-right: clamp(40px, 10vw, 60px); /* Больше справа для peek эффекта */
   display: flex;
-  gap: clamp(4px, 1vw, 6px);
+  gap: clamp(8px, 2vw, 12px); /* Увеличенный gap для лучшего UX */
   overflow-x: auto;
   
   /* Полностью убираем фон и все декоративные элементы */
   background: none;
   
-  /* Улучшенный скролл */
-  scroll-snap-type: x mandatory;
+  /* Улучшенный скролл - убираем snap для более естественного скролла */
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
   scrollbar-width: none;
   
-  /* Добавляем отступ слева через псевдоэлемент */
-  &::before {
-    content: '';
-    flex-shrink: 0;
-    width: 8px;
-  }
+  /* Safe area только для левой стороны */
+  padding-left: max(env(safe-area-inset-left), clamp(16px, 4vw, 20px));
 }
 
 /* Скрываем скроллбар для всех браузеров */
@@ -540,21 +535,20 @@ html, body {
   scrollbar-width: none;
 }
 
-/* Minimalist Category Navigation Buttons */
+/* UX Best Practice: Touch-friendly category buttons */
 .catalog-nav li button {
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 500;
-  font-size: clamp(12px, 2.8vw, 13px);
+  font-size: clamp(14px, 3vw, 15px); /* Увеличенный шрифт для лучшей читаемости */
   border: 2px solid transparent;
   color: #3D4453;
-  border-radius: clamp(6px, 1.5vw, 8px);
-  padding: clamp(4px, 1vw, 6px) clamp(10px, 2.5vw, 14px);
-  min-height: 28px;
+  border-radius: clamp(12px, 3vw, 16px); /* Больший border-radius */
+  padding: clamp(8px, 2vw, 12px) clamp(16px, 4vw, 20px); /* Больший padding для touch */
+  min-height: 44px; /* Apple HIG рекомендуемый минимум для touch targets */
   text-decoration: none;
   white-space: nowrap;
-  scroll-snap-align: start;
   cursor: pointer;
   transition: all 0.2s ease;
   
@@ -567,7 +561,7 @@ html, body {
   
   /* Touch feedback */
   &:active {
-    transform: scale(0.95);
+    transform: scale(0.96);
     transition-duration: 0.1s;
   }
 }
@@ -599,13 +593,10 @@ html, body {
 /* Мобильная адаптация */
 @media (max-width: 480px) {
   .catalog-nav {
-    padding-left: max(env(safe-area-inset-left), clamp(12px, 3vw, 16px));
-    padding-right: max(env(safe-area-inset-right), clamp(12px, 3vw, 16px));
-    
-    /* Меньший отступ на мобильных */
-    &::before {
-      width: 6px;
-    }
+    /* Стандартные отступы как у основного контента */
+    padding-left: max(env(safe-area-inset-left), 16px);
+    padding-right: 40px; /* Фиксированный peek эффект на мобильных */
+    gap: 8px; /* Фиксированный gap для мобильных */
   }
 }
 
@@ -635,18 +626,11 @@ html, body {
     display: flex;
     gap: 8px;
     overflow-x: auto;
-    padding-left: max(env(safe-area-inset-left), 16px);
-    padding-right: max(env(safe-area-inset-right), 16px);
-    scroll-snap-type: x mandatory;
+    /* UX Best Practice: консистентные отступы с основным контентом */
+    padding-left: max(env(safe-area-inset-left), clamp(16px, 4vw, 20px));
+    padding-right: clamp(40px, 10vw, 60px); /* Peek эффект */
     -webkit-overflow-scrolling: touch;
     margin: 0;
-    
-    /* Добавляем отступ слева через псевдоэлемент */
-    &::before {
-      content: '';
-      flex-shrink: 0;
-      width: 8px;
-    }
     
     /* Скрываем скроллбар */
     scrollbar-width: none;
@@ -739,14 +723,10 @@ html, body {
     padding: 10px 0;
     
     .category-filter-list {
-      padding-left: max(env(safe-area-inset-left), 12px);
-      padding-right: max(env(safe-area-inset-right), 12px);
+      /* Консистентные отступы для мобильных */
+      padding-left: max(env(safe-area-inset-left), 16px);
+      padding-right: 40px; /* Фиксированный peek эффект */
       gap: 6px;
-      
-      /* Меньший отступ фильтра на мобильных */
-      &::before {
-        width: 6px;
-      }
     }
     
     .category-filter-item {
