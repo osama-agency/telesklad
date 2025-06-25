@@ -572,6 +572,8 @@ model settings {
   updated_at  DateTime @db.Timestamp(6)
 }
 
+
+
 model supplier_stats {
   id                 Int       @id
   supplier           String    @unique

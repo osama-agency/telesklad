@@ -3,38 +3,34 @@ import { GrammyBotWorker } from '@/lib/services/grammy/GrammyBotWorker';
 import { logger } from '@/lib/logger';
 
 /**
- * Webhook для @telesklad_bot (админские уведомления)
- * Использует тот же GrammyBotWorker, но с токеном админского бота
+ * Упрощенный Grammy Webhook для @strattera_test_bot
+ * Полноценная обработка всех обновлений
  */
 
-let adminWorker: GrammyBotWorker | null = null;
+let grammyWorker: GrammyBotWorker | null = null;
 
-async function initializeAdminWorker(): Promise<GrammyBotWorker> {
-  if (!adminWorker) {
-    adminWorker = GrammyBotWorker.getInstance('admin');
+async function initializeGrammyWorker(): Promise<GrammyBotWorker> {
+  if (!grammyWorker) {
+    grammyWorker = GrammyBotWorker.getInstance('client');
     
-    if (!adminWorker.isReady()) {
-      logger.info('🚀 Initializing GrammyBotWorker for admin bot...', undefined, 'Grammy');
-      
-      // Получаем токен админского бота из переменных окружения
-      const adminToken = process.env.TELESKLAD_BOT_TOKEN;
-      if (!adminToken) {
-        throw new Error('TELESKLAD_BOT_TOKEN not found in environment');
-      }
-      
-      await adminWorker.initialize(adminToken);
-      logger.info('✅ Admin GrammyBotWorker initialized successfully', undefined, 'Grammy');
+    if (!grammyWorker.isReady()) {
+      logger.info('🚀 Initializing GrammyBotWorker for simple webhook...', undefined, 'Grammy');
+      await grammyWorker.initialize();
+      logger.info('✅ GrammyBotWorker initialized successfully', undefined, 'Grammy');
     }
   }
   
-  return adminWorker;
+  return grammyWorker;
 }
 
+/**
+ * POST handler - полноценная обработка через Grammy
+ */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const startTime = performance.now();
   
   try {
-    logger.info('📨 Telesklad webhook received', {
+    logger.info('📨 Simple Grammy webhook received', {
       url: request.url,
       contentType: request.headers.get('content-type')
     }, 'Grammy');
@@ -64,14 +60,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }, 'Grammy');
 
     // Инициализируем worker
-    const worker = await initializeAdminWorker();
+    const worker = await initializeGrammyWorker();
 
-    // Обрабатываем обновление
+    // ВАЖНО: Вызываем полную обработку обновления через handleUpdate
     await worker.handleUpdate(update);
     
     const duration = performance.now() - startTime;
     
-    logger.info('✅ Telesklad webhook processed successfully', {
+    logger.info('✅ Simple Grammy webhook processed successfully', {
       duration: Math.round(duration),
       updateId: update.update_id
     }, 'Grammy');
@@ -87,7 +83,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   } catch (error) {
     const duration = performance.now() - startTime;
     
-    logger.error('❌ Telesklad webhook error', {
+    logger.error('❌ Simple Grammy webhook error', {
       error: error instanceof Error ? error.message : 'Unknown error',
       duration: Math.round(duration),
       url: request.url
@@ -105,12 +101,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 }
 
+/**
+ * GET handler - статус
+ */
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const worker = await initializeAdminWorker();
+    const worker = await initializeGrammyWorker();
     
     return NextResponse.json({
-      message: 'Telesklad Bot Webhook Endpoint',
+      message: 'Simple Grammy Webhook Endpoint',
       status: 'active',
       worker_ready: worker.isReady(),
       timestamp: new Date().toISOString()

@@ -770,19 +770,94 @@ function WebappSettings({ data, onSave, saving }: SettingsComponentProps) {
 }
 
 function TelegramSettings({ data, onSave, saving }: SettingsComponentProps) {
-  const [activeTab, setActiveTab] = useState<'templates' | 'chats'>('templates');
+  const [activeTab, setActiveTab] = useState<'tokens' | 'chats' | 'templates' | 'buttons' | 'webhook'>('tokens');
   const [templates, setTemplates] = useState<Array<{ key: string; template: string; description?: string }>>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(true);
-  const [chatSettings, setChatSettings] = useState({
-    admin_chat_id: data.settings.admin_chat_id || '125861752',
-    courier_chat_id: data.settings.courier_chat_id || '7828956680', 
-    group_chat_id: data.settings.group_chat_id || '-4729817036'
-  });
+  const [botStatus, setBotStatus] = useState<any>(null);
+  const [loadingStatus, setLoadingStatus] = useState(false);
+  const [botSettings, setBotSettings] = useState<any>(null);
+  const [loadingSettings, setLoadingSettings] = useState(true);
   const { success, error: showError } = useToast();
 
+  // Состояния для разных разделов
+  const [tokenSettings, setTokenSettings] = useState({
+    client_bot_token: '',
+    admin_bot_token: ''
+  });
+  
+  const [chatSettings, setChatSettings] = useState({
+    admin_chat_id: '',
+    courier_tg_id: ''
+  });
+  
+  const [buttonSettings, setButtonSettings] = useState({
+    bot_btn_title: '',
+    group_btn_title: '',
+    support_btn_title: '',
+    tg_group: '',
+    tg_support: ''
+  });
+  
+  const [webhookSettings, setWebhookSettings] = useState({
+    webhook_url: '',
+    webhook_secret: '',
+    webhook_max_connections: 40,
+    grammy_enabled: true
+  });
+  
+  const [mediaSettings, setMediaSettings] = useState({
+    first_video_id: ''
+  });
+
   useEffect(() => {
+    loadBotSettings();
     loadTemplates();
   }, []);
+
+  const loadBotSettings = async () => {
+    try {
+      const response = await fetch('/api/telegram/bot-settings');
+      if (response.ok) {
+        const result = await response.json();
+        const settings = result.settings;
+        setBotSettings(settings);
+        
+        // Устанавливаем значения для всех разделов
+        setTokenSettings({
+          client_bot_token: settings.client_bot_token || '',
+          admin_bot_token: settings.admin_bot_token || ''
+        });
+        
+        setChatSettings({
+          admin_chat_id: settings.admin_chat_id || '125861752',
+          courier_tg_id: settings.courier_tg_id || '7690550402'
+        });
+        
+        setButtonSettings({
+          bot_btn_title: settings.bot_btn_title || 'Каталог',
+          group_btn_title: settings.group_btn_title || 'Перейти в СДВГ-чат',
+          support_btn_title: settings.support_btn_title || 'Задать вопрос',
+          tg_group: settings.tg_group || '',
+          tg_support: settings.tg_support || ''
+        });
+        
+        setWebhookSettings({
+          webhook_url: settings.webhook_url || '',
+          webhook_secret: settings.webhook_secret || '',
+          webhook_max_connections: settings.webhook_max_connections || 40,
+          grammy_enabled: settings.grammy_enabled !== false
+        });
+        
+        setMediaSettings({
+          first_video_id: settings.first_video_id || ''
+        });
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки настроек бота:', error);
+    } finally {
+      setLoadingSettings(false);
+    }
+  };
 
   const loadTemplates = async () => {
     try {
@@ -798,10 +873,46 @@ function TelegramSettings({ data, onSave, saving }: SettingsComponentProps) {
     }
   };
 
+  const loadBotStatus = async () => {
+    setLoadingStatus(true);
+    try {
+      const response = await fetch('/api/telegram/bot-status');
+      if (response.ok) {
+        const result = await response.json();
+        setBotStatus(result.bots);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки статуса ботов:', error);
+    } finally {
+      setLoadingStatus(false);
+    }
+  };
+
   const handleTemplateChange = (key: string, value: string) => {
     setTemplates(prev => prev.map(t => 
       t.key === key ? { ...t, template: value } : t
     ));
+  };
+
+  const saveSection = async (section: string, sectionData: any) => {
+    try {
+      const response = await fetch('/api/telegram/bot-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ section, data: sectionData })
+      });
+      
+      if (response.ok) {
+        success('Настройки сохранены!', `Настройки ${section} успешно обновлены`);
+        // Перезагружаем настройки
+        await loadBotSettings();
+      } else {
+        const error = await response.json();
+        showError('Ошибка сохранения', error.error || 'Не удалось сохранить настройки');
+      }
+    } catch (error) {
+      showError('Ошибка соединения', 'Проверьте подключение к интернету');
+    }
   };
 
   const saveTemplates = async () => {
@@ -822,49 +933,357 @@ function TelegramSettings({ data, onSave, saving }: SettingsComponentProps) {
     }
   };
 
-  const saveChatSettings = async () => {
-    await onSave({ 
-      settings: {
-        admin_chat_id: chatSettings.admin_chat_id,
-        courier_chat_id: chatSettings.courier_chat_id,
-        group_chat_id: chatSettings.group_chat_id
-      }
-    });
-  };
+  if (loadingSettings) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          <div className="grid grid-cols-5 gap-2">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-10 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+          <div className="space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-16 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-      <h2 className="text-xl font-semibold text-[#1E293B] dark:text-white mb-6">Настройки Telegram</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-semibold text-[#1E293B] dark:text-white">🤖 Настройки Telegram Ботов</h2>
+        <div className="flex gap-2">
+          <button
+            onClick={loadBotStatus}
+            disabled={loadingStatus}
+            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-all disabled:opacity-50 text-sm"
+          >
+            {loadingStatus ? 'Проверка...' : '🔄 Проверить статус'}
+          </button>
+        </div>
+      </div>
       
       {/* Переключатель вкладок */}
-      <div className="flex border-b border-gray-200 dark:border-gray-600 mb-6">
-        <button
-          onClick={() => setActiveTab('templates')}
-          className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${
-            activeTab === 'templates'
-              ? 'border-[#1A6DFF] text-[#1A6DFF] dark:text-[#00C5FF]'
-              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-          }`}
-        >
-          📝 Шаблоны сообщений
-        </button>
-        <button
-          onClick={() => setActiveTab('chats')}
-          className={`px-6 py-3 font-medium text-sm border-b-2 transition-colors ${
-            activeTab === 'chats'
-              ? 'border-[#1A6DFF] text-[#1A6DFF] dark:text-[#00C5FF]'
-              : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-          }`}
-        >
-          👥 ID чатов
-        </button>
+      <div className="flex flex-wrap border-b border-gray-200 dark:border-gray-600 mb-6 gap-1">
+        {[
+          { id: 'tokens', label: '🔑 Токены ботов', icon: '🔑' },
+          { id: 'chats', label: '👥 ID чатов', icon: '👥' },
+          { id: 'buttons', label: '🔘 Кнопки и ссылки', icon: '🔘' },
+          { id: 'templates', label: '📝 Шаблоны сообщений', icon: '📝' },
+          { id: 'webhook', label: '🌐 Webhook', icon: '🌐' }
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors rounded-t-lg ${
+              activeTab === tab.id
+                ? 'border-[#1A6DFF] text-[#1A6DFF] dark:text-[#00C5FF] bg-blue-50 dark:bg-blue-900/20'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
+      {/* Статус ботов */}
+      {botStatus && (
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Клиентский бот */}
+          <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-medium text-[#1E293B] dark:text-white">📱 Клиентский бот</h3>
+              <span className={`px-2 py-1 rounded-full text-xs ${
+                botStatus.client?.status === 'active' 
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                  : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+              }`}>
+                {botStatus.client?.status === 'active' ? '🟢 Активен' : '🔴 Ошибка'}
+              </span>
+            </div>
+            {botStatus.client?.bot ? (
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                <p>@{botStatus.client.bot.username}</p>
+                <p>{botStatus.client.bot.first_name}</p>
+              </div>
+            ) : (
+              <p className="text-sm text-red-600 dark:text-red-400">{botStatus.client?.error}</p>
+            )}
+          </div>
+          
+          {/* Админский бот */}
+          <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-medium text-[#1E293B] dark:text-white">👑 Админский бот</h3>
+              <span className={`px-2 py-1 rounded-full text-xs ${
+                botStatus.admin?.status === 'active' 
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                  : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+              }`}>
+                {botStatus.admin?.status === 'active' ? '🟢 Активен' : '🔴 Ошибка'}
+              </span>
+            </div>
+            {botStatus.admin?.bot ? (
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                <p>@{botStatus.admin.bot.username}</p>
+                <p>{botStatus.admin.bot.first_name}</p>
+              </div>
+            ) : (
+              <p className="text-sm text-red-600 dark:text-red-400">{botStatus.admin?.error}</p>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Контент вкладок */}
+      {activeTab === 'tokens' && (
+        <div className="space-y-6">
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">🔑 Токены Telegram ботов</h3>
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              Настройте токены для клиентского и админского ботов. Получите токены у @BotFather в Telegram.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-[#374151] dark:text-gray-300 mb-2">
+                📱 Токен клиентского бота (@strattera_test_bot)
+              </label>
+              <input
+                type="password"
+                value={tokenSettings.client_bot_token}
+                onChange={(e) => setTokenSettings(prev => ({ ...prev, client_bot_token: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-[#1E293B] dark:text-white focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20 transition-all"
+                placeholder="7754514670:AAF..."
+              />
+              <p className="text-xs text-gray-500 mt-1">Используется для уведомлений клиентов</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[#374151] dark:text-gray-300 mb-2">
+                👑 Токен админского бота (@telesklad_bot)
+              </label>
+              <input
+                type="password"
+                value={tokenSettings.admin_bot_token}
+                onChange={(e) => setTokenSettings(prev => ({ ...prev, admin_bot_token: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-[#1E293B] dark:text-white focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20 transition-all"
+                placeholder="7612206140:AAH..."
+              />
+              <p className="text-xs text-gray-500 mt-1">Используется для админских и курьерских уведомлений</p>
+            </div>
+          </div>
+
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <span className="text-yellow-600 dark:text-yellow-400">⚠️</span>
+              <div>
+                <h4 className="font-medium text-yellow-800 dark:text-yellow-200">Безопасность</h4>
+                <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                  Токены хранятся в зашифрованном виде. Никогда не передавайте их третьим лицам.
+                  При изменении токенов потребуется перенастройка webhook'ов.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={() => saveSection('tokens', tokenSettings)}
+            disabled={saving}
+            className="bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] text-white px-6 py-2 rounded-lg hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {saving ? 'Сохранение...' : 'Сохранить токены'}
+          </button>
+        </div>
+      )}
+
+      {activeTab === 'chats' && (
+        <div className="space-y-6">
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">👥 ID чатов для уведомлений</h3>
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              Укажите ID чатов для отправки уведомлений. Для получения ID чата отправьте сообщение @userinfobot
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-[#374151] dark:text-gray-300 mb-2">
+                👑 ID админа (Эльдар)
+              </label>
+              <input
+                type="text"
+                value={chatSettings.admin_chat_id}
+                onChange={(e) => setChatSettings(prev => ({ ...prev, admin_chat_id: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-[#1E293B] dark:text-white focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20 transition-all"
+                placeholder="125861752"
+              />
+              <p className="text-xs text-gray-500 mt-1">Получает уведомления о проверке оплат</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[#374151] dark:text-gray-300 mb-2">
+                🚚 ID курьера
+              </label>
+              <input
+                type="text"
+                value={chatSettings.courier_tg_id}
+                onChange={(e) => setChatSettings(prev => ({ ...prev, courier_tg_id: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-[#1E293B] dark:text-white focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20 transition-all"
+                placeholder="7690550402"
+              />
+              <p className="text-xs text-gray-500 mt-1">Получает уведомления о заказах для отправки</p>
+            </div>
+          </div>
+
+          <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <h4 className="font-medium text-[#1E293B] dark:text-white mb-2">💡 Как получить ID чата:</h4>
+            <ul className="text-sm text-[#64748B] dark:text-gray-400 space-y-1">
+              <li>• Для личного чата: отправьте любое сообщение @userinfobot</li>
+              <li>• ID пользователя всегда положительное число (например: 125861752)</li>
+              <li>• Проверьте правильность ID перед сохранением</li>
+            </ul>
+          </div>
+
+          <button
+            onClick={() => saveSection('chats', chatSettings)}
+            disabled={saving}
+            className="bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] text-white px-6 py-2 rounded-lg hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {saving ? 'Сохранение...' : 'Сохранить ID чатов'}
+          </button>
+        </div>
+      )}
+
+      {activeTab === 'buttons' && (
+        <div className="space-y-6">
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">🔘 Кнопки и ссылки</h3>
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              Настройте тексты кнопок и ссылки для приветственного сообщения и уведомлений.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <h4 className="font-medium text-[#1E293B] dark:text-white">📝 Тексты кнопок</h4>
+              
+              <div>
+                <label className="block text-sm font-medium text-[#374151] dark:text-gray-300 mb-2">
+                  🛒 Кнопка каталога
+                </label>
+                <input
+                  type="text"
+                  value={buttonSettings.bot_btn_title}
+                  onChange={(e) => setButtonSettings(prev => ({ ...prev, bot_btn_title: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-[#1E293B] dark:text-white focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20 transition-all"
+                  placeholder="Каталог"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#374151] dark:text-gray-300 mb-2">
+                  💬 Кнопка группы
+                </label>
+                <input
+                  type="text"
+                  value={buttonSettings.group_btn_title}
+                  onChange={(e) => setButtonSettings(prev => ({ ...prev, group_btn_title: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-[#1E293B] dark:text-white focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20 transition-all"
+                  placeholder="Перейти в СДВГ-чат"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#374151] dark:text-gray-300 mb-2">
+                  ❓ Кнопка поддержки
+                </label>
+                <input
+                  type="text"
+                  value={buttonSettings.support_btn_title}
+                  onChange={(e) => setButtonSettings(prev => ({ ...prev, support_btn_title: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-[#1E293B] dark:text-white focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20 transition-all"
+                  placeholder="Задать вопрос"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="font-medium text-[#1E293B] dark:text-white">🔗 Ссылки</h4>
+              
+              <div>
+                <label className="block text-sm font-medium text-[#374151] dark:text-gray-300 mb-2">
+                  💬 Ссылка на группу
+                </label>
+                <input
+                  type="url"
+                  value={buttonSettings.tg_group}
+                  onChange={(e) => setButtonSettings(prev => ({ ...prev, tg_group: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-[#1E293B] dark:text-white focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20 transition-all"
+                  placeholder="https://t.me/+2rTVT8IxtFozNDY0"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#374151] dark:text-gray-300 mb-2">
+                  ❓ Ссылка на поддержку
+                </label>
+                <input
+                  type="url"
+                  value={buttonSettings.tg_support}
+                  onChange={(e) => setButtonSettings(prev => ({ ...prev, tg_support: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-[#1E293B] dark:text-white focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20 transition-all"
+                  placeholder="https://t.me/strattera_help"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#374151] dark:text-gray-300 mb-2">
+                  📹 ID приветственного видео
+                </label>
+                <input
+                  type="text"
+                  value={mediaSettings.first_video_id}
+                  onChange={(e) => setMediaSettings(prev => ({ ...prev, first_video_id: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-[#1E293B] dark:text-white focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20 transition-all"
+                  placeholder="BAACAgIAAxkBAAIBhGhcEQABGPrLRuy1bX2kSTyY1JDtzgAC..."
+                />
+                <p className="text-xs text-gray-500 mt-1">Отправьте видео боту, скопируйте file_id</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={() => saveSection('buttons', buttonSettings)}
+              disabled={saving}
+              className="bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] text-white px-6 py-2 rounded-lg hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saving ? 'Сохранение...' : 'Сохранить кнопки'}
+            </button>
+            
+            <button
+              onClick={() => saveSection('media', mediaSettings)}
+              disabled={saving}
+              className="bg-green-600 text-white px-6 py-2 rounded-lg hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saving ? 'Сохранение...' : 'Сохранить видео'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {activeTab === 'templates' && (
         <div className="space-y-6">
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Шаблоны сообщений</h3>
+            <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">📝 Шаблоны сообщений</h3>
             <p className="text-sm text-blue-700 dark:text-blue-300">
               Настройте тексты уведомлений для клиентов, админа и курьера. Используйте переменные: %{'{order}'}, %{'{price}'}, %{'{items}'}, %{'{fio}'}, %{'{address}'}, %{'{phone}'}, %{'{card}'}, %{'{track}'}
             </p>
@@ -906,75 +1325,151 @@ function TelegramSettings({ data, onSave, saving }: SettingsComponentProps) {
         </div>
       )}
 
-      {activeTab === 'chats' && (
+      {activeTab === 'webhook' && (
         <div className="space-y-6">
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">ID чатов для уведомлений</h3>
+            <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">🌐 Настройки Webhook</h3>
             <p className="text-sm text-blue-700 dark:text-blue-300">
-              Укажите ID чатов для отправки уведомлений. Для получения ID чата отправьте сообщение @userinfobot
+              Настройте webhook'и для получения обновлений от Telegram. Grammy система управляет webhook'ами автоматически.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-[#374151] dark:text-gray-300 mb-2">
-                ID админа для проверки оплат
+                🌐 URL для webhook'ов
               </label>
               <input
-                type="text"
-                value={chatSettings.admin_chat_id}
-                onChange={(e) => setChatSettings(prev => ({ ...prev, admin_chat_id: e.target.value }))}
+                type="url"
+                value={webhookSettings.webhook_url}
+                onChange={(e) => setWebhookSettings(prev => ({ ...prev, webhook_url: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-[#1E293B] dark:text-white focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20 transition-all"
-                placeholder="125861752"
+                placeholder="https://strattera.ngrok.app/api/telegram/grammy/webhook"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-[#374151] dark:text-gray-300 mb-2">
-                ID курьера для отправки заказов
+                🔐 Секретный токен webhook'а
               </label>
               <input
-                type="text"
-                value={chatSettings.courier_chat_id}
-                onChange={(e) => setChatSettings(prev => ({ ...prev, courier_chat_id: e.target.value }))}
+                type="password"
+                value={webhookSettings.webhook_secret}
+                onChange={(e) => setWebhookSettings(prev => ({ ...prev, webhook_secret: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-[#1E293B] dark:text-white focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20 transition-all"
-                placeholder="7828956680"
+                placeholder="Введите секретный токен..."
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-[#374151] dark:text-gray-300 mb-2">
-                ID группы для закупок
+                🔗 Максимальное количество соединений
               </label>
               <input
-                type="text"
-                value={chatSettings.group_chat_id}
-                onChange={(e) => setChatSettings(prev => ({ ...prev, group_chat_id: e.target.value }))}
+                type="number"
+                min="1"
+                max="100"
+                value={webhookSettings.webhook_max_connections}
+                onChange={(e) => setWebhookSettings(prev => ({ ...prev, webhook_max_connections: parseInt(e.target.value) || 40 }))}
                 className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-[#1E293B] dark:text-white focus:border-[#1A6DFF] focus:outline-none focus:ring-2 focus:ring-[#1A6DFF]/20 transition-all"
-                placeholder="-4729817036"
               />
             </div>
-          </div>
 
-          <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-            <h4 className="font-medium text-[#1E293B] dark:text-white mb-2">Как получить ID чата:</h4>
-            <ul className="text-sm text-[#64748B] dark:text-gray-400 space-y-1">
-              <li>• Для личного чата: отправьте сообщение @userinfobot</li>
-              <li>• Для группы: добавьте @userinfobot в группу и отправьте команду /start</li>
-              <li>• ID группы начинается с минуса (например: -4729817036)</li>
-              <li>• ID пользователя - положительное число (например: 125861752)</li>
-            </ul>
+            <div className="flex items-center gap-3 p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
+              <input
+                type="checkbox"
+                checked={webhookSettings.grammy_enabled}
+                onChange={(e) => setWebhookSettings(prev => ({ ...prev, grammy_enabled: e.target.checked }))}
+                className="w-4 h-4 text-[#1A6DFF] border-gray-300 dark:border-gray-600 rounded focus:ring-[#1A6DFF] dark:bg-gray-700"
+              />
+              <div>
+                <span className="block font-medium text-[#1E293B] dark:text-white">🚀 Включить Grammy систему</span>
+                <span className="text-sm text-[#64748B] dark:text-gray-400">Использовать современную Grammy библиотеку вместо старого подхода</span>
+              </div>
+            </div>
           </div>
 
           <button
-            onClick={saveChatSettings}
+            onClick={() => saveSection('webhook', webhookSettings)}
             disabled={saving}
             className="bg-gradient-to-r from-[#1A6DFF] to-[#00C5FF] text-white px-6 py-2 rounded-lg hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {saving ? 'Сохранение...' : 'Сохранить настройки чатов'}
+            {saving ? 'Сохранение...' : 'Сохранить настройки webhook'}
           </button>
         </div>
       )}
+      
+      {/* Информация об архитектуре */}
+      <div className="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+        <div className="flex items-start gap-4">
+          <div className="bg-blue-100 dark:bg-blue-900/50 rounded-lg p-3">
+            <span className="text-3xl">🤖</span>
+          </div>
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-3">Архитектура Telegram ботов</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
+                <h4 className="font-medium text-[#1E293B] dark:text-white mb-2">📱 Клиенты</h4>
+                <div className="text-sm space-y-1">
+                  <div className="flex justify-between">
+                    <span>Development:</span>
+                    <span className="font-mono text-blue-600">@strattera_test_bot</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Production:</span>
+                    <span className="font-mono text-blue-600">@strattera_test_bot</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">Всегда одинаковый</p>
+                </div>
+              </div>
+              
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
+                <h4 className="font-medium text-[#1E293B] dark:text-white mb-2">👑 Админ</h4>
+                <div className="text-sm space-y-1">
+                  <div className="flex justify-between">
+                    <span>Development:</span>
+                    <span className="font-mono text-blue-600">@telesklad_bot</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Production:</span>
+                    <span className="font-mono text-blue-600">@telesklad_bot</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">Всегда одинаковый</p>
+                </div>
+              </div>
+              
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
+                <h4 className="font-medium text-[#1E293B] dark:text-white mb-2">🚚 Курьер</h4>
+                <div className="text-sm space-y-1">
+                  <div className="flex justify-between">
+                    <span>Development:</span>
+                    <span className="font-mono text-blue-600">@telesklad_bot</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Production:</span>
+                    <span className="font-mono text-blue-600">@telesklad_bot</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">Всегда одинаковый</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <span className="text-yellow-600 dark:text-yellow-400">💡</span>
+                <div>
+                  <h5 className="font-medium text-yellow-800 dark:text-yellow-200 mb-1">Ключевая особенность архитектуры</h5>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                    Клиенты <strong>ВСЕГДА</strong> получают уведомления в @strattera_test_bot независимо от режима (dev/prod).
+                    @telesklad_bot используется только для админа и курьера. Это обеспечивает четкое разделение ролей.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

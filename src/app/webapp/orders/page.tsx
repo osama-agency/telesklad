@@ -239,7 +239,7 @@ const OrdersPage: React.FC = () => {
         </div>
         <div className="empty-state">
           <div className="empty-state-icon">
-            <IconComponent name="cart2" size={64} />
+            <IconComponent name="shopping-bag" size={64} />
           </div>
           <h3>Нет заказов</h3>
           <p>Когда вы сделаете первый заказ, он появится здесь</p>
@@ -844,25 +844,117 @@ const OrdersPage: React.FC = () => {
           flex-direction: column;
           align-items: center;
           text-align: center;
-          padding: 60px 20px;
+          padding: 80px 20px 60px 20px;
+          min-height: 60vh;
+          justify-content: center;
+          position: relative;
+        }
+
+        .empty-state::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 200px;
+          height: 200px;
+          background: linear-gradient(135deg, rgba(72, 201, 40, 0.1) 0%, rgba(72, 201, 40, 0.05) 100%);
+          border-radius: 50%;
+          z-index: 0;
+          animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+          0%, 100% { transform: translateX(-50%) translateY(0px); }
+          50% { transform: translateX(-50%) translateY(-10px); }
         }
 
         .empty-state-icon {
-          margin-bottom: 20px;
-          color: #D1D5DB;
+          position: relative;
+          z-index: 1;
+          margin-bottom: 32px;
+          padding: 24px;
+          background: linear-gradient(135deg, #48C928 0%, #3AA120 100%);
+          border-radius: 24px;
+          color: white;
+          box-shadow: 0 8px 32px rgba(72, 201, 40, 0.3);
+          animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+          0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+          40% { transform: translateY(-8px); }
+          60% { transform: translateY(-4px); }
         }
 
         .empty-state h3 {
-          font-size: 18px;
-          font-weight: 600;
-          color: #374151;
-          margin: 0 0 8px 0;
+          position: relative;
+          z-index: 1;
+          font-size: 24px;
+          font-weight: 700;
+          background: linear-gradient(135deg, #1F2937 0%, #374151 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          margin: 0 0 12px 0;
+          letter-spacing: -0.025em;
         }
 
         .empty-state p {
+          position: relative;
+          z-index: 1;
           color: #6B7280;
-          margin: 0 0 24px 0;
-          line-height: 1.5;
+          margin: 0 0 36px 0;
+          line-height: 1.6;
+          font-size: 16px;
+          max-width: 280px;
+          font-weight: 500;
+        }
+
+        .empty-state .webapp-btn {
+          position: relative;
+          z-index: 1;
+          background: linear-gradient(135deg, #48C928 0%, #3AA120 100%);
+          border: none;
+          color: white;
+          padding: 16px 32px;
+          border-radius: 16px;
+          font-size: 16px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 8px 24px rgba(72, 201, 40, 0.3);
+          text-transform: none;
+          letter-spacing: 0;
+          min-width: 200px;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .empty-state .webapp-btn::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+          transition: left 0.5s ease;
+        }
+
+        .empty-state .webapp-btn:hover::before {
+          left: 100%;
+        }
+
+        .empty-state .webapp-btn:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 12px 36px rgba(72, 201, 40, 0.4);
+          background: linear-gradient(135deg, #3AA120 0%, #2E8B1C 100%);
+        }
+
+        .empty-state .webapp-btn:active {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 20px rgba(72, 201, 40, 0.3);
         }
 
         /* Адаптивность */
@@ -936,6 +1028,41 @@ const OrdersPage: React.FC = () => {
               font-size: 13px;
               margin-top: 8px;
               gap: 6px;
+          }
+
+          /* Empty state адаптивность */
+          .empty-state {
+            padding: 60px 16px 40px 16px;
+            min-height: 50vh;
+          }
+
+          .empty-state::before {
+            width: 150px;
+            height: 150px;
+          }
+
+          .empty-state-icon {
+            margin-bottom: 24px;
+            padding: 20px;
+            border-radius: 20px;
+          }
+
+          .empty-state h3 {
+            font-size: 20px;
+            margin: 0 0 10px 0;
+          }
+
+          .empty-state p {
+            font-size: 14px;
+            margin: 0 0 28px 0;
+            max-width: 240px;
+          }
+
+          .empty-state .webapp-btn {
+            padding: 14px 28px;
+            font-size: 14px;
+            min-width: 180px;
+            border-radius: 14px;
           }
         }
       `}</style>

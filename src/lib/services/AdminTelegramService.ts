@@ -1,4 +1,4 @@
-import { TelegramTokenService } from './telegram-token.service';
+import { SettingsService } from './SettingsService';
 
 interface AdminTelegramServiceOptions {
   markup?: string;
@@ -23,7 +23,7 @@ export class AdminTelegramService {
 
     try {
       // Админские уведомления ВСЕГДА идут в @telesklad_bot
-      const botToken = await TelegramTokenService.getTelegramBotToken();
+      const botToken = await SettingsService.get('admin_bot_token', process.env.TELESKLAD_BOT_TOKEN);
       // Удалено логирование токена для безопасности
 
       if (!botToken) {

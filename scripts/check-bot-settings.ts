@@ -1,41 +1,28 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { SettingsService } from '../src/lib/services/SettingsService';
 
 async function checkBotSettings() {
-  console.log('🔍 Проверяем настройки бота в базе данных...\n');
-  
+  console.log('🔍 Проверка настроек ботов...\n');
+
   try {
-    const settings = await prisma.settings.findMany({
-      where: {
-        variable: {
-          in: ['preview_msg', 'first_video_id', 'bot_btn_title', 'group_btn_title', 'tg_main_bot', 'admin_ids']
-        }
-      },
-      orderBy: {
-        variable: 'asc'
-      }
-    });
+    const settings = await SettingsService.getBotSettings();
     
-    console.log('📋 Найденные настройки:');
-    settings.forEach(setting => {
-      console.log(`  ${setting.variable}: ${setting.value || 'НЕ УСТАНОВЛЕНО'}`);
-    });
-    
-    console.log('\n🔧 Отсутствующие настройки:');
-    const foundVariables = settings.map(s => s.variable);
-    const expectedVariables = ['preview_msg', 'first_video_id', 'bot_btn_title', 'group_btn_title', 'tg_main_bot', 'admin_ids'];
-    
-    expectedVariables.forEach(variable => {
-      if (!foundVariables.includes(variable)) {
-        console.log(`  ${variable}: ОТСУТСТВУЕТ`);
-      }
-    });
-    
+    console.log('📋 Основные настройки:');
+    console.log(`   client_bot_token: ${settings.client_bot_token ? '***заполнен***' : 'НЕ НАЙДЕН'}`);
+    console.log(`   admin_bot_token: ${settings.admin_bot_token ? '***заполнен***' : 'НЕ НАЙДЕН'}`);
+    console.log(`   admin_chat_id: ${settings.admin_chat_id}`);
+    console.log(`   courier_tg_id: ${settings.courier_tg_id}`);
+    console.log(`   webhook_url: ${settings.webhook_url || 'НЕ УСТАНОВЛЕН'}`);
+    console.log(`   grammy_enabled: ${settings.grammy_enabled}`);
+
+    const isReady = await SettingsService.isGrammyReady();
+    console.log(`\n🤖 Grammy готов: ${isReady ? 'ДА ✅' : 'НЕТ ❌'}`);
+
+    if (isReady) {
+      console.log('\n🚀 Можно тестировать боты!');
+    }
+
   } catch (error) {
-    console.error('❌ Ошибка при получении настроек:', error);
-  } finally {
-    await prisma.$disconnect();
+    console.error('❌ Ошибка:', error);
   }
 }
 

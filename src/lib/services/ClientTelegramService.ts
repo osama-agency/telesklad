@@ -1,4 +1,4 @@
-import { TelegramTokenService } from './telegram-token.service';
+import { SettingsService } from './SettingsService';
 
 interface ClientTelegramServiceOptions {
   markup?: string;
@@ -14,46 +14,33 @@ export class ClientTelegramService {
   private static readonly MESSAGE_LIMIT = 4090;
 
   /**
-   * Отправить сообщение клиенту через правильный бот в зависимости от окружения
+   * Отправить сообщение клиенту через правильный бот
+   * ВСЕГДА @strattera_test_bot для клиентов
    */
   static async sendToClient(message: string, userTgId: string, options: ClientTelegramServiceOptions = {}): Promise<number | Error> {
     console.log(`📤 ClientTelegramService.sendToClient:`, {
       to: userTgId,
-      environment: process.env.NODE_ENV,
-      bot: process.env.NODE_ENV === 'development' ? '@strattera_test_bot' : '@telesklad_bot',
+      bot: '@strattera_test_bot (ALWAYS)',
       markup: options.markup,
       messageLength: message.length
     });
 
     try {
-      // В development ВСЕГДА используем тестовый бот для клиентов
-      let botToken: string;
-      if (process.env.NODE_ENV === 'development') {
-        const token = await TelegramTokenService.getWebappBotToken();
-        if (!token) {
-          throw new Error('Webapp bot token not available');
-        }
-        botToken = token;
-        console.log('🔑 ClientTelegramService using WEBAPP_TELEGRAM_BOT_TOKEN (@strattera_test_bot) for client in development');
-      } else {
-        const token = await TelegramTokenService.getTelegramBotToken();
-        if (!token) {
-          throw new Error('Telegram bot token not available');
-        }
-        botToken = token;
-        console.log('🔑 ClientTelegramService using TELESKLAD_BOT_TOKEN (@telesklad_bot) for client in production');
+      // ✅ ИСПРАВЛЕНО: Клиенты ВСЕГДА используют @strattera_test_bot
+      const token = await SettingsService.get('client_bot_token', process.env.WEBAPP_TELEGRAM_BOT_TOKEN);
+      if (!token) {
+        throw new Error('Client bot token not available');
       }
+      
+      console.log('🔑 ClientTelegramService using WEBAPP_TELEGRAM_BOT_TOKEN (@strattera_test_bot) for client');
 
-      // Добавляем префикс для разработки
-      let finalMessage = message;
-      if (process.env.NODE_ENV === 'development') {
-        finalMessage = `‼️‼️Development‼️‼️\n\n${message}`;
-      }
+      // ✅ УБИРАЕМ префикс Development - клиенты всегда в тестовом боте
+      const finalMessage = message; // Без префикса
 
       // Формируем клавиатуру если нужно
       const markup = this.formMarkup(options);
       
-      const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

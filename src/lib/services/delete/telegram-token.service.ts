@@ -55,7 +55,8 @@ export class TelegramTokenService {
   }
 
   /**
-   * Получить токен WebApp бота (@strattera_test_bot для разработки)
+   * Получить токен клиентского бота (CLIENT_BOT_TOKEN)
+   * Используется для WebApp и коммуникации с клиентами
    */
   static async getWebappBotToken(): Promise<string | null> {
     try {
@@ -64,7 +65,7 @@ export class TelegramTokenService {
         return this.tokenCache.webapp_telegram_bot_token;
       }
 
-      // Получаем из базы данных
+      // Получаем из старой таблицы settings (пока используем старую логику)
       const setting = await prisma.settings.findUnique({
         where: { variable: 'webapp_telegram_bot_token' }
       });
@@ -73,7 +74,7 @@ export class TelegramTokenService {
 
       if (setting && setting.value && !this.isMaskedToken(setting.value)) {
         token = setting.value;
-        console.log('🔑 Using webapp_telegram_bot_token (@strattera_test_bot) from database');
+        console.log('🔑 Using CLIENT_BOT_TOKEN (webapp_telegram_bot_token) from settings table');
       } else {
         // Fallback к переменной окружения
         token = process.env.WEBAPP_TELEGRAM_BOT_TOKEN || null;

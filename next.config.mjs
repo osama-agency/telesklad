@@ -83,6 +83,7 @@ const nextConfig = {
   },
   
   // Разрешаем cross-origin запросы с ngrok домена в режиме разработки
+  allowedDevOrigins: ["https://strattera.ngrok.app"],
   async headers() {
     return [
       {

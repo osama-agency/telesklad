@@ -15,12 +15,12 @@ export class KeyboardUtils {
     
     // Основная кнопка для WebApp
     const appUrl = webappUrl || process.env.WEBAPP_URL || 'https://strattera.ngrok.app/webapp';
-    keyboard.webApp('🛒 Каталог', appUrl);
+    keyboard.webApp('👉 Открыть каталог', appUrl);
     
     // Вторая строка с дополнительными кнопками
     keyboard.row();
+    keyboard.url('❓ Задать вопрос', 'https://t.me/strattera_help');
     keyboard.url('👥 Наша группа', 'https://t.me/+2rTVT8IxtFozNDY0');
-    keyboard.url('💬 Поддержка', 'https://t.me/strattera_help');
     
     return keyboard;
   }

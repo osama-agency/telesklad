@@ -55,27 +55,37 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Инициализируем worker
     const worker = await initializeGrammyWorker();
 
-    // Получаем webhook callback из grammY
-    const webhookCallback = worker.getWebhookCallback();
+    // Получаем тело запроса как текст
+    const requestBody = await request.text();
+    
+    // Парсим JSON
+    let update;
+    try {
+      update = JSON.parse(requestBody);
+    } catch (parseError) {
+      logger.error('❌ Failed to parse webhook JSON', { error: parseError.message }, 'Grammy');
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    }
 
-    // Создаем объекты Request и Response для grammY
-    const response = await webhookCallback(request);
+    // Обрабатываем update через Grammy worker
+    await worker.handleUpdate(update);
 
     const duration = performance.now() - startTime;
     
     logger.info('✅ Grammy webhook processed successfully', {
       duration: Math.round(duration),
-      status: response.status
+      updateType: Object.keys(update).filter(key => key !== 'update_id')[0]
     }, 'Grammy');
 
-    return response;
+    // Telegram ожидает статус 200 для успешной обработки
+    return NextResponse.json({ ok: true }, { status: 200 });
 
   } catch (error) {
     const duration = performance.now() - startTime;
     
     logger.error('❌ Grammy webhook error', {
-      error: error.message,
-      stack: error.stack,
+      error: (error as Error).message,
+      stack: (error as Error).stack,
       duration: Math.round(duration),
       url: request.url
     }, 'Grammy');
@@ -84,9 +94,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (process.env.NODE_ENV === 'development') {
       try {
         const body = await request.clone().text();
-        logger.debug('📝 Request body for debugging', { body: body.substring(0, 500) }, 'Grammy');
+        logger.debug('📝 Request body for debugging', { body: body.substring(0, 1000) }, 'Grammy');
       } catch (bodyError) {
-        logger.debug('⚠️ Could not read request body for debugging', { error: bodyError.message }, 'Grammy');
+        logger.debug('⚠️ Could not read request body for debugging', { error: (bodyError as Error).message }, 'Grammy');
       }
     }
 

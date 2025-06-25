@@ -1,5 +1,5 @@
 import { prisma } from '@/libs/prismaDb';
-import { TelegramTokenService } from './telegram-token.service';
+import { SettingsService } from './SettingsService';
 
 export class NotificationExecutorService {
 
@@ -328,7 +328,7 @@ export class NotificationExecutorService {
 
   // Получение токена webapp бота из централизованного сервиса
   private static async getWebappBotToken(): Promise<string | null> {
-    return await TelegramTokenService.getWebappBotToken();
+    return await SettingsService.get('client_bot_token', process.env.WEBAPP_TELEGRAM_BOT_TOKEN);
   }
 
   // Отправка уведомления через Telegram

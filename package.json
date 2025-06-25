@@ -31,9 +31,12 @@
     "redis:demo": "ts-node scripts/redis-demo.ts",
     "redis:clear": "ts-node scripts/clear-redis.ts",
     "photos:check": "tsx -r tsconfig-paths/register scripts/check-photo-migration.ts",
-    "grammy:test": "tsx scripts/test-grammy.ts",
-    "grammy:webhook": "tsx scripts/test-grammy-webhook.ts",
-    "grammy:callbacks": "tsx scripts/test-grammy-callbacks.ts"
+    "grammy:test": "npx tsx scripts/test-grammy.ts",
+    "grammy:webhook": "npx tsx scripts/test-grammy-webhook.ts",
+    "grammy:phase3": "npx tsx scripts/test-grammy-phase3.ts",
+    "grammy:full-test": "npm run grammy:test && npm run grammy:webhook && npm run grammy:phase3",
+    "grammy:set-simple-webhook": "npx tsx scripts/set-simple-webhook.ts",
+    "grammy:check-settings": "npx tsx scripts/check-settings.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.832.0",

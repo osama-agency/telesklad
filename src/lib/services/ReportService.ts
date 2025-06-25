@@ -1,4 +1,4 @@
-import { TelegramService } from './TelegramService';
+import { TelegramService } from './delete/TelegramService';
 import { AdminTelegramService } from './AdminTelegramService';
 import { prisma } from '@/libs/prismaDb';
 
@@ -351,7 +351,8 @@ export class ReportService {
           {
             markup: options.userMarkup,
             markup_url: options.userMarkupUrl
-          }
+          },
+          order.id.toString()
         );
 
         // Сохраняем ID сообщения в заказе
@@ -374,8 +375,8 @@ export class ReportService {
 
   /**
    * Отправка уведомлений клиентам через правильный бот
-   * В development: всегда @strattera_test_bot
-   * В production: @telesklad_bot
+   * ВСЕГДА @strattera_test_bot для клиентов
+   * @telesklad_bot только для админа и курьера
    */
   private static async sendClientNotification(
     message: string,
@@ -383,60 +384,56 @@ export class ReportService {
     options: {
       markup?: string;
       markup_url?: string;
-    } = {}
+    } = {},
+    orderId?: string
   ): Promise<number | Error> {
-    // В development клиентские уведомления ВСЕГДА идут через @strattera_test_bot
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔄 Forcing client notification through @strattera_test_bot in development');
+    // ✅ ИСПРАВЛЕНО: Клиенты ВСЕГДА получают уведомления в @strattera_test_bot
+    console.log('🔄 Sending client notification through @strattera_test_bot (ALWAYS)');
+    
+    try {
+      // Получаем токен клиентского бота
+      const { SettingsService } = await import('./SettingsService');
+      const botToken = await SettingsService.get('client_bot_token', process.env.WEBAPP_TELEGRAM_BOT_TOKEN);
       
-      try {
-        // Получаем токен тестового бота
-        const { TelegramTokenService } = await import('./telegram-token.service');
-        const botToken = await TelegramTokenService.getWebappBotToken();
-        
-        if (!botToken) {
-          throw new Error('Webapp bot token not available');
-        }
-        
-        console.log('🔑 ClientNotification using WEBAPP_TELEGRAM_BOT_TOKEN (@strattera_test_bot) for client in development');
-        
-        // Добавляем префикс для разработки
-        const finalMessage = `‼️‼️Development‼️‼️\n\n${message}`;
-        
-        // Формируем клавиатуру если нужно
-        const markup = this.formClientMarkup(options);
-        
-        const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            chat_id: userTgId,
-            text: this.escapeMarkdown(finalMessage),
-            parse_mode: 'MarkdownV2',
-            reply_markup: markup
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.text();
-          throw new Error(`Telegram API error: ${response.status} - ${errorData}`);
-        }
-
-        const result = await response.json();
-        const messageId = result.result.message_id;
-        console.log(`✅ Client message sent to ${userTgId}, ID: ${messageId}`);
-        
-        return messageId;
-        
-      } catch (error) {
-        console.error(`❌ Failed to send client message: ${error}`);
-        return error instanceof Error ? error : new Error('Unknown error');
+      if (!botToken) {
+        throw new Error('Client bot token not available');
       }
-    } else {
-      // В production используем обычную логику
-      return await TelegramService.call(message, userTgId, options);
+      
+      console.log('🔑 ClientNotification using WEBAPP_TELEGRAM_BOT_TOKEN (@strattera_test_bot) for client');
+      
+      // ✅ УБИРАЕМ префикс Development - клиенты всегда в @strattera_test_bot
+      const finalMessage = message; // Без префикса
+      
+      // Формируем клавиатуру если нужно
+      const markup = this.formClientMarkup(options, orderId);
+      
+      const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chat_id: userTgId,
+          text: this.escapeMarkdown(finalMessage),
+          parse_mode: 'MarkdownV2',
+          reply_markup: markup
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Telegram API error: ${response.status} - ${errorData}`);
+      }
+
+      const result = await response.json();
+      const messageId = result.result.message_id;
+      console.log(`✅ Client message sent to ${userTgId}, ID: ${messageId}`);
+      
+      return messageId;
+      
+    } catch (error) {
+      console.error(`❌ Failed to send client message: ${error}`);
+      return error instanceof Error ? error : new Error('Unknown error');
     }
   }
 
@@ -447,7 +444,7 @@ export class ReportService {
       .replace(/([-_\[\]()~>#+=|{}.!])/g, '\\$1'); // экранируем спецсимволы
   }
 
-  private static formClientMarkup(options: { markup?: string; markup_url?: string }): any {
+  private static formClientMarkup(options: { markup?: string; markup_url?: string }, orderId?: string): any {
     if (!options.markup && !options.markup_url) {
       return undefined;
     }
@@ -463,9 +460,13 @@ export class ReportService {
         }]);
       } else {
         // Для остальных кнопок используем callback_data
+        let callbackData = options.markup;
+        if (options.markup === 'i_paid' && orderId) {
+          callbackData = `i_paid_${orderId}`;
+        }
         buttons.push([{
           text: this.getButtonText(options.markup),
-          callback_data: options.markup
+          callback_data: callbackData
         }]);
       }
       

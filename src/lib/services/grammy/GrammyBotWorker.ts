@@ -15,7 +15,7 @@ import {
 } from './types/grammy-types';
 
 import { prisma } from '@/libs/prismaDb';
-import { TelegramTokenService } from '../telegram-token.service';
+import { SettingsService } from '../SettingsService';
 import { UserService } from '../UserService';
 import { ReportService } from '../ReportService';
 import { RedisService } from '../redis.service';
@@ -23,6 +23,7 @@ import { CacheService } from '../cache.service';
 import { logger } from '@/lib/logger';
 import { RedisQueueService } from '../redis-queue.service';
 import { KeyboardUtils } from './utils/keyboard-utils';
+import { TrackingConversation } from './conversations/TrackingConversation';
 
 /**
  * GrammyBotWorker - современная замена TelegramBotWorker на базе grammY
@@ -49,7 +50,7 @@ export class GrammyBotWorker {
     lastResetTime: new Date()
   };
   
-  private static instance: GrammyBotWorker | null = null;
+  private static instances: Map<string, GrammyBotWorker> = new Map();
   private isInitialized = false;
 
   private constructor() {
@@ -57,11 +58,11 @@ export class GrammyBotWorker {
     this.bot = new Bot('placeholder-token');
   }
 
-  static getInstance(): GrammyBotWorker {
-    if (!this.instance) {
-      this.instance = new GrammyBotWorker();
+  static getInstance(instanceName: string = 'default'): GrammyBotWorker {
+    if (!this.instances.has(instanceName)) {
+      this.instances.set(instanceName, new GrammyBotWorker());
     }
-    return this.instance;
+    return this.instances.get(instanceName)!;
   }
 
   /**
@@ -70,7 +71,7 @@ export class GrammyBotWorker {
   async initialize(token?: string): Promise<void> {
     try {
       // Получаем токен если не передан
-      const botToken = token || await TelegramTokenService.getWebappBotToken();
+      const botToken = token || await SettingsService.get('client_bot_token', process.env.WEBAPP_TELEGRAM_BOT_TOKEN);
       if (!botToken) {
         throw new Error('Telegram bot token not found');
       }
@@ -79,6 +80,10 @@ export class GrammyBotWorker {
       this.bot = new Bot<ExtendedContext>(botToken);
 
       logger.info('🚀 Initializing grammY bot...', undefined, 'Grammy');
+
+      // ВАЖНО: Инициализируем бот для получения информации о нем
+      await this.bot.init();
+      logger.info('✅ Bot info loaded', undefined, 'Grammy');
 
       // Инициализируем Redis если доступен
       await this.initializeRedis();
@@ -127,41 +132,39 @@ export class GrammyBotWorker {
   }
 
   /**
-   * Загрузка настроек из базы данных
+   * Загрузка настроек из базы данных через SettingsService
    */
   private async loadSettings(): Promise<void> {
     try {
-      // Попытка загрузить из кэша
-      const cachedSettings = await CacheService.getBotSettings();
+      // Используем новый SettingsService для загрузки настроек
+      const settings = await SettingsService.getBotSettings();
       
-      if (Object.keys(cachedSettings).length > 0) {
-        this.settings = cachedSettings as BotSettings;
-        logger.info('📋 Bot settings loaded from cache', undefined, 'Grammy');
-      } else {
-        // Загрузка из базы данных
-        const settings = await prisma.settings.findMany();
-        this.settings = settings.reduce((acc, setting) => {
-          if (setting.variable && setting.value) {
-            acc[setting.variable as keyof BotSettings] = setting.value;
-          }
-          return acc;
-        }, {} as BotSettings);
-        logger.info('📋 Bot settings loaded from database', undefined, 'Grammy');
-      }
-
-      // Fallback к переменным окружения
       this.settings = {
-        ...this.settings,
-        tg_main_bot: this.settings.tg_main_bot || process.env.TELEGRAM_BOT_USERNAME || '@strattera_bot',
-        admin_chat_id: this.settings.admin_chat_id || process.env.TELEGRAM_ADMIN_CHAT_ID || '125861752',
-        courier_tg_id: this.settings.courier_tg_id || process.env.TELEGRAM_COURIER_ID || '7690550402',
-        admin_ids: this.settings.admin_ids || process.env.TELEGRAM_ADMIN_IDS || '125861752',
-        preview_msg: this.settings.preview_msg || 'Добро пожаловать!',
-        bot_btn_title: this.settings.bot_btn_title || 'Каталог',
-        group_btn_title: this.settings.group_btn_title || 'Наша группа',
-        tg_group: this.settings.tg_group || 'https://t.me/+2rTVT8IxtFozNDY0',
-        tg_support: this.settings.tg_support || 'https://t.me/strattera_help'
+        tg_main_bot: process.env.TELEGRAM_BOT_USERNAME || '@strattera_bot',
+        admin_chat_id: settings.admin_chat_id,
+        courier_tg_id: settings.courier_tg_id,
+        preview_msg: settings.welcome_message,
+        bot_btn_title: settings.bot_btn_title,
+        group_btn_title: settings.group_btn_title,
+        tg_group: settings.tg_group,
+        tg_support: settings.tg_support,
+        first_video_id: settings.first_video_id,
+        
+        // Сообщения для заказов
+        tg_msg_unpaid_main: settings.tg_msg_unpaid_main,
+        tg_msg_paid_client: settings.tg_msg_paid_client,
+        tg_msg_paid_admin: settings.tg_msg_paid_admin,
+        tg_msg_on_processing_client: settings.tg_msg_on_processing_client,
+        tg_msg_on_processing_courier: settings.tg_msg_on_processing_courier,
+        tg_msg_set_track_num: settings.tg_msg_set_track_num,
+        tg_msg_on_shipped_courier: settings.tg_msg_on_shipped_client,
+        
+        // Дополнительные настройки
+        webapp_url: settings.webapp_url || process.env.WEBAPP_URL,
+        support_btn_title: settings.support_btn_title || 'Задать вопрос'
       };
+
+      logger.info('📋 Bot settings loaded via SettingsService', undefined, 'Grammy');
 
     } catch (error) {
       logger.error('❌ Failed to load bot settings', { error: (error as Error).message }, 'Grammy');
@@ -172,7 +175,9 @@ export class GrammyBotWorker {
         admin_ids: '125861752',
         preview_msg: 'Добро пожаловать!',
         bot_btn_title: 'Каталог',
-        group_btn_title: 'Наша группа'
+        group_btn_title: 'Наша группа',
+        tg_group: 'https://t.me/+2rTVT8IxtFozNDY0',
+        tg_support: 'https://t.me/strattera_help'
       };
     }
   }
@@ -226,8 +231,7 @@ export class GrammyBotWorker {
     this.bot.use(conversations());
     
     // Регистрируем conversation для ввода трек-номера
-    // Временно отключаем conversations до полной реализации
-    // this.bot.use(createConversation(this.trackingConversation.bind(this), 'tracking'));
+    this.bot.use(createConversation(this.trackingConversation.bind(this), 'tracking'));
     
     logger.info('🗣️ Conversations initialized', undefined, 'Grammy');
   }
@@ -307,6 +311,13 @@ export class GrammyBotWorker {
 
     // Обработка видео (для админов)
     this.bot.on('message:video', async (ctx) => {
+      logger.info('📹 Video message received', { 
+        userId: ctx.from?.id,
+        isAdmin: this.isAdmin(ctx.from?.id),
+        videoFileId: ctx.message?.video?.file_id,
+        videoSize: `${ctx.message?.video?.width}x${ctx.message?.video?.height}`
+      }, 'Grammy');
+      
       if (this.isAdmin(ctx.from?.id)) {
         await this.handleVideoMessage(ctx);
       } else {
@@ -316,6 +327,12 @@ export class GrammyBotWorker {
 
     // Обработка фото (для админов)
     this.bot.on('message:photo', async (ctx) => {
+      logger.info('🖼 Photo message received', { 
+        userId: ctx.from?.id,
+        isAdmin: this.isAdmin(ctx.from?.id),
+        photoCount: ctx.message?.photo?.length
+      }, 'Grammy');
+      
       if (this.isAdmin(ctx.from?.id)) {
         await this.handlePhotoMessage(ctx);
       } else {
@@ -323,13 +340,29 @@ export class GrammyBotWorker {
       }
     });
 
-    // Обработка остальных типов сообщений
+    // Обработка остальных типов сообщений (НЕ текст, НЕ видео, НЕ фото)
     this.bot.on('message', async (ctx) => {
-      logger.info('📨 Unknown message type received', { 
-        type: ctx.message?.photo ? 'photo' : 'unknown',
-        userId: ctx.from?.id 
+      // Пропускаем текстовые сообщения, видео и фото - они обрабатываются выше
+      if (ctx.message?.text || ctx.message?.video || ctx.message?.photo) {
+        return;
+      }
+      
+      // Логируем остальные типы сообщений
+      const messageType = ctx.message?.document ? 'document' :
+                         ctx.message?.voice ? 'voice' :
+                         ctx.message?.audio ? 'audio' :
+                         ctx.message?.sticker ? 'sticker' :
+                         ctx.message?.animation ? 'animation' :
+                         ctx.message?.location ? 'location' :
+                         ctx.message?.contact ? 'contact' : 'unknown';
+                         
+      logger.info('📨 Other message received', { 
+        type: messageType,
+        userId: ctx.from?.id,
+        isAdmin: this.isAdmin(ctx.from?.id)
       }, 'Grammy');
       
+      // Для всех остальных типов отправляем приветственное сообщение
       await this.sendWelcomeMessage(ctx);
     });
 
@@ -1049,22 +1082,282 @@ export class GrammyBotWorker {
   // ========================
 
   /**
-   * Обработчик текстовых сообщений
+   * Обработчик текстовых сообщений - полная реализация
    */
   private async handleTextMessage(ctx: ExtendedContext): Promise<void> {
+    const messageText = ctx.message?.text || '';
+    const userId = ctx.from?.id;
+    const chatId = ctx.chat?.id;
+
+    logger.info('📨 Text message received', { 
+      userId, 
+      chatId,
+      textLength: messageText.length,
+      textPreview: messageText.substring(0, 50)
+    }, 'Grammy');
+
     // Проверяем, не является ли это сообщением от курьера
-    if (this.isCourier(ctx.from?.id)) {
-      logger.info('📦 Courier message detected', { 
-        userId: ctx.from?.id, 
-        text: ctx.message?.text?.substring(0, 50) 
+    if (this.isCourier(userId)) {
+      await this.handleCourierMessage(ctx, messageText);
+      return;
+    }
+
+    // Проверяем, не находится ли пользователь в conversation
+    const userState = await RedisService.getUserState(`user_${chatId}_state`);
+    if (userState && userState.mode === 'tracking') {
+      logger.info('👤 User in tracking conversation, letting conversation handle', { 
+        userId, 
+        orderId: userState.order_id 
       }, 'Grammy');
-      
-      // TODO: В будущем здесь будет обработка трек-номеров от курьера
+      // Conversation сам обработает это сообщение
       return;
     }
 
     // Для обычных пользователей отправляем приветствие
     await this.sendWelcomeMessage(ctx);
+  }
+
+  /**
+   * Обработчик сообщений от курьера - полная реализация
+   */
+  private async handleCourierMessage(ctx: ExtendedContext, messageText: string): Promise<void> {
+    const userId = ctx.from?.id;
+    const chatId = ctx.chat?.id;
+
+    logger.info('📦 Courier message detected', { 
+      userId, 
+      messageText: messageText.substring(0, 100) 
+    }, 'Grammy');
+
+    try {
+      // Проверяем состояние курьера
+      const courierState = await RedisService.getUserState(`user_${chatId}_state`);
+      
+      if (courierState && courierState.mode === 'tracking') {
+        // Курьер в процессе ввода трек-номера - пропускаем для conversation
+        logger.info('📦 Courier in tracking conversation', { 
+          userId, 
+          orderId: courierState.order_id 
+        }, 'Grammy');
+        return;
+      }
+
+      // Попытка распознать трек-номер в сообщении
+      const possibleTrackingNumber = messageText.trim();
+      
+      if (TrackingConversation.isValidTrackingNumber(possibleTrackingNumber)) {
+        await this.handleDirectTrackingInput(ctx, possibleTrackingNumber);
+        return;
+      }
+
+      // Попытка найти номер заказа в сообщении
+      const orderNumber = this.parseOrderNumber(messageText);
+      if (orderNumber) {
+        await this.handleOrderReference(ctx, orderNumber, messageText);
+        return;
+      }
+
+      // Общие команды курьера
+      if (messageText.toLowerCase().includes('помощь') || messageText === '/help') {
+        await this.sendCourierHelp(ctx);
+        return;
+      }
+
+      if (messageText.toLowerCase().includes('статус') || messageText.toLowerCase().includes('заказы')) {
+        await this.sendCourierStatus(ctx);
+        return;
+      }
+
+      // Неопознанное сообщение курьера
+      await ctx.reply(
+        '🤔 Не понял сообщение.\n\n' +
+        '💡 <b>Доступные команды:</b>\n' +
+        '• Отправьте трек-номер для привязки\n' +
+        '• Напишите "помощь" для справки\n' +
+        '• Напишите "статус" для проверки заказов\n\n' +
+        '📱 Или используйте кнопки в сообщениях о заказах.',
+        { parse_mode: 'HTML' }
+      );
+
+    } catch (error) {
+      logger.error('❌ Error handling courier message', { 
+        error: (error as Error).message,
+        userId,
+        messageText: messageText.substring(0, 50)
+      }, 'Grammy');
+
+      await ctx.reply('😔 Произошла ошибка. Попробуйте еще раз или обратитесь в поддержку.');
+    }
+  }
+
+  /**
+   * Обработка прямого ввода трек-номера курьером
+   */
+  private async handleDirectTrackingInput(ctx: ExtendedContext, trackingNumber: string): Promise<void> {
+    logger.info('📦 Direct tracking number input detected', { 
+      userId: ctx.from?.id,
+      trackingPreview: trackingNumber.substring(0, 5) + '...'
+    }, 'Grammy');
+
+    await ctx.reply(
+      `🔍 Обнаружен трек-номер: <code>${trackingNumber}</code>\n\n` +
+      `Для какого заказа этот трек-номер?\n` +
+      `Пожалуйста, используйте кнопку "Привязать трек-номер" в сообщении с заказом.`,
+      { parse_mode: 'HTML' }
+    );
+  }
+
+  /**
+   * Обработка упоминания номера заказа курьером
+   */
+  private async handleOrderReference(ctx: ExtendedContext, orderNumber: string, fullMessage: string): Promise<void> {
+    logger.info('📋 Order reference detected in courier message', { 
+      userId: ctx.from?.id,
+      orderNumber,
+      message: fullMessage.substring(0, 100)
+    }, 'Grammy');
+
+    try {
+      // Получаем информацию о заказе
+      const order = await TrackingConversation.getOrderInfo(orderNumber);
+      
+      if (!order) {
+        await ctx.reply(`❌ Заказ №${orderNumber} не найден.`);
+        return;
+      }
+
+      // Отправляем краткую информацию о заказе
+      const orderInfo = this.buildCourierOrderInfo(order);
+      const keyboard = KeyboardUtils.createCourierKeyboard(orderNumber);
+
+      await ctx.reply(orderInfo, {
+        reply_markup: keyboard,
+        parse_mode: 'HTML'
+      });
+
+    } catch (error) {
+      logger.error('❌ Error handling order reference', { 
+        error: (error as Error).message,
+        orderNumber
+      }, 'Grammy');
+
+      await ctx.reply(`😔 Ошибка при получении информации о заказе №${orderNumber}.`);
+    }
+  }
+
+  /**
+   * Отправка справки курьеру
+   */
+  private async sendCourierHelp(ctx: ExtendedContext): Promise<void> {
+    const helpMessage = `📋 <b>Справка для курьера</b>\n\n` +
+      `🚚 <b>Основные функции:</b>\n` +
+      `• Получение заказов для отправки\n` +
+      `• Привязка трек-номеров к заказам\n` +
+      `• Подтверждение отправки\n\n` +
+      `📝 <b>Как привязать трек-номер:</b>\n` +
+      `1. Найдите сообщение с заказом\n` +
+      `2. Нажмите "Привязать трек-номер"\n` +
+      `3. Введите трек-номер в чат\n` +
+      `4. Подтвердите отправку\n\n` +
+      `🔢 <b>Форматы трек-номеров:</b>\n` +
+      `• Почта России: RA123456789RU\n` +
+      `• СДЭК: 1234567890\n` +
+      `• DPD: буквы и цифры\n\n` +
+      `💬 <b>Команды:</b>\n` +
+      `• "статус" - проверить заказы\n` +
+      `• "помощь" - эта справка`;
+
+    await ctx.reply(helpMessage, { parse_mode: 'HTML' });
+  }
+
+  /**
+   * Отправка статуса заказов курьеру
+   */
+  private async sendCourierStatus(ctx: ExtendedContext): Promise<void> {
+    try {
+      // Получаем заказы в статусе "processing" (готовые к отправке)
+      const processingOrders = await prisma.orders.findMany({
+        where: { status: 2 }, // processing
+        include: {
+          users: true,
+          order_items: {
+            include: {
+              products: true
+            }
+          }
+        },
+        orderBy: { created_at: 'desc' },
+        take: 10 // Последние 10 заказов
+      });
+
+      if (processingOrders.length === 0) {
+        await ctx.reply('✅ Все заказы отправлены! Новых заказов для отправки нет.');
+        return;
+      }
+
+      let statusMessage = `📊 <b>Заказы к отправке: ${processingOrders.length}</b>\n\n`;
+
+      processingOrders.forEach((order, index) => {
+        const orderItems = order.order_items.map(item => 
+          `${item.products.name} (${item.quantity}шт.)`
+        ).join(', ');
+
+        statusMessage += `${index + 1}. <b>№${order.id}</b>\n` +
+          `📄 ${orderItems}\n` +
+          `👤 ${this.getFullName(order.users)}\n` +
+          `📅 ${order.created_at.toLocaleDateString('ru-RU')}\n\n`;
+      });
+
+      statusMessage += `💡 Используйте кнопки в сообщениях о заказах для привязки трек-номеров.`;
+
+      await ctx.reply(statusMessage, { parse_mode: 'HTML' });
+
+    } catch (error) {
+      logger.error('❌ Error getting courier status', { 
+        error: (error as Error).message,
+        userId: ctx.from?.id 
+      }, 'Grammy');
+
+      await ctx.reply('😔 Ошибка при получении статуса заказов.');
+    }
+  }
+
+  /**
+   * Построение информации о заказе для курьера
+   */
+  private buildCourierOrderInfo(order: any): string {
+    const user = order.users;
+    const orderItems = order.order_items;
+    
+    const itemsStr = orderItems.map((item: any) => 
+      `• ${item.products.name} — ${item.quantity}шт.`
+    ).join('\n');
+
+    const fullAddress = this.buildFullAddress(user);
+
+    return `📦 <b>Заказ №${order.id}</b>\n\n` +
+      `📄 <b>Состав заказа:</b>\n${itemsStr}\n\n` +
+      `📍 <b>Адрес:</b>\n${fullAddress}\n\n` +
+      `👤 <b>ФИО:</b> ${this.getFullName(user)}\n` +
+      `📱 <b>Телефон:</b> ${user.phone_number || 'Не указан'}\n` +
+      `📅 <b>Дата заказа:</b> ${order.created_at.toLocaleDateString('ru-RU')}\n\n` +
+      `📊 <b>Статус:</b> ${this.getOrderStatusText(order.status)}`;
+  }
+
+  /**
+   * Получение текстового описания статуса заказа
+   */
+  private getOrderStatusText(status: number): string {
+    const statusMap = {
+      0: 'Неоплачен',
+      1: 'Оплачен',
+      2: 'В обработке',
+      3: 'Отправлен',
+      4: 'Доставлен',
+      5: 'Отменен'
+    };
+    
+    return statusMap[status as keyof typeof statusMap] || 'Неизвестно';
   }
 
   /**
@@ -1112,14 +1405,16 @@ export class GrammyBotWorker {
   }
 
   /**
-   * Conversation для ввода трек-номера
+   * Conversation для ввода трек-номера - теперь использует TrackingConversation
    */
-  private async trackingConversation(conversation: Conversation<ConversationContext>, ctx: ConversationContext): Promise<void> {
-    logger.info('🗣️ Tracking conversation started', { userId: ctx.from?.id }, 'Grammy');
+  private async trackingConversation(conversation: Conversation<ExtendedContext>, ctx: ExtendedContext): Promise<void> {
+    logger.info('🗣️ Starting tracking conversation via GrammyBotWorker', { userId: ctx.from?.id }, 'Grammy');
     
-    // TODO: Полная реализация conversation для ввода трек-номеров
-    // Это будет реализовано в следующей итерации
-    await ctx.reply('🚧 Conversation для трек-номеров будет реализован в следующей итерации.');
+    // Используем полную реализацию из TrackingConversation
+    await TrackingConversation.trackingFlow(conversation, ctx);
+    
+    // Увеличиваем счетчик conversations
+    this.metrics.conversationsStarted++;
   }
 
   /**
@@ -1276,8 +1571,8 @@ export class GrammyBotWorker {
 
   private isAdmin(userId?: number): boolean {
     if (!userId) return false;
-    const adminIds = this.settings.admin_ids?.split(',').map(id => id.trim()) || ['125861752'];
-    return adminIds.includes(userId.toString());
+    const adminChatId = this.settings.admin_chat_id || '125861752';
+    return userId.toString() === adminChatId;
   }
 
   private isCourier(userId?: number): boolean {
@@ -1303,13 +1598,51 @@ export class GrammyBotWorker {
   // ========================
 
   /**
-   * Webhook callback для Next.js
+   * Получение webhook callback для интеграции с Next.js
    */
-  public getWebhookCallback() {
-    if (!this.isInitialized) {
-      throw new Error('GrammyBotWorker not initialized. Call initialize() first.');
+  getWebhookCallback() {
+    if (!this.bot) {
+      throw new Error('Bot not initialized');
     }
-    return webhookCallback(this.bot, 'nextjs');
+    
+    return webhookCallback(this.bot, 'next-js');
+  }
+
+  /**
+   * Обработка update от Telegram webhook
+   */
+  async handleUpdate(update: any): Promise<void> {
+    if (!this.isInitialized || !this.bot) {
+      throw new Error('Bot not initialized! Either call `await bot.init()`, or directly set the `botInfo` option in the `Bot` constructor to specify a known bot info object.');
+    }
+
+    try {
+      logger.info('📨 Processing Telegram update', { 
+        updateId: update.update_id,
+        updateType: Object.keys(update).filter(key => key !== 'update_id')[0]
+      }, 'Grammy');
+
+      // Обрабатываем update через grammY bot
+      await this.bot.handleUpdate(update);
+      
+      // Увеличиваем счетчик обработанных сообщений
+      this.metrics.messagesProcessed++;
+
+      logger.info('✅ Update processed successfully', { 
+        updateId: update.update_id 
+      }, 'Grammy');
+
+    } catch (error) {
+      this.metrics.errorsCount++;
+      
+      logger.error('❌ Failed to process update', { 
+        error: (error as Error).message,
+        updateId: update.update_id,
+        stack: (error as Error).stack
+      }, 'Grammy');
+      
+      throw error;
+    }
   }
 
   /**

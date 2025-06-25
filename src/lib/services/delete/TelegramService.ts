@@ -1,4 +1,4 @@
-import { TelegramTokenService } from './telegram-token.service';
+import { SettingsService } from '../SettingsService';
 import { prisma } from '@/libs/prismaDb';
 
 interface TelegramServiceOptions {
@@ -93,28 +93,27 @@ export class TelegramService {
 
   private async botReady(): Promise<boolean> {
     // Определяем, кому отправляется сообщение
-    const isAdminOrCourier = this.chat_id === '125861752' || // админ
-                            this.chat_id === process.env.TELEGRAM_COURIER_ID || // курьер
-                            this.chat_id === '7690550402'; // курьер (хардкод для надежности)
+    const isAdmin = this.chat_id === '125861752'; // админ
+    const isCourier = this.chat_id === process.env.TELEGRAM_COURIER_ID || 
+                     this.chat_id === '7690550402'; // курьер
     
-    if (isAdminOrCourier) {
-      // Админу и курьеру ВСЕГДА отправляем через @telesklad_bot
-      this.bot_token = await TelegramTokenService.getTelegramBotToken();
+    if (isAdmin || isCourier) {
+      // ✅ Админу и курьеру ВСЕГДА отправляем через @telesklad_bot
+      this.bot_token = await SettingsService.get('admin_bot_token', process.env.TELESKLAD_BOT_TOKEN);
       console.log('🔑 Using TELESKLAD_BOT_TOKEN (@telesklad_bot) for admin/courier');
-    } else if (process.env.NODE_ENV === 'development') {
-      // Клиентам в development отправляем через @strattera_test_bot
-      this.bot_token = await TelegramTokenService.getWebappBotToken();
-      console.log('🔑 Using WEBAPP_TELEGRAM_BOT_TOKEN (@strattera_test_bot) for client in development');
     } else {
-      // В production всем отправляем через @telesklad_bot
-      this.bot_token = await TelegramTokenService.getTelegramBotToken();
-      console.log('🔑 Using TELESKLAD_BOT_TOKEN (@telesklad_bot) for production');
+      // ✅ ИСПРАВЛЕНО: Клиентам ВСЕГДА отправляем через @strattera_test_bot
+      this.bot_token = await SettingsService.get('client_bot_token', process.env.WEBAPP_TELEGRAM_BOT_TOKEN);
+      console.log('🔑 Using WEBAPP_TELEGRAM_BOT_TOKEN (@strattera_test_bot) for client');
     }
     
     if (this.bot_token && this.chat_id && this.message) {
-      // Добавляем префикс для разработки как в Rails
-      if (process.env.NODE_ENV === 'development') {
-        this.message = `‼️‼️Development‼️‼️\n\n${this.message}`;
+      // ✅ УБИРАЕМ префикс Development для клиентов - они всегда в тестовом боте
+      if (isAdmin || isCourier) {
+        // Только админу и курьеру добавляем префикс в development
+        if (process.env.NODE_ENV === 'development') {
+          this.message = `‼️‼️Development‼️‼️\n\n${this.message}`;
+        }
       }
       return true;
     } else {
