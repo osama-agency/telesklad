@@ -100,7 +100,7 @@ export default function BonusSelector({
           </svg>
         </div>
         <h3 className="bonus-title">Используйте бонусы</h3>
-        <div className="bonus-balance">{userBonus.toLocaleString('ru-RU')}₽</div>
+        <div className="bonus-balance">{selectedBonus.toLocaleString('ru-RU')}₽</div>
       </div>
       
       <div className="bonus-slider-container">
@@ -123,21 +123,7 @@ export default function BonusSelector({
           <div className="slider-track-fill" style={{width: `${(selectedBonus / applicableBonusSteps) * 100}%`}}></div>
         </div>
 
-        {selectedBonus > 0 && (
-          <div className="bonus-selected">
-            <div className="selected-content">
-              <span className="selected-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M4 6v12c0 1.1.9 2 2 2h14v-8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <circle cx="20" cy="16" r="2" stroke="currentColor" strokeWidth="2"/>
-                </svg>
-              </span>
-              <span>Будет списано</span>
-            </div>
-            <div className="selected-amount">{selectedBonus.toLocaleString('ru-RU')}₽</div>
-          </div>
-        )}
+
 
 
       </div>

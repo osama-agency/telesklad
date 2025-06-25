@@ -20,6 +20,9 @@ import {
   Star,
   Hourglass,
   History,
+  Package,
+  LocateFixed,
+  Copy,
 } from "lucide-react";
 
 interface IconProps {
@@ -54,6 +57,9 @@ export function IconComponent({ name, size = 24, className = "" }: IconProps) {
     star: <Star size={size} className={className} fill="currentColor" />,
     hourglass: <Hourglass size={size} className={className} />,
     history: <History size={size} className={className} />,
+    package: <Package size={size} className={className} />,
+    "locate-fixed": <LocateFixed size={size} className={className} />,
+    copy: <Copy size={size} className={className} />,
   };
 
   const iconComponent = icons[name];

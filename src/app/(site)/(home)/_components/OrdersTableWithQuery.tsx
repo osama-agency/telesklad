@@ -7,6 +7,7 @@ import {
   useOrdersQuery, 
   ORDER_STATUSES,
   useDeleteOrder,
+  useBulkDeleteOrders,
   useUpdateOrder,
   type OrderEntity,
   type OrdersParams 
@@ -14,6 +15,7 @@ import {
 import { get } from "@/lib/api";
 import DeleteOrderModal from "@/components/Modals/DeleteOrderModal";
 import EditOrderModal from "@/components/Modals/EditOrderModal";
+import BulkDeleteOrdersModal from "@/components/Modals/BulkDeleteOrdersModal";
 import { useToast } from "@/hooks/useToast";
 import { ToastContainer } from "@/components/ui/Toast";
 import Spinner from "@/components/common/Spinner";
@@ -133,6 +135,10 @@ export function OrdersTable() {
   const [orderToDelete, setOrderToDelete] = useState<OrderEntity | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [orderToEdit, setOrderToEdit] = useState<OrderEntity | null>(null);
+  
+  // Состояние для массового удаления
+  const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
+  const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
 
   // Маппинг значений dropdown в значения БД
   const mapFilterToDbStatus = (filterValue: number): number | undefined => {
@@ -160,6 +166,8 @@ export function OrdersTable() {
 
   // Хук для удаления заказа
   const deleteOrderMutation = useDeleteOrder();
+  // Хук для массового удаления заказов
+  const bulkDeleteMutation = useBulkDeleteOrders();
   // Хук для обновления заказа
   const updateOrderMutation = useUpdateOrder();
   
@@ -288,6 +296,69 @@ export function OrdersTable() {
     setOrderToDelete(null);
   };
 
+  // Обработчики для массового выбора
+  const handleSelectOrder = (orderId: number) => {
+    setSelectedOrders(prev => 
+      prev.includes(orderId) 
+        ? prev.filter(id => id !== orderId)
+        : [...prev, orderId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedOrders.length === orders.length) {
+      setSelectedOrders([]);
+    } else {
+      setSelectedOrders(orders.map(order => order.id));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedOrders.length > 0) {
+      setBulkDeleteModalOpen(true);
+    }
+  };
+
+  const handleBulkDeleteConfirm = async () => {
+    if (selectedOrders.length === 0) return;
+    
+    const selectedOrdersRef = [...selectedOrders];
+    
+    // Закрываем модальное окно сразу
+    setBulkDeleteModalOpen(false);
+    
+    try {
+      // Используем оптимистичное удаление
+      const result = await bulkDeleteMutation.mutateOptimistic(
+        selectedOrdersRef,
+        (ids) => {
+          ids.forEach(id => removeOrderOptimistically(id));
+          setSelectedOrders([]); // Очищаем выбранные заказы
+        }
+      );
+      
+      // Показываем уведомление об успехе
+      success(
+        'Заказы удалены',
+        result.message || `Успешно удалено ${result.deletedCount} заказов`
+      );
+    } catch (error) {
+      console.error('Ошибка при массовом удалении заказов:', error);
+      // При ошибке обновляем данные с сервера, чтобы восстановить состояние
+      refetch();
+      setSelectedOrders([]); // Очищаем выбранные заказы
+      // Показываем уведомление об ошибке
+      showError(
+        'Ошибка удаления',
+        error instanceof Error ? error.message : 'Не удалось удалить заказы'
+      );
+    }
+  };
+
+  const handleBulkDeleteCancel = () => {
+    setBulkDeleteModalOpen(false);
+  };
+
   // Компонент прогресс-бара для заказов
   const OrderProgress = ({ order }: { order: any }) => {
     const steps = [
@@ -366,6 +437,15 @@ export function OrdersTable() {
         onClose={() => setEditModalOpen(false)}
         onSave={handleEditSave}
         order={orderToEdit}
+      />
+      
+      {/* Модальное окно массового удаления */}
+      <BulkDeleteOrdersModal
+        isOpen={bulkDeleteModalOpen}
+        onClose={handleBulkDeleteCancel}
+        onConfirm={handleBulkDeleteConfirm}
+        selectedOrders={orders.filter(order => selectedOrders.includes(order.id))}
+        isLoading={bulkDeleteMutation.isLoading}
       />
 
       {/* Статистика */}
@@ -462,6 +542,39 @@ export function OrdersTable() {
         </div>
       </div>
 
+      {/* Панель управления */}
+      {selectedOrders.length > 0 && (
+        <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                  Выбран{selectedOrders.length === 1 ? '' : selectedOrders.length < 5 ? 'о' : 'о'} {selectedOrders.length} заказ{selectedOrders.length === 1 ? '' : selectedOrders.length < 5 ? 'а' : 'ов'}
+                </span>
+              </div>
+              <button
+                onClick={() => setSelectedOrders([])}
+                className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
+              >
+                Отменить выбор
+              </button>
+            </div>
+            <button
+              onClick={handleBulkDelete}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Удалить выбранные
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Таблица заказов */}
       <div className="space-y-4">
         {/* Desktop таблица */}
@@ -470,6 +583,16 @@ export function OrdersTable() {
             <table className="w-full">
           <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-700">
+                  <th className="px-6 py-4 text-left w-12">
+                    <div className="flex items-center justify-center">
+                      <input
+                        type="checkbox"
+                        checked={orders.length > 0 && selectedOrders.length === orders.length}
+                        onChange={handleSelectAll}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                      />
+                    </div>
+                  </th>
                   <th className="px-6 py-4 text-left">
                     <div className="flex items-center gap-2 text-xs font-medium text-[#64748B] dark:text-gray-400 uppercase tracking-wider">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -538,7 +661,7 @@ export function OrdersTable() {
               ) : error ? (
                 <tbody className="bg-white dark:bg-gray-800">
                   <tr>
-                    <td colSpan={8} className="text-center py-10">
+                    <td colSpan={9} className="text-center py-10">
                       <p className="text-red-500">Ошибка загрузки данных: {error}</p>
                       <button onClick={() => refetch()} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
                         Попробовать снова
@@ -550,6 +673,16 @@ export function OrdersTable() {
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                   {orders.map((order) => (
                     <tr key={order.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/20 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedOrders.includes(order.id)}
+                            onChange={() => handleSelectOrder(order.id)}
+                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                          />
+                        </div>
+                      </td>
                       <td className="px-6 py-4">
                         <div className="space-y-1">
                           <p className="font-semibold text-[#1E293B] dark:text-white">
@@ -704,7 +837,7 @@ export function OrdersTable() {
               ) : (
                 <tbody className="bg-white dark:bg-gray-800">
                   <tr>
-                    <td colSpan={8} className="text-center py-20">
+                    <td colSpan={9} className="text-center py-20">
                       <div className="flex flex-col items-center">
                         <SearchIcon className="w-16 h-16 text-gray-300 dark:text-gray-600 mb-4" />
                         <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200">

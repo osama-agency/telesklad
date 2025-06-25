@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Script from "next/script";
 import "@/styles/webapp.scss";
+import "@/css/golos.css";
 import { IconComponent } from "@/components/webapp/IconComponent";
 import { CartSummary } from "./_components/CartSummary";
 import { BottomNavigation } from "./_components/BottomNavigation";
@@ -73,7 +74,7 @@ function WebappLayoutInner({ children }: PropsWithChildren) {
             </div>
           </header>
 
-          {/* Main content - точно как в Rails с отступами */}
+          {/* Main content */}
           <main className="container-adaptive">
             {children}
           </main>

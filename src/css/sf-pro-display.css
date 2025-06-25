@@ -1,0 +1,63 @@
+/**
+ * SF Pro Display Font Family
+ * Apple's system font for optimal readability across all devices
+ * 
+ * This uses the system's built-in SF Pro Display on Apple devices
+ * and fallbacks to system fonts on other platforms
+ */
+
+@supports (font: -apple-system-body) {
+  :root {
+    --font-sf-pro: "SF Pro Display", -apple-system, system-ui;
+  }
+}
+
+@supports not (font: -apple-system-body) {
+  :root {
+    --font-sf-pro: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+}
+
+/* Универсальный класс для SF Pro Display */
+.font-sf-pro {
+  font-family: var(--font-sf-pro);
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Веса шрифтов SF Pro Display */
+.font-sf-pro-light {
+  font-family: var(--font-sf-pro);
+  font-weight: 300;
+}
+
+.font-sf-pro-regular {
+  font-family: var(--font-sf-pro);
+  font-weight: 400;
+}
+
+.font-sf-pro-medium {
+  font-family: var(--font-sf-pro);
+  font-weight: 500;
+}
+
+.font-sf-pro-semibold {
+  font-family: var(--font-sf-pro);
+  font-weight: 600;
+}
+
+.font-sf-pro-bold {
+  font-family: var(--font-sf-pro);
+  font-weight: 700;
+}
+
+.font-sf-pro-heavy {
+  font-family: var(--font-sf-pro);
+  font-weight: 800;
+}
+
+.font-sf-pro-black {
+  font-family: var(--font-sf-pro);
+  font-weight: 900;
+} 

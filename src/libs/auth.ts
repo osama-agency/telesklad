@@ -30,20 +30,26 @@ export const authOptions: NextAuthOptions = {
       },
 
       async authorize(credentials) {
+        console.log('🔐 NextAuth authorize attempt:', { email: credentials?.email, hasPassword: !!credentials?.password });
+        
         // check to see if eamil and password is there
         if (!credentials?.email || !credentials?.password) {
+          console.error('❌ Missing email or password');
           throw new Error("Please enter an email or password");
         }
 
         // check to see if user already exist
-        const user = await prisma.telesklad_user.findUnique({
+        const user = await prisma.telesklad_users.findUnique({
           where: {
             email: credentials.email,
           },
         });
 
+        console.log('👤 User found:', { found: !!user, hasPassword: !!user?.password, role: user?.role });
+
         // if user was not found
         if (!user || !user?.password) {
+          console.error('❌ No user found or no password');
           throw new Error("No user found");
         }
 
@@ -53,10 +59,14 @@ export const authOptions: NextAuthOptions = {
           user.password,
         );
 
+        console.log('🔑 Password match:', passwordMatch);
+
         if (!passwordMatch) {
+          console.error('❌ Incorrect password');
           throw new Error("Incorrect password");
         }
 
+        console.log('✅ User authenticated successfully:', user.email);
         return user;
       },
     }),

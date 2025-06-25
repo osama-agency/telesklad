@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface AccountTier {
   id: string;
@@ -28,6 +29,7 @@ interface LoyaltyData {
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 
 export default function BonusBlock() {
+  const router = useRouter();
   const { user: authUser, isAuthenticated } = useTelegramAuth();
   const [loyaltyData, setLoyaltyData] = useState<LoyaltyData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,6 +40,41 @@ export default function BonusBlock() {
       fetchLoyaltyData();
     }
   }, [isAuthenticated, authUser]);
+
+  // Закрываем модальное окно при размонтировании компонента или изменении маршрута
+  useEffect(() => {
+    const handleRouteChange = () => {
+      setShowTierModal(false);
+    };
+
+    // Слушаем изменения маршрута
+    window.addEventListener('beforeunload', handleRouteChange);
+    
+    return () => {
+      setShowTierModal(false);
+      window.removeEventListener('beforeunload', handleRouteChange);
+    };
+  }, []);
+
+  // Дополнительная защита: закрываем модальное окно при клике на Escape
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowTierModal(false);
+      }
+    };
+
+    if (showTierModal) {
+      document.addEventListener('keydown', handleEscape);
+      // Блокируем скролл body когда модальное окно открыто
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [showTierModal]);
 
   const fetchLoyaltyData = async () => {
     try {
@@ -109,8 +146,19 @@ export default function BonusBlock() {
 
       {/* Модальное окно с информацией об уровнях */}
       {showTierModal && (
-        <div className="modal-account-tier open">
-          <div className="modal-wrapper">
+        <div 
+          className="modal-account-tier open"
+          onClick={(e) => {
+            // Закрываем модальное окно при клике на backdrop
+            if (e.target === e.currentTarget) {
+              setShowTierModal(false);
+            }
+          }}
+        >
+          <div 
+            className="modal-wrapper"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="modal-title">
               <h3>Уровни лояльности</h3>
               <button 

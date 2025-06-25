@@ -8,21 +8,42 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
+// Иконки для показа/скрытия пароля
+const EyeIcon = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+  </svg>
+);
+
+const EyeOffIcon = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+  </svg>
+);
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
 
-  // Загружаем сохранённый email при монтировании
+  // Загружаем сохранённые данные при монтировании
   useEffect(() => {
     const savedEmail = localStorage.getItem('loginEmail');
+    const savedPassword = localStorage.getItem('loginPassword');
     const savedRemember = localStorage.getItem('rememberLogin') === 'true';
     
     if (savedEmail && savedRemember) {
       setEmail(savedEmail);
       setRememberMe(true);
+      // Загружаем пароль только если он был сохранён
+      if (savedPassword) {
+        setPassword(savedPassword);
+      }
     }
   }, []);
 
@@ -32,32 +53,24 @@ export default function LoginPage() {
     setError("");
 
     try {
-      // Проверяем, является ли email администратором
-      const isAdmin = email.toLowerCase() === 'go@osama.agency';
-      
-      if (!isAdmin) {
-        setError("Доступ разрешён только администратору");
-        setIsLoading(false);
-        return;
-      }
-
-      // Для администратора используем дефолтный пароль
       const result = await signIn("credentials", {
         email,
-        password: "admin123", // Автоматически используем admin пароль
+        password,
         redirect: false,
       });
 
       if (result?.error) {
-        setError("Ошибка входа. Проверьте email администратора.");
+        setError("Неверный email или пароль");
       } else {
-        // Сохраняем email если включено "Запомнить меня"
+        // Сохраняем данные если включено "Запомнить меня"
         if (rememberMe) {
           localStorage.setItem('loginEmail', email);
+          localStorage.setItem('loginPassword', password);
           localStorage.setItem('rememberLogin', 'true');
         } else {
           // Очищаем сохранённые данные
           localStorage.removeItem('loginEmail');
+          localStorage.removeItem('loginPassword');
           localStorage.removeItem('rememberLogin');
         }
 
@@ -110,7 +123,7 @@ export default function LoginPage() {
               Вход в систему
             </h1>
             <p className="text-sm text-dark-4 dark:text-dark-6">
-              Введите email администратора для входа в панель управления
+              Введите ваши данные для входа в панель управления
             </p>
           </div>
 
@@ -118,7 +131,7 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-dark dark:text-white mb-2">
-                Email администратора
+                Email
               </label>
               <input
                 type="email"
@@ -128,9 +141,30 @@ export default function LoginPage() {
                 className="w-full rounded-lg border border-stroke bg-gray px-4 py-3 text-dark outline-none focus:ring-gradient dark:border-dark-3 dark:bg-gray-dark dark:text-white transition-all duration-200"
                 required
               />
-              <p className="mt-1 text-xs text-dark-4 dark:text-dark-6">
-                Доступ только для администратора: go@osama.agency
-              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-dark dark:text-white mb-2">
+                Пароль
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Введите ваш пароль"
+                  className="w-full rounded-lg border border-stroke bg-gray px-4 py-3 pr-12 text-dark outline-none focus:ring-gradient dark:border-dark-3 dark:bg-gray-dark dark:text-white transition-all duration-200"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-dark-4 hover:text-dark dark:text-dark-6 dark:hover:text-white transition-colors duration-200"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
             </div>
 
             {/* Запомнить меня */}
@@ -158,13 +192,16 @@ export default function LoginPage() {
                   )}
                 </div>
                 <span className="ml-2 text-sm text-dark dark:text-white">
-                  Запомнить email
+                  Запомнить меня
                 </span>
               </label>
 
-              <div className="text-xs text-dark-4 dark:text-dark-6">
-                🔐 Упрощённый вход
-              </div>
+              <Link 
+                href="/forgot-password" 
+                className="text-sm text-primary hover:text-primary/80 transition-colors duration-200"
+              >
+                Забыли пароль?
+              </Link>
             </div>
 
             {error && (
@@ -181,14 +218,14 @@ export default function LoginPage() {
               size="md"
               variant="primary"
             >
-              Войти как администратор
+              Войти
             </LoadingButton>
           </form>
 
-          {/* Информация */}
+          {/* Подсказка с данными */}
           <div className="mt-6 text-center">
             <p className="text-xs text-dark-4 dark:text-dark-6">
-              Система автоматически использует административные права
+              💡 Для администратора: go@osama.agency / admin123
             </p>
           </div>
         </motion.div>

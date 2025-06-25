@@ -164,17 +164,21 @@ export default function CartCheckoutSummary({ onTotalChange, onBonusChange }: Ca
       {/* Улучшенный блок итогового расчета */}
       <div className="checkout-summary-card">
         <div className="summary-header">
-          <h3 className="summary-title">Итого</h3>
+          <h3 className="summary-title">Ваша корзина</h3>
         </div>
         
         <div className="summary-details">
-          <div className="summary-row">
-            <div className="summary-label">
-              <span className="label-icon">🛍️</span>
-              <span>Товары</span>
+          {/* Список товаров в корзине */}
+          {cartItems.map((item, index) => (
+            <div key={item.product_id} className="summary-row cart-item-row">
+              <div className="summary-label">
+                <span className="label-icon">🛍️</span>
+                <span>{item.product_name} × {item.quantity}</span>
+              </div>
+              <div className="summary-value">{(item.product_price * item.quantity).toLocaleString('ru-RU')}₽</div>
             </div>
-            <div className="summary-value">{itemsTotal.toLocaleString('ru-RU')}₽</div>
-          </div>
+          ))}
+          
           
           {appliedBonus > 0 && (
             <div className="summary-row discount-row">

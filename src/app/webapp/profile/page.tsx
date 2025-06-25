@@ -64,6 +64,7 @@ const ProfilePage: React.FC = () => {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [animationKey, setAnimationKey] = useState(0);
 
   useEffect(() => {
     if (isAuthenticated && authUser?.tg_id) {
@@ -97,6 +98,8 @@ const ProfilePage: React.FC = () => {
         const profileData = await profileResponse.json();
         if (profileData.success) {
           setProfileData(profileData);
+          // Запускаем анимацию при обновлении данных
+          setAnimationKey(prev => prev + 1);
         }
       }
 
@@ -157,7 +160,7 @@ const ProfilePage: React.FC = () => {
           )}
         </div>
         <h2 className="!mb-0 text-xl font-semibold">
-          Привет, {user.first_name || user.first_name_raw} 👋
+          Привет, {user.first_name || user.first_name_raw} <span key={animationKey} className="waving-hand">👋</span>
         </h2>
       </div>
 

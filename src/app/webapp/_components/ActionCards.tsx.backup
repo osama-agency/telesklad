@@ -46,6 +46,8 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
   const router = useRouter();
   const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState(false);
   const [isSubscriptionsModalOpen, setIsSubscriptionsModalOpen] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [navigatingTo, setNavigatingTo] = useState<string>('');
 
   // Слушаем события обновления подписок
   const [currentSubscriptionsCount, setCurrentSubscriptionsCount] = useState(subscriptionsCount);
@@ -91,17 +93,41 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
     }
   };
 
-  // Обработчик навигации - упрощенная версия без preloader'а для заказов
-  const handleNavigation = (href: string, id: string) => {
+  // Обработчик навигации с preloader'ом
+  const handleNavigation = async (href: string, id: string) => {
     // Для карточки подписок открываем модальное окно
     if (id === 'subscriptions') {
       setIsSubscriptionsModalOpen(true);
       return;
     }
     
-    // Для всех остальных карточек делаем простую навигацию
-    router.push(href);
+    // Для карточки заказов показываем preloader
+    if (id === 'orders') {
+      setIsNavigating(true);
+      setNavigatingTo(id);
+      
+      try {
+        // Небольшая задержка для визуального эффекта
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        router.push(href);
+      } finally {
+        // Сбрасываем состояние загрузки в любом случае
+        setIsNavigating(false);
+        setNavigatingTo('');
+      }
+    } else {
+      router.push(href);
+    }
   };
+
+  // Сбрасываем состояние навигации при размонтировании компонента
+  useEffect(() => {
+    return () => {
+      setIsNavigating(false);
+      setNavigatingTo('');
+    };
+  }, []);
 
   // Форматируем данные пользователя для отображения
   const formatUserData = () => {
@@ -194,7 +220,15 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
         text: 'активных',
         type: 'info'
       } : undefined
-    }
+    },
+    // {
+    //   id: 'support',
+    //   title: 'Поддержка',
+    //   description: 'Связаться с нами в Telegram',
+    //   icon: 'support',
+    //   href: 'https://t.me/Telesklad_support',
+    //   external: true
+    // }
   ];
 
   const getBadgeColors = (type: string) => {
@@ -284,7 +318,7 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
       );
     }
 
-    // Для карточек с навигацией (подписки и заказы)
+    // Для карточек с navigation preloader'ом
     if (item.id === 'subscriptions' || item.id === 'orders') {
       return (
         <div 
@@ -306,11 +340,16 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
     );
   };
 
+  // Показываем preloader если идет навигация
+  if (isNavigating) {
+    return <SkeletonLoading type="page" />;
+  }
+
   return (
     <>
-      <div className="action-cards-container">
-        {actionItems.map(renderActionCard)}
-      </div>
+    <div className="action-cards-container">
+      {actionItems.map(renderActionCard)}
+    </div>
 
       {/* Модальное окно данных доставки */}
       <DeliveryDataSheet
@@ -329,4 +368,4 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
   );
 };
 
-export default ActionCards;
+export default ActionCards; 

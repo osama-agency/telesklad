@@ -349,6 +349,72 @@ export function useDeleteOrder(): UseMutationResult<void, number> & {
   return { mutate, mutateOptimistic, isLoading, error };
 }
 
+// Хук для массового удаления заказов
+export function useBulkDeleteOrders(): UseMutationResult<{ deletedCount: number; message: string }, number[]> & {
+  mutateOptimistic: (ids: number[], onOptimisticUpdate?: (ids: number[]) => void) => Promise<{ deletedCount: number; message: string }>;
+} {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const mutate = useCallback(async (orderIds: number[]): Promise<{ deletedCount: number; message: string }> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      console.log('🚀 Sending bulk delete request with IDs:', orderIds);
+      
+      const response = await fetch('/api/orders/bulk-delete', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ orderIds }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Ошибка при удалении заказов');
+      }
+
+      const result = await response.json();
+      return {
+        deletedCount: result.deletedCount,
+        message: result.message
+      };
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const mutateOptimistic = useCallback(async (
+    orderIds: number[], 
+    onOptimisticUpdate?: (ids: number[]) => void
+  ): Promise<{ deletedCount: number; message: string }> => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Сначала оптимистично обновляем UI
+      if (onOptimisticUpdate) {
+        onOptimisticUpdate(orderIds);
+      }
+      
+      // Затем выполняем запрос
+      return await mutate(orderIds);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [mutate]);
+
+  return { mutate, mutateOptimistic, isLoading, error };
+}
+
 // Хук для обновления статуса заказа
 export function useUpdateOrderStatus(): UseMutationResult<OrderEntity, { id: number; status: number }> {
   const [isLoading, setIsLoading] = useState(false);
