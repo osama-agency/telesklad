@@ -21,6 +21,8 @@ import { ReportService } from '../ReportService';
 import { RedisService } from '../redis.service';
 import { CacheService } from '../cache.service';
 import { logger } from '@/lib/logger';
+import { RedisQueueService } from '../redis-queue.service';
+import { KeyboardUtils } from './utils/keyboard-utils';
 
 /**
  * GrammyBotWorker - современная замена TelegramBotWorker на базе grammY
@@ -120,7 +122,7 @@ export class GrammyBotWorker {
         logger.info('✅ Redis initialized for Grammy', undefined, 'Grammy');
       }
     } catch (error) {
-      logger.warn('⚠️ Redis not available, using memory fallback', { error: error.message }, 'Grammy');
+      logger.warn('⚠️ Redis not available, using memory fallback', { error: (error as Error).message }, 'Grammy');
     }
   }
 
@@ -162,7 +164,7 @@ export class GrammyBotWorker {
       };
 
     } catch (error) {
-      logger.error('❌ Failed to load bot settings', { error: error.message }, 'Grammy');
+      logger.error('❌ Failed to load bot settings', { error: (error as Error).message }, 'Grammy');
       // Используем fallback настройки
       this.settings = {
         admin_chat_id: '125861752',
@@ -224,7 +226,8 @@ export class GrammyBotWorker {
     this.bot.use(conversations());
     
     // Регистрируем conversation для ввода трек-номера
-    this.bot.use(createConversation(this.trackingConversation, 'tracking'));
+    // Временно отключаем conversations до полной реализации
+    // this.bot.use(createConversation(this.trackingConversation.bind(this), 'tracking'));
     
     logger.info('🗣️ Conversations initialized', undefined, 'Grammy');
   }
@@ -340,10 +343,11 @@ export class GrammyBotWorker {
     this.bot.catch(async (err) => {
       this.metrics.errorsCount++;
       
+      const error = err.error as Error;
       logger.error('❌ grammY bot error', {
-        error: err.error.message,
-        stack: err.error.stack,
-        updateType: err.ctx.updateType,
+        error: error.message,
+        stack: error.stack,
+        updateType: err.ctx.update.update_id ? 'update' : 'unknown',
         userId: err.ctx.from?.id
       }, 'Grammy');
 
@@ -356,7 +360,7 @@ export class GrammyBotWorker {
           );
         }
       } catch (replyError) {
-        logger.error('❌ Failed to send error message to user', { error: replyError.message }, 'Grammy');
+        logger.error('❌ Failed to send error message to user', { error: (replyError as Error).message }, 'Grammy');
       }
 
       // Уведомляем админа о критических ошибках
@@ -365,13 +369,13 @@ export class GrammyBotWorker {
           await this.bot.api.sendMessage(
             this.settings.admin_chat_id,
             `🚨 grammY Bot Error\n\n` +
-            `Error: ${err.error.message}\n` +
+            `Error: ${error.message}\n` +
             `User: ${err.ctx.from?.id}\n` +
-            `Update: ${err.ctx.updateType}\n` +
+            `Update: ${err.ctx.update.update_id || 'unknown'}\n` +
             `Time: ${new Date().toISOString()}`
           );
         } catch (adminNotifyError) {
-          logger.error('❌ Failed to notify admin about error', { error: adminNotifyError.message }, 'Grammy');
+          logger.error('❌ Failed to notify admin about error', { error: (adminNotifyError as Error).message }, 'Grammy');
         }
       }
     });
@@ -422,7 +426,7 @@ export class GrammyBotWorker {
           });
 
           // Добавляем пользователя в контекст
-          ctx.user = user;
+          ctx.user = user as any; // Temporary type fix
 
           // Дополнительная информация
           ctx.messageInfo = {
@@ -433,7 +437,7 @@ export class GrammyBotWorker {
 
         } catch (error) {
           logger.warn('⚠️ Failed to load user in auth middleware', { 
-            error: error.message, 
+            error: (error as Error).message, 
             userId: ctx.from.id 
           }, 'Grammy');
         }
@@ -449,7 +453,7 @@ export class GrammyBotWorker {
   private createLoggingMiddleware() {
     return async (ctx: ExtendedContext, next: () => Promise<void>) => {
       logger.info('📨 Processing update', {
-        updateType: ctx.updateType,
+        updateType: ctx.message ? 'message' : ctx.callbackQuery ? 'callback_query' : 'unknown',
         userId: ctx.from?.id,
         chatId: ctx.chat?.id,
         text: ctx.message?.text ? ctx.message.text.substring(0, 100) : undefined,
@@ -461,7 +465,7 @@ export class GrammyBotWorker {
       const duration = ctx.metrics?.processingDuration;
       if (duration !== undefined) {
         logger.info('✅ Update processed', {
-          updateType: ctx.updateType,
+          updateType: ctx.message ? 'message' : ctx.callbackQuery ? 'callback_query' : 'unknown',
           userId: ctx.from?.id,
           duration: Math.round(duration)
         }, 'Grammy');
@@ -512,7 +516,7 @@ export class GrammyBotWorker {
       await this.sendWelcomeMessage(ctx);
       
     } catch (error) {
-      logger.error('❌ Error in /start command', { error: error.message }, 'Grammy');
+      logger.error('❌ Error in /start command', { error: (error as Error).message }, 'Grammy');
       await ctx.reply('😔 Произошла ошибка. Попробуйте позже.');
     }
   }
@@ -533,41 +537,529 @@ export class GrammyBotWorker {
   }
 
   // ========================
-  // PLACEHOLDER METHODS
+  // CALLBACK HANDLERS (FULL IMPLEMENTATION)
   // ========================
-  // Эти методы будут реализованы в следующих итерациях
 
+  /**
+   * Обработчик callback "Я оплатил" - полная реализация
+   */
   private async handleIPaidCallback(ctx: CallbackContext, orderId: string): Promise<void> {
-    // TODO: Implement in next iteration
-    await ctx.answerCallbackQuery('💳 Обрабатываем вашу оплату...');
-    logger.info('💳 i_paid callback (placeholder)', { orderId, userId: ctx.from?.id }, 'Grammy');
+    try {
+      const callbackAge = Date.now() - ((ctx.callbackQuery.message?.date || 0) * 1000);
+      const MAX_CALLBACK_AGE = 24 * 60 * 60 * 1000; // 24 часа
+      
+      if (callbackAge > MAX_CALLBACK_AGE) {
+        logger.warn('⚠️ I_paid callback too old, skipping', { userId: ctx.from?.id, orderId }, 'Grammy');
+        
+        await ctx.reply('Кнопка устарела. Пожалуйста, оформите новый заказ через каталог.');
+        return;
+      }
+
+      // Быстрый ответ пользователю
+      try {
+        await ctx.answerCallbackQuery('💳 Идет проверка вашего перевода...');
+      } catch (callbackError: any) {
+        if (callbackError.message?.includes('query is too old') || 
+            callbackError.message?.includes('query ID is invalid')) {
+          logger.warn('⚠️ I_paid callback query expired', { userId: ctx.from?.id, orderId }, 'Grammy');
+        } else {
+          logger.error('❌ Error answering i_paid callback', { error: callbackError.message }, 'Grammy');
+        }
+      }
+
+      // Получаем пользователя и обновляем заказ
+      let user = null;
+      try {
+        // Попытка получить из кэша, затем из БД
+        user = await RedisService.getUserData(ctx.from!.id.toString())
+          .then(cachedUser => cachedUser || prisma.users.findUnique({ 
+            where: { tg_id: BigInt(ctx.from!.id) }
+          }))
+          .catch(() => prisma.users.findUnique({ 
+            where: { tg_id: BigInt(ctx.from!.id) }
+          }));
+      } catch (fetchError) {
+        logger.error('❌ Error fetching user data', { error: (fetchError as Error).message, userId: ctx.from?.id }, 'Grammy');
+        user = await prisma.users.findUnique({ 
+          where: { tg_id: BigInt(ctx.from!.id) }
+        });
+      }
+
+      if (!user) {
+        logger.warn('⚠️ User not found for i_paid callback', { userId: ctx.from?.id, orderId }, 'Grammy');
+        return;
+      }
+
+      // Обновляем заказ на статус "paid"
+      const updatedOrder = await prisma.orders.update({
+        where: { id: BigInt(orderId) },
+        data: {
+          status: 1, // paid
+          updated_at: new Date()
+        },
+        include: {
+          order_items: {
+            include: {
+              products: true
+            }
+          },
+          users: true,
+          bank_cards: true
+        }
+      });
+
+      logger.info('✅ Order status updated to paid', { orderId, userId: ctx.from?.id }, 'Grammy');
+
+      // Отправляем уведомления через ReportService
+      const orderForReport = {
+        ...updatedOrder,
+        msg_id: updatedOrder.msg_id ? BigInt(updatedOrder.msg_id) : null
+      };
+      
+      // Пытаемся добавить в Redis очередь для асинхронной обработки
+      let notificationSent = false;
+      if (RedisService.isAvailable()) {
+        try {
+          await RedisQueueService.addNotificationJob('order_status_change', {
+            order: orderForReport,
+            previousStatus: 0 // unpaid
+          });
+          notificationSent = true;
+          logger.info('✅ Notification job added to Redis queue', { orderId }, 'Grammy');
+        } catch (redisError) {
+          logger.warn('⚠️ Redis notification failed, using fallback', { error: (redisError as Error).message }, 'Grammy');
+        }
+      }
+      
+      // Если Redis недоступен, обрабатываем синхронно
+      if (!notificationSent) {
+        await ReportService.handleOrderStatusChange(orderForReport as any, 0);
+        logger.info('✅ Notification handled synchronously', { orderId }, 'Grammy');
+      }
+
+      // Кэшируем данные пользователя
+      if (RedisService.isAvailable()) {
+        try {
+          await RedisService.setUserData(ctx.from!.id.toString(), user);
+        } catch (cacheError) {
+          logger.warn('⚠️ Failed to cache user data', { error: (cacheError as Error).message }, 'Grammy');
+        }
+      }
+
+      this.metrics.callbacksHandled++;
+
+    } catch (error) {
+      logger.error('❌ Error in handleIPaidCallback', { 
+        error: (error as Error).message, 
+        orderId, 
+        userId: ctx.from?.id 
+      }, 'Grammy');
+      
+      // Уведомляем пользователя об ошибке
+      try {
+        await ctx.answerCallbackQuery('😔 Произошла ошибка. Попробуйте еще раз или обратитесь в поддержку.');
+      } catch (answerError) {
+        logger.error('❌ Failed to send error callback answer', { error: answerError.message }, 'Grammy');
+      }
+    }
   }
 
+  /**
+   * Обработчик callback "Оплата пришла" (админ) - полная реализация
+   */
   private async handleApprovePaymentCallback(ctx: CallbackContext, orderId: string): Promise<void> {
-    // TODO: Implement in next iteration
-    await ctx.answerCallbackQuery('✅ Подтверждаем оплату...');
-    logger.info('✅ approve_payment callback (placeholder)', { orderId, userId: ctx.from?.id }, 'Grammy');
+    try {
+      const callbackAge = Date.now() - ((ctx.callbackQuery.message?.date || 0) * 1000);
+      const MAX_CALLBACK_AGE = 24 * 60 * 60 * 1000; // 24 часа
+      
+      if (callbackAge > MAX_CALLBACK_AGE) {
+        logger.warn('⚠️ Admin approve_payment callback too old', { userId: ctx.from?.id, orderId }, 'Grammy');
+        return;
+      }
+
+      // Определяем тип бота для правильной обработки
+      const messageBotId = ctx.callbackQuery.message?.from?.id;
+      const isMainBot = messageBotId === 7612206140; // @telesklad_bot
+      
+      logger.info('🤖 Approve payment callback', { 
+        botId: messageBotId, 
+        isMainBot, 
+        orderId, 
+        adminId: ctx.from?.id 
+      }, 'Grammy');
+
+      // Быстрый ответ на callback
+      try {
+        await ctx.answerCallbackQuery('✅ Подтверждаем оплату...');
+      } catch (callbackError: any) {
+        if (callbackError.message?.includes('query is too old') || 
+            callbackError.message?.includes('query ID is invalid')) {
+          logger.warn('⚠️ Admin callback query expired', { userId: ctx.from?.id, orderId }, 'Grammy');
+        } else {
+          logger.error('❌ Error answering admin callback', { error: callbackError.message }, 'Grammy');
+        }
+      }
+
+      // Получаем заказ с полной информацией
+      const order = await prisma.orders.findUnique({
+        where: { id: BigInt(orderId) },
+        include: {
+          order_items: {
+            include: {
+              products: true
+            }
+          },
+          users: true,
+          bank_cards: true
+        }
+      });
+
+      if (!order) {
+        logger.warn('⚠️ Order not found for approve_payment', { orderId }, 'Grammy');
+        return;
+      }
+
+      const previousStatus = order.status;
+
+      // Обновляем статус заказа на "processing" (в обработке)
+      const updatedOrder = await prisma.orders.update({
+        where: { id: BigInt(orderId) },
+        data: {
+          status: 2, // processing
+          paid_at: new Date(),
+          updated_at: new Date()
+        },
+        include: {
+          order_items: {
+            include: {
+              products: true
+            }
+          },
+          users: true,
+          bank_cards: true
+        }
+      });
+
+      logger.info('✅ Order status updated to processing', { orderId, previousStatus }, 'Grammy');
+
+      // Формируем новый текст сообщения для админа
+      const user = updatedOrder.users;
+      const orderItems = updatedOrder.order_items;
+      
+      const itemsStr = orderItems.map(item => 
+        `• ${item.products.name} — ${item.quantity}шт. — ${item.price}₽`
+      ).join(',\n');
+
+      const bankCardInfo = updatedOrder.bank_cards 
+        ? `${updatedOrder.bank_cards.name} — ${updatedOrder.bank_cards.fio} — ${updatedOrder.bank_cards.number}`
+        : 'Не указана';
+
+      const fullAddress = this.buildFullAddress(user);
+      const fullName = this.getFullName(user);
+
+      const deliveryCost = updatedOrder.deliverycost || 0;
+      const totalPaid = Number(updatedOrder.total_amount) + Number(deliveryCost);
+
+      let newMessageText = `📲 Заказ №${orderId} отправлен курьеру!\n\n` +
+        `Итого клиент оплатил: ${totalPaid}₽\n\n` +
+        `Банк: ${bankCardInfo}\n\n` +
+        `📄 Состав заказа:\n${itemsStr}\n\n` +
+        `📍 Адрес:\n${fullAddress}\n\n` +
+        `👤 ФИО:\n${fullName}\n\n` +
+        `📱 Телефон:\n${user.phone_number || 'Не указан'}`;
+
+      // Добавляем маркер development если нужно
+      if (process.env.NODE_ENV === 'development') {
+        newMessageText = `‼️‼️Development‼️‼️\n\n${newMessageText}`;
+      }
+
+      // Редактируем сообщение через правильный бот
+      try {
+        if (isMainBot) {
+          // Редактируем через основной бот (@telesklad_bot)
+          const MAIN_BOT_TOKEN = '7612206140:AAHA6sV7VZLyUu0Ua1DAoULiFYehAkAjJK4';
+          
+          const editResponse = await fetch(`https://api.telegram.org/bot${MAIN_BOT_TOKEN}/editMessageText`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: ctx.callbackQuery.message?.chat.id,
+              message_id: ctx.callbackQuery.message?.message_id,
+              text: newMessageText,
+              parse_mode: 'HTML',
+              reply_markup: { inline_keyboard: [] } // Убираем кнопки
+            })
+          });
+
+          const editResult = await editResponse.json();
+          if (!editResult.ok) {
+            logger.warn('⚠️ Could not edit message via main bot', { error: editResult.description }, 'Grammy');
+          } else {
+            logger.info('✅ Message edited successfully via main bot', { orderId }, 'Grammy');
+          }
+        } else {
+          // Редактируем через текущий Grammy бот
+          await ctx.editMessageText(newMessageText, {
+            parse_mode: 'HTML',
+            reply_markup: undefined // Убираем кнопки
+          });
+          logger.info('✅ Message edited successfully via Grammy bot', { orderId }, 'Grammy');
+        }
+      } catch (editError) {
+        logger.error('❌ Could not edit admin message', { error: editError.message, orderId }, 'Grammy');
+      }
+
+      // Отправляем уведомления через ReportService (включая сообщение клиенту)
+      if (previousStatus !== updatedOrder.status) {
+        const orderForReport = {
+          ...updatedOrder,
+          msg_id: updatedOrder.msg_id ? BigInt(updatedOrder.msg_id) : null
+        };
+        await ReportService.handleOrderStatusChange(orderForReport as any, previousStatus);
+        logger.info('✅ Order status change notifications sent', { orderId, previousStatus, newStatus: updatedOrder.status }, 'Grammy');
+      }
+
+      this.metrics.callbacksHandled++;
+
+    } catch (error) {
+      logger.error('❌ Error in handleApprovePaymentCallback', { 
+        error: error.message, 
+        orderId, 
+        userId: ctx.from?.id 
+      }, 'Grammy');
+    }
   }
 
+  /**
+   * Обработчик callback "Привязать трек-номер" - полная реализация
+   */
   private async handleSubmitTrackingCallback(ctx: CallbackContext, orderId: string): Promise<void> {
-    // TODO: Implement in next iteration
-    await ctx.answerCallbackQuery('📦 Запрашиваем трек-номер...');
-    logger.info('📦 submit_tracking callback (placeholder)', { orderId, userId: ctx.from?.id }, 'Grammy');
+    try {
+      const text = ctx.callbackQuery.message?.text || '';
+      const orderNumber = this.parseOrderNumber(text);
+      const fullName = this.parseFullName(text);
+      
+      if (!orderNumber) {
+        logger.warn('⚠️ Could not parse order number from tracking callback', { userId: ctx.from?.id }, 'Grammy');
+        return;
+      }
+
+      // Определяем тип бота
+      const messageBotId = ctx.callbackQuery.message?.from?.id;
+      const isMainBot = messageBotId === 7612206140; // @telesklad_bot
+      
+      logger.info('🤖 Submit tracking callback', { 
+        botId: messageBotId, 
+        isMainBot, 
+        orderNumber, 
+        userId: ctx.from?.id 
+      }, 'Grammy');
+
+      // Создаем клавиатуру с кнопкой "Назад"
+      const keyboard = KeyboardUtils.createBackKeyboard('track_back');
+
+      let msgId: number;
+
+      if (isMainBot) {
+        // Отправляем через основной бот (@telesklad_bot)
+        const MAIN_BOT_TOKEN = '7612206140:AAHA6sV7VZLyUu0Ua1DAoULiFYehAkAjJK4';
+        
+        const response = await fetch(`https://api.telegram.org/bot${MAIN_BOT_TOKEN}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: ctx.callbackQuery.message?.chat.id,
+            text: `📦 Введите трек-номер для заказа №${orderNumber}\n\n👤 ФИО:\n${fullName || 'Не указано'}`,
+            reply_markup: keyboard
+          })
+        });
+
+        const result = await response.json();
+        if (result.ok) {
+          msgId = result.result.message_id;
+          logger.info('✅ Tracking request sent via main bot', { orderNumber }, 'Grammy');
+        } else {
+          throw new Error(`Main bot API error: ${result.description}`);
+        }
+
+        // Отвечаем на callback через основной бот
+        await fetch(`https://api.telegram.org/bot${MAIN_BOT_TOKEN}/answerCallbackQuery`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            callback_query_id: ctx.callbackQuery.id,
+            text: '📝 Введите трек-номер в чат'
+          })
+        });
+
+      } else {
+        // Отправляем через Grammy бот
+        const msg = await ctx.reply(
+          `📦 Введите трек-номер для заказа №${orderNumber}\n\n👤 ФИО:\n${fullName || 'Не указано'}`,
+          { reply_markup: keyboard }
+        );
+        
+        msgId = msg.message_id;
+        logger.info('✅ Tracking request sent via Grammy bot', { orderNumber }, 'Grammy');
+
+        // Отвечаем на callback
+        await ctx.answerCallbackQuery('📝 Введите трек-номер в чат');
+      }
+
+      // Сохраняем состояние для conversation
+      await this.saveUserState(orderNumber, ctx.callbackQuery.message?.message_id || 0, msgId, ctx.chat?.id || 0);
+
+      this.metrics.callbacksHandled++;
+
+    } catch (error) {
+      logger.error('❌ Error in handleSubmitTrackingCallback', { 
+        error: error.message, 
+        userId: ctx.from?.id 
+      }, 'Grammy');
+      
+      try {
+        await ctx.answerCallbackQuery('😔 Произошла ошибка. Попробуйте еще раз.');
+      } catch (answerError) {
+        logger.error('❌ Failed to send error callback answer', { error: answerError.message }, 'Grammy');
+      }
+    }
   }
 
+  /**
+   * Обработчик callback "Назад" для трекинга - полная реализация
+   */
   private async handleTrackBackCallback(ctx: CallbackContext): Promise<void> {
-    // TODO: Implement in next iteration
-    await ctx.answerCallbackQuery('⬅️ Возвращаемся назад...');
-    logger.info('⬅️ track_back callback (placeholder)', { userId: ctx.from?.id }, 'Grammy');
+    try {
+      const text = ctx.callbackQuery.message?.text || '';
+      const orderNumber = this.parseOrderNumber(text);
+      
+      if (!orderNumber) {
+        logger.warn('⚠️ Could not parse order number from track_back callback', { userId: ctx.from?.id }, 'Grammy');
+        return;
+      }
+
+      // Определяем тип бота
+      const messageBotId = ctx.callbackQuery.message?.from?.id;
+      const isMainBot = messageBotId === 7612206140; // @telesklad_bot
+      
+      logger.info('🤖 Track back callback', { 
+        botId: messageBotId, 
+        isMainBot, 
+        orderNumber, 
+        userId: ctx.from?.id 
+      }, 'Grammy');
+
+      // Получаем детали заказа
+      const order = await prisma.orders.findUnique({
+        where: { id: BigInt(orderNumber) },
+        include: {
+          order_items: {
+            include: {
+              products: true
+            }
+          },
+          users: true
+        }
+      });
+
+      if (!order) {
+        logger.warn('⚠️ Order not found for track_back', { orderNumber }, 'Grammy');
+        return;
+      }
+
+      const user = order.users;
+      const orderItemsStr = order.order_items.map(item => 
+        `• ${item.products.name} — ${item.quantity}шт.`
+      ).join('\n');
+      const fullAddress = this.buildFullAddress(user);
+
+      // Восстанавливаем исходное сообщение курьера
+      const courierMsg = `👀 Нужно отправить заказ №${orderNumber}\n\n` +
+        `📄 Состав заказа:\n${orderItemsStr}\n\n` +
+        `📍 Адрес:\n${fullAddress}\n\n` +
+        `📍 Индекс: ${user.postal_code || 'Не указан'}\n\n` +
+        `👤 ФИО:\n${this.getFullName(user)}\n\n` +
+        `📱 Телефон:\n${user.phone_number || 'Не указан'}`;
+
+      const keyboard = KeyboardUtils.createCourierKeyboard(orderNumber);
+
+      if (isMainBot) {
+        // Обновляем сообщение через основной бот (@telesklad_bot)
+        const MAIN_BOT_TOKEN = '7612206140:AAHA6sV7VZLyUu0Ua1DAoULiFYehAkAjJK4';
+        
+        const editResponse = await fetch(`https://api.telegram.org/bot${MAIN_BOT_TOKEN}/editMessageText`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: ctx.callbackQuery.message?.chat.id,
+            message_id: ctx.callbackQuery.message?.message_id,
+            text: courierMsg,
+            reply_markup: keyboard
+          })
+        });
+
+        const editResult = await editResponse.json();
+        if (editResult.ok) {
+          logger.info('✅ Message updated via main bot', { orderNumber }, 'Grammy');
+        } else {
+          logger.warn('⚠️ Could not edit message via main bot', { error: editResult.description }, 'Grammy');
+        }
+
+        // Отвечаем на callback через основной бот
+        await fetch(`https://api.telegram.org/bot${MAIN_BOT_TOKEN}/answerCallbackQuery`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            callback_query_id: ctx.callbackQuery.id,
+            text: '⬅️ Возврат к деталям заказа'
+          })
+        });
+
+      } else {
+        // Обновляем сообщение через Grammy бот
+        await ctx.editMessageText(courierMsg, {
+          reply_markup: keyboard
+        });
+
+        await ctx.answerCallbackQuery('⬅️ Возврат к деталям заказа');
+        logger.info('✅ Message updated via Grammy bot', { orderNumber }, 'Grammy');
+      }
+
+      // Очищаем состояние пользователя
+      await RedisService.clearUserState(`user_${ctx.chat?.id}_state`);
+
+      this.metrics.callbacksHandled++;
+
+    } catch (error) {
+      logger.error('❌ Error in handleTrackBackCallback', { 
+        error: error.message, 
+        userId: ctx.from?.id 
+      }, 'Grammy');
+      
+      try {
+        await ctx.answerCallbackQuery('😔 Произошла ошибка. Попробуйте еще раз.');
+      } catch (answerError) {
+        logger.error('❌ Failed to send error callback answer', { error: answerError.message }, 'Grammy');
+      }
+    }
   }
 
+  // ========================
+  // MESSAGE HANDLERS (IMPLEMENTATIONS)
+  // ========================
+
+  /**
+   * Обработчик текстовых сообщений
+   */
   private async handleTextMessage(ctx: ExtendedContext): Promise<void> {
     // Проверяем, не является ли это сообщением от курьера
     if (this.isCourier(ctx.from?.id)) {
-      logger.info('📦 Courier message detected (placeholder)', { 
+      logger.info('📦 Courier message detected', { 
         userId: ctx.from?.id, 
         text: ctx.message?.text?.substring(0, 50) 
       }, 'Grammy');
+      
+      // TODO: В будущем здесь будет обработка трек-номеров от курьера
       return;
     }
 
@@ -575,8 +1067,10 @@ export class GrammyBotWorker {
     await this.sendWelcomeMessage(ctx);
   }
 
+  /**
+   * Обработчик видео сообщений (для админов)
+   */
   private async handleVideoMessage(ctx: ExtendedContext): Promise<void> {
-    // TODO: Implement admin video handling
     const video = ctx.message?.video;
     if (video) {
       await ctx.reply(
@@ -586,11 +1080,19 @@ export class GrammyBotWorker {
         `⏱ *Длительность:* ${video.duration} сек`,
         { parse_mode: 'Markdown' }
       );
+      
+      logger.info('📹 Video received from admin', { 
+        fileId: video.file_id,
+        userId: ctx.from?.id,
+        size: `${video.width}x${video.height}`
+      }, 'Grammy');
     }
   }
 
+  /**
+   * Обработчик фото сообщений (для админов)
+   */
   private async handlePhotoMessage(ctx: ExtendedContext): Promise<void> {
-    // TODO: Implement admin photo handling
     const photos = ctx.message?.photo;
     if (photos && photos.length > 0) {
       const bestPhoto = photos[photos.length - 1];
@@ -600,31 +1102,68 @@ export class GrammyBotWorker {
         `📏 *Размер:* ${bestPhoto.width}x${bestPhoto.height}`,
         { parse_mode: 'Markdown' }
       );
+      
+      logger.info('🖼 Photo received from admin', { 
+        fileId: bestPhoto.file_id,
+        userId: ctx.from?.id,
+        size: `${bestPhoto.width}x${bestPhoto.height}`
+      }, 'Grammy');
     }
   }
 
-  private async trackingConversation(conversation: any, ctx: ExtendedContext): Promise<void> {
-    // TODO: Implement tracking conversation
-    logger.info('🗣️ Tracking conversation started (placeholder)', { userId: ctx.from?.id }, 'Grammy');
+  /**
+   * Conversation для ввода трек-номера
+   */
+  private async trackingConversation(conversation: Conversation<ConversationContext>, ctx: ConversationContext): Promise<void> {
+    logger.info('🗣️ Tracking conversation started', { userId: ctx.from?.id }, 'Grammy');
+    
+    // TODO: Полная реализация conversation для ввода трек-номеров
+    // Это будет реализовано в следующей итерации
+    await ctx.reply('🚧 Conversation для трек-номеров будет реализован в следующей итерации.');
   }
 
+  /**
+   * Отправка приветственного сообщения
+   */
   private async sendWelcomeMessage(ctx: ExtendedContext): Promise<void> {
-    // TODO: Implement full welcome message with keyboard
     const welcomeText = this.settings.preview_msg || 'Добро пожаловать в наш бот!';
+    const keyboard = KeyboardUtils.createWelcomeKeyboard();
     
-    await ctx.reply(
-      `${welcomeText}\n\n🎉 *grammY Migration Test Mode*\n\nТестируем новую архитектуру бота.`,
-      { 
-        parse_mode: 'Markdown',
-        reply_markup: {
-          inline_keyboard: [[
-            { text: '🧪 Test Callback', callback_data: 'test_callback' }
-          ]]
+    try {
+      // Пытаемся отправить видео, если есть video_id
+      if (this.settings.first_video_id) {
+        try {
+          await ctx.replyWithVideo(this.settings.first_video_id, {
+            caption: welcomeText,
+            reply_markup: keyboard
+          });
+          logger.info('✅ Welcome video sent', { userId: ctx.from?.id }, 'Grammy');
+          return;
+        } catch (videoError) {
+          logger.warn('⚠️ Failed to send video, falling back to text', { 
+            error: (videoError as Error).message,
+            userId: ctx.from?.id 
+          }, 'Grammy');
         }
       }
-    );
+      
+      // Отправляем текстовое сообщение
+      await ctx.reply(welcomeText, {
+        reply_markup: keyboard
+      });
+      logger.info('✅ Welcome message sent', { userId: ctx.from?.id }, 'Grammy');
+      
+    } catch (error) {
+      logger.error('❌ Error sending welcome message', { 
+        error: (error as Error).message,
+        userId: ctx.from?.id 
+      }, 'Grammy');
+    }
   }
 
+  /**
+   * Уведомление админа о новом пользователе
+   */
   private async notifyAdminNewUser(user: any): Promise<void> {
     if (!this.settings.admin_chat_id) return;
 
@@ -637,11 +1176,15 @@ export class GrammyBotWorker {
 
     try {
       await this.bot.api.sendMessage(this.settings.admin_chat_id, message, { parse_mode: 'Markdown' });
+      logger.info('✅ New user notification sent to admin', { userId: user.id }, 'Grammy');
     } catch (error) {
-      logger.error('❌ Failed to notify admin about new user', { error: error.message }, 'Grammy');
+      logger.error('❌ Failed to notify admin about new user', { error: (error as Error).message }, 'Grammy');
     }
   }
 
+  /**
+   * Построение информационного сообщения для админа
+   */
   private buildAdminInfoMessage(): string {
     return `⚙️ *Настройки grammY бота*\n\n` +
       `🤖 Основной бот: ${this.settings.tg_main_bot || 'не указан'}\n` +
@@ -656,6 +1199,75 @@ export class GrammyBotWorker {
       `- Среднее время: ${this.metrics.averageResponseTime.toFixed(2)}ms\n` +
       `- Callback'ов: ${this.metrics.callbacksHandled}\n\n` +
       `🧪 *grammY Migration Mode Active*`;
+  }
+
+  // ========================
+  // UTILITY METHODS (IMPLEMENTATIONS)
+  // ========================
+
+  /**
+   * Парсинг номера заказа из текста
+   */
+  private parseOrderNumber(text: string): string | null {
+    const match = text.match(/№(\d+)/);
+    return match ? match[1] : null;
+  }
+
+  /**
+   * Парсинг ФИО из текста сообщения
+   */
+  private parseFullName(text: string): string | null {
+    const match = text.match(/ФИО:\s*(.+?)(?:\n|$)/);
+    return match ? match[1].trim() : null;
+  }
+
+  /**
+   * Сохранение состояния пользователя для tracking conversation
+   */
+  private async saveUserState(orderId: string, msgId: number, hMsgId: number, chatId: number): Promise<void> {
+    const key = `user_${chatId}_state`;
+    const state = {
+      order_id: BigInt(orderId),
+      msg_id: msgId,
+      h_msg: hMsgId,
+      timestamp: Date.now(),
+      mode: 'tracking'
+    };
+    
+    try {
+      // Сохраняем состояние пользователя в Redis с TTL 5 минут
+      await RedisService.setUserState(key, state, 300);
+      logger.info('✅ User state saved for tracking', { orderId, chatId }, 'Grammy');
+    } catch (error) {
+      logger.warn('⚠️ Failed to save user state', { error: error.message, orderId, chatId }, 'Grammy');
+    }
+  }
+
+  /**
+   * Получение полного имени пользователя
+   */
+  private getFullName(user: any): string {
+    const firstName = user.first_name || user.first_name_raw || '';
+    const lastName = user.last_name || user.last_name_raw || '';
+    const middleName = user.middle_name || '';
+    
+    return `${firstName} ${lastName} ${middleName}`.trim() || 'Не указано';
+  }
+
+  /**
+   * Построение полного адреса пользователя
+   */
+  private buildFullAddress(user: any): string {
+    const parts = [];
+    
+    if (user.postal_code) parts.push(`${user.postal_code}`);
+    if (user.address) parts.push(user.address);
+    if (user.street) parts.push(user.street);
+    if (user.home) parts.push(`дом ${user.home}`);
+    if (user.apartment) parts.push(`кв. ${user.apartment}`);
+    if (user.build) parts.push(`корп. ${user.build}`);
+    
+    return parts.join(', ') || 'Адрес не указан';
   }
 
   // ========================

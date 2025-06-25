@@ -32,7 +32,8 @@
     "redis:clear": "ts-node scripts/clear-redis.ts",
     "photos:check": "tsx -r tsconfig-paths/register scripts/check-photo-migration.ts",
     "grammy:test": "tsx scripts/test-grammy.ts",
-    "grammy:webhook": "tsx scripts/test-grammy-webhook.ts"
+    "grammy:webhook": "tsx scripts/test-grammy-webhook.ts",
+    "grammy:callbacks": "tsx scripts/test-grammy-callbacks.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.832.0",
