@@ -243,13 +243,18 @@ export default function FavoritesPage() {
                     </Link>
                   </div>
 
-                  {/* Product Footer */}
+                  {/* Product Footer - современный дизайн цен */}
                   <div className="product-footer">
                     {product.stock_quantity > 0 ? (
                       <>
                         {product.old_price ? (
-                          <div className="flex gap-1 items-center">
-                            <div className="price">{Math.floor(product.price)}₽</div>
+                          <div className="price-block">
+                            <div className="price-row">
+                              <div className="price">{Math.floor(product.price)}₽</div>
+                              <div className="discount-badge">
+                                -{Math.round(((product.old_price - product.price) / product.old_price) * 100)}%
+                              </div>
+                            </div>
                             <div className="old-price">{Math.floor(product.old_price)}₽</div>
                           </div>
                         ) : (
@@ -266,8 +271,13 @@ export default function FavoritesPage() {
                     ) : (
                       <>
                         {product.old_price ? (
-                          <div className="flex gap-1 items-center">
-                            <div className="price-unavailable">{Math.floor(product.price)}₽</div>
+                          <div className="price-block">
+                            <div className="price-row">
+                              <div className="price-unavailable">{Math.floor(product.price)}₽</div>
+                              <div className="discount-badge">
+                                -{Math.round(((product.old_price - product.price) / product.old_price) * 100)}%
+                              </div>
+                            </div>
                             <div className="old-price">{Math.floor(product.old_price)}₽</div>
                           </div>
                         ) : (

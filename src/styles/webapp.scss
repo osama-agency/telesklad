@@ -635,15 +635,15 @@ html, body {
     }
     
     &.active {
-      background: #48C928;
+      background: linear-gradient(135deg, #48C928 0%, #3AA120 100%);
       border-color: #48C928;
       color: white;
       font-weight: 600;
       box-shadow: 0 4px 16px rgba(72, 201, 40, 0.3);
       
       &:hover {
-        background: #3ba220;
-        border-color: #3ba220;
+        background: linear-gradient(135deg, #3AA120 0%, #2E8B1C 100%);
+        border-color: #3AA120;
         transform: translateY(-1px);
       }
     }

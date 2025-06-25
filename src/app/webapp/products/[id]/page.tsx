@@ -305,18 +305,28 @@ export default function ProductDetailPage() {
         </div>
 
         {product.stock_quantity > 0 && (
-          <div className="mb-3 flex items-end gap-1">
-            {product.old_price && (
-              <div className="card-old-price">
-                {product.old_price.toFixed(0)}₽
+          <div className="mb-3">
+            {product.old_price ? (
+              <div className="price-block">
+                <div className="price-row">
+                  <div className="price card-price">
+                    {product.price.toFixed(0)}₽
+                  </div>
+                  {discountPercent && (
+                    <div className="discount-badge">
+                      -{discountPercent}%
+                    </div>
+                  )}
+                </div>
+                <div className="old-price card-old-price">
+                  {product.old_price.toFixed(0)}₽
+                </div>
+              </div>
+            ) : (
+              <div className="price-without-old card-price">
+                {product.price.toFixed(0)}₽
               </div>
             )}
-            <div className="card-price">
-              {product.price.toFixed(0)}₽
-              {discountPercent && (
-                <span className="price-percent">-{discountPercent}%</span>
-              )}
-            </div>
           </div>
         )}
 
