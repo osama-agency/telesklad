@@ -507,7 +507,7 @@ html, body {
   white-space: nowrap;
   margin: 0;
   /* Отступы для первой и последней кнопки с начальным отступом слева */
-  padding-left: max(env(safe-area-inset-left), calc(clamp(16px, 4vw, 20px) + 2px));
+  padding-left: max(env(safe-area-inset-left), calc(clamp(16px, 4vw, 20px) + 3px));
   padding-right: max(env(safe-area-inset-right), clamp(16px, 4vw, 20px));
   display: flex;
   gap: clamp(4px, 1vw, 6px);
@@ -590,7 +590,7 @@ html, body {
 /* Мобильная адаптация */
 @media (max-width: 480px) {
   .catalog-nav {
-    padding-left: max(env(safe-area-inset-left), calc(clamp(12px, 3vw, 16px) + 2px));
+    padding-left: max(env(safe-area-inset-left), calc(clamp(12px, 3vw, 16px) + 3px));
     padding-right: max(env(safe-area-inset-right), clamp(12px, 3vw, 16px));
   }
 }
@@ -621,7 +621,7 @@ html, body {
     display: flex;
     gap: 8px;
     overflow-x: auto;
-    padding-left: max(env(safe-area-inset-left), calc(16px + 2px));
+    padding-left: max(env(safe-area-inset-left), calc(16px + 3px));
     padding-right: max(env(safe-area-inset-right), 16px);
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
@@ -718,7 +718,7 @@ html, body {
     padding: 10px 0;
     
     .category-filter-list {
-      padding-left: max(env(safe-area-inset-left), calc(12px + 2px));
+      padding-left: max(env(safe-area-inset-left), calc(12px + 3px));
       padding-right: max(env(safe-area-inset-right), 12px);
       gap: 6px;
     }
