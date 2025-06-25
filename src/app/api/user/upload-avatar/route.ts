@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get current user to check for existing avatar
-    const currentUser = await prisma.telesklad_user.findUnique({
+    const currentUser = await prisma.telesklad_users.findUnique({
       where: { email: session.user.email }
     });
 
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     );
 
     // Update user with new avatar URL
-    await prisma.telesklad_user.update({
+    await prisma.telesklad_users.update({
       where: { email: session.user.email },
       data: { image: avatarUrl }
     });

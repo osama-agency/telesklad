@@ -1,0 +1,33 @@
+# npm audit report
+
+request  *
+Severity: moderate
+Server-Side Request Forgery in Request - https://github.com/advisories/GHSA-p8p7-x288-28g6
+Depends on vulnerable versions of tough-cookie
+fix available via `npm audit fix --force`
+Will install node-telegram-bot-api@0.66.0, which is a breaking change
+node_modules/request
+  node-telegram-bot-api  <=0.63.0
+  Depends on vulnerable versions of request
+  Depends on vulnerable versions of request-promise
+  node_modules/node-telegram-bot-api
+  request-promise  >=0.0.2
+  Depends on vulnerable versions of request
+  Depends on vulnerable versions of request-promise-core
+  Depends on vulnerable versions of tough-cookie
+  node_modules/request-promise
+  request-promise-core  *
+  Depends on vulnerable versions of request
+  node_modules/request-promise-core
+
+tough-cookie  <4.1.3
+Severity: moderate
+tough-cookie Prototype Pollution vulnerability - https://github.com/advisories/GHSA-72xf-g2v4-qvf3
+fix available via `npm audit fix --force`
+Will install node-telegram-bot-api@0.66.0, which is a breaking change
+node_modules/tough-cookie
+
+5 moderate severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force

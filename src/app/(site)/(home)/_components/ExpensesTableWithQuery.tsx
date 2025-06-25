@@ -395,7 +395,7 @@ export function ExpensesTable() {
       </div>
 
       {/* Toast Container */}
-      <ToastContainer toasts={toast.toasts} onRemove={toast.removeToast} />
+      <ToastContainer toasts={toast.toasts as any} onClose={toast.removeToast} />
     </>
   );
 } 

@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ВРЕМЕННО ОТКЛЮЧЕНА АВТОРИЗАЦИЯ - используем дефолтного пользователя
-    const teleskladUser = await (prisma as any).telesklad_user.findFirst({
+    const teleskladUser = await (prisma as any).telesklad_users.findFirst({
       where: { email: 'go@osama.agency' }
     });
 

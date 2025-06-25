@@ -295,7 +295,7 @@ export async function POST(request: NextRequest) {
     console.log(`💰 Creating purchase with currency: ${currency}, total: ${totalAmount}`);
 
     // ВРЕМЕННО ОТКЛЮЧЕНА АВТОРИЗАЦИЯ - используем дефолтного пользователя
-    const user = await (prisma as any).telesklad_user.findFirst({
+    const user = await (prisma as any).telesklad_users.findFirst({
       where: { email: 'go@osama.agency' }
     });
 

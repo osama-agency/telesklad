@@ -5,7 +5,7 @@ import { isAuthorized } from "@/libs/isAuthorized";
 export async function getUsers(filter: any) {
   const currentUser = await isAuthorized();
 
-  const res = await prisma.telesklad_user.findMany({
+  const res = await prisma.telesklad_users.findMany({
     where: {
       role: filter,
     },
@@ -21,7 +21,7 @@ export async function getUsers(filter: any) {
 
 export async function updateUser(data: any) {
   const { email } = data;
-  return await prisma.telesklad_user.update({
+  return await prisma.telesklad_users.update({
     where: {
       email: email.toLowerCase(),
     },
@@ -41,7 +41,7 @@ export async function deleteUser(user: any) {
     return new Error("User not found");
   }
 
-  return await prisma.telesklad_user.delete({
+  return await prisma.telesklad_users.delete({
     where: {
       email: user?.email.toLowerCase() as string,
     },
@@ -49,7 +49,7 @@ export async function deleteUser(user: any) {
 }
 
 export async function serchUser(email: string) {
-  return await prisma.telesklad_user.findUnique({
+  return await prisma.telesklad_users.findUnique({
     where: {
       email: email.toLowerCase(),
     },

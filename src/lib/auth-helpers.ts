@@ -72,7 +72,7 @@ export async function checkAccess(
   if (!session?.user) return false;
 
   try {
-    const user = await prisma.telesklad_user.findUnique({
+    const user = await prisma.telesklad_users.findUnique({
       where: { id: session.user.id },
     });
 
@@ -132,7 +132,7 @@ export async function getCurrentUser() {
     return null;
   }
 
-  const user = await prisma.telesklad_user.findUnique({
+  const user = await prisma.telesklad_users.findUnique({
     where: { email: session.user.email },
     select: {
       id: true,

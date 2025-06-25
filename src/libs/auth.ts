@@ -39,7 +39,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         // check to see if user already exist
-        const user = await prisma.telesklad_users.findUnique({
+        const user = await prisma.telesklad_userss.findUnique({
           where: {
             email: credentials.email,
           },

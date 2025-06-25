@@ -9,7 +9,7 @@ export async function DELETE(request: Request) {
 
 	const session = await getServerSession(authOptions);
 
-	const user = await prisma.telesklad_user.findUnique({
+	const user = await prisma.telesklad_users.findUnique({
 		where: {
 			email: email.toLowerCase(),
 		},
@@ -28,7 +28,7 @@ export async function DELETE(request: Request) {
 	}
 
 	try {
-		const user = await prisma.telesklad_user.delete({
+		const user = await prisma.telesklad_users.delete({
 			where: {
 				email: email.toLowerCase(),
 			},

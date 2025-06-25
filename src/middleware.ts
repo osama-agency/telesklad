@@ -9,10 +9,7 @@ export default withAuth(
     const token = req.nextauth.token;
     const { pathname } = req.nextUrl;
     
-    // Логирование только для не-webapp маршрутов
-    if (!pathname.startsWith('/webapp') && !pathname.startsWith('/api/webapp')) {
-      console.log(`[Middleware] Path: ${pathname}, User: ${token?.email}, Role: ${token?.role}`);
-    }
+    // Удалено логирование для безопасности в продакшене
     
     // Проверка доступа к админским маршрутам
     const isAdminRoute = pathname.startsWith('/admin') || 
@@ -23,7 +20,7 @@ export default withAuth(
     if (isAdminRoute) {
       // Проверяем роль администратора
       if (token?.role !== 'ADMIN') {
-        console.log(`[Middleware] Access denied for ${token?.email} to ${pathname}`);
+        // Удалено логирование для безопасности
         return NextResponse.redirect(new URL('/403', req.url));
       }
       
@@ -33,7 +30,7 @@ export default withAuth(
         // Проверяем конкретный email для супер-критических операций
         const allowedAdmins = process.env.ADMIN_EMAILS?.split(',') || ['go@osama.agency'];
         if (!allowedAdmins.includes(token.email?.toLowerCase() || '')) {
-          console.log(`[Middleware] Critical operation denied for ${token?.email}`);
+          // Удалено логирование для безопасности
           return NextResponse.redirect(new URL('/403', req.url));
         }
       }

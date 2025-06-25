@@ -25,10 +25,6 @@ const nextConfig = {
     externalDir: true,
     // Оптимизация пакетов
     optimizePackageImports: ['lucide-react', '@heroicons/react'],
-    // Турбо режим для быстрой сборки
-    turbotrace: {
-      logLevel: 'error',
-    },
     // Оптимизация CSS
     optimizeCss: true,
   },

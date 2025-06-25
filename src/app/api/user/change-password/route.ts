@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 		return new NextResponse("Unauthorized", { status: 401 });
 	}
 
-	const user = await prisma.telesklad_user.findUnique({
+	const user = await prisma.telesklad_users.findUnique({
 		where: {
 			email: formatedEmail,
 		},
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
 	const hashedPassword = await bcrypt.hash(password, 10);
 
 	try {
-		await prisma.telesklad_user.update({
+		await prisma.telesklad_users.update({
 			where: {
 				email: formatedEmail,
 			},

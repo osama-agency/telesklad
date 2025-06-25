@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { logger } from '@/lib/logger';
 
 interface PurchaseItem {
   id?: number;
@@ -71,7 +72,7 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
           const result = await response.json();
           if (result.success && result.data) {
             setExchangeRate(result.data.rate);
-            console.log(`Модальное окно: загружен курс TRY: 1 ₺ = ${result.data.rate} ₽`);
+            logger.debug(`Модальное окно: загружен курс TRY: 1 ₺ = ${result.data.rate} ₽`, undefined, 'PurchaseModal');
           }
         }
       } catch (error) {
@@ -85,9 +86,9 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
   }, [isOpen]);
 
   useEffect(() => {
-    console.log('🔧 PurchaseModal useEffect - isOpen:', isOpen, 'purchase:', purchase);
+    logger.debug('PurchaseModal useEffect', { isOpen, hasPurchase: !!purchase }, 'PurchaseModal');
     if (purchase) {
-      console.log('🔧 Setting form data from purchase:', purchase);
+      logger.debug('Setting form data from purchase', { purchaseId: purchase.id }, 'PurchaseModal');
       setFormData({
         totalAmount: purchase.totalAmount,
         isUrgent: purchase.isUrgent,
@@ -95,7 +96,7 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
       });
       setItems(purchase.items);
     } else {
-      console.log('🔧 No purchase, setting default form data');
+      logger.debug('No purchase, setting default form data', undefined, 'PurchaseModal');
       setFormData({
         totalAmount: 0,
         isUrgent: false,
@@ -121,7 +122,7 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
         const costPrice = product.avgPurchasePriceRub || product.prime_cost;
         if (costPrice) {
           setNewItem(prev => ({ ...prev, costPrice: costPrice.toString() }));
-          console.log(`Модальное окно: автозаполнение себестоимости товара "${product.name}": ${costPrice} ₽`);
+          logger.debug(`Auto-fill cost price for product`, { productName: product.name, costPrice }, 'PurchaseModal');
         } else {
           setNewItem(prev => ({ ...prev, costPrice: "" }));
         }
@@ -168,7 +169,7 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
       total,
     };
 
-    console.log('Adding item:', item);
+    logger.debug('Adding purchase item', { productName: item.productName, quantity: item.quantity }, 'PurchaseModal');
     setItems((prev) => [...prev, item]);
     setNewItem({ productId: "", quantity: "", costPrice: "" });
   };
@@ -231,7 +232,7 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
         })),
       };
 
-      console.log('Sending purchase data:', requestData);
+      logger.debug('Sending purchase data', { itemsCount: requestData.items.length, totalAmount: requestData.totalAmount }, 'PurchaseModal');
 
       const response = await fetch(url, {
         method,
@@ -257,7 +258,7 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
     }
   };
 
-  console.log('🔧 PurchaseModal render - isOpen:', isOpen, 'purchase:', purchase, 'products:', products.length);
+  logger.debug('PurchaseModal render', { isOpen, hasPurchase: !!purchase, productsCount: products.length }, 'PurchaseModal');
 
   if (!isOpen) return null;
 

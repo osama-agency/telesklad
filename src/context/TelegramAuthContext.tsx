@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { logger } from '@/lib/logger';
 
 interface TelegramUser {
   id: string;
@@ -46,12 +47,12 @@ export function TelegramAuthProvider({ children }: TelegramAuthProviderProps) {
         if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
           const tg = window.Telegram.WebApp;
           
-          console.log('🔍 Telegram WebApp detected:', {
-            initData: tg.initData,
-            initDataUnsafe: tg.initDataUnsafe,
+          logger.debug('🔍 Telegram WebApp detected', {
+            hasInitData: !!tg.initData,
+            hasUser: !!tg.initDataUnsafe?.user,
             platform: tg.platform,
             version: tg.version
-          });
+          }, 'TelegramAuth');
           
           // Инициализируем Telegram Web App
           tg.ready();
@@ -63,26 +64,26 @@ export function TelegramAuthProvider({ children }: TelegramAuthProviderProps) {
           const initData = tg.initData;
           
           if (initData && tg.initDataUnsafe?.user) {
-            console.log('🔐 Authenticating with Telegram initData...');
+            logger.info('🔐 Authenticating with Telegram initData', undefined, 'TelegramAuth');
             await login(initData);
           } else {
-            console.warn('⚠️ No Telegram initData available');
+            logger.warn('⚠️ No Telegram initData available', undefined, 'TelegramAuth');
             // Для разработки можем использовать тестовые данные
             if (process.env.NODE_ENV === 'development') {
-              console.log('🧪 Using test user for development');
+              logger.debug('🧪 Using test user for development', undefined, 'TelegramAuth');
               await checkTestUser();
             }
           }
         } else {
-          console.warn('⚠️ Telegram Web App not available');
+          logger.warn('⚠️ Telegram Web App not available', undefined, 'TelegramAuth');
           // Для разработки можем использовать тестовые данные
           if (process.env.NODE_ENV === 'development') {
-            console.log('🧪 Using test user for development');
+            logger.debug('🧪 Using test user for development', undefined, 'TelegramAuth');
             await checkTestUser();
           }
         }
       } catch (error) {
-        console.error('❌ Auth initialization error:', error);
+        logger.error('❌ Auth initialization error', error, 'TelegramAuth');
       } finally {
         setIsLoading(false);
       }
@@ -99,11 +100,11 @@ export function TelegramAuthProvider({ children }: TelegramAuthProviderProps) {
         const data = await response.json();
         if (data.success) {
           setUser(data.user);
-          console.log('🧪 Test user authenticated:', data.user);
+          logger.debug('🧪 Test user authenticated', { tg_id: data.user.tg_id }, 'TelegramAuth');
         }
       }
     } catch (error) {
-      console.error('Test user check failed:', error);
+      logger.error('Test user check failed', error, 'TelegramAuth');
     }
   };
 
@@ -111,7 +112,7 @@ export function TelegramAuthProvider({ children }: TelegramAuthProviderProps) {
   const login = async (initData: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      console.log('🔐 Attempting Telegram authentication...');
+      logger.info('🔐 Attempting Telegram authentication', undefined, 'TelegramAuth');
       
       const response = await fetch('/api/webapp/auth/telegram', {
         method: 'POST',
@@ -125,25 +126,24 @@ export function TelegramAuthProvider({ children }: TelegramAuthProviderProps) {
 
       if (data.success) {
         setUser(data.user);
-        console.log('✅ User authenticated successfully:', {
+        logger.info('✅ User authenticated successfully', {
           id: data.user.id,
           tg_id: data.user.tg_id,
-          name: `${data.user.first_name} ${data.user.last_name || ''}`.trim(),
-          username: data.user.username
-        });
+          name: `${data.user.first_name} ${data.user.last_name || ''}`.trim()
+        }, 'TelegramAuth');
         return true;
       } else {
-        console.error('❌ Authentication failed:', data.error);
+        logger.error('❌ Authentication failed', data.error, 'TelegramAuth');
         
         // Если пользователь не найден или заблокирован, показываем соответствующее сообщение
         if (data.error?.includes('not started') || data.error?.includes('banned')) {
-          console.warn('⚠️ User needs to start the bot or is banned');
+          logger.warn('⚠️ User needs to start the bot or is banned', undefined, 'TelegramAuth');
         }
         
         return false;
       }
     } catch (error) {
-      console.error('❌ Login error:', error);
+      logger.error('❌ Login error', error, 'TelegramAuth');
       return false;
     } finally {
       setIsLoading(false);
@@ -153,7 +153,7 @@ export function TelegramAuthProvider({ children }: TelegramAuthProviderProps) {
   // Выход
   const logout = () => {
     setUser(null);
-    console.log('👋 User logged out');
+    logger.info('👋 User logged out', undefined, 'TelegramAuth');
   };
 
   // Обновление данных пользователя
@@ -166,10 +166,10 @@ export function TelegramAuthProvider({ children }: TelegramAuthProviderProps) {
 
       if (data.success) {
         setUser(data.user);
-        console.log('🔄 User data refreshed');
+        logger.debug('🔄 User data refreshed', undefined, 'TelegramAuth');
       }
     } catch (error) {
-      console.error('❌ Refresh user error:', error);
+      logger.error('❌ Refresh user error', error, 'TelegramAuth');
     }
   };
 

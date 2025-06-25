@@ -44,7 +44,7 @@ export async function POST(request: Request) {
 	}
 
 	try {
-		const user = await prisma.telesklad_user.update({
+		const user = await prisma.telesklad_users.update({
 			where: {
 				email: session?.user?.email as string,
 			},
@@ -73,7 +73,7 @@ export async function PUT(request: Request) {
 	const body = await request.json();
 
 	try {
-		const user = await prisma.telesklad_user.update({
+		const user = await prisma.telesklad_users.update({
 			where: {
 				email: body.email.toLowerCase(),
 			},

@@ -197,12 +197,12 @@ const OrdersPage: React.FC = () => {
   if (isLoading) {
     return (
       <PageTransition>
-        <div className="webapp-container">
-          <div className="header-simple">
-            <h1>История заказов</h1>
-          </div>
-          <SkeletonLoading type="order" count={3} />
+      <div className="webapp-container">
+        <div className="header-simple">
+          <h1>История заказов</h1>
         </div>
+        <SkeletonLoading type="order" count={3} />
+      </div>
       </PageTransition>
     );
   }
@@ -210,22 +210,22 @@ const OrdersPage: React.FC = () => {
   if (error) {
     return (
       <PageTransition>
-        <div className="webapp-container">
-          <div className="header-simple">
-            <h1>История заказов</h1>
-          </div>
-          <div className="main-block">
-            <div className="text-center text-red-600">
-              <p>{error}</p>
-              <button 
-                onClick={() => window.location.reload()} 
-                className="webapp-btn-secondary mt-4"
-              >
-                Попробовать снова
-              </button>
-            </div>
+      <div className="webapp-container">
+        <div className="header-simple">
+          <h1>История заказов</h1>
+        </div>
+        <div className="main-block">
+          <div className="text-center text-red-600">
+            <p>{error}</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="webapp-btn-secondary mt-4"
+            >
+              Попробовать снова
+            </button>
           </div>
         </div>
+      </div>
       </PageTransition>
     );
   }
@@ -233,125 +233,125 @@ const OrdersPage: React.FC = () => {
   if (orders.length === 0) {
     return (
       <PageTransition>
-        <div className="webapp-container">
-          <div className="header-simple">
-            <h1>История заказов</h1>
-          </div>
-          <div className="empty-state">
-            <div className="empty-state-icon">
-              <IconComponent name="cart2" size={64} />
-            </div>
-            <h3>Нет заказов</h3>
-            <p>Когда вы сделаете первый заказ, он появится здесь</p>
-            <button 
-              onClick={() => router.push('/webapp')}
-              className="webapp-btn"
-            >
-              Перейти к каталогу
-            </button>
-          </div>
+      <div className="webapp-container">
+        <div className="header-simple">
+          <h1>История заказов</h1>
         </div>
+        <div className="empty-state">
+          <div className="empty-state-icon">
+            <IconComponent name="cart2" size={64} />
+          </div>
+          <h3>Нет заказов</h3>
+          <p>Когда вы сделаете первый заказ, он появится здесь</p>
+          <button 
+            onClick={() => router.push('/webapp')}
+            className="webapp-btn"
+          >
+            Перейти к каталогу
+          </button>
+        </div>
+      </div>
       </PageTransition>
     );
   }
 
   return (
     <PageTransition>
-      <div className="webapp-container">
-        <div className="header-simple">
-          <h1>История заказов</h1>
-        </div>
+    <div className="webapp-container">
+      <div className="header-simple">
+        <h1>История заказов</h1>
+      </div>
 
-        {stats && (
-          <div className="orders-stats fade-in">
-            <div className="stat-item">
-              <span className="stat-value">{stats.total_orders}</span>
-              <span className="stat-label">Всего заказов</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-value">
-                {formatPrice(stats.total_amount)}
-              </span>
-              <span className="stat-label">Общая сумма</span>
-            </div>
+      {stats && (
+        <div className="orders-stats fade-in">
+          <div className="stat-item">
+            <span className="stat-value">{stats.total_orders}</span>
+            <span className="stat-label">Всего заказов</span>
           </div>
-        )}
+          <div className="stat-item">
+            <span className="stat-value">
+              {formatPrice(stats.total_amount)}
+            </span>
+            <span className="stat-label">Общая сумма</span>
+          </div>
+        </div>
+      )}
 
-        <div className="orders-list fade-in">
-          {orders.map(order => {
-            const statusInfo = getStatusInfo(order.status);
-            
-            return (
-              <div key={order.id} className="order-item">
-                <div className="order-header">
-                  <div className="order-number">
-                    <span className="order-label">Заказ</span>
-                    <span className="order-value">#{order.id}</span>
+      <div className="orders-list fade-in">
+        {orders.map(order => {
+          const statusInfo = getStatusInfo(order.status);
+          
+          return (
+            <div key={order.id} className="order-item">
+              <div className="order-header">
+                <div className="order-number">
+                  <span className="order-label">Заказ</span>
+                  <span className="order-value">#{order.id}</span>
+                </div>
+                <div className="order-date">
+                  {formatDate(order.created_at)}
+                </div>
+              </div>
+
+              <div className="order-content">
+                <div className="order-summary">
+                  <div className="order-amount">
+                    <span className="amount-value">{formatPrice(order.total_amount)}</span>
+                    <span className="items-count">
+                      {order.total_items} {order.total_items === 1 ? 'товар' : order.total_items < 5 ? 'товара' : 'товаров'}
+                    </span>
                   </div>
-                  <div className="order-date">
-                    {formatDate(order.created_at)}
+
+                  <div className="order-status">
+                    <span 
+                      className="status-badge"
+                      style={{ 
+                        color: statusInfo.color,
+                        backgroundColor: statusInfo.bgColor
+                      }}
+                    >
+                      <IconComponent name={statusInfo.icon} size={12} />
+                      {statusInfo.label}
+                    </span>
                   </div>
                 </div>
 
-                <div className="order-content">
-                  <div className="order-summary">
-                    <div className="order-amount">
-                      <span className="amount-value">{formatPrice(order.total_amount)}</span>
-                      <span className="items-count">
-                        {order.total_items} {order.total_items === 1 ? 'товар' : order.total_items < 5 ? 'товара' : 'товаров'}
-                      </span>
-                    </div>
-
-                    <div className="order-status">
-                      <span 
-                        className="status-badge"
-                        style={{ 
-                          color: statusInfo.color,
-                          backgroundColor: statusInfo.bgColor
-                        }}
-                      >
-                        <IconComponent name={statusInfo.icon} size={12} />
-                        {statusInfo.label}
-                      </span>
+                {/* Список товаров */}
+                {order.items && order.items.length > 0 && (
+                  <div className="order-items">
+                    <div className="items-header">Товары в заказе:</div>
+                    <div className="items-list">
+                      {order.items.map((item, index) => (
+                        <div key={index} className="order-item-row">
+                          {/* Изображение товара */}
+                          <div className="item-image">
+                            {item.image_url ? (
+                              <img
+                                src={item.image_url}
+                                alt={item.product_name}
+                                className="product-image"
+                              />
+                            ) : (
+                              <div className="no-image-placeholder">
+                                <IconComponent name="no-image" size={16} />
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="item-info">
+                            <span className="item-name">{item.product_name}</span>
+                            <span className="item-quantity">×{item.quantity}</span>
+                          </div>
+                          <span className="item-price">{formatPrice(item.total)}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
+                )}
 
-                  {/* Список товаров */}
-                  {order.items && order.items.length > 0 && (
-                    <div className="order-items">
-                      <div className="items-header">Товары в заказе:</div>
-                      <div className="items-list">
-                        {order.items.map((item, index) => (
-                          <div key={index} className="order-item-row">
-                            {/* Изображение товара */}
-                            <div className="item-image">
-                              {item.image_url ? (
-                                <img
-                                  src={item.image_url}
-                                  alt={item.product_name}
-                                  className="product-image"
-                                />
-                              ) : (
-                                <div className="no-image-placeholder">
-                                  <IconComponent name="no-image" size={16} />
-                                </div>
-                              )}
-                            </div>
-                            
-                            <div className="item-info">
-                              <span className="item-name">{item.product_name}</span>
-                              <span className="item-quantity">×{item.quantity}</span>
-                            </div>
-                            <span className="item-price">{formatPrice(item.total)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Дополнительная информация */}
-                  <div className="order-details">
-                                    {order.tracking_number && (
+                {/* Дополнительная информация */}
+                <div className="order-details">
+                  {order.tracking_number && (
                     <div className="tracking-section">
                       <div className="detail-row">
                         <IconComponent name="package" size={16} />
@@ -406,328 +406,328 @@ const OrdersPage: React.FC = () => {
                       </button>
                     </div>
                   )}
-                    
-                    {order.paid_at && (
-                      <div className="detail-row">
-                        <IconComponent name="info" size={14} />
-                        <span className="detail-label">Проверка оплаты:</span>
-                        <span className="detail-value">{formatDate(order.paid_at)}</span>
-                      </div>
-                    )}
-                    
-                    {order.shipped_at && (
-                      <div className="detail-row">
-                        <IconComponent name="arrow-right" size={14} />
-                        <span className="detail-label">Отправлен:</span>
-                        <span className="detail-value">{formatDate(order.shipped_at)}</span>
-                      </div>
-                    )}
-                    
-                    {order.bonus > 0 && (
-                      <div className="detail-row bonus-row">
-                        <IconComponent name="star" size={14} />
-                        <span className="detail-label">Бонусы:</span>
-                        <span className="detail-value bonus-value">+{order.bonus}₽</span>
-                      </div>
-                    )}
-                  </div>
+                  
+                  {order.paid_at && (
+                    <div className="detail-row">
+                      <IconComponent name="info" size={14} />
+                      <span className="detail-label">Проверка оплаты:</span>
+                      <span className="detail-value">{formatDate(order.paid_at)}</span>
+                    </div>
+                  )}
+                  
+                  {order.shipped_at && (
+                    <div className="detail-row">
+                      <IconComponent name="arrow-right" size={14} />
+                      <span className="detail-label">Отправлен:</span>
+                      <span className="detail-value">{formatDate(order.shipped_at)}</span>
+                    </div>
+                  )}
+                  
+                  {order.bonus > 0 && (
+                    <div className="detail-row bonus-row">
+                      <IconComponent name="star" size={14} />
+                      <span className="detail-label">Бонусы:</span>
+                      <span className="detail-value bonus-value">+{order.bonus}₽</span>
+                    </div>
+                  )}
                 </div>
-
-
               </div>
-            );
-          })}
-        </div>
 
-        <style jsx>{`
-          .header-with-back {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
-            padding: 0 4px;
+
+            </div>
+          );
+        })}
+      </div>
+
+      <style jsx>{`
+        .header-with-back {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 16px;
+          padding: 0 4px;
+        }
+
+        .back-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 40px;
+          height: 40px;
+          border: none;
+          background-color: #F3F4F6;
+          border-radius: 10px;
+          color: #374151;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .back-btn:hover {
+          background-color: #E5E7EB;
+        }
+
+        .back-btn:active {
+          transform: scale(0.95);
+        }
+
+        .orders-stats {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+          margin-bottom: 20px;
+        }
+
+        .stat-item {
+          background: white;
+          border-radius: 12px;
+          padding: 16px;
+          text-align: center;
+          box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+          border: 1px solid #f0f0f0;
+        }
+
+        .stat-value {
+          display: block;
+          font-size: 18px;
+          font-weight: 700;
+          color: #48C928;
+          margin-bottom: 4px;
+        }
+
+        .stat-label {
+          font-size: 12px;
+          color: #6B7280;
+          font-weight: 500;
+        }
+
+        .orders-list {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .fade-in {
+          animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
           }
-
-          .back-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px;
-            height: 40px;
-            border: none;
-            background-color: #F3F4F6;
-            border-radius: 10px;
-            color: #374151;
-            cursor: pointer;
-            transition: all 0.2s ease;
+          to {
+            opacity: 1;
+            transform: translateY(0);
           }
+        }
 
-          .back-btn:hover {
-            background-color: #E5E7EB;
-          }
+        .order-item {
+          background: white;
+          border-radius: 16px;
+          padding: 16px;
+          box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+          border: 1px solid #f0f0f0;
+        }
 
-          .back-btn:active {
-            transform: scale(0.95);
-          }
+        .order-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 12px;
+          padding-bottom: 8px;
+          border-bottom: 1px solid #F3F4F6;
+        }
 
-          .orders-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 20px;
-          }
+        .order-number {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
 
-          .stat-item {
-            background: white;
-            border-radius: 12px;
+        .order-label {
+          font-size: 11px;
+          color: #9CA3AF;
+          font-weight: 500;
+          text-transform: uppercase;
+        }
+
+        .order-value {
+          font-size: 14px;
+          font-weight: 600;
+          color: #1F2937;
+        }
+
+        .order-date {
+          font-size: 12px;
+          color: #6B7280;
+          font-weight: 500;
+        }
+
+        .order-content {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          margin-bottom: 16px;
+        }
+
+        .order-summary {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .order-amount {
+          display: flex;
+          align-items: baseline;
+          gap: 8px;
+        }
+
+        .amount-value {
+          font-size: 18px;
+          font-weight: 700;
+          color: #48C928;
+        }
+
+        .items-count {
+          font-size: 12px;
+          color: #6B7280;
+          font-weight: 500;
+        }
+
+        .order-status {
+          flex-shrink: 0;
+        }
+
+        /* Список товаров */
+        .order-items {
+          background: #F9FAFB;
+          border-radius: 12px;
+          padding: 12px;
+        }
+
+        .items-header {
+          font-size: 12px;
+          font-weight: 600;
+          color: #374151;
+          margin-bottom: 8px;
+          text-transform: uppercase;
+          letter-spacing: 0.025em;
+        }
+
+        .items-list {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .order-item-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 6px 0;
+        }
+
+        .item-image {
+          width: 40px;
+          height: 40px;
+          border-radius: 8px;
+          overflow: hidden;
+          margin-right: 12px;
+        }
+
+        .product-image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .no-image-placeholder {
+          width: 100%;
+          height: 100%;
+          background-color: #F3F4F6;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #9CA3AF;
+        }
+
+        .item-info {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex: 1;
+        }
+
+        .item-name {
+          font-size: 13px;
+          color: #374151;
+          font-weight: 500;
+          line-height: 1.3;
+        }
+
+        .item-quantity {
+          font-size: 11px;
+          color: #6B7280;
+          font-weight: 600;
+          background: #E5E7EB;
+          padding: 2px 6px;
+          border-radius: 6px;
+        }
+
+        .item-price {
+          font-size: 13px;
+          font-weight: 600;
+          color: #48C928;
+        }
+
+        /* Дополнительная информация */
+        .order-details {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .detail-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 4px 0;
+        }
+
+        .detail-label {
+          font-size: 12px;
+          color: #6B7280;
+          font-weight: 500;
+          min-width: 80px;
+        }
+
+        .detail-value {
+          font-size: 12px;
+          color: #374151;
+          font-weight: 500;
+        }
+
+        .bonus-row {
+          background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+          border-radius: 8px;
+          padding: 8px 12px;
+          margin: 4px 0;
+        }
+
+        .bonus-value {
+          color: #D97706;
+          font-weight: 700;
+        }
+
+        /* Трек-номер и отслеживание */
+        .tracking-section {
+          background: linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 100%);
+          border: 1px solid #BBF7D0;
+          border-radius: 12px;
             padding: 16px;
-            text-align: center;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-            border: 1px solid #f0f0f0;
-          }
-
-          .stat-value {
-            display: block;
-            font-size: 18px;
-            font-weight: 700;
-            color: #48C928;
-            margin-bottom: 4px;
-          }
-
-          .stat-label {
-            font-size: 12px;
-            color: #6B7280;
-            font-weight: 500;
-          }
-
-          .orders-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-          }
-
-          .fade-in {
-            animation: fadeIn 0.4s ease-out;
-          }
-
-          @keyframes fadeIn {
-            from {
-              opacity: 0;
-              transform: translateY(20px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-
-          .order-item {
-            background: white;
-            border-radius: 16px;
-            padding: 16px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-            border: 1px solid #f0f0f0;
-          }
-
-          .order-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #F3F4F6;
-          }
-
-          .order-number {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-          }
-
-          .order-label {
-            font-size: 11px;
-            color: #9CA3AF;
-            font-weight: 500;
-            text-transform: uppercase;
-          }
-
-          .order-value {
-            font-size: 14px;
-            font-weight: 600;
-            color: #1F2937;
-          }
-
-          .order-date {
-            font-size: 12px;
-            color: #6B7280;
-            font-weight: 500;
-          }
-
-          .order-content {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            margin-bottom: 16px;
-          }
-
-          .order-summary {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-          }
-
-          .order-amount {
-            display: flex;
-            align-items: baseline;
-            gap: 8px;
-          }
-
-          .amount-value {
-            font-size: 18px;
-            font-weight: 700;
-            color: #48C928;
-          }
-
-          .items-count {
-            font-size: 12px;
-            color: #6B7280;
-            font-weight: 500;
-          }
-
-          .order-status {
-            flex-shrink: 0;
-          }
-
-          /* Список товаров */
-          .order-items {
-            background: #F9FAFB;
-            border-radius: 12px;
-            padding: 12px;
-          }
-
-          .items-header {
-            font-size: 12px;
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.025em;
-          }
-
-          .items-list {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-          }
-
-          .order-item-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 6px 0;
-          }
-
-          .item-image {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            overflow: hidden;
-            margin-right: 12px;
-          }
-
-          .product-image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-          }
-
-          .no-image-placeholder {
-            width: 100%;
-            height: 100%;
-            background-color: #F3F4F6;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #9CA3AF;
-          }
-
-          .item-info {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex: 1;
-          }
-
-          .item-name {
-            font-size: 13px;
-            color: #374151;
-            font-weight: 500;
-            line-height: 1.3;
-          }
-
-          .item-quantity {
-            font-size: 11px;
-            color: #6B7280;
-            font-weight: 600;
-            background: #E5E7EB;
-            padding: 2px 6px;
-            border-radius: 6px;
-          }
-
-          .item-price {
-            font-size: 13px;
-            font-weight: 600;
-            color: #48C928;
-          }
-
-          /* Дополнительная информация */
-          .order-details {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-          }
-
-          .detail-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 4px 0;
-          }
-
-          .detail-label {
-            font-size: 12px;
-            color: #6B7280;
-            font-weight: 500;
-            min-width: 80px;
-          }
-
-          .detail-value {
-            font-size: 12px;
-            color: #374151;
-            font-weight: 500;
-          }
-
-          .bonus-row {
-            background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
-            border-radius: 8px;
-            padding: 8px 12px;
-            margin: 4px 0;
-          }
-
-          .bonus-value {
-            color: #D97706;
-            font-weight: 700;
-          }
-
-          /* Трек-номер и отслеживание */
-          .tracking-section {
-            background: linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 100%);
-            border: 1px solid #BBF7D0;
-            border-radius: 12px;
-            padding: 16px;
-            margin: 8px 0;
+          margin: 8px 0;
             position: relative;
-          }
+        }
 
           .tracking-number {
             display: flex !important;
@@ -796,130 +796,130 @@ const OrdersPage: React.FC = () => {
             transform: translateX(-50%) translateY(-5px);
           }
 
-          .track-button {
-            width: 100%;
+        .track-button {
+          width: 100%;
             margin-top: 12px;
             padding: 12px 16px;
-            background: linear-gradient(135deg, #48C928 0%, #3AA120 100%);
-            color: white;
-            border: none;
+          background: linear-gradient(135deg, #48C928 0%, #3AA120 100%);
+          color: white;
+          border: none;
             border-radius: 10px;
             font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+          font-weight: 600;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
             gap: 8px;
-            transition: all 0.2s ease;
+          transition: all 0.2s ease;
             box-shadow: 0 2px 8px rgba(72, 201, 40, 0.2);
-          }
+        }
 
-          .track-button:hover {
-            background: linear-gradient(135deg, #3AA120 0%, #2E8B1C 100%);
+        .track-button:hover {
+          background: linear-gradient(135deg, #3AA120 0%, #2E8B1C 100%);
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(72, 201, 40, 0.4);
-          }
+        }
 
-          .track-button:active {
+        .track-button:active {
             transform: scale(0.98) translateY(-1px);
+        }
+
+        .status-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 6px 10px;
+          border-radius: 20px;
+          font-size: 11px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.025em;
+        }
+
+
+
+        .empty-state {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          padding: 60px 20px;
+        }
+
+        .empty-state-icon {
+          margin-bottom: 20px;
+          color: #D1D5DB;
+        }
+
+        .empty-state h3 {
+          font-size: 18px;
+          font-weight: 600;
+          color: #374151;
+          margin: 0 0 8px 0;
+        }
+
+        .empty-state p {
+          color: #6B7280;
+          margin: 0 0 24px 0;
+          line-height: 1.5;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 640px) {
+          .orders-stats {
+            grid-template-columns: 1fr;
           }
-
-          .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 6px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.025em;
+          
+          .order-item {
+            padding: 14px;
           }
-
-
-
-          .empty-state {
-            display: flex;
+          
+          .order-header {
             flex-direction: column;
-            align-items: center;
-            text-align: center;
-            padding: 60px 20px;
+            align-items: flex-start;
+            gap: 4px;
           }
-
-          .empty-state-icon {
-            margin-bottom: 20px;
-            color: #D1D5DB;
+          
+          .order-summary {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
           }
-
-          .empty-state h3 {
-            font-size: 18px;
-            font-weight: 600;
-            color: #374151;
-            margin: 0 0 8px 0;
+          
+          .order-items {
+            padding: 10px;
           }
-
-          .empty-state p {
-            color: #6B7280;
-            margin: 0 0 24px 0;
-            line-height: 1.5;
+          
+          .order-item-row {
+            flex-wrap: wrap;
+            gap: 4px;
           }
-
-          /* Адаптивность */
-          @media (max-width: 640px) {
-            .orders-stats {
-              grid-template-columns: 1fr;
-            }
-            
-            .order-item {
-              padding: 14px;
-            }
-            
-            .order-header {
-              flex-direction: column;
-              align-items: flex-start;
-              gap: 4px;
-            }
-            
-            .order-summary {
-              flex-direction: column;
-              align-items: flex-start;
-              gap: 8px;
-            }
-            
-            .order-items {
-              padding: 10px;
-            }
-            
-            .order-item-row {
-              flex-wrap: wrap;
-              gap: 4px;
-            }
-            
-            .item-info {
-              flex-direction: column;
-              align-items: flex-start;
-              gap: 4px;
-            }
-            
-            .detail-row {
-              gap: 6px;
-            }
-            
-            .detail-label {
-              min-width: 70px;
-              font-size: 11px;
-            }
-            
-            .detail-value {
-              font-size: 11px;
-            }
-            
-            .tracking-section {
+          
+          .item-info {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+          }
+          
+          .detail-row {
+            gap: 6px;
+          }
+          
+          .detail-label {
+            min-width: 70px;
+            font-size: 11px;
+          }
+          
+          .detail-value {
+            font-size: 11px;
+          }
+          
+          .tracking-section {
               padding: 12px;
-              margin: 6px 0;
-            }
-
+            margin: 6px 0;
+          }
+          
             .tracking-number {
               padding: 6px 10px;
               font-size: 12px !important;
@@ -930,16 +930,16 @@ const OrdersPage: React.FC = () => {
               font-size: 11px;
               padding: 4px 8px;
             }
-            
-            .track-button {
+          
+          .track-button {
               padding: 10px 14px;
               font-size: 13px;
               margin-top: 8px;
               gap: 6px;
-            }
           }
-        `}</style>
-      </div>
+        }
+      `}</style>
+    </div>
     </PageTransition>
   );
 };

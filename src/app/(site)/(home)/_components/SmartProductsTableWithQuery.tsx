@@ -433,8 +433,8 @@ function SmartProductsTableContent() {
 
   // Сортировка
   const sortedProducts = [...filteredProducts].sort((a, b) => {
-    const aValue = a[sortBy];
-    const bValue = b[sortBy];
+    const aValue = (a as any)[sortBy];
+    const bValue = (b as any)[sortBy];
     
     if (typeof aValue === 'string' && typeof bValue === 'string') {
       return sortOrder === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
@@ -490,18 +490,18 @@ function SmartProductsTableContent() {
 
   const updateCartQuantity = (id: number, quantity: number) => {
     setCartItems(prev => prev.map(item => 
-      item.id === id ? { ...item, quantity } : item
+      Number(item.id) === id ? { ...item, quantity } : item
     ));
   };
 
   const updateCartCostPrice = (id: number, costPrice: number) => {
     setCartItems(prev => prev.map(item => 
-      item.id === id ? { ...item, costPrice } : item
+      item.id === id.toString() ? { ...item, costPrice } : item
     ));
   };
 
   const removeFromCart = (id: number) => {
-    setCartItems(prev => prev.filter(item => item.id !== id));
+    setCartItems(prev => prev.filter(item => item.id !== id.toString()));
   };
 
   const openCartModal = () => {
@@ -512,7 +512,8 @@ function SmartProductsTableContent() {
     try {
       // Используем уже правильные значения costPriceTRY из prime_cost
       const itemsWithTRY = items.map(item => ({
-        ...item
+        ...item,
+        id: Number(item.id) // Преобразуем id в число для API
         // costPriceTRY уже содержит правильное значение из prime_cost
       }));
 
@@ -537,7 +538,7 @@ function SmartProductsTableContent() {
   // Функции для обновления товара
   const handleUpdateStock = async (productId: number, newStock: number) => {
     try {
-      await updateProductMutation.mutateAsync({
+      await updateProductMutation.mutate({
         id: productId,
         data: { stock_quantity: newStock },
         period,
@@ -551,7 +552,7 @@ function SmartProductsTableContent() {
 
   const handleUpdatePrice = async (productId: number, newPrice: number) => {
     try {
-      await updateProductMutation.mutateAsync({
+      await updateProductMutation.mutate({
         id: productId,
         data: { price: newPrice },
         period,
@@ -565,7 +566,7 @@ function SmartProductsTableContent() {
 
   const handleUpdateOldPrice = async (productId: number, newOldPrice: number) => {
     try {
-      await updateProductMutation.mutateAsync({
+      await updateProductMutation.mutate({
         id: productId,
         data: { old_price: newOldPrice },
         period,
@@ -579,7 +580,7 @@ function SmartProductsTableContent() {
 
   const handleUpdatePrimeCost = async (productId: number, newPrimeCost: number) => {
     try {
-      await updateProductMutation.mutateAsync({
+      await updateProductMutation.mutate({
         id: productId,
         data: { prime_cost: newPrimeCost },
         period,
@@ -917,7 +918,7 @@ function SmartProductsTableContent() {
                             type="decimal"
                             min={0}
                             onSave={(value) => handleUpdatePrice(product.id, value)}
-                            isLoading={updateProductMutation.isPending}
+                            isLoading={updateProductMutation.isLoading}
                             displayClassName="text-purple-600 dark:text-purple-400"
                             formatDisplay={(value) => `${value.toLocaleString()} ₽ (продажа)`}
                           />
@@ -934,7 +935,7 @@ function SmartProductsTableContent() {
                               type="decimal"
                               min={0}
                               onSave={(value) => handleUpdateOldPrice(product.id, value)}
-                              isLoading={updateProductMutation.isPending}
+                              isLoading={updateProductMutation.isLoading}
                               displayClassName="text-gray-500 line-through"
                               formatDisplay={(value) => `${value.toLocaleString()} ₽ (старая)`}
                             />
@@ -967,7 +968,7 @@ function SmartProductsTableContent() {
                                 min={0}
                                 step={0.01}
                                 onSave={(value) => handleUpdatePrimeCost(product.id, value)}
-                                isLoading={updateProductMutation.isPending}
+                                isLoading={updateProductMutation.isLoading}
                                 displayClassName="text-xs text-blue-600 dark:text-blue-400"
                                 formatDisplay={(value) => `₺${value.toFixed(2)} (себест.)`}
                               />
@@ -986,7 +987,7 @@ function SmartProductsTableContent() {
                           type="integer"
                           min={0}
                           onSave={(value) => handleUpdateStock(product.id, value)}
-                          isLoading={updateProductMutation.isPending}
+                          isLoading={updateProductMutation.isLoading}
                           displayClassName="text-xs"
                           formatDisplay={(value) => `${value} шт.`}
                         />

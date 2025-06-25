@@ -7,7 +7,7 @@ async function checkUserAuth() {
   try {
     console.log('🔍 Диагностика аутентификации пользователя...');
     
-    const user = await prisma.telesklad_user.findUnique({
+    const user = await prisma.telesklad_users.findUnique({
       where: { email: 'go@osama.agency' },
       select: { 
         id: true, 

@@ -11,7 +11,7 @@ export async function GET() {
 	}
 
 	try {
-		const user = await prisma.telesklad_user.findUnique({
+		const user = await prisma.telesklad_users.findUnique({
 			where: {
 				email: session.user.email,
 			},

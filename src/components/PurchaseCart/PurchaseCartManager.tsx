@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/components/ui/toastNotification';
+import { logger } from '@/lib/logger';
 import StatusButtons from './StatusButtons';
 
 interface PurchaseItem {
@@ -194,10 +195,10 @@ const PurchaseCartManager: React.FC = () => {
         if (response.ok) {
           const data = await response.json();
           setTryRate(Number(data.rate) || 30);
-          console.log(`💱 Loaded TRY rate: ${data.rate}`);
+          logger.debug(`💱 Loaded TRY rate: ${data.rate}`, undefined, 'PurchaseCart');
         }
       } catch (error) {
-        console.warn('⚠️ Could not load TRY rate, using default');
+        logger.warn('⚠️ Could not load TRY rate, using default', undefined, 'PurchaseCart');
       }
     };
     

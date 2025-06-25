@@ -19,16 +19,12 @@ export class AdminTelegramService {
    * Отправить сообщение админу через @telesklad_bot
    */
   static async sendToAdmin(message: string, options: AdminTelegramServiceOptions = {}): Promise<number | Error> {
-    console.log(`📤 AdminTelegramService.sendToAdmin:`, {
-      to: this.ADMIN_CHAT_ID,
-      markup: options.markup,
-      messageLength: message.length
-    });
+    // Удалено логирование для безопасности в продакшене
 
     try {
       // Админские уведомления ВСЕГДА идут в @telesklad_bot
       const botToken = await TelegramTokenService.getTelegramBotToken();
-      console.log('🔑 AdminTelegramService using TELESKLAD_BOT_TOKEN (@telesklad_bot) for admin notifications');
+      // Удалено логирование токена для безопасности
 
       if (!botToken) {
         throw new Error('Bot token not available');
@@ -69,7 +65,7 @@ export class AdminTelegramService {
       const result = await response.json();
 
       if (result.ok) {
-        console.log(`✅ Message sent to admin, ID: ${result.result.message_id}`);
+        // Удалено логирование для безопасности
         return result.result.message_id;
       } else {
         console.error('❌ Failed to send message to admin:', result);
