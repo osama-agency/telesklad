@@ -142,19 +142,11 @@ export function TelegramHeader({ className = '' }: TelegramHeaderProps) {
             role="button"
           >
             <div className="header-action-icon">
-              {user?.photo_url ? (
-                <img 
-                  src={user.photo_url} 
-                  alt="Профиль" 
-                  className="header-profile-avatar"
-                />
-              ) : (
-                <IconComponent 
-                  name="profile" 
-                  size={24}
-                  aria-hidden="true"
-                />
-              )}
+              <IconComponent 
+                name="profile" 
+                size={24}
+                aria-hidden="true"
+              />
             </div>
           </Link>
         </div>
