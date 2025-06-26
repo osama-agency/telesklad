@@ -238,170 +238,162 @@ export default function ProductDetailPage() {
     : null
 
   return (
-    <div className="webapp-container">
-      <style jsx>{`
-        body { background-color: white; }
-        .btn { padding: 18px; border-radius: 20px; }
-      `}</style>
+    <div className="webapp-container product-page">
+      {/* Единый контейнер с фиксированными отступами как на странице профиля */}
+      <div className="product-content-stack">
+        
+        <style jsx>{`
+          body { background-color: white; }
+          .btn { padding: 18px; border-radius: 20px; }
+        `}</style>
 
-      <div className="card-main-block">
-        {/* Breadcrumb */}
-        <ul className="breadcrumb">
-          <li>
-            <button 
-              onClick={() => router.push('/webapp')}
-              className="text-sm font-medium opacity-60 hover:opacity-100 hover:text-green-600"
-            >
-              Каталог
-            </button>
-          </li>
-          <li className="text-sm font-medium">{product.name}</li>
-        </ul>
-
-        {/* Product Image */}
-        <div className="product-img">
-          <div 
-            role="status" 
-            className="flex justify-center space-y-8 animate-pulse md:space-y-0 md:space-x-8 rtl:space-x-reverse md:flex md:items-center"
-          >
-            <div className="flex items-center justify-center w-full h-58">
-              <IconComponent name="no-image" size={40} />
-            </div>
-          </div>
-          {product.image_url && (
+        <div className="card-main-block">
+          {/* Product Image */}
+          <div className="product-img">
             <div 
-              className="img absolute left-0 top-0 w-full h-full"
-              style={{
-                backgroundImage: `url('${product.image_url}')`,
-                backgroundSize: 'contain',
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'center'
-              }}
-            />
-          )}
-        </div>
-      </div>
-
-      <div className="card-block mb-3">
-        <div className="flex justify-between mb-3">
-          <div>
-            <div className="font-semibold text-base leading-tight mb-1">
-              {product.name}
+              role="status" 
+              className="flex justify-center space-y-8 animate-pulse md:space-y-0 md:space-x-8 rtl:space-x-reverse md:flex md:items-center"
+            >
+              <div className="flex items-center justify-center w-full h-58">
+                <IconComponent name="no-image" size={40} />
+              </div>
             </div>
-            {product.stock_quantity > 0 ? (
-              <div className="flex items-center gap-1.5">
-                <div className="have-product-ico">
-                  <IconComponent name="checked" size={10} />
-                </div>
-                <div className="have-product">В наличии</div>
-              </div>
-            ) : (
-              <div className="no-have-product">Нет в наличии</div>
+            {product.image_url && (
+              <div 
+                className="img absolute left-0 top-0 w-full h-full"
+                style={{
+                  backgroundImage: `url('${product.image_url}')`,
+                  backgroundSize: 'contain',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'center'
+                }}
+              />
             )}
-          </div>
-          <div className="card-favorite">
-                            <AnimatedFavoriteButton productId={product.id} />
           </div>
         </div>
 
-        {product.stock_quantity > 0 && (
-          <div className="mb-3">
-            {product.old_price ? (
-              <div className="price-block">
-                <div className="price-row">
-                  <div className="price card-price">
-                    {product.price.toFixed(0)}₽
-                  </div>
-                  {discountPercent && (
-                    <div className="discount-badge">
-                      -{discountPercent}%
-                    </div>
-                  )}
-                </div>
-                <div className="old-price card-old-price">
-                  {product.old_price.toFixed(0)}₽
-                </div>
-              </div>
-            ) : (
-              <div className="price-without-old card-price">
-                {product.price.toFixed(0)}₽
-              </div>
-            )}
-          </div>
-        )}
-
-        {product.stock_quantity > 0 ? (
-          <AddToCartButton 
-            productId={product.id} 
-            productName={product.name}
-            productPrice={product.price}
-            maxQuantity={product.stock_quantity}
-            imageUrl={product.image_url}
-          />
-        ) : (
-          <button 
-            className={`btn btn-disable ${isNotificationEnabled ? 'notification-enabled' : ''} ${isNotificationLoading ? 'loading' : ''}`}
-            onClick={handleNotificationToggle}
-            disabled={isNotificationLoading}
-          >
-            {isNotificationLoading ? (
-              <span>Загрузка...</span>
-            ) : isNotificationEnabled ? (
-              <>🔔 Уведомление включено</>
-            ) : (
-              <>🔔 Уведомить о поступлении</>
-            )}
-          </button>
-        )}
-      </div>
-
-      {/* Product Properties */}
-      {properties.length > 0 && (
         <div className="card-block mb-3">
-          <div className="title-card">О товаре</div>
-          <ul className="properties-list">
-            {properties.map((property) => (
-              <li key={property.key} className="flex justify-between mb-3">
-                <div 
-                  className="variable"
-                  style={{ width: property.key === 'package_quantity' ? '99px' : undefined }}
-                >
-                  {property.label}:
-                </div>
-                <div className="value">{property.value}</div>
-              </li>
-            ))}
-          </ul>
-
-          {product.description && (
-            <>
-              <div className="product-description-line" />
-              <div className="title-card">Описание</div>
-              <div className="product-description">
-                {product.description}
+          <div className="flex justify-between mb-3">
+            <div>
+              <div className="font-semibold text-base leading-tight mb-1">
+                {product.name}
               </div>
-            </>
+              {product.stock_quantity > 0 ? (
+                <div className="flex items-center gap-1.5">
+                  <div className="have-product-ico">
+                    <IconComponent name="checked" size={10} />
+                  </div>
+                  <div className="have-product">В наличии</div>
+                </div>
+              ) : (
+                <div className="no-have-product">Нет в наличии</div>
+              )}
+            </div>
+            <div className="card-favorite">
+              <AnimatedFavoriteButton productId={product.id} />
+            </div>
+          </div>
+
+          {product.stock_quantity > 0 && (
+            <div className="mb-3">
+              {product.old_price ? (
+                <div className="price-block">
+                  <div className="price-row">
+                    <div className="price card-price">
+                      {product.price.toFixed(0)}₽
+                    </div>
+                    {discountPercent && (
+                      <div className="discount-badge">
+                        -{discountPercent}%
+                      </div>
+                    )}
+                  </div>
+                  <div className="old-price card-old-price">
+                    {product.old_price.toFixed(0)}₽
+                  </div>
+                </div>
+              ) : (
+                <div className="price-without-old card-price">
+                  {product.price.toFixed(0)}₽
+                </div>
+              )}
+            </div>
+          )}
+
+          {product.stock_quantity > 0 ? (
+            <AddToCartButton 
+              productId={product.id} 
+              productName={product.name}
+              productPrice={product.price}
+              maxQuantity={product.stock_quantity}
+              imageUrl={product.image_url}
+            />
+          ) : (
+            <button 
+              className={`btn btn-disable ${isNotificationEnabled ? 'notification-enabled' : ''} ${isNotificationLoading ? 'loading' : ''}`}
+              onClick={handleNotificationToggle}
+              disabled={isNotificationLoading}
+            >
+              {isNotificationLoading ? (
+                <span>Загрузка...</span>
+              ) : isNotificationEnabled ? (
+                <>🔔 Уведомление включено</>
+              ) : (
+                <>🔔 Уведомить о поступлении</>
+              )}
+            </button>
           )}
         </div>
-      )}
 
-      {/* Reviews Section */}
-      {showReviewForm ? (
-        <div className="card-block">
-          <ReviewForm
+        {/* Product Properties */}
+        {properties.length > 0 && (
+          <div className="card-block mb-3">
+            <div className="title-card">О товаре</div>
+            <ul className="properties-list">
+              {properties.map((property) => (
+                <li key={property.key} className="flex justify-between mb-3">
+                  <div 
+                    className="variable"
+                    style={{ width: property.key === 'package_quantity' ? '99px' : undefined }}
+                  >
+                    {property.label}:
+                  </div>
+                  <div className="value">{property.value}</div>
+                </li>
+              ))}
+            </ul>
+
+            {product.description && (
+              <>
+                <div className="product-description-line" />
+                <div className="title-card">Описание</div>
+                <div className="product-description">
+                  {product.description}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Reviews Section */}
+        {showReviewForm ? (
+          <div className="card-block">
+            <ReviewForm
+              productId={product.id}
+              productName={product.name}
+              onSuccess={handleReviewSuccess}
+              onCancel={handleReviewCancel}
+            />
+          </div>
+        ) : (
+          <ReviewsList
+            key={reviewsKey}
             productId={product.id}
-            productName={product.name}
-            onSuccess={handleReviewSuccess}
-            onCancel={handleReviewCancel}
+            onReviewCreate={handleReviewFormShow}
           />
-        </div>
-      ) : (
-        <ReviewsList
-          key={reviewsKey}
-          productId={product.id}
-          onReviewCreate={handleReviewFormShow}
-        />
-      )}
+        )}
+        
+      </div>
     </div>
   )
 } 

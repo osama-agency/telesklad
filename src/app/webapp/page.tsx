@@ -25,7 +25,7 @@ export default function WebappHomePage() {
   // Показываем загрузку пока идет аутентификация
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#F8F9FA]">
+      <div className="min-h-screen bg-[#F9F9F9]">
         <SkeletonLoading type="catalog" />
       </div>
     );
@@ -55,7 +55,7 @@ export default function WebappHomePage() {
       <main className="container-adaptive">
         {/* Product Catalog - показываем всегда, как в старом Rails приложении */}
         <Suspense fallback={
-          <div className="min-h-screen bg-[#F8F9FA]">
+          <div className="min-h-screen bg-[#F9F9F9]">
             <SkeletonLoading type="catalog" />
           </div>
         }>

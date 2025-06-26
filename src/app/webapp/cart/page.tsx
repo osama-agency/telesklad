@@ -402,7 +402,6 @@ export default function CartPage() {
   if (cartItems.length === 0) {
     return (
       <div className={containerClassName}>
-        <h1>Корзина</h1>
         <div className="empty-state">
           <div className="empty-state-content">
             <div className="empty-state-icon">

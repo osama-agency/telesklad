@@ -41,5 +41,5 @@ interface ProductGridSkeletonProps {
 }
 
 export const ProductGridSkeleton: React.FC<ProductGridSkeletonProps> = () => {
-    return <LoadingWrapper />;
+    return null; // Убираем анимацию загрузки
 }; 

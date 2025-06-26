@@ -46,6 +46,12 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
 
   // Загружаем количество при изменении аутентификации или перехода на страницу избранного
   useEffect(() => {
+    // Не загружаем количество на странице избранного - страница сама загрузит и обновит контекст
+    if (pathname === '/webapp/favorites') {
+      console.log('🔄 FavoritesContext: Skipping load on favorites page');
+      return;
+    }
+    
     loadFavoritesCount();
   }, [isAuthenticated, user?.tg_id, pathname]);
 

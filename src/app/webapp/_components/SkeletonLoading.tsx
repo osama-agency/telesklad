@@ -14,7 +14,7 @@ const SkeletonLoading: React.FC<SkeletonLoadingProps> = ({
     count = 1,
   className = ''
 }) => {
-    return <LoadingWrapper className={className} />;
+    return null; // Убираем анимацию загрузки
 };
 
 export default SkeletonLoading; 

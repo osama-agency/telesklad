@@ -26,6 +26,7 @@ import {
   LocateFixed,
   Copy,
   HelpCircle,
+  CircleHelp,
 } from "lucide-react";
 
 interface IconProps {
@@ -89,6 +90,7 @@ export function IconComponent({ name, size = 24, className = "" }: IconProps) {
     "locate-fixed": <LocateFixed size={size} className={className} />,
     copy: <Copy size={size} className={className} />,
     help: <HelpCircle size={size} className={className} />,
+    "help-circle": <CircleHelp size={size} className={className} />,
   };
 
   const iconComponent = icons[name];

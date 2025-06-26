@@ -132,20 +132,12 @@ export default function FavoritesPage() {
 
   // Простая загрузка
   if (authLoading) {
-    return (
-      <div className="webapp-container favorites-page">
-        <LoadingWrapper />
-      </div>
-    );
+    return null; // Убираем анимацию загрузки
   }
 
   // Простая загрузка данных
   if (isLoading) {
-    return (
-      <div className="webapp-container favorites-page">
-        <LoadingWrapper />
-      </div>
-    );
+    return null; // Убираем анимацию загрузки
   }
 
   // Ошибка

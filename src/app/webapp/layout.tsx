@@ -7,7 +7,7 @@ import Script from "next/script";
 import "@/styles/webapp.scss";
 import "@/css/golos.css";
 import { IconComponent } from "@/components/webapp/IconComponent";
-import { HeaderProvider } from "./_components/HeaderProvider";
+import { TelegramHeader } from "./_components/TelegramHeader";
 import TelegramCartButton from "./_components/TelegramCartButton";
 
 import { TelegramAuthProvider } from "@/context/TelegramAuthContext";
@@ -54,16 +54,14 @@ function WebappLayoutInner({ children }: PropsWithChildren) {
         <TelegramOutlineRemover />
         
         {/* Универсальный Header с поиском и кнопками */}
-        <HeaderProvider />
+        <TelegramHeader />
         
         <div className={`webapp-container ${getPageClass()}`} style={{
           minHeight: '100vh',
           backgroundColor: '#f9f9f9'
         }}>
           {/* Main content */}
-          <main className="container-adaptive">
-            {children}
-          </main>
+          {children}
 
           {/* Telegram Cart Button - показывается когда есть товары в корзине */}
           <TelegramCartButton />

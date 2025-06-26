@@ -4,6 +4,15 @@ import { UserService } from '@/lib/services/UserService';
 import { S3Service } from '@/lib/services/s3';
 import { RedisService } from '@/lib/services/redis.service';
 
+// Интерфейс для результата API
+interface FavoritesResult {
+  success?: boolean;
+  favorites?: any[];
+  total?: number;
+  error?: string;
+  status?: number;
+}
+
 // Request deduplication для предотвращения дублирования запросов
 const pendingRequests = new Map<string, Promise<any>>();
 
@@ -57,21 +66,22 @@ export async function GET(request: NextRequest) {
     }
 
     // 🚀 ДЕДУПЛИКАЦИЯ + КЭШИРОВАНИЕ
-    return await dedupeRequest(`favorites:${tgId}`, async () => {
+    const data = await dedupeRequest<FavoritesResult>(`favorites:${tgId}`, async () => {
       const cacheKey = `webapp:favorites:${tgId}`;
       const cached = await RedisService.getCache(cacheKey);
       
       if (cached) {
         console.log(`✅ Favorites from cache for user ${tgId}`);
-        return NextResponse.json(cached);
+        return cached;
       }
 
       // Получаем пользователя через UserService
       const user = await UserService.getUserByTelegramId(tgId);
       if (!user) {
-        return NextResponse.json({ 
-          error: 'User not found' 
-        }, { status: 404 });
+        return { 
+          error: 'User not found',
+          status: 404
+        };
       }
 
       // Получаем избранные товары пользователя из базы данных
@@ -153,8 +163,19 @@ export async function GET(request: NextRequest) {
       // 🚀 Кэш на 2 минуты (избранное может часто меняться)
       await RedisService.setCache(cacheKey, result, 120);
       
-      return NextResponse.json(result);
+      return result;
     });
+
+    // Обработка ошибок из дедуплицированного запроса
+    if (data.error && data.status) {
+      return NextResponse.json(
+        { error: data.error },
+        { status: data.status }
+      );
+    }
+
+    // Возвращаем новый Response для каждого вызова
+    return NextResponse.json(data);
 
   } catch (error: any) {
     console.error('Favorites API error:', error);

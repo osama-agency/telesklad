@@ -17,8 +17,8 @@
 
 /* Убираем лишние отступы у category-filter */
 .category-filter {
-  /* Сокращаем отступы сверху и снизу */
-  margin-top: 8px !important;
+  /* Убираем отступ сверху для плотного прилегания к header */
+  margin-top: 0 !important;
   margin-bottom: 8px !important;
   
   /* Убираем дополнительный padding */
