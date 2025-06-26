@@ -1,0 +1,124 @@
+/* ====================================
+   ИСПРАВЛЕНИЯ ДЛЯ TELEGRAM WEBAPP
+   Оптимизация отступов, центрирование поиска, убираем границы
+   ==================================== */
+
+/* 1. УБИРАЕМ ОГРОМНОЕ ПУСТОЕ ПРОСТРАНСТВО МЕЖДУ HEADER И КАТЕГОРИЯМИ */
+
+/* Уменьшаем отступ webapp-container для каталога */
+.webapp-container.catalog-page {
+  /* Header margin-bottom убран, отступ не нужен */
+  
+  /* Убираем дополнительные отступы у container-adaptive */
+  .container-adaptive {
+    padding-top: 0 !important;
+  }
+}
+
+/* Убираем лишние отступы у category-filter */
+.category-filter {
+  /* Убираем отступ сверху для плотного прилегания к header */
+  margin-top: 0 !important;
+  margin-bottom: 8px !important;
+  
+  /* Убираем дополнительный padding */
+  padding: 4px 0 !important;
+}
+
+/* 2. ЦЕНТРИРОВАНИЕ ПОИСКА ИСПРАВЛЕНО В ОСНОВНОМ ФАЙЛЕ */
+/* (Стили перенесены в algolia-modern-search-light.scss для лучшей интеграции) */
+
+/* Дополнительные исправления для header search если нужны */
+.webapp-header-search .algolia-search-box {
+  .search-input {
+    /* Убеждаемся что центрирование работает в header */
+    display: flex !important;
+    align-items: center !important;
+    min-height: 18px !important;
+  }
+}
+
+/* 3. УБИРАЕМ ЧЕРНУЮ ПОЛОСКУ СНИЗУ HEADER */
+
+/* Убираем границу header в Telegram WebApp */
+.webapp-header {
+  border-bottom: none !important;
+  
+  /* Заменяем на очень светлую тень при скролле */
+  &.scrolled {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+  }
+}
+
+/* 4. ДОПОЛНИТЕЛЬНЫЕ ОПТИМИЗАЦИИ ДЛЯ TELEGRAM */
+
+/* Убираем лишние отступы у product-catalog */
+.product-catalog {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Оптимизируем отступы между блоками */
+.webapp-container.catalog-page .product-catalog .category-filter + * {
+  margin-top: 8px !important;
+}
+
+/* 5. АДАПТИВНЫЕ ИСПРАВЛЕНИЯ ДЛЯ МОБИЛЬНЫХ */
+
+/* iPhone SE и маленькие экраны */
+@media (max-width: 375px) {
+  .webapp-container.catalog-page {
+    /* Header margin-bottom убран, padding-top не нужен */
+  }
+  
+  .category-filter {
+    margin-top: 4px !important;
+    margin-bottom: 4px !important;
+    padding: 2px 0 !important;
+  }
+  
+  .webapp-header-search .algolia-search-box {
+    .search-input {
+      padding-top: 6px !important;
+      padding-bottom: 6px !important;
+      height: 32px !important;
+    }
+  }
+}
+
+/* Планшеты и большие экраны */
+@media (min-width: 768px) {
+  .webapp-container.catalog-page {
+    /* Header margin-bottom убран, padding-top не нужен */
+  }
+  
+  .category-filter {
+    margin-top: 12px !important;
+    margin-bottom: 12px !important;
+  }
+}
+
+/* 6. СПЕЦИАЛЬНЫЕ ИСПРАВЛЕНИЯ ДЛЯ TELEGRAM WEBAPP */
+
+/* Улучшаем визуальный поток в Telegram */
+.webapp-container.catalog-page {
+  /* Smooth transition между элементами */
+  .webapp-header + main .category-filter {
+    animation: slideInFromTop 0.3s ease-out;
+  }
+}
+
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 7. FALLBACK ДЛЯ НЕ-TELEGRAM ОКРУЖЕНИЙ */
+
+/* Header margin-bottom убран, fallback отступы не нужны */ 

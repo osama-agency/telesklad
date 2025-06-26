@@ -275,7 +275,7 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
 
   return (
     <>
-      <div className="action-cards-container space-y-2">
+      <div className="action-cards-container">
         {actionItems.map(renderActionCard)}
       </div>
 

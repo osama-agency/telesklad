@@ -1,0 +1,412 @@
+// Стили для универсального Header компонента
+.webapp-header {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: #f9f9f9;
+  border-bottom: none;
+  transition: all 0.2s ease;
+
+  &.scrolled {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  }
+
+  &-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  &-search {
+    flex: 1;
+    min-width: 0; // Позволяет поиску сжиматься
+
+    // Переопределяем стили AlgoliaModernSearch для компактности
+    .algolia-modern-search {
+      margin: 0;
+    }
+
+    .algolia-search-box {
+      height: 36px;
+      border-radius: 20px;
+      background: #f5f5f5;
+      border: 1px solid transparent;
+
+      &:focus-within {
+        background: #f8f8f8;
+        border-color: #e0e0e0;
+      }
+
+      .search-input {
+        font-size: 14px;
+        padding: 0 36px;
+        
+        /* Убираем все возможные обводки */
+        &:focus,
+        &:active,
+        &:hover,
+        &:focus-visible {
+          outline: none !important;
+          border: none !important;
+          box-shadow: none !important;
+        }
+      }
+
+      .search-icon-wrapper {
+        left: 12px;
+        svg {
+          width: 18px;
+          height: 18px;
+        }
+      }
+
+      .clear-button {
+        right: 8px;
+        width: 24px;
+        height: 24px;
+      }
+    }
+  }
+
+  &-actions {
+    display: flex;
+    gap: 4px;
+  }
+}
+
+// Кнопки действий в header
+.header-action-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  background: transparent;
+  transition: none !important; // Убираем ВСЕ анимации
+  color: #8E8E93; // Серый цвет для всех иконок
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+
+  &:hover {
+    background-color: transparent !important;
+    transform: none !important;
+    color: #8E8E93 !important; // Серый цвет при наведении
+  }
+
+  &:active {
+    transform: none !important;
+    background-color: transparent !important;
+    color: #8E8E93 !important; // Серый цвет при клике
+  }
+
+  &:focus,
+  &:focus-visible,
+  &:focus-within {
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+  }
+
+  &:visited {
+    color: #8E8E93;
+    text-decoration: none;
+  }
+
+  &.active {
+    color: #48C928 !important; // Только активная страница имеет зеленый цвет
+    background-color: transparent !important;
+    
+    &:hover,
+    &:active {
+      color: #48C928 !important; // Сохраняем зеленый цвет для активной страницы
+    }
+  }
+
+  &.profile-button {
+    padding: 0;
+  }
+
+  /* Убираем все стандартные стили ссылок */
+  &:link,
+  &:visited,
+  &:hover,
+  &:active {
+    text-decoration: none !important;
+    outline: none !important;
+    border: none !important;
+  }
+
+  /* Переопределяем цвет для кнопки избранного когда есть товары */
+  &:has(.filled) {
+    color: #8E8E93 !important; // Серый цвет даже с заполненным сердечком
+    
+    &:hover,
+    &:active {
+      color: #8E8E93 !important;
+    }
+  }
+}
+
+.header-action-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+
+  svg {
+    width: 24px;
+    height: 24px;
+    color: #8E8E93 !important; /* Серый цвет для всех иконок */
+  }
+  
+  /* Стили для обычного (незаполненного) сердечка и других иконок */
+  svg:not(.filled):not([fill="currentColor"]) {
+    color: #8E8E93 !important;
+    
+    /* Для иконки профиля - тоже делаем контурной */
+    &.lucide-user-round {
+      fill: none !important;
+      stroke: #8E8E93 !important;
+      stroke-width: 2px !important;
+      
+      * {
+        fill: none !important;
+        stroke: #8E8E93 !important;
+        stroke-width: 2px !important;
+      }
+    }
+    
+    /* Для остальных иконок которые используют stroke */
+    &:not(.lucide-user-round) {
+      fill: none !important;
+      stroke: #8E8E93 !important;
+      stroke-width: 2px !important;
+      
+      * {
+        fill: none !important;
+        stroke: #8E8E93 !important;
+        stroke-width: 2px !important;
+      }
+    }
+  }
+  
+  /* Стили для заполненного сердечка (когда есть избранные товары) */
+  svg.filled,
+  svg[fill="currentColor"] {
+    color: #8E8E93 !important; // Серый цвет
+    fill: none !important; /* Убираем заливку */
+    stroke: #8E8E93 !important; /* Серый контур */
+    stroke-width: 2px !important; /* Толщина линии */
+    
+    * {
+      fill: none !important; /* Убираем заливку у всех элементов */
+      stroke: #8E8E93 !important; /* Серый контур */
+      stroke-width: 2px !important; /* Толщина линии */
+    }
+  }
+}
+
+// Аватар профиля в header
+.header-profile-avatar {
+  width: 24px; /* Уменьшили до 24px для единообразия */
+  height: 24px; /* Уменьшили до 24px для единообразия */
+  border-radius: 50%;
+  object-fit: cover; /* Обеспечивает правильное масштабирование в круге */
+  border: 2px solid #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+// Бейдж для счетчика
+.header-action-badge {
+  position: absolute;
+  top: -10px; /* Сдвигаем выше, чтобы меньше перекрывать иконку */
+  right: -10px; /* Сдвигаем правее, чтобы меньше перекрывать иконку */
+  min-width: 14px; /* Уменьшаем размер для лучшего UX */
+  height: 14px; /* Уменьшаем размер для лучшего UX */
+  padding: 0 3px; /* Уменьшаем padding */
+  background: #48C928; /* Зеленый фон вместо красного */
+  color: #fff;
+  font-size: 9px; /* Уменьшаем шрифт соответственно */
+  font-weight: 700; /* Делаем жирнее для лучшей читаемости */
+  line-height: 14px; /* Корректируем line-height */
+  text-align: center;
+  border-radius: 8px; /* Корректируем для меньшего размера */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1),
+              inset 0 0 0 1px #F9F9F9; /* Внутренняя обводка светло-серая */
+  border: 2px solid #fff; /* Добавляем белую обводку */
+  transform: translate(25%, -25%); /* Дополнительное смещение для лучшего позиционирования */
+}
+
+/* Специальные стили для бейджа на зеленом сердечке */
+.header-action-button:has(.filled) .header-action-badge,
+.header-action-button:has(svg.filled) .header-action-badge,
+.header-action-button:has(svg[fill="currentColor"]) .header-action-badge {
+  background: #48C928; /* Зеленый фон */
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15),
+              inset 0 0 0 1px #F9F9F9; /* Внутренняя обводка светло-серая */
+}
+
+// Адаптация контента под fixed header убрана для единого фона
+// .webapp-container {
+//   &:not(.cart-page) {
+//     padding-top: 56px; // Высота header + отступ - УБРАНО для исправления белой полосы
+//   }
+// }
+
+// Медиа запросы для мобильных устройств
+@media (max-width: 375px) {
+  .webapp-header {
+    &-container {
+      padding: 8px 12px;
+      gap: 8px;
+    }
+
+    &-search {
+      .algolia-search-box {
+        height: 34px;
+        
+        .search-input {
+          font-size: 13px;
+        }
+      }
+    }
+  }
+
+  .header-action-button {
+    width: 36px;
+    height: 36px;
+    
+    &:focus,
+    &:focus-visible {
+      outline: none !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+  }
+
+  .header-action-icon {
+    width: 22px;
+    height: 22px;
+
+    svg {
+      width: 22px;
+      height: 22px;
+    }
+  }
+
+  .header-profile-avatar {
+    width: 22px; /* Пропорционально уменьшили для мобильных */
+    height: 22px; /* Пропорционально уменьшили для мобильных */
+  }
+  
+  .header-action-badge {
+    top: -8px; /* Немного ближе на мобильных */
+    right: -8px; /* Немного ближе на мобильных */
+    min-width: 12px; /* Еще меньше на мобильных */
+    height: 12px;
+    font-size: 8px;
+    line-height: 12px;
+    padding: 0 2px;
+    border-radius: 7px;
+    border-width: 1.5px; /* Тоньше обводка на мобильных */
+    transform: translate(20%, -20%); /* Немного меньше смещение */
+  }
+}
+
+// Для больших экранов
+@media (min-width: 768px) {
+  .webapp-header {
+    &-container {
+      max-width: 768px;
+      padding: 12px 24px;
+    }
+
+    &-search {
+      .algolia-search-box {
+        height: 40px;
+        
+        .search-input {
+          font-size: 15px;
+        }
+      }
+    }
+  }
+}
+
+// Темная тема (если потребуется)
+@media (prefers-color-scheme: dark) {
+  .webapp-header {
+    background: #1a1a1a;
+    border-bottom: none;
+
+    &.scrolled {
+      box-shadow: none;
+    }
+  }
+
+  .header-action-button {
+    color: #8E8E93; /* Серый цвет и в темной теме */
+
+    &:hover {
+      background: transparent;
+      color: #8E8E93;
+    }
+
+    &:active {
+      background: transparent;
+      color: #8E8E93;
+    }
+
+    &:focus,
+    &:focus-visible {
+      outline: none !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+
+    &.active {
+      color: #48C928;
+      background: transparent;
+    }
+  }
+}
+
+/* Глобальные правила для убирания обводок в header */
+.webapp-header {
+  *, *:before, *:after {
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  a, button, input, svg, img {
+    &:focus,
+    &:focus-visible,
+    &:focus-within,
+    &:active,
+    &:hover {
+      outline: none !important;
+      border: none !important;
+      box-shadow: none !important;
+      text-decoration: none !important;
+    }
+  }
+
+  /* Специально для иконок и изображений */
+  svg, img, .header-action-icon, .header-profile-avatar {
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+} 

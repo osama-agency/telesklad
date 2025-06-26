@@ -195,8 +195,8 @@ export default function BonusBlock() {
                     До уровня "{nextTier.title}"
                   </div>
                   <div className="progress-counter">
-                    {nextTier.orders_to_next} {nextTier.orders_to_next === 1 ? 'заказ' : 
-                     nextTier.orders_to_next < 5 ? 'заказа' : 'заказов'}
+                    {nextTier.orders_to_next ?? 0} {(nextTier.orders_to_next ?? 0) === 1 ? 'заказ' : 
+                     (nextTier.orders_to_next ?? 0) < 5 ? 'заказа' : 'заказов'}
                   </div>
                 </div>
                 
@@ -337,7 +337,7 @@ export default function BonusBlock() {
                           <span className="status-badge achieved">Достигнут</span>
                         )}
                         {user.order_count < tier.order_threshold && (
-                          <span className="status-badge locked">Заблокирован</span>
+                          <span className="status-badge locked"></span>
                         )}
                       </div>
                     </div>
@@ -350,8 +350,8 @@ export default function BonusBlock() {
                     {tier.id === nextTier?.id && (
                       <div className="tier-card-progress">
                         <div className="progress-info">
-                          Осталось: {nextTier.orders_to_next} {nextTier.orders_to_next === 1 ? 'заказ' : 
-                                   nextTier.orders_to_next < 5 ? 'заказа' : 'заказов'}
+                          Осталось: {nextTier.orders_to_next ?? 0} {(nextTier.orders_to_next ?? 0) === 1 ? 'заказ' : 
+                                   (nextTier.orders_to_next ?? 0) < 5 ? 'заказа' : 'заказов'}
                         </div>
                         <div className="mini-progress-bar">
                           <div 

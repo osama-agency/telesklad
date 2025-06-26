@@ -1,0 +1,118 @@
+// ========================================
+// CORE VARIABLES - Centralized Design System
+// ========================================
+
+// Colors
+:root {
+  // Primary colors
+  --color-primary: #48C928;
+  --color-primary-light: #f0fcf0;
+  --color-primary-dark: #3da821;
+  
+  // Neutral colors
+  --color-text: #3D4453;
+  --color-text-light: #8E8E93;
+  --color-text-hint: #999999;
+  --color-bg: #f9f9f9;
+  --color-bg-white: #ffffff;
+  --color-border: #e0e0e0;
+  
+  // Status colors
+  --color-success: #48C928;
+  --color-error: #FF3B30;
+  --color-warning: #FF9500;
+  --color-info: #007AFF;
+  
+  // Spacing system (4px base)
+  --space-1: 4px;   // 0.25rem
+  --space-2: 8px;   // 0.5rem
+  --space-3: 12px;  // 0.75rem
+  --space-4: 16px;  // 1rem
+  --space-5: 20px;  // 1.25rem
+  --space-6: 24px;  // 1.5rem
+  --space-8: 32px;  // 2rem
+  --space-10: 40px; // 2.5rem
+  --space-12: 48px; // 3rem
+  --space-16: 64px; // 4rem
+  
+  // Typography
+  --font-family-primary: "Inter", -apple-system, system-ui, sans-serif;
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  // Breakpoints
+  --breakpoint-xs: 375px;
+  --breakpoint-sm: 480px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1200px;
+  
+  // Z-index scale
+  --z-dropdown: 10;
+  --z-sticky: 20;
+  --z-fixed: 50;
+  --z-modal-backdrop: 100;
+  --z-modal: 1000;
+  --z-popover: 1010;
+  --z-tooltip: 1020;
+  
+  // Telegram theme variables (force light theme)
+  --tg-bg-color: #ffffff !important;
+  --tg-text-color: #000000 !important;
+  --tg-hint-color: #999999 !important;
+  --tg-link-color: #48C928 !important;
+  --tg-button-color: #48C928 !important;
+  --tg-button-text-color: #ffffff !important;
+  --tg-secondary-bg-color: #f0fcf0 !important;
+}
+
+// SCSS Variables for calculations and mixins
+$space-1: 4px;
+$space-2: 8px;
+$space-3: 12px;
+$space-4: 16px;
+$space-5: 20px;
+$space-6: 24px;
+$space-8: 32px;
+$space-10: 40px;
+$space-12: 48px;
+$space-16: 64px;
+
+$color-primary: #48C928;
+$color-primary-light: #f0fcf0;
+$color-primary-dark: #3da821;
+$color-text: #3D4453;
+$color-text-light: #8E8E93;
+$color-text-hint: #999999;
+$color-bg: #f9f9f9;
+$color-bg-white: #ffffff;
+$color-border: #e0e0e0;
+
+$font-family-primary: "Inter", -apple-system, system-ui, sans-serif;
+$font-size-xs: 12px;
+$font-size-sm: 14px;
+$font-size-base: 16px;
+$font-size-lg: 18px;
+$font-size-xl: 20px;
+$font-size-2xl: 24px;
+
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+// Breakpoints for mixins
+$breakpoint-xs: 375px;
+$breakpoint-sm: 480px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 1024px;
+$breakpoint-xl: 1200px; 

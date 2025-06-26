@@ -1,0 +1,193 @@
+// ========================================
+// RESET - Base styles and normalization
+// ========================================
+
+// Modern CSS reset
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+body {
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Remove focus outlines for touch interfaces
+html,
+body {
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-focus-ring-color: transparent !important;
+}
+
+// Force light theme globally
+html, body {
+  color-scheme: light !important;
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root,
+  html,
+  body {
+    color-scheme: light !important;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+}
+
+// Remove all focus styles globally for touch interfaces
+*:focus,
+*:focus-visible,
+*:focus-within,
+*:active,
+*:hover {
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-focus-ring-color: transparent !important;
+}
+
+*, *::before, *::after {
+  outline: none !important;
+}
+
+// Button and input resets
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+// List resets
+ul,
+ol {
+  list-style: none;
+}
+
+// Link resets
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+// Image resets
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+// Form element resets
+input,
+button,
+textarea,
+select {
+  outline: none;
+  border: none;
+  background: none;
+}
+
+// Remove search input styling
+input[type="search"] {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+input[type="search"]::-webkit-search-decoration,
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-results-button,
+input[type="search"]::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+  display: none;
+}
+
+// Remove autofill styles
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: none;
+  box-shadow: none;
+  outline: none;
+  border: none;
+}
+
+// Disable dark theme for all elements
+.tg-theme-dark,
+body.tg-theme-dark,
+html.tg-theme-dark {
+  color-scheme: light !important;
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+// Global focus removal for all interactive elements
+button:focus, button:focus-visible,
+input:focus, input:focus-visible,
+textarea:focus, textarea:focus-visible,
+select:focus, select:focus-visible,
+a:focus, a:focus-visible,
+[tabindex]:focus, [tabindex]:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+// Telegram-specific resets
+.tg-main-button,
+[class*="telegram"],
+[class*="tg-"],
+.telegram-cart-button,
+.telegram-checkout-button {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-focus-ring-color: transparent !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+}
+
+// For all buttons and interactive elements
+button, 
+input, 
+textarea, 
+select, 
+a, 
+div[role="button"], 
+span[role="button"], 
+[tabindex], 
+[onclick] {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+} 
