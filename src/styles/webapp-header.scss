@@ -144,6 +144,16 @@
     outline: none !important;
     border: none !important;
   }
+
+  /* Переопределяем цвет для кнопки избранного когда есть товары */
+  &:has(.filled) {
+    color: #48C928 !important;
+    
+    &:hover,
+    &:active {
+      color: #48C928 !important;
+    }
+  }
 }
 
 .header-action-icon {
@@ -157,6 +167,17 @@
   svg {
     width: 24px;
     height: 24px;
+  }
+  
+  /* Стили для заполненного сердечка (когда есть избранные товары) */
+  svg.filled,
+  svg[fill="currentColor"] {
+    color: #48C928 !important;
+    fill: #48C928 !important;
+    
+    * {
+      fill: #48C928 !important;
+    }
   }
 }
 

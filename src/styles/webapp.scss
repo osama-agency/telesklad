@@ -185,6 +185,32 @@ input:-webkit-autofill:active {
   -webkit-tap-highlight-color: transparent !important;
 }
 
+/* Форсируем зеленый цвет для заполненного сердечка в хедере */
+.webapp-header .header-action-button .filled,
+.webapp-header .header-action-button svg.filled,
+.webapp-header .header-action-button svg[fill="currentColor"],
+.webapp-header .header-action-icon svg.filled,
+.webapp-header .header-action-icon svg[fill="currentColor"] {
+  color: #48C928 !important;
+  fill: #48C928 !important;
+  stroke: #48C928 !important;
+}
+
+.webapp-header .header-action-button:has(svg.filled),
+.webapp-header .header-action-button:has(svg[fill="currentColor"]) {
+  color: #48C928 !important;
+}
+
+/* Убираем черный цвет принудительно */
+.webapp-header .header-action-button svg.filled *,
+.webapp-header .header-action-button svg[fill="currentColor"] *,
+.webapp-header .header-action-icon svg.filled *,
+.webapp-header .header-action-icon svg[fill="currentColor"] * {
+  fill: #48C928 !important;
+  color: #48C928 !important;
+  stroke: none !important;
+}
+
 /* СУПЕР АГРЕССИВНОЕ ОТКЛЮЧЕНИЕ ДЛЯ TELEGRAM MAIN BUTTON */
 .tg-main-button,
 [class*="telegram"],
@@ -1043,13 +1069,15 @@ html, body {
 /* Адаптивная сетка товаров */
 .product-grid {
   display: grid;
-  gap: clamp(8px, 2vw, 16px);
+  gap: clamp(12px, 3vw, 20px); /* Увеличен gap для видимости теней */
   grid-template-columns: repeat(2, 1fr); /* 2 колонки на телефонах */
   margin-top: 16px;
   margin-bottom: 16px;
+  padding: 4px; /* Небольшой padding чтобы тени не обрезались по краям */
+  overflow: visible; /* Важно для видимости теней */
   
   @media (min-width: 375px) {
-    gap: clamp(12px, 2.5vw, 16px);
+    gap: clamp(16px, 3.5vw, 20px);
   }
   
   @media (min-width: 640px) {
@@ -1062,160 +1090,122 @@ html, body {
   
   @media (min-width: 1024px) {
     grid-template-columns: repeat(5, 1fr); /* 5 колонок на ноутбуках */
-    gap: 16px;
+    gap: 24px;
   }
 }
 
 .product-card {
   width: 100%;
+  overflow: visible; /* Разрешаем теням выходить за границы */
 }
 
 /* ===============================================
-   🚀 MODERN PRODUCT CARDS - 2025 UX REVOLUTION
+   🚀 MODERN PRODUCT CARDS - 2025 CLEAN DESIGN
    =============================================== */
 
 .product-wrapper {
-  /* Glassmorphism Background - Главный тренд 2025 */
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.25) 0%,
-    rgba(255, 255, 255, 0.15) 50%,
-    rgba(255, 255, 255, 0.1) 100%
-  );
+  /* Clean White Background */
+  background: #ffffff;
   
-  /* Advanced Backdrop Blur */
-  backdrop-filter: blur(20px) saturate(1.2);
-  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  /* Modern Border with subtle color */
+  border: 1px solid rgba(0, 0, 0, 0.06);
   
-  /* Modern Border System */
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: clamp(20px, 5vw, 24px);
+  /* Adaptive Border Radius - не переборщить на мобильных */
+  border-radius: clamp(12px, 3vw, 20px);
   
-  /* 2025 Shadow Stack - Многослойные тени */
+  /* Modern Shadow Stack - мягкие тени для глубины */
   box-shadow: 
-    /* Primary shadow - основная глубина */
-    0 8px 32px rgba(0, 0, 0, 0.06),
-    /* Secondary shadow - атмосферная глубина */
-    0 2px 8px rgba(0, 0, 0, 0.04),
-    /* Highlight shadow - внутренний свет */
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    /* Bottom glow - нижнее свечение */
-    0 0 0 1px rgba(255, 255, 255, 0.05);
+    /* Primary shadow - основная мягкая тень */
+    0 4px 16px rgba(0, 0, 0, 0.08),
+    /* Secondary shadow - легкая тень для определения границ */
+    0 1px 3px rgba(0, 0, 0, 0.04),
+    /* Subtle green accent on hover (через переменную) */
+    var(--product-hover-shadow, 0 0 0 0 transparent);
   
-  /* Premium Padding */
-  padding: clamp(14px, 3.5vw, 18px);
+  /* Generous Padding for breathing room */
+  padding: clamp(16px, 4vw, 24px);
   position: relative;
   
-  /* Fluid Transitions - Плавные переходы */
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Smooth Transitions */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   
-  /* Overflow Control */
-  overflow: hidden;
+  /* Ensure shadows are visible */
+  overflow: visible;
   
-  /* 🎯 ADVANCED INTERACTION STATES - 2025 UX */
+  /* 🎯 INTERACTION STATES - Clean & Modern */
   
-  /* Hover State - Premium Desktop Experience */
+  /* Hover State - Subtle elevation */
   @media (hover: hover) {
     &:hover {
-      /* Levitation Effect */
-      transform: translateY(-2px) scale(1.005);
+      /* Gentle lift */
+      transform: translateY(-3px);
       
-      /* Enhanced Glassmorphism */
-      background: linear-gradient(135deg, 
-        rgba(255, 255, 255, 0.35) 0%,
-        rgba(255, 255, 255, 0.25) 50%,
-        rgba(255, 255, 255, 0.2) 100%
-      );
-      
-      /* Premium Shadow Stack */
+      /* Enhanced shadows for depth */
       box-shadow: 
-        /* Primary elevation */
-        0 16px 48px rgba(0, 0, 0, 0.12),
-        /* Atmospheric depth */
-        0 8px 24px rgba(0, 0, 0, 0.08),
-        /* Glow effect */
-        0 0 0 1px rgba(72, 201, 40, 0.1),
-        /* Inner highlight */
-        inset 0 1px 0 rgba(255, 255, 255, 0.4),
-        /* Green accent glow */
-        0 0 20px rgba(72, 201, 40, 0.05);
+        /* Elevated shadow */
+        0 8px 24px rgba(0, 0, 0, 0.12),
+        /* Soft shadow */
+        0 2px 8px rgba(0, 0, 0, 0.06),
+        /* Green accent glow - subtle */
+        0 0 0 1px rgba(72, 201, 40, 0.08);
       
-      /* Enhanced Border */
-      border-color: rgba(255, 255, 255, 0.3);
+      /* Subtle border enhancement */
+      border-color: rgba(72, 201, 40, 0.15);
       
-      /* Advanced Backdrop */
-      backdrop-filter: blur(25px) saturate(1.4);
-      -webkit-backdrop-filter: blur(25px) saturate(1.4);
+      /* Keep background white */
+      background: #ffffff;
     }
   }
   
   /* Touch State - Mobile Optimized */
   &:active {
-    transform: scale(0.96) translateY(-2px);
-    transition-duration: 0.15s;
+    transform: scale(0.98);
+    transition-duration: 0.1s;
     
-    /* Pressed Glass Effect */
-    background: linear-gradient(135deg, 
-      rgba(255, 255, 255, 0.15) 0%,
-      rgba(255, 255, 255, 0.1) 50%,
-      rgba(255, 255, 255, 0.05) 100%
-    );
-    
-    /* Compact Shadow */
+    /* Pressed state shadow */
     box-shadow: 
-      0 4px 16px rgba(0, 0, 0, 0.08),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      0 2px 8px rgba(0, 0, 0, 0.08),
+      0 1px 2px rgba(0, 0, 0, 0.04);
+    
+    /* Keep background white */
+    background: #ffffff;
   }
   
-  /* 🚫 OUT OF STOCK STATE - Modern Disabled Design */
+  /* 🚫 OUT OF STOCK STATE - Clean Disabled Design */
   &.out-of-stock {
-    /* Muted Glassmorphism */
-    background: linear-gradient(135deg, 
-      rgba(248, 248, 248, 0.4) 0%,
-      rgba(240, 240, 240, 0.3) 50%,
-      rgba(235, 235, 235, 0.2) 100%
-    );
+    /* Light gray background */
+    background: #f8f8f8;
     
     /* Subtle Border */
-    border: 1px solid rgba(255, 107, 107, 0.15);
+    border: 1px solid rgba(0, 0, 0, 0.04);
     
-    /* Reduced Shadow Stack */
+    /* Softer shadows */
     box-shadow: 
-      0 4px 16px rgba(0, 0, 0, 0.03),
-      0 1px 4px rgba(0, 0, 0, 0.02),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    
-    /* Muted Backdrop */
-    backdrop-filter: blur(15px) saturate(0.8);
-    -webkit-backdrop-filter: blur(15px) saturate(0.8);
+      0 2px 8px rgba(0, 0, 0, 0.04),
+      0 1px 2px rgba(0, 0, 0, 0.02);
     
     .product-img {
-      opacity: 0.6;
-      filter: grayscale(40%) blur(0.5px);
+      opacity: 0.5;
+      filter: grayscale(100%);
       transition: all 0.3s ease;
     }
     
     .product-title {
-      opacity: 0.7;
+      opacity: 0.6;
       color: #999999;
     }
     
-    /* Subtle Hover for Disabled Items */
+    /* Minimal hover for disabled items */
     @media (hover: hover) {
       &:hover {
-        transform: translateY(-1px) scale(1.002);
-        
-        background: linear-gradient(135deg, 
-          rgba(248, 248, 248, 0.5) 0%,
-          rgba(240, 240, 240, 0.4) 50%,
-          rgba(235, 235, 235, 0.3) 100%
-        );
+        transform: translateY(-1px);
         
         box-shadow: 
-          0 8px 24px rgba(0, 0, 0, 0.06),
-          0 2px 8px rgba(0, 0, 0, 0.04),
-          inset 0 1px 0 rgba(255, 255, 255, 0.3);
+          0 4px 12px rgba(0, 0, 0, 0.06),
+          0 1px 3px rgba(0, 0, 0, 0.03);
         
-        border-color: rgba(255, 107, 107, 0.2);
+        /* Keep disabled background */
+        background: #f8f8f8;
       }
     }
   }

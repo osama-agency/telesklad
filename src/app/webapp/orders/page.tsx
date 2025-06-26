@@ -197,8 +197,8 @@ const OrdersPage: React.FC = () => {
   if (isLoading) {
     return (
       <PageTransition>
-      <div className="webapp-container">
-        <div className="header-simple">
+      <div className="webapp-container px-4 py-6">
+        <div className="header-simple mb-6">
           <h1>История заказов</h1>
         </div>
         <SkeletonLoading type="order" count={3} />
@@ -210,16 +210,16 @@ const OrdersPage: React.FC = () => {
   if (error) {
     return (
       <PageTransition>
-      <div className="webapp-container">
-        <div className="header-simple">
+      <div className="webapp-container px-4 py-6">
+        <div className="header-simple mb-6">
           <h1>История заказов</h1>
         </div>
         <div className="main-block">
           <div className="text-center text-red-600">
-            <p>{error}</p>
+            <p className="mb-6">{error}</p>
             <button 
               onClick={() => window.location.reload()} 
-              className="webapp-btn-secondary mt-4"
+              className="webapp-btn-secondary"
             >
               Попробовать снова
             </button>
@@ -233,16 +233,18 @@ const OrdersPage: React.FC = () => {
   if (orders.length === 0) {
     return (
       <PageTransition>
-      <div className="webapp-container">
-        <div className="header-simple">
+      <div className="webapp-container px-4 py-6">
+        <div className="header-simple mb-6">
           <h1>История заказов</h1>
         </div>
-        <div className="empty-state">
+        <div className="empty-state space-y-6">
           <div className="empty-state-icon">
             <IconComponent name="shopping-bag" size={64} />
           </div>
-          <h3>Нет заказов</h3>
-          <p>Когда вы сделаете первый заказ, он появится здесь</p>
+          <div className="space-y-2">
+            <h3>Нет заказов</h3>
+            <p>Когда вы сделаете первый заказ, он появится здесь</p>
+          </div>
           <button 
             onClick={() => router.push('/webapp')}
             className="webapp-btn"
@@ -257,13 +259,13 @@ const OrdersPage: React.FC = () => {
 
   return (
     <PageTransition>
-    <div className="webapp-container">
-      <div className="header-simple">
+    <div className="webapp-container px-4 py-6">
+      <div className="header-simple mb-6">
         <h1>История заказов</h1>
       </div>
 
       {stats && (
-        <div className="orders-stats fade-in">
+        <div className="orders-stats fade-in mb-6">
           <div className="stat-item">
             <span className="stat-value">{stats.total_orders}</span>
             <span className="stat-label">Всего заказов</span>
@@ -277,7 +279,7 @@ const OrdersPage: React.FC = () => {
         </div>
       )}
 
-      <div className="orders-list fade-in">
+      <div className="orders-list fade-in space-y-4">
         {orders.map(order => {
           const statusInfo = getStatusInfo(order.status);
           

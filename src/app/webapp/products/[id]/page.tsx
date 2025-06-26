@@ -203,7 +203,7 @@ export default function ProductDetailPage() {
 
   if (loading) {
     return (
-      <div className="webapp-container">
+      <div className="webapp-container px-4 py-6">
         <SkeletonLoading type="product" />
       </div>
     )
@@ -211,9 +211,9 @@ export default function ProductDetailPage() {
 
   if (error || !product) {
     return (
-      <div className="webapp-container">
+      <div className="webapp-container px-4 py-6">
         <div className="flex flex-col items-center justify-center min-h-screen">
-          <h1 className="text-xl font-semibold mb-4">Товар не найден</h1>
+          <h1 className="text-xl font-semibold mb-6">Товар не найден</h1>
           <button 
             onClick={() => router.back()}
             className="webapp-btn"
@@ -238,9 +238,9 @@ export default function ProductDetailPage() {
     : null
 
   return (
-    <div className="webapp-container product-page">
+    <div className="webapp-container product-page px-4 py-6">
       {/* Единый контейнер с фиксированными отступами как на странице профиля */}
-      <div className="product-content-stack">
+      <div className="product-content-stack space-y-6">
         
         <style jsx>{`
           body { background-color: white; }
@@ -272,10 +272,10 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
-        <div className="card-block mb-3">
+        <div className="card-block">
           <div className="flex justify-between mb-3">
             <div>
-              <div className="font-semibold text-base leading-tight mb-1">
+              <div className="font-semibold text-base leading-tight mb-2">
                 {product.name}
               </div>
               {product.stock_quantity > 0 ? (
@@ -295,7 +295,7 @@ export default function ProductDetailPage() {
           </div>
 
           {product.stock_quantity > 0 && (
-            <div className="mb-3">
+            <div className="mb-6">
               {product.old_price ? (
                 <div className="price-block">
                   <div className="price-row">
@@ -347,11 +347,11 @@ export default function ProductDetailPage() {
 
         {/* Product Properties */}
         {properties.length > 0 && (
-          <div className="card-block mb-3">
-            <div className="title-card">О товаре</div>
-            <ul className="properties-list">
+          <div className="card-block">
+            <div className="title-card mb-6">О товаре</div>
+            <ul className="properties-list space-y-2">
               {properties.map((property) => (
-                <li key={property.key} className="flex justify-between mb-3">
+                <li key={property.key} className="flex justify-between">
                   <div 
                     className="variable"
                     style={{ width: property.key === 'package_quantity' ? '99px' : undefined }}
@@ -365,8 +365,8 @@ export default function ProductDetailPage() {
 
             {product.description && (
               <>
-                <div className="product-description-line" />
-                <div className="title-card">Описание</div>
+                <div className="product-description-line my-6" />
+                <div className="title-card mb-2">Описание</div>
                 <div className="product-description">
                   {product.description}
                 </div>
