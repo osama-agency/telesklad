@@ -1,0 +1,247 @@
+// ========================================
+// TELEGRAM DESIGN SYSTEM - .tg- namespace
+// ========================================
+
+.tg-design-system {
+  // Telegram theme variables with fallbacks to core variables
+  --tg-header-height: 60px;
+  --tg-safe-area-top: 0px;
+  --tg-safe-area-bottom: 0px;
+  --tg-safe-area-left: 0px;
+  --tg-safe-area-right: 0px;
+  
+  // Animations optimized for 60fps
+  --tg-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --tg-transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --tg-transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  // Telegram header component
+  .tg-header {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-fixed);
+    background-color: var(--tg-bg-color, var(--color-bg));
+    color: var(--tg-text-color, var(--color-text));
+    transition: all var(--tg-transition-normal);
+    will-change: transform, box-shadow;
+    
+    // Safe area support
+    @include safe-area-top;
+    padding-left: var(--tg-safe-area-left);
+    padding-right: var(--tg-safe-area-right);
+    
+    &.tg-header-scrolled {
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    
+    // Optimization for low-end devices
+    &.tg-header-low-end {
+      will-change: auto; // Disable will-change to save memory
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      
+      &.tg-header-scrolled {
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12); // Simplified shadow
+      }
+    }
+  }
+
+  // Telegram button component
+  .tg-button {
+    @include button-base;
+    @include no-focus;
+    
+    position: relative;
+    padding: var(--space-2);
+    border-radius: 12px;
+    color: var(--tg-text-color, var(--color-text));
+    background-color: transparent;
+    
+    // No animations on hover/active (touch interface)
+    &:hover {
+      background-color: transparent !important;
+      transform: none !important;
+      color: var(--tg-text-color, var(--color-text)) !important;
+    }
+    
+    &.tg-button-active {
+      color: var(--tg-link-color, var(--color-primary)) !important;
+      background-color: transparent !important;
+      
+      &:hover,
+      &:active {
+        color: var(--tg-link-color, var(--color-primary)) !important;
+        background-color: transparent !important;
+      }
+    }
+    
+    // Accessibility support (optional)
+    &:focus-visible {
+      outline: 2px solid var(--tg-link-color, var(--color-primary));
+      outline-offset: 2px;
+    }
+    
+    &:active {
+      transform: none !important;
+      background-color: transparent !important;
+    }
+    
+    // Badge for notifications
+    .tg-button-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      min-width: 18px;
+      height: 18px;
+      @include flex-center;
+      font-size: 11px;
+      font-weight: var(--font-weight-semibold);
+      color: var(--tg-button-text-color, var(--color-bg-white));
+      background-color: var(--tg-button-color, var(--color-primary));
+      border-radius: 9px;
+      padding: 0 4px;
+      line-height: 1;
+      animation: tgBadgeAppear var(--tg-transition-normal) ease-out;
+    }
+  }
+
+  // Telegram avatar component
+  .tg-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--tg-secondary-bg-color, var(--color-bg));
+    @include no-transition;
+    
+    .tg-button-active & {
+      border-color: var(--tg-link-color, var(--color-primary));
+    }
+  }
+
+  // Telegram main button (global component)
+  .tg-main-button {
+    @include button-primary;
+    @include no-focus;
+    
+    width: 100%;
+    padding: var(--space-4) var(--space-6);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    background: var(--tg-button-color, var(--color-primary));
+    color: var(--tg-button-text-color, var(--color-bg-white));
+    border-radius: 12px;
+    
+    &:hover {
+      background: var(--color-primary-dark);
+    }
+    
+    &:disabled {
+      background: var(--color-text-light);
+      cursor: not-allowed;
+    }
+  }
+
+  // Telegram card component
+  .tg-card {
+    @include card;
+    background: var(--tg-bg-color, var(--color-bg-white));
+    border: 1px solid var(--color-border);
+    
+    .tg-card-header {
+      @include flex-between;
+      margin-bottom: var(--space-4);
+      
+      .tg-card-title {
+        font-size: var(--font-size-base);
+        font-weight: var(--font-weight-semibold);
+        color: var(--tg-text-color, var(--color-text));
+        margin: 0;
+      }
+    }
+    
+    .tg-card-content {
+      @include stack(var(--space-3));
+    }
+  }
+}
+
+// Badge animation
+@keyframes tgBadgeAppear {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// Responsive design
+@include mobile {
+  .tg-design-system {
+    .tg-button {
+      padding: var(--space-1); // Smaller padding on mobile
+    }
+    
+    .tg-avatar {
+      width: 22px;
+      height: 22px;
+    }
+    
+    .tg-main-button {
+      padding: var(--space-3) var(--space-5);
+      font-size: var(--font-size-sm);
+    }
+  }
+}
+
+@include desktop {
+  .tg-design-system {
+    .tg-main-button {
+      max-width: 400px;
+      margin: 0 auto;
+    }
+  }
+}
+
+// Dark theme support (optional, currently disabled in project)
+@media (prefers-color-scheme: dark) {
+  .tg-design-system.tg-support-dark-theme {
+    --tg-bg-color: #1c1c1e;
+    --tg-text-color: #ffffff;
+    --tg-hint-color: #8e8e93;
+    --tg-secondary-bg-color: #2c2c2e;
+  }
+}
+
+// Integration with existing webapp-header
+.webapp-header.tg-design-system {
+  // Inherit all styles from .webapp-header and extend with Telegram features
+  
+  .webapp-header-container {
+    @include flex-between;
+    padding: var(--space-3) var(--space-4);
+    max-width: 100%;
+    margin: 0 auto;
+  }
+  
+  .webapp-header-search {
+    flex: 1;
+    margin-right: var(--space-4);
+  }
+  
+  .webapp-header-actions {
+    @include inline-stack(var(--space-2));
+  }
+}
+
+// Backward compatibility - ensure old styles work without .tg-design-system
+.webapp-header:not(.tg-design-system) {
+  // All old styles are preserved without changes
+  // This selector ensures that when enableDesignSystem is disabled,
+  // everything works as before
+} 

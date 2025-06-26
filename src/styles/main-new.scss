@@ -15,12 +15,14 @@
 // 3. Modules (page-specific styles)
 @import './modules/profile';
 
-// 4. Legacy imports (temporary - will be migrated)
+// 4. Telegram namespace styles
+@import './telegram/design-system';
+@import './telegram/adaptive-theme';
+@import './telegram/webapp-base';
+
+// 5. Legacy imports (temporary - will be migrated)
 @import './webapp-support.scss';
-@import './telegram-webapp-spacing-fixes.scss';
-@import './telegram-design-system.scss';
 @import './webapp-action-cards.scss';
-@import './telegram-adaptive-theme.scss';
 
 // Base webapp container styles with new variables
 .webapp-container {
