@@ -36,6 +36,7 @@ interface TelegramWebAppThemeParams {
   button_color?: string;
   button_text_color?: string;
   secondary_bg_color?: string;
+  bottom_bar_bg_color?: string; // Bot API 7.10+
 }
 
 interface TelegramWebAppBackButton {
@@ -97,6 +98,9 @@ interface TelegramWebApp {
   ready(): void;
   expand(): void;
   close(): void;
+  setHeaderColor(color: string): void;
+  setBackgroundColor(color: string): void;
+  setBottomBarColor?(color: string): void; // Bot API 7.10+
   enableClosingConfirmation(): void;
   disableClosingConfirmation(): void;
   onEvent(eventType: string, eventHandler: () => void): void;
@@ -143,6 +147,17 @@ declare global {
         sendData: (data: string) => void;
         setHeaderColor: (color: string) => void;
         setBackgroundColor: (color: string) => void;
+        setBottomBarColor?: (color: string) => void; // Bot API 7.10+
+        themeParams?: {
+          bg_color?: string;
+          text_color?: string;
+          hint_color?: string;
+          link_color?: string;
+          button_color?: string;
+          button_text_color?: string;
+          secondary_bg_color?: string;
+          bottom_bar_bg_color?: string; // Bot API 7.10+
+        };
         initData: string;
         initDataUnsafe: {
           user?: {

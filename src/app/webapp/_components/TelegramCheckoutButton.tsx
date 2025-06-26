@@ -66,6 +66,13 @@ export default function TelegramCheckoutButton({
         setTimeout(() => {
           tg.MainButton.color = '#48C928';
           tg.MainButton.textColor = '#FFFFFF';
+          
+          // КРИТИЧЕСКИ ВАЖНО: Устанавливаем цвет нижней панели
+          if (tg.setBottomBarColor) {
+            tg.setBottomBarColor('#FFFFFF');
+            console.log('🎯 Цвет нижней панели установлен в TelegramCheckoutButton');
+          }
+          
           console.log('🎨 Цвета MainButton установлены напрямую');
         }, 100);
       } catch (error) {

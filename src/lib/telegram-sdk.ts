@@ -192,6 +192,15 @@ export class TelegramSDK {
       tg.setHeaderColor('#FFFFFF');
       tg.setBackgroundColor('#FFFFFF');
       
+      // КРИТИЧЕСКИ ВАЖНО: Устанавливаем цвет нижней панели (Bot API 7.10+)
+      // Это контролирует фон области под MainButton
+      if (tg.setBottomBarColor) {
+        tg.setBottomBarColor('#FFFFFF');
+        console.log('✅ Цвет нижней панели установлен на белый');
+      } else {
+        console.warn('⚠️ setBottomBarColor не поддерживается в этой версии Telegram');
+      }
+      
       // Переопределяем параметры темы для полной совместимости
       if (tg.themeParams) {
         tg.themeParams.bg_color = '#FFFFFF';
@@ -201,6 +210,7 @@ export class TelegramSDK {
         tg.themeParams.link_color = '#48C928';
         tg.themeParams.button_color = '#48C928';
         tg.themeParams.button_text_color = '#FFFFFF';
+        tg.themeParams.bottom_bar_bg_color = '#FFFFFF';
       }
       
       // Если MainButton уже показана, обновляем её цвета

@@ -8,6 +8,7 @@ declare global {
         close(): void;
         setHeaderColor(color: string): void;
         setBackgroundColor(color: string): void;
+        setBottomBarColor?(color: string): void; // Bot API 7.10+
         showAlert(message: string): void;
         showConfirm(message: string, callback?: (confirmed: boolean) => void): void;
         showPopup(params: {
@@ -71,6 +72,7 @@ declare global {
           button_color?: string;
           button_text_color?: string;
           secondary_bg_color?: string;
+          bottom_bar_bg_color?: string; // Bot API 7.10+
         };
 
         initData: string;

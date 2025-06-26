@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/libs/prismaDb';
-import { TelegramTokenService } from '@/lib/services/telegram-token.service';
+import { TelegramTokenService } from '@/lib/services/delete/telegram-token.service';
 
 // POST - отправка сообщения в Telegram
 export async function POST(request: NextRequest) {
