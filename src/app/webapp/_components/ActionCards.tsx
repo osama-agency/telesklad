@@ -221,14 +221,6 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
             <IconComponent name="right" size={16} />
           </div>
         </div>
-        
-        {item.badge && item.id !== 'delivery-data' && (
-          <div className="action-card-footer mt-2">
-            <span className="action-card-footer-text">
-              {item.badge.count} {item.badge.text}
-            </span>
-          </div>
-        )}
       </div>
     );
 
