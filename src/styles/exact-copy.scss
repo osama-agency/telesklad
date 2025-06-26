@@ -437,4 +437,84 @@
   --font-size-base: 16px;
   --font-weight-medium: 500;
   --font-weight-bold: 600;
+}
+
+/* Импортируем новые компоненты */
+@import './components/action-cards-v2.scss';
+
+/* Алиасы для обратной совместимости - Action Cards */
+.action-cards-container {
+  @extend .action-container;
+}
+
+.action-card-link {
+  @extend .action-link;
+}
+
+.action-card {
+  @extend .action-item;
+  
+  &.action-card-admin {
+    @extend .action-item--admin;
+  }
+}
+
+.action-card-content {
+  @extend .action-content;
+}
+
+.action-card-icon {
+  @extend .action-icon;
+}
+
+.action-card-text {
+  @extend .action-text;
+}
+
+.action-card-title {
+  @extend .action-title;
+}
+
+.action-card-description {
+  @extend .action-description;
+}
+
+.action-card-badge {
+  @extend .action-badge;
+  
+  &.bg-blue-100 {
+    @extend .action-badge--info;
+  }
+  
+  &.bg-green-100 {
+    @extend .action-badge--success;
+  }
+  
+  &.bg-yellow-100 {
+    @extend .action-badge--warning;
+  }
+  
+  &.bg-red-100 {
+    @extend .action-badge--danger;
+  }
+}
+
+.action-card-arrow {
+  @extend .action-arrow;
+}
+
+.action-card-footer {
+  @extend .action-footer;
+  
+  &:has(.delivery-data) {
+    @extend .action-footer--delivery;
+  }
+}
+
+.action-card-footer-text {
+  @extend .action-footer-text;
+  
+  &.delivery-data {
+    @extend .action-footer-text--delivery;
+  }
 } 
