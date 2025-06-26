@@ -143,13 +143,13 @@ export default function FavoritesPage() {
   // Ошибка
   if (error) {
     return (
-      <div className="webapp-container favorites-page">
+      <div className="webapp-container favorites-page px-4 py-6">
         <div className="main-block">
           <div className="text-center text-red-600">
-            <p>{error}</p>
+            <p className="mb-6">{error}</p>
             <button 
               onClick={loadFavorites} 
-              className="webapp-btn-secondary mt-4"
+              className="webapp-btn-secondary"
             >
               Попробовать снова
             </button>
@@ -162,17 +162,17 @@ export default function FavoritesPage() {
   // Не авторизован
   if (!isAuthenticated) {
     return (
-      <div className="webapp-container favorites-page">
+      <div className="webapp-container favorites-page px-4 py-6">
         <div className="empty-state">
-          <div className="empty-state-content">
-            <div className="empty-state-icon">
+          <div className="empty-state-content space-y-2">
+            <div className="empty-state-icon mb-6">
               <IconComponent name="no-favorite" size={64} />
             </div>
             <div className="empty-state-title">Войдите для просмотра избранного</div>
             <div className="empty-state-subtitle">
               Для работы с избранными товарами необходимо войти через Telegram
             </div>
-            <Link href="/webapp" className="empty-state-button">
+            <Link href="/webapp" className="empty-state-button mt-6">
               Вернуться в каталог
             </Link>
           </div>
@@ -182,10 +182,10 @@ export default function FavoritesPage() {
   }
 
   return (
-    <div className="webapp-container favorites-page">
+    <div className="webapp-container favorites-page px-4 py-6">
       {favoriteProducts.length > 0 ? (
         <>
-          <h1>Избранное</h1>
+          <h1 className="mb-6">Избранное</h1>
           <div className="product-grid" id="favorites">
             {favoriteProducts.map((product) => (
               <div
@@ -292,15 +292,15 @@ export default function FavoritesPage() {
         </>
       ) : (
         <div className="empty-state">
-          <div className="empty-state-content">
-            <div className="empty-state-icon">
+          <div className="empty-state-content space-y-2">
+            <div className="empty-state-icon mb-6">
               <IconComponent name="no-favorite" size={64} />
             </div>
             <div className="empty-state-title">Избранное пусто</div>
             <div className="empty-state-subtitle">
               Добавьте товары в избранное, чтобы быстро находить их позже
             </div>
-            <Link href="/webapp" className="empty-state-button">
+            <Link href="/webapp" className="empty-state-button mt-6">
               Посмотреть каталог
             </Link>
           </div>
