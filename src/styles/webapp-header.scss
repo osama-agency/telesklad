@@ -90,7 +90,7 @@
   border-radius: 20px;
   background: transparent;
   transition: none !important; // Убираем ВСЕ анимации
-  color: #666;
+  color: #8E8E93; // Серый цвет для всех иконок
   border: none;
   cursor: pointer;
   text-decoration: none;
@@ -98,13 +98,13 @@
   &:hover {
     background-color: transparent !important;
     transform: none !important;
-    color: #666 !important; // Цвет НЕ меняется при наведении
+    color: #8E8E93 !important; // Серый цвет при наведении
   }
 
   &:active {
     transform: none !important;
     background-color: transparent !important;
-    color: #666 !important; // Цвет НЕ меняется при клике
+    color: #8E8E93 !important; // Серый цвет при клике
   }
 
   &:focus,
@@ -117,7 +117,7 @@
   }
 
   &:visited {
-    color: #666;
+    color: #8E8E93;
     text-decoration: none;
   }
 
@@ -147,11 +147,11 @@
 
   /* Переопределяем цвет для кнопки избранного когда есть товары */
   &:has(.filled) {
-    color: #48C928 !important;
+    color: #8E8E93 !important; // Серый цвет даже с заполненным сердечком
     
     &:hover,
     &:active {
-      color: #48C928 !important;
+      color: #8E8E93 !important;
     }
   }
 }
@@ -167,19 +167,49 @@
   svg {
     width: 24px;
     height: 24px;
+    color: #8E8E93 !important; /* Серый цвет для всех иконок */
+  }
+  
+  /* Стили для обычного (незаполненного) сердечка и других иконок */
+  svg:not(.filled):not([fill="currentColor"]) {
+    color: #8E8E93 !important;
+    
+    /* Для иконки профиля которая использует fill */
+    &.lucide-user-round {
+      fill: #8E8E93 !important;
+      stroke: #8E8E93 !important;
+      
+      * {
+        fill: #8E8E93 !important;
+        stroke: #8E8E93 !important;
+      }
+    }
+    
+    /* Для остальных иконок которые используют stroke */
+    &:not(.lucide-user-round) {
+      fill: none !important;
+      stroke: #8E8E93 !important;
+      stroke-width: 2px !important;
+      
+      * {
+        fill: none !important;
+        stroke: #8E8E93 !important;
+        stroke-width: 2px !important;
+      }
+    }
   }
   
   /* Стили для заполненного сердечка (когда есть избранные товары) */
   svg.filled,
   svg[fill="currentColor"] {
-    color: #48C928 !important;
+    color: #8E8E93 !important; // Серый цвет
     fill: none !important; /* Убираем заливку */
-    stroke: #48C928 !important; /* Зеленый контур */
+    stroke: #8E8E93 !important; /* Серый контур */
     stroke-width: 2px !important; /* Толщина линии */
     
     * {
       fill: none !important; /* Убираем заливку у всех элементов */
-      stroke: #48C928 !important; /* Зеленый контур */
+      stroke: #8E8E93 !important; /* Серый контур */
       stroke-width: 2px !important; /* Толщина линии */
     }
   }
@@ -311,14 +341,16 @@
   }
 
   .header-action-button {
-    color: #ccc;
+    color: #8E8E93; /* Серый цвет и в темной теме */
 
     &:hover {
-      background: #2a2a2a;
+      background: transparent;
+      color: #8E8E93;
     }
 
     &:active {
-      background: #333;
+      background: transparent;
+      color: #8E8E93;
     }
 
     &:focus,
@@ -329,8 +361,8 @@
     }
 
     &.active {
-      color: #00c100;
-      background: #1a2f1a;
+      color: #48C928;
+      background: transparent;
     }
   }
 }

@@ -185,21 +185,21 @@ input:-webkit-autofill:active {
   -webkit-tap-highlight-color: transparent !important;
 }
 
-/* Форсируем зеленый цвет для заполненного сердечка в хедере */
+/* Форсируем серый цвет для заполненного сердечка в хедере */
 .webapp-header .header-action-button .filled,
 .webapp-header .header-action-button svg.filled,
 .webapp-header .header-action-button svg[fill="currentColor"],
 .webapp-header .header-action-icon svg.filled,
 .webapp-header .header-action-icon svg[fill="currentColor"] {
-  color: #48C928 !important;
+  color: #8E8E93 !important;
   fill: none !important; /* Убираем заливку */
-  stroke: #48C928 !important; /* Зеленый контур */
+  stroke: #8E8E93 !important; /* Серый контур */
   stroke-width: 2px !important; /* Толщина линии */
 }
 
 .webapp-header .header-action-button:has(svg.filled),
 .webapp-header .header-action-button:has(svg[fill="currentColor"]) {
-  color: #48C928 !important;
+  color: #8E8E93 !important;
 }
 
 /* Убираем черный цвет принудительно */
@@ -208,8 +208,8 @@ input:-webkit-autofill:active {
 .webapp-header .header-action-icon svg.filled *,
 .webapp-header .header-action-icon svg[fill="currentColor"] * {
   fill: none !important; /* Убираем заливку */
-  color: #48C928 !important;
-  stroke: #48C928 !important; /* Зеленый контур */
+  color: #8E8E93 !important;
+  stroke: #8E8E93 !important; /* Серый контур */
   stroke-width: 2px !important; /* Толщина линии для лучшей видимости */
 }
 
@@ -862,37 +862,33 @@ html, body {
    🚀 MODERN PRODUCT CARDS - 2025 CLEAN DESIGN
    =============================================== */
 
-/* Основные стили для карточек товаров с более высокой специфичностью */
-.product-catalog .product-grid .product-card .product-wrapper,
-.webapp-container .product-grid .product-card .product-wrapper,
+/* Базовые стили для карточек товаров */
 .product-wrapper {
   /* Clean White Background */
-  background: #ffffff !important;
+  background: #ffffff;
   
   /* Modern Border with subtle color */
-  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  border: 1px solid rgba(0, 0, 0, 0.06);
   
   /* Adaptive Border Radius - не переборщить на мобильных */
-  border-radius: clamp(12px, 3vw, 20px) !important;
+  border-radius: clamp(12px, 3vw, 20px);
   
   /* Modern Shadow Stack - мягкие тени для глубины */
   box-shadow: 
     /* Primary shadow - основная мягкая тень */
     0 4px 16px rgba(0, 0, 0, 0.08),
     /* Secondary shadow - легкая тень для определения границ */
-    0 1px 3px rgba(0, 0, 0, 0.04),
-    /* Subtle green accent on hover (через переменную) */
-    var(--product-hover-shadow, 0 0 0 0 transparent) !important;
+    0 1px 3px rgba(0, 0, 0, 0.04);
   
   /* Generous Padding for breathing room */
-  padding: clamp(16px, 4vw, 24px) !important;
+  padding: clamp(16px, 4vw, 24px);
   position: relative;
   
   /* Smooth Transitions */
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   
   /* Ensure shadows are visible */
-  overflow: visible !important;
+  overflow: visible;
   
   /* 🎯 INTERACTION STATES - Clean & Modern */
   
@@ -900,7 +896,7 @@ html, body {
   @media (hover: hover) {
     &:hover {
       /* Gentle lift */
-      transform: translateY(-3px) !important;
+      transform: translateY(-3px);
       
       /* Enhanced shadows for depth */
       box-shadow: 
@@ -909,42 +905,42 @@ html, body {
         /* Soft shadow */
         0 2px 8px rgba(0, 0, 0, 0.06),
         /* Green accent glow - subtle */
-        0 0 0 1px rgba(72, 201, 40, 0.08) !important;
+        0 0 0 1px rgba(72, 201, 40, 0.08);
       
       /* Subtle border enhancement */
-      border-color: rgba(72, 201, 40, 0.15) !important;
+      border-color: rgba(72, 201, 40, 0.15);
       
       /* Keep background white */
-      background: #ffffff !important;
+      background: #ffffff;
     }
   }
   
   /* Touch State - Mobile Optimized */
   &:active {
-    transform: scale(0.98) !important;
+    transform: scale(0.98);
     transition-duration: 0.1s;
     
     /* Pressed state shadow */
     box-shadow: 
       0 2px 8px rgba(0, 0, 0, 0.08),
-      0 1px 2px rgba(0, 0, 0, 0.04) !important;
+      0 1px 2px rgba(0, 0, 0, 0.04);
     
     /* Keep background white */
-    background: #ffffff !important;
+    background: #ffffff;
   }
   
   /* 🚫 OUT OF STOCK STATE - Clean Disabled Design */
   &.out-of-stock {
     /* Light gray background */
-    background: #f8f8f8 !important;
+    background: #f8f8f8;
     
     /* Subtle Border */
-    border: 1px solid rgba(0, 0, 0, 0.04) !important;
+    border: 1px solid rgba(0, 0, 0, 0.04);
     
     /* Softer shadows */
     box-shadow: 
       0 2px 8px rgba(0, 0, 0, 0.04),
-      0 1px 2px rgba(0, 0, 0, 0.02) !important;
+      0 1px 2px rgba(0, 0, 0, 0.02);
     
     .product-img {
       opacity: 0.5;
@@ -960,26 +956,20 @@ html, body {
     /* Minimal hover for disabled items */
     @media (hover: hover) {
       &:hover {
-        transform: translateY(-1px) !important;
+        transform: translateY(-1px);
         
         box-shadow: 
           0 4px 12px rgba(0, 0, 0, 0.06),
-          0 1px 3px rgba(0, 0, 0, 0.03) !important;
+          0 1px 3px rgba(0, 0, 0, 0.03);
         
         /* Keep disabled background */
-        background: #f8f8f8 !important;
+        background: #f8f8f8;
       }
     }
   }
 }
 
-/* Исключаем Algolia поиск из стилей каталога */
-.search-page .product-card .product-wrapper,
-.search-results-grid .product-card .product-wrapper,
-.algolia-search-wrapper .product-card .product-wrapper {
-  /* Algolia использует свои стили */
-  all: revert;
-}
+
 
 /* Стили для изображения товара */
 .product-wrapper .product-img {
@@ -3553,14 +3543,14 @@ html, body {
 .bonus-header {
   position: relative;
   z-index: 1;
-  margin-bottom: var(--space-20);
+  margin-bottom: 20px;
 }
 
 .bonus-title-group {
   display: flex;
   align-items: center;
-  gap: var(--space-8);
-  margin-bottom: var(--space-16);
+  gap: 8px;
+  margin-bottom: 16px;
 }
 
 .bonus-title {
@@ -3596,7 +3586,7 @@ html, body {
 .bonus-balance-group {
   display: flex;
   align-items: baseline;
-  gap: var(--space-12);
+  gap: 12px;
 }
 
 .bonus-balance-label {
@@ -3626,8 +3616,8 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--space-20);
-  padding: var(--space-16);
+  margin-bottom: 20px;
+  padding: 16px;
   background: linear-gradient(135deg, #f8fff8 0%, #ffffff 100%);
   border: 1px solid rgba(72, 201, 40, 0.15);
   border-radius: 20px;
@@ -3636,7 +3626,7 @@ html, body {
 .tier-badge {
   display: flex;
   align-items: center;
-  gap: var(--space-12);
+  gap: 12px;
 }
 
 .tier-icon {
@@ -3647,7 +3637,7 @@ html, body {
 .tier-details {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: 4px;
 }
 
 .tier-name {
@@ -3665,14 +3655,14 @@ html, body {
 .view-all-tiers {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  gap: 4px;
   background: none;
   border: none;
   color: #48C928;
   font-size: clamp(12px, 3vw, 13px);
   font-weight: 500;
   cursor: pointer;
-  padding: var(--space-8);
+  padding: 8px;
   border-radius: 8px;
   transition: all 0.2s ease;
   
@@ -3691,14 +3681,14 @@ html, body {
   background: linear-gradient(135deg, #ffffff 0%, #f8fff8 100%);
   border: 1px solid rgba(72, 201, 40, 0.1);
   border-radius: 20px;
-  padding: var(--space-16);
+  padding: 16px;
 }
 
 .progress-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--space-12);
+  margin-bottom: 12px;
 }
 
 .progress-label {
@@ -3712,7 +3702,7 @@ html, body {
   color: #48C928;
   font-weight: 600;
   background: rgba(72, 201, 40, 0.1);
-  padding: var(--space-4) var(--space-8);
+  padding: 4px 8px;
   border-radius: 12px;
 }
 
@@ -3722,7 +3712,7 @@ html, body {
   background: #f0f0f0;
   border-radius: 4px;
   overflow: hidden;
-  margin-bottom: var(--space-8);
+  margin-bottom: 8px;
   position: relative;
 }
 
@@ -3766,7 +3756,7 @@ html, body {
 /* Приветственная секция для новых пользователей */
 .welcome-section {
   text-align: center;
-  padding: var(--space-24) var(--space-16);
+  padding: 24px 16px;
   background: linear-gradient(135deg, #f8fff8 0%, #ffffff 100%);
   border: 1px solid rgba(72, 201, 40, 0.15);
   border-radius: 20px;
@@ -3776,7 +3766,7 @@ html, body {
 
 .welcome-icon {
   font-size: clamp(32px, 8vw, 40px);
-  margin-bottom: var(--space-16);
+  margin-bottom: 16px;
   animation: bounce-welcome 2s ease-in-out infinite;
 }
 
@@ -3785,14 +3775,14 @@ html, body {
     font-size: clamp(16px, 4vw, 18px);
     font-weight: 600;
     color: #3D4453;
-    margin: 0 0 var(--space-8) 0;
+    margin: 0 0 8px 0;
   }
   
   p {
     font-size: clamp(13px, 3.2vw, 14px);
     color: #777777;
     line-height: 1.5;
-    margin: 0 0 var(--space-16) 0;
+    margin: 0 0 16px 0;
     max-width: 280px;
     margin-left: auto;
     margin-right: auto;
@@ -3804,7 +3794,7 @@ html, body {
   color: white;
   border: none;
   border-radius: 12px;
-  padding: var(--space-12) var(--space-20);
+  padding: 12px 20px;
   font-size: clamp(13px, 3.2vw, 14px);
   font-weight: 600;
   cursor: pointer;
@@ -3823,7 +3813,7 @@ html, body {
 
 /* Скелетон для загрузки */
 .bonus-skeleton {
-  padding: var(--space-20);
+  padding: 20px;
   
   .skeleton-line {
     height: 16px;
@@ -3831,7 +3821,7 @@ html, body {
     background-size: 200% 100%;
     animation: skeleton-loading 1.5s infinite;
     border-radius: 8px;
-    margin-bottom: var(--space-12);
+    margin-bottom: 12px;
     
     &.short {
       width: 40%;
@@ -3854,7 +3844,7 @@ html, body {
     background-size: 200% 100%;
     animation: skeleton-loading 1.5s infinite;
     border-radius: 4px;
-    margin-top: var(--space-16);
+    margin-top: 16px;
   }
 }
 
@@ -3870,7 +3860,7 @@ html, body {
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: var(--space-20);
+  padding: 20px;
   backdrop-filter: blur(4px);
 }
 
@@ -3889,7 +3879,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-20);
+  padding: 20px;
   border-bottom: 1px solid #f0f0f0;
   
   h3 {
@@ -3905,7 +3895,7 @@ html, body {
   border: none;
   color: #777777;
   cursor: pointer;
-  padding: var(--space-8);
+  padding: 8px;
   border-radius: 50%;
   transition: all 0.2s ease;
   
@@ -3916,7 +3906,7 @@ html, body {
 }
 
 .modal-content {
-  padding: var(--space-20);
+  padding: 20px;
   overflow-y: auto;
   max-height: calc(80vh - 80px);
 }
@@ -3924,8 +3914,8 @@ html, body {
 /* Информационные секции */
 .info-section {
   display: flex;
-  gap: var(--space-16);
-  margin-bottom: var(--space-20);
+  gap: 16px;
+  margin-bottom: 20px;
   
   &:last-child {
     margin-bottom: 0;
@@ -3945,7 +3935,7 @@ html, body {
     font-size: clamp(14px, 3.5vw, 16px);
     font-weight: 600;
     color: #3D4453;
-    margin: 0 0 var(--space-8) 0;
+    margin: 0 0 8px 0;
   }
   
   p {
@@ -8777,6 +8767,23 @@ html {
 @import './loader.scss';
 @import './photo-uploader.scss';
 @import './webapp-algolia.scss';
+
+/* ===============================================
+   🎯 OVERRIDE ALGOLIA STYLES FOR CATALOG
+   =============================================== */
+
+/* Переопределяем стили Algolia для основного каталога */
+.webapp-container:not(.search-page) .product-catalog .product-grid .product-card .product-wrapper {
+  /* Применяем наши современные стили */
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  border-radius: clamp(12px, 3vw, 20px) !important;
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.08),
+    0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  padding: clamp(16px, 4vw, 24px) !important;
+  overflow: visible !important;
+}
 @import './modern-search.scss';
 
 /* Страница поддержки */
@@ -9452,4 +9459,64 @@ html {
   margin-top: var(--space-12) !important; /* 8-12px отступ сверху */
 }
 @import "./webapp-catalog-optimization.scss";
+
+/* ===============================================
+   🎯 FINAL OVERRIDES FOR CATALOG PRODUCT CARDS
+   =============================================== */
+
+/* Финальные стили для карточек в каталоге (переопределяют все предыдущие) */
+.webapp-container.catalog-page .product-grid .product-card .product-wrapper,
+.product-catalog:not(.search-page) .product-grid .product-card .product-wrapper {
+  /* Modern Clean Design */
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  border-radius: clamp(12px, 3vw, 20px) !important;
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.08),
+    0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  padding: clamp(16px, 4vw, 24px) !important;
+  overflow: visible !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Hover state */
+  @media (hover: hover) {
+    &:hover {
+      transform: translateY(-3px) !important;
+      box-shadow: 
+        0 8px 24px rgba(0, 0, 0, 0.12),
+        0 2px 8px rgba(0, 0, 0, 0.06),
+        0 0 0 1px rgba(72, 201, 40, 0.08) !important;
+      border-color: rgba(72, 201, 40, 0.15) !important;
+      background: #ffffff !important;
+    }
+  }
+  
+  /* Active state */
+  &:active {
+    transform: scale(0.98) !important;
+    box-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.08),
+      0 1px 2px rgba(0, 0, 0, 0.04) !important;
+    background: #ffffff !important;
+  }
+  
+  /* Out of stock state */
+  &.out-of-stock {
+    background: #f8f8f8 !important;
+    border: 1px solid rgba(0, 0, 0, 0.04) !important;
+    box-shadow: 
+      0 2px 8px rgba(0, 0, 0, 0.04),
+      0 1px 2px rgba(0, 0, 0, 0.02) !important;
+    
+    @media (hover: hover) {
+      &:hover {
+        transform: translateY(-1px) !important;
+        box-shadow: 
+          0 4px 12px rgba(0, 0, 0, 0.06),
+          0 1px 3px rgba(0, 0, 0, 0.03) !important;
+        background: #f8f8f8 !important;
+      }
+    }
+  }
+}
 
