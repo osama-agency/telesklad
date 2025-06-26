@@ -11,9 +11,11 @@
 // 2. Components (reusable UI elements)
 @import './components/header';
 @import './components/search';
+@import './components/product-card';
 
 // 3. Modules (page-specific styles)
 @import './modules/profile';
+@import './modules/catalog';
 
 // 4. Telegram namespace styles
 @import './telegram/design-system';
