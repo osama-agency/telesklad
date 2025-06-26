@@ -1,14 +1,18 @@
 // === КАРТОЧКИ ДЕЙСТВИЙ ===
 .action-cards-container {
-  padding: clamp(16px, 4vw, 24px);
+  padding: 0 16px; // Фиксированный отступ 16px слева и справа
+  display: flex;
+  flex-direction: column;
+  gap: 8px; // Отступ между карточками
 }
 
 .action-card {
   background: white;
   border-radius: clamp(12px, 3vw, 20px);
-  padding: clamp(16px, 4vw, 24px);
+  padding: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   transition: transform 0.2s ease;
+  width: 100%; // Занимать всю доступную ширину
   
   &:active {
     transform: scale(0.98);
@@ -16,7 +20,7 @@
 }
 
 .action-card-content {
-  min-height: 48px; // Фиксированная высота для выравнивания
+  min-height: 40px; // Фиксированная высота для выравнивания
   display: flex;
   align-items: center;
   gap: clamp(12px, 3vw, 16px);
@@ -24,13 +28,13 @@
 
 .action-card-icon {
   flex-shrink: 0;
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: #F9F9F9;
-  border-radius: 12px;
+  border-radius: 8px;
   
   svg {
     color: #8E8E93;
@@ -43,17 +47,17 @@
 }
 
 .action-card-title {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   color: #23272F;
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .action-card-description {
-  font-size: 14px;
+  font-size: 12px;
   color: #8E8E93;
 }
 
@@ -85,8 +89,9 @@
 .action-card-link {
   text-decoration: none;
   display: block;
+  width: 100%; // Занимать всю доступную ширину
   
   &:not(:last-child) {
-    margin-bottom: clamp(8px, 2vw, 12px);
+    margin-bottom: 8px;
   }
 } 
