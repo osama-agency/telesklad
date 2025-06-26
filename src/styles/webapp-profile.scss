@@ -1,26 +1,31 @@
 // === СТРАНИЦА ПРОФИЛЯ ===
 .profile-page {
   // Отступ от хедера Telegram WebApp
-  padding-top: 16px !important;
+  padding-top: 16px;
+  padding-bottom: 16px;
+  background-color: #F9F9F9;
+  min-height: 100vh;
   
   // Основной контейнер с контентом
   .profile-content-stack {
     display: flex;
     flex-direction: column;
-    gap: 16px; // Уменьшаем отступ между основными секциями с 24px до 16px
+    gap: 16px; // Единый отступ между секциями
+    padding: 0 16px; // Фиксированные боковые отступы
   }
   
   // Заголовок профиля
   .profile-header {
-    margin-bottom: 0; // Убираем старый отступ
+    margin: 0;
+    padding: 0;
     
     .profile-avatar {
-      width: 28px; // Уменьшаем размер аватара
+      width: 28px;
       height: 28px;
     }
     
     h2 {
-      font-size: 18px; // Уменьшаем размер заголовка
+      font-size: 18px;
       line-height: 1.2;
     }
     
@@ -28,19 +33,103 @@
       display: inline-block;
       animation: wave 2.5s infinite;
       transform-origin: 70% 70%;
-      font-size: 16px; // Уменьшаем размер эмодзи
+      font-size: 16px;
     }
   }
   
   // Блок бонусной программы
   .bonus-block {
-    display: flex;
-    flex-direction: column;
-    gap: 8px; // Уменьшаем отступ между элементами внутри блока
-    padding: 12px; // Уменьшаем паддинг карточки
     background: #fff;
     border-radius: 12px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    padding: 16px;
+    margin: 0;
+    
+    .bonus-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      
+      h3 {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+      }
+    }
+    
+    .bonus-amount {
+      font-size: 24px;
+      font-weight: 700;
+      color: #48C928;
+      margin-bottom: 16px;
+    }
+    
+    .bonus-tier {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      
+      .tier-icon {
+        width: 24px;
+        height: 24px;
+      }
+      
+      .tier-name {
+        font-size: 14px;
+        font-weight: 500;
+      }
+      
+      .tier-cashback {
+        font-size: 14px;
+        color: #48C928;
+      }
+    }
+    
+    .progress-section {
+      .progress-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        
+        .progress-title {
+          font-size: 14px;
+          color: #6B7280;
+        }
+        
+        .progress-target {
+          font-size: 14px;
+          font-weight: 500;
+          color: #48C928;
+        }
+      }
+      
+      .progress-bar {
+        height: 4px;
+        background: #E5E7EB;
+        border-radius: 2px;
+        overflow: hidden;
+        
+        .progress-fill {
+          height: 100%;
+          background: #48C928;
+          border-radius: 2px;
+          transition: width 0.3s ease;
+        }
+      }
+      
+      .progress-values {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 8px;
+        
+        span {
+          font-size: 12px;
+          color: #6B7280;
+        }
+      }
+    }
   }
   
   // Карточки действий
