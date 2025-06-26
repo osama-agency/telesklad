@@ -359,8 +359,10 @@
   }
 }
 
-/* Стили для карточек товаров в результатах Algolia */
-.product-card {
+/* Стили для карточек товаров ТОЛЬКО в результатах Algolia */
+.search-page .product-card,
+.search-results-grid .product-card,
+.algolia-search-wrapper .product-card {
   background: white;
   border-radius: 12px;
   overflow: hidden;
