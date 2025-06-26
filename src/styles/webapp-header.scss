@@ -210,7 +210,8 @@
   line-height: 16px; /* Корректируем line-height */
   text-align: center;
   border-radius: 10px; /* Увеличиваем для компенсации обводки */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1),
+              inset 0 0 0 1px #F9F9F9; /* Внутренняя обводка светло-серая */
   border: 2px solid #fff; /* Добавляем белую обводку */
 }
 
@@ -220,7 +221,8 @@
 .header-action-button:has(svg[fill="currentColor"]) .header-action-badge {
   background: #48C928; /* Зеленый фон */
   border: 2px solid #fff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15),
+              inset 0 0 0 1px #F9F9F9; /* Внутренняя обводка светло-серая */
 }
 
 // Адаптация контента под fixed header убрана для единого фона

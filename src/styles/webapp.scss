@@ -862,15 +862,18 @@ html, body {
    🚀 MODERN PRODUCT CARDS - 2025 CLEAN DESIGN
    =============================================== */
 
+/* Основные стили для карточек товаров с более высокой специфичностью */
+.product-catalog .product-grid .product-card .product-wrapper,
+.webapp-container .product-grid .product-card .product-wrapper,
 .product-wrapper {
   /* Clean White Background */
-  background: #ffffff;
+  background: #ffffff !important;
   
   /* Modern Border with subtle color */
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
   
   /* Adaptive Border Radius - не переборщить на мобильных */
-  border-radius: clamp(12px, 3vw, 20px);
+  border-radius: clamp(12px, 3vw, 20px) !important;
   
   /* Modern Shadow Stack - мягкие тени для глубины */
   box-shadow: 
@@ -879,17 +882,17 @@ html, body {
     /* Secondary shadow - легкая тень для определения границ */
     0 1px 3px rgba(0, 0, 0, 0.04),
     /* Subtle green accent on hover (через переменную) */
-    var(--product-hover-shadow, 0 0 0 0 transparent);
+    var(--product-hover-shadow, 0 0 0 0 transparent) !important;
   
   /* Generous Padding for breathing room */
-  padding: clamp(16px, 4vw, 24px);
+  padding: clamp(16px, 4vw, 24px) !important;
   position: relative;
   
   /* Smooth Transitions */
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   
   /* Ensure shadows are visible */
-  overflow: visible;
+  overflow: visible !important;
   
   /* 🎯 INTERACTION STATES - Clean & Modern */
   
@@ -897,7 +900,7 @@ html, body {
   @media (hover: hover) {
     &:hover {
       /* Gentle lift */
-      transform: translateY(-3px);
+      transform: translateY(-3px) !important;
       
       /* Enhanced shadows for depth */
       box-shadow: 
@@ -906,42 +909,42 @@ html, body {
         /* Soft shadow */
         0 2px 8px rgba(0, 0, 0, 0.06),
         /* Green accent glow - subtle */
-        0 0 0 1px rgba(72, 201, 40, 0.08);
+        0 0 0 1px rgba(72, 201, 40, 0.08) !important;
       
       /* Subtle border enhancement */
-      border-color: rgba(72, 201, 40, 0.15);
+      border-color: rgba(72, 201, 40, 0.15) !important;
       
       /* Keep background white */
-      background: #ffffff;
+      background: #ffffff !important;
     }
   }
   
   /* Touch State - Mobile Optimized */
   &:active {
-    transform: scale(0.98);
+    transform: scale(0.98) !important;
     transition-duration: 0.1s;
     
     /* Pressed state shadow */
     box-shadow: 
       0 2px 8px rgba(0, 0, 0, 0.08),
-      0 1px 2px rgba(0, 0, 0, 0.04);
+      0 1px 2px rgba(0, 0, 0, 0.04) !important;
     
     /* Keep background white */
-    background: #ffffff;
+    background: #ffffff !important;
   }
   
   /* 🚫 OUT OF STOCK STATE - Clean Disabled Design */
   &.out-of-stock {
     /* Light gray background */
-    background: #f8f8f8;
+    background: #f8f8f8 !important;
     
     /* Subtle Border */
-    border: 1px solid rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.04) !important;
     
     /* Softer shadows */
     box-shadow: 
       0 2px 8px rgba(0, 0, 0, 0.04),
-      0 1px 2px rgba(0, 0, 0, 0.02);
+      0 1px 2px rgba(0, 0, 0, 0.02) !important;
     
     .product-img {
       opacity: 0.5;
@@ -957,19 +960,28 @@ html, body {
     /* Minimal hover for disabled items */
     @media (hover: hover) {
       &:hover {
-        transform: translateY(-1px);
+        transform: translateY(-1px) !important;
         
         box-shadow: 
           0 4px 12px rgba(0, 0, 0, 0.06),
-          0 1px 3px rgba(0, 0, 0, 0.03);
+          0 1px 3px rgba(0, 0, 0, 0.03) !important;
         
         /* Keep disabled background */
-        background: #f8f8f8;
+        background: #f8f8f8 !important;
       }
     }
   }
 }
 
+/* Исключаем Algolia поиск из стилей каталога */
+.search-page .product-card .product-wrapper,
+.search-results-grid .product-card .product-wrapper,
+.algolia-search-wrapper .product-card .product-wrapper {
+  /* Algolia использует свои стили */
+  all: revert;
+}
+
+/* Стили для изображения товара */
 .product-wrapper .product-img {
   height: 172px;
   overflow: hidden;
@@ -3498,7 +3510,7 @@ html, body {
   background: linear-gradient(135deg, #ffffff 0%, #f8fff8 100%);
   border: 1px solid rgba(72, 201, 40, 0.1);
   border-radius: 20px;
-  padding: var(--space-20);
+  padding: 20px;
   margin: 0; /* убираем margin, используем gap родителя */
   box-shadow: 
     0px 4px 16px rgba(61, 68, 83, 0.06),
@@ -9440,3 +9452,4 @@ html {
   margin-top: var(--space-12) !important; /* 8-12px отступ сверху */
 }
 @import "./webapp-catalog-optimization.scss";
+
