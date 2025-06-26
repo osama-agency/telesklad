@@ -1,0 +1,993 @@
+/* ====================================
+   Algolia InstantSearch Styles
+   ==================================== */
+
+/* Wrapper для Algolia поиска */
+.algolia-search-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+/* Стили для результатов поиска в хедере */
+.search-results-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-height: 70vh; /* Увеличиваем высоту до 70% экрана */
+  overflow: hidden;
+  z-index: 1000;
+  margin-top: 4px;
+  
+  .search-results-root {
+    padding: 0;
+  }
+  
+  .search-results {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: calc(70vh - 60px); /* Оставляем место для кнопки */
+    overflow-y: auto;
+    /* Добавляем отступ внизу для визуального разделения */
+    padding-bottom: 12px;
+    
+    /* Стили для скроллбара */
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: #ddd;
+      border-radius: 2px;
+    }
+    
+    &::-webkit-scrollbar-thumb:hover {
+      background: #bbb;
+    }
+  }
+  
+  /* Удалено - границы теперь в основном стиле .search-result-item */
+}
+
+/* Стили для элементов результатов поиска */
+.search-result-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  background: white;
+  border-bottom: 1px solid #f0f0f0;
+  
+  &:last-child {
+    border-bottom: none;
+    /* Добавляем дополнительный отступ снизу для последнего элемента */
+    margin-bottom: 8px;
+    
+    /* Добавляем тонкую завершающую линию для визуального закрытия списка */
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 16px;
+      right: 16px;
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(72, 201, 40, 0.15), transparent);
+    }
+  }
+  
+  &:hover {
+    background-color: #f8f9fa;
+    transform: translateX(2px);
+  }
+  
+  .search-result-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-right: 12px;
+    flex-shrink: 0;
+    background: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    .product-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .product-image-placeholder {
+      color: #999;
+    }
+  }
+  
+  .search-result-info {
+    flex: 1;
+    min-width: 0;
+    
+    .search-result-name {
+      font-weight: 500;
+      font-size: 14px;
+      color: #333;
+      margin-bottom: 2px;
+      line-height: 1.3;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    .search-result-category {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 4px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    .search-result-price {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      
+      .price-current {
+        font-weight: 600;
+        color: #48C928;
+        font-size: 14px;
+      }
+      
+      .price-old {
+        text-decoration: line-through;
+        color: #999;
+        font-size: 12px;
+      }
+    }
+  }
+  
+  .search-result-arrow {
+    color: #ccc;
+    margin-left: 8px;
+    flex-shrink: 0;
+  }
+}
+
+/* Стили для полной страницы поиска */
+.search-page {
+  
+  .search-header-section {
+    padding: 16px 0;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 16px;
+    
+    .search-query-info {
+      h1 {
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #333;
+      }
+      
+      .search-query {
+        font-size: 16px;
+        color: #666;
+        margin-bottom: 8px;
+      }
+    }
+  }
+  
+  .search-input-section {
+    margin-bottom: 20px;
+    
+    .search-box-wrapper {
+      position: relative;
+      
+      .search-form {
+        display: flex;
+        align-items: center;
+      }
+      
+      .search-input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        font-size: 16px;
+        outline: none;
+        
+        &:focus {
+          border-color: #48C928;
+          box-shadow: 0 0 0 3px rgba(72, 201, 40, 0.1);
+        }
+      }
+      
+      .search-submit-btn,
+      .search-reset-btn {
+        position: absolute;
+        right: 12px;
+        background: none;
+        border: none;
+        padding: 4px;
+        cursor: pointer;
+        color: #666;
+        
+        &:hover {
+          color: #48C928;
+        }
+      }
+    }
+  }
+  
+  .search-filters-section {
+    margin-bottom: 20px;
+    
+    .current-refinements {
+      margin-bottom: 16px;
+      
+      .current-refinements-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      
+      .current-refinement-item {
+        background: #e8f5e8;
+        border-radius: 20px;
+        padding: 6px 12px;
+        font-size: 14px;
+        color: #48C928;
+        
+                  .current-refinement-delete {
+            margin-left: 8px;
+            background: none;
+            border: none;
+            color: #48C928;
+            cursor: pointer;
+            padding: 0;
+          
+          &:hover {
+            color: #d32f2f;
+          }
+        }
+      }
+    }
+    
+    .refinement-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      
+      .refinement-list {
+        .refinement-items {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+        }
+        
+        .refinement-item {
+          margin-bottom: 8px;
+          
+          .refinement-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #333;
+            
+            &:hover {
+              color: #48C928;
+            }
+          }
+          
+          .refinement-checkbox {
+            accent-color: #48C928;
+          }
+          
+          .refinement-count {
+            color: #666;
+            font-size: 12px;
+            margin-left: auto;
+          }
+          
+          &.refinement-item--selected {
+            .refinement-text {
+              font-weight: 600;
+              color: #48C928;
+            }
+          }
+        }
+      }
+      
+      .clear-refinements {
+        .clear-refinements-button {
+          background: #f44336;
+          color: white;
+          border: none;
+          padding: 8px 16px;
+          border-radius: 6px;
+          font-size: 14px;
+          cursor: pointer;
+          
+          &:hover {
+            background: #d32f2f;
+          }
+          
+          &.clear-refinements-button--disabled {
+            background: #ccc;
+            cursor: not-allowed;
+          }
+        }
+      }
+    }
+  }
+  
+  .search-content-section {
+    .search-results-grid {
+      .products-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        
+        @media (max-width: 768px) {
+          grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+          gap: 12px;
+        }
+      }
+      
+      .product-grid-item {
+        // Стили унаследованы от существующих product-card стилей
+      }
+    }
+  }
+}
+
+/* Стили для карточек товаров ТОЛЬКО в результатах Algolia */
+.search-page .product-card,
+.search-results-grid .product-card,
+.algolia-search-wrapper .product-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  }
+  
+  .product-image-wrapper {
+    position: relative;
+    padding-top: 75%; // 4:3 aspect ratio
+    background: #f8f9fa;
+    
+    .product-image {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .product-image-placeholder {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #ccc;
+    }
+    
+    .stock-indicator {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      
+      &.in-stock {
+        background: #4caf50;
+        color: white;
+      }
+      
+      &.out-of-stock {
+        background: #f44336;
+        color: white;
+      }
+    }
+  }
+  
+  .product-info {
+    padding: 12px;
+    
+    .product-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 4px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      line-height: 1.3;
+    }
+    
+    .product-category {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    
+    .product-pricing {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+      
+      .current-price {
+        font-size: 16px;
+        font-weight: 700;
+        color: #48C928;
+      }
+      
+      .old-price {
+        font-size: 12px;
+        color: #999;
+        text-decoration: line-through;
+      }
+    }
+    
+    .stock-info {
+      font-size: 11px;
+      color: #666;
+    }
+  }
+}
+
+/* Статистика поиска */
+.search-stats {
+  font-size: 14px;
+  color: #666;
+  margin-top: 4px;
+}
+
+/* ====================================
+   Улучшенные стили для стандартного поиска
+   ==================================== */
+
+/* Иконка поиска с анимацией */
+.search-icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+  
+  &:hover {
+    color: #48C928 !important;
+  }
+}
+
+/* ====================================
+   Современный футер результатов поиска
+   ==================================== */
+
+.search-result-footer {
+  /* CSS кастомные свойства для централизованного управления стилями */
+  --footer-bg-start: #fafafa;
+  --footer-bg-end: #f8f9fa;
+  --footer-border: #f0f0f0;
+  --footer-shadow: rgba(0, 0, 0, 0.08);
+  --primary-color: #48C928;
+  --primary-hover: #3AA120;
+  --primary-active: #2E8B1C;
+  --text-primary: #333;
+  --text-secondary: #666;
+  --border-radius: 12px;
+  --spacing-unit: 4px;
+  
+  /* Контейнер футера */
+  border-top: 2px solid var(--footer-border);
+  background: linear-gradient(to bottom, var(--footer-bg-start), var(--footer-bg-end));
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  box-shadow: 0 calc(-1 * var(--spacing-unit)) calc(3 * var(--spacing-unit)) var(--footer-shadow);
+  margin-top: calc(2 * var(--spacing-unit));
+  
+  /* Декоративная разделительная линия */
+  &::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: calc(4 * var(--spacing-unit));
+    right: calc(4 * var(--spacing-unit));
+    height: 1px;
+    background: linear-gradient(
+      to right, 
+      transparent, 
+      var(--primary-color), 
+      transparent
+    );
+    opacity: 0.3;
+  }
+  
+  /* Основная кнопка */
+  .search-view-all-button {
+    /* Макет и позиционирование */
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: calc(3 * var(--spacing-unit));
+    padding: calc(4 * var(--spacing-unit)) calc(5 * var(--spacing-unit));
+    
+    /* Сброс стилей кнопки */
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+    
+    /* Анимация и переходы */
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    
+    /* Типографика */
+    font-family: inherit;
+    line-height: 1.4;
+    text-align: left;
+    
+    /* Декоративный индикатор сверху */
+    &::after {
+      content: '';
+      position: absolute;
+      top: calc(2 * var(--spacing-unit));
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(10 * var(--spacing-unit));
+      height: calc(1 * var(--spacing-unit) - 1px);
+      background: var(--primary-color);
+      border-radius: calc(0.5 * var(--spacing-unit));
+      opacity: 0.3;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    /* Состояния интерактивности */
+    &:hover {
+      background: linear-gradient(
+        to bottom, 
+        rgba(72, 201, 40, 0.05), 
+        rgba(72, 201, 40, 0.08)
+      );
+      transform: translateY(-1px);
+      
+      &::after {
+        opacity: 0.6;
+        width: calc(15 * var(--spacing-unit));
+      }
+      
+      .search-button-icon {
+        color: var(--primary-hover);
+        transform: scale(1.1);
+      }
+      
+      .search-button-text {
+        color: var(--text-primary);
+      }
+      
+      .search-query-highlight {
+        background: rgba(72, 201, 40, 0.1);
+      }
+    }
+    
+    &:active {
+      background: rgba(72, 201, 40, 0.1);
+      transform: translateY(0);
+    }
+    
+    /* Состояние фокуса для accessibility */
+    &:focus-visible {
+      outline: 2px solid var(--primary-color);
+      outline-offset: 2px;
+    }
+  }
+  
+  /* Иконка кнопки */
+  .search-button-icon {
+    flex-shrink: 0;
+    color: var(--primary-color);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-top: 1px; /* Выравнивание с первой строкой текста */
+  }
+  
+  /* Контейнер текста */
+  .search-button-text {
+    flex: 1;
+    min-width: 0; /* Позволяет тексту сжиматься */
+    color: var(--text-secondary);
+    transition: color 0.2s ease;
+    
+    /* Используем CSS Grid для лучшего контроля над макетом */
+    display: grid;
+    gap: 2px;
+    grid-template-rows: auto auto;
+  }
+  
+  /* Основной текст действия */
+  .search-button-action {
+    font-size: clamp(14px, 3.5vw, 15px);
+    font-weight: 600;
+    color: var(--primary-color);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  
+  /* Текст с запросом */
+  .search-button-query {
+    font-size: clamp(12px, 3vw, 13px);
+    font-weight: 400;
+    color: var(--text-secondary);
+    line-height: 1.3;
+    
+    /* Контролируем перенос длинного текста */
+    word-break: break-word;
+    hyphens: auto;
+    
+    /* Ограничиваем количество строк на мобильных */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  /* Выделение запроса */
+  .search-query-highlight {
+    font-weight: 500;
+    color: var(--text-primary);
+    background: rgba(72, 201, 40, 0.05);
+    padding: 1px 3px;
+    border-radius: 3px;
+    transition: background-color 0.2s ease;
+    
+    /* Обрезаем очень длинные запросы */
+    max-width: 120px;
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: baseline;
+  }
+}
+
+/* Улучшенное состояние "Ничего не найдено" */
+.search-no-results {
+  padding: 20px 16px;
+  
+  .search-no-results-content {
+    text-align: center;
+    
+    .search-no-results-icon {
+      color: #ccc;
+      margin-bottom: 12px;
+    }
+    
+    .search-no-results-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+    }
+    
+    .search-no-results-subtitle {
+      font-size: 14px;
+      color: #666;
+      line-height: 1.4;
+      margin-bottom: 16px;
+    }
+    
+    .search-try-advanced-button {
+      /* Современная кнопка с использованием CSS переменных */
+      background: var(--primary-color, #48C928);
+      color: white;
+      border: none;
+      padding: calc(2.5 * var(--spacing-unit, 4px)) calc(5 * var(--spacing-unit, 4px));
+      border-radius: calc(2 * var(--spacing-unit, 4px));
+      cursor: pointer;
+      
+      /* Современная типографика */
+      font-family: inherit;
+      font-size: clamp(14px, 3.5vw, 15px);
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+      
+      /* Анимация и интерактивность */
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      
+      /* Accessibility */
+      &:focus-visible {
+        outline: 2px solid var(--primary-color, #48C928);
+        outline-offset: 2px;
+      }
+      
+      /* Состояния */
+      &:hover {
+        background: var(--primary-hover, #3AA120);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(72, 201, 40, 0.3);
+      }
+      
+      &:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 6px rgba(72, 201, 40, 0.3);
+      }
+      
+      /* Структурированный текст */
+      .search-advanced-text {
+        display: block;
+        position: relative;
+        z-index: 1;
+      }
+      
+      /* Анимированный фон при hover */
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.1),
+          transparent
+        );
+        transition: left 0.5s ease;
+      }
+      
+      &:hover::before {
+        left: 100%;
+      }
+    }
+  }
+}
+
+/* Анимация загрузки для мини-спиннера */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Улучшения для Telegram WebApp */
+@media (max-width: 768px) {
+  .search-results-dropdown {
+    border-radius: 8px;
+    margin-top: 2px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    max-height: 75vh; /* Увеличиваем для мобильных */
+    
+    .search-results {
+      max-height: calc(75vh - 60px); /* Оставляем место для кнопки */
+      /* Улучшенная прокрутка для мобильных */
+      -webkit-overflow-scrolling: touch;
+      /* Добавляем отступ внизу для мобильных */
+      padding-bottom: 16px;
+      
+      /* Стили скроллбара для мобильных */
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+      
+      &::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      
+      &::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 3px;
+      }
+      
+      &::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 0, 0, 0.3);
+      }
+    }
+    
+    .search-result-item {
+      padding: 14px 16px;
+      /* Оптимизация для touch устройств */
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+      
+      &:hover {
+        transform: none; // Убираем transform на мобильных
+      }
+      
+      &:active {
+        background-color: #f5f5f5;
+      }
+      
+      .search-result-image {
+        width: 44px;
+        height: 44px;
+        border-radius: 8px;
+      }
+      
+      .search-result-info {
+        margin-right: 8px;
+        
+        .search-result-name {
+          font-size: 15px;
+          line-height: 1.4;
+          font-weight: 600;
+        }
+        
+        .search-result-category {
+          font-size: 13px;
+          margin-bottom: 6px;
+        }
+        
+        .search-result-price {
+          .price-current {
+            font-size: 16px;
+            font-weight: 700;
+          }
+          
+          .price-old {
+            font-size: 13px;
+          }
+        }
+      }
+      
+      .search-result-arrow {
+        margin-left: 4px;
+      }
+    }
+    
+    .search-result-footer {
+      /* Адаптивные переменные для мобильных */
+      --mobile-spacing: 5px;
+      --mobile-border-radius: 8px;
+      
+      /* Усиливаем визуальное разделение на мобильных */
+      border-top: 3px solid var(--footer-border);
+      margin-top: calc(3 * var(--mobile-spacing));
+      box-shadow: 0 calc(-1.5 * var(--mobile-spacing)) calc(4 * var(--mobile-spacing)) rgba(0, 0, 0, 0.1);
+      
+      &::before {
+        left: var(--mobile-spacing);
+        right: var(--mobile-spacing);
+        height: 2px;
+        opacity: 0.4;
+      }
+      
+      .search-view-all-button {
+        padding: calc(3.5 * var(--mobile-spacing)) var(--mobile-spacing);
+        gap: calc(2.5 * var(--mobile-spacing));
+        border-radius: 0 0 var(--mobile-border-radius) var(--mobile-border-radius);
+        
+        /* Улучшенный декоративный индикатор для мобильных */
+        &::after {
+          top: calc(2 * var(--mobile-spacing));
+          width: calc(12 * var(--mobile-spacing));
+          height: calc(0.8 * var(--mobile-spacing));
+        }
+        
+        &:hover::after {
+          width: calc(18 * var(--mobile-spacing));
+        }
+      }
+      
+      /* Мобильная типографика */
+      .search-button-action {
+        font-size: clamp(15px, 4vw, 16px);
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      
+      .search-button-query {
+        font-size: clamp(13px, 3.5vw, 14px);
+        line-height: 1.4;
+        
+        /* Более жесткие ограничения на мобильных */
+        -webkit-line-clamp: 1;
+      }
+      
+      .search-query-highlight {
+        max-width: 100px; /* Меньше места на мобильных */
+        font-size: inherit;
+      }
+      
+      /* Улучшенная иконка для мобильных */
+      .search-button-icon {
+        margin-top: 2px;
+        
+        svg {
+          width: 18px;
+          height: 18px;
+        }
+      }
+    }
+    
+    .search-no-results {
+      padding: 32px 20px;
+      
+      .search-no-results-content {
+        .search-no-results-icon {
+          margin-bottom: 16px;
+        }
+        
+        .search-no-results-title {
+          font-size: 18px;
+          margin-bottom: 12px;
+        }
+        
+        .search-no-results-subtitle {
+          font-size: 15px;
+          line-height: 1.5;
+          margin-bottom: 20px;
+        }
+        
+        .search-try-advanced-button {
+          padding: calc(3.5 * var(--mobile-spacing, 5px)) calc(7 * var(--mobile-spacing, 5px));
+          border-radius: calc(2.5 * var(--mobile-spacing, 5px));
+          
+          .search-advanced-text {
+            font-size: clamp(15px, 4vw, 16px);
+            font-weight: 600;
+          }
+        }
+      }
+    }
+  }
+  
+  // Улучшения для мини-спиннера на мобильных
+  .search-loading-icon {
+    .spinner-mini {
+      width: 18px;
+      height: 18px;
+    }
+  }
+}
+
+/* Улучшенная анимация появления результатов */
+.search-results-dropdown {
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Удалено - hover эффекты теперь в основном стиле .search-result-item */ 

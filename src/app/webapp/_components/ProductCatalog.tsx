@@ -27,12 +27,11 @@ interface Subscription {
 }
 
 interface ProductCatalogProps {
-  showSearch?: boolean;
+  // Удаляем showSearch prop
 }
 
-export function ProductCatalog({ showSearch = false }: ProductCatalogProps) {
+export function ProductCatalog({}: ProductCatalogProps) {
   console.log('🏗️ ProductCatalog render', { 
-    showSearch, 
     timestamp: new Date().toISOString().split('T')[1].split('.')[0] 
   });
 
@@ -145,13 +144,6 @@ export function ProductCatalog({ showSearch = false }: ProductCatalogProps) {
 
   return (
     <div className="product-catalog">
-      {/* Header with Search - только на главной странице */}
-      {showSearch && (
-        <header className="catalog-header full-width">
-          <AlgoliaModernSearch />
-        </header>
-      )}
-
       {/* Category Filter - современный фильтр под поиском */}
       <CategoryFilter 
         selectedCategory={selectedCategory}

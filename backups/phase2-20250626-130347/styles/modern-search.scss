@@ -1,0 +1,537 @@
+/* ====================================
+   Современный поисковый диалог
+   ==================================== */
+
+/* CSS переменные для зеленой темы */
+:root {
+  --search-primary: #48C928;
+  --search-primary-hover: #3AA120;
+  --search-primary-active: #2E8B1C;
+  --search-primary-light: rgba(72, 201, 40, 0.1);
+  --search-primary-lighter: rgba(72, 201, 40, 0.05);
+  --search-text-primary: #333;
+  --search-text-secondary: #666;
+  --search-text-muted: #94a3b8;
+  --search-border: #e2e8f0;
+  --search-bg: #ffffff;
+  --search-bg-hover: #f8fafc;
+  --search-radius: 12px;
+  --search-radius-sm: 8px;
+  --search-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --search-shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* Кнопка-триггер для открытия поиска */
+.modern-search-trigger {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--search-border);
+  border-radius: var(--search-radius);
+  padding: 8px 12px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  font-family: inherit;
+  
+  &:hover {
+    border-color: var(--search-primary);
+    box-shadow: 0 0 0 3px var(--search-primary-light);
+  }
+  
+  &:focus-visible {
+    outline: none;
+    border-color: var(--search-primary);
+    box-shadow: 0 0 0 3px var(--search-primary-light);
+  }
+}
+
+.modern-search-trigger-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.modern-search-trigger-text {
+  flex: 1;
+  text-align: left;
+  color: var(--search-text-muted);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.modern-search-trigger-shortcut {
+  background: #f1f5f9;
+  border: 1px solid var(--search-border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 11px;
+  color: var(--search-text-muted);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.modern-search-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  color: var(--search-text-secondary);
+  font-size: 14px;
+}
+
+.modern-search-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #f3f4f6;
+  border-top: 2px solid var(--search-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Кастомизация CommandDialog */
+[data-radix-dialog-overlay] {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+[data-radix-dialog-content] {
+  background: var(--search-bg);
+  border: 1px solid var(--search-border);
+  border-radius: var(--search-radius);
+  box-shadow: var(--search-shadow-lg);
+  max-width: 640px;
+  width: 90vw;
+  max-height: 80vh;
+  overflow: hidden;
+}
+
+/* Command Input стилизация */
+[cmdk-input] {
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 16px 20px;
+  font-size: 16px;
+  color: var(--search-text-primary);
+  caret-color: var(--search-primary);
+  
+  &::placeholder {
+    color: var(--search-text-muted);
+  }
+  
+  &:focus {
+    outline: none;
+    box-shadow: none;
+  }
+}
+
+/* Command List */
+[cmdk-list] {
+  max-height: 400px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding: 8px;
+  
+  /* Кастомный скроллбар */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: #ddd;
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background: #bbb;
+  }
+}
+
+/* Command Group Headers */
+[cmdk-group-heading] {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--search-text-secondary);
+  padding: 8px 12px 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Command Items */
+[cmdk-item] {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--search-radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+  margin-bottom: 2px;
+  
+  &:hover,
+  &[data-selected="true"] {
+    background: var(--search-primary-lighter);
+    border-color: var(--search-primary-light);
+  }
+  
+  &:active {
+    background: var(--search-primary-light);
+    transform: scale(0.98);
+  }
+  
+  /* Иконки в items */
+  svg {
+    color: var(--search-primary);
+    flex-shrink: 0;
+  }
+  
+  /* Текст в items */
+  span {
+    color: var(--search-text-primary);
+    font-size: 14px;
+    line-height: 1.4;
+  }
+}
+
+/* Command Separator */
+[cmdk-separator] {
+  height: 1px;
+  background: var(--search-border);
+  margin: 8px 0;
+}
+
+/* Command Empty */
+[cmdk-empty] {
+  padding: 24px;
+  text-align: center;
+}
+
+/* Стилизация элементов поиска */
+.modern-search-item {
+  padding: 16px 12px;
+  gap: 16px;
+  min-height: 80px;
+  align-items: flex-start;
+  
+  &:hover {
+    background: var(--search-bg-hover);
+    border-color: var(--search-primary);
+    box-shadow: 0 2px 8px rgba(72, 201, 40, 0.1);
+  }
+}
+
+.modern-search-item-image {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--search-radius-sm);
+  overflow: hidden;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  
+  .product-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .product-image-placeholder {
+    color: var(--search-text-muted);
+  }
+}
+
+.modern-search-item-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.modern-search-item-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.modern-search-item-name {
+  font-weight: 600;
+  color: var(--search-text-primary);
+  font-size: 15px;
+  line-height: 1.3;
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.modern-search-item-badge {
+  flex-shrink: 0;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  
+  &[data-variant="default"] {
+    background: var(--search-primary-light);
+    color: var(--search-primary);
+    border: 1px solid var(--search-primary);
+  }
+  
+  &[data-variant="secondary"] {
+    background: #fef3c7;
+    color: #d97706;
+    border: 1px solid #f59e0b;
+  }
+  
+  &[data-variant="destructive"] {
+    background: #fee2e2;
+    color: #dc2626;
+    border: 1px solid #ef4444;
+  }
+}
+
+.modern-search-item-category {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--search-text-secondary);
+  
+  svg {
+    color: var(--search-text-muted);
+  }
+}
+
+.modern-search-item-price {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  .price-current {
+    font-weight: 700;
+    color: var(--search-primary);
+    font-size: 16px;
+  }
+  
+  .price-old {
+    font-size: 13px;
+    color: var(--search-text-muted);
+    text-decoration: line-through;
+  }
+}
+
+.modern-search-item-arrow {
+  color: var(--search-text-muted);
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.modern-search-item:hover .modern-search-item-arrow {
+  color: var(--search-primary);
+  transform: translateX(2px);
+}
+
+/* View All стили */
+.modern-search-view-all {
+  background: var(--search-primary-lighter);
+  border: 1px solid var(--search-primary-light);
+  border-radius: var(--search-radius-sm);
+  margin: 4px 0;
+  
+  &:hover {
+    background: var(--search-primary-light);
+    border-color: var(--search-primary);
+  }
+}
+
+.modern-search-view-all-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  flex: 1;
+}
+
+.modern-search-view-all-action {
+  font-weight: 600;
+  color: var(--search-primary);
+  font-size: 14px;
+}
+
+.modern-search-view-all-query {
+  font-size: 12px;
+  color: var(--search-text-secondary);
+}
+
+/* Empty State */
+.modern-search-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 24px;
+  
+  svg {
+    color: var(--search-text-muted);
+    opacity: 0.5;
+  }
+}
+
+.modern-search-empty-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--search-text-primary);
+}
+
+.modern-search-empty-subtitle {
+  font-size: 14px;
+  color: var(--search-text-secondary);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.modern-search-empty-button {
+  background: var(--search-primary);
+  color: white;
+  border: none;
+  border-radius: var(--search-radius-sm);
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: var(--search-primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(72, 201, 40, 0.3);
+  }
+}
+
+/* Loading State */
+.modern-search-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+  color: var(--search-text-secondary);
+  font-size: 14px;
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 768px) {
+  [data-radix-dialog-content] {
+    width: 95vw;
+    max-height: 85vh;
+    border-radius: var(--search-radius-sm);
+  }
+  
+  [cmdk-input] {
+    padding: 16px;
+    font-size: 16px; /* Предотвращает zoom на iOS */
+  }
+  
+  .modern-search-item {
+    padding: 14px 12px;
+    min-height: 72px;
+  }
+  
+  .modern-search-item-image {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .modern-search-item-name {
+    font-size: 14px;
+  }
+  
+  .modern-search-item-price .price-current {
+    font-size: 15px;
+  }
+  
+  .modern-search-empty {
+    padding: 24px 16px;
+  }
+  
+  .modern-search-empty-title {
+    font-size: 16px;
+  }
+  
+  .modern-search-empty-subtitle {
+    font-size: 13px;
+  }
+}
+
+/* Dark mode support (если потребуется) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --search-text-primary: #f1f5f9;
+    --search-text-secondary: #cbd5e1;
+    --search-text-muted: #64748b;
+    --search-border: #334155;
+    --search-bg: #1e293b;
+    --search-bg-hover: #334155;
+  }
+  
+  [data-radix-dialog-overlay] {
+    background: rgba(0, 0, 0, 0.7);
+  }
+  
+  .modern-search-item-image {
+    background: #334155;
+  }
+}
+
+/* Анимация появления диалога */
+@keyframes dialogContentShow {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+[data-radix-dialog-content] {
+  animation: dialogContentShow 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Улучшенная типографика */
+[cmdk-root] {
+  font-family: inherit;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Кастомные focus стили */
+[cmdk-item]:focus-visible {
+  outline: 2px solid var(--search-primary);
+  outline-offset: 2px;
+}
+
+[cmdk-input]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--search-primary);
+} 

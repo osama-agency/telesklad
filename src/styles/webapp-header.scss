@@ -1,0 +1,327 @@
+// Стили для универсального Header компонента
+.webapp-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: #f9f9f9;
+  border-bottom: none;
+  transition: all 0.2s ease;
+
+  &.scrolled {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  }
+
+  &-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  &-search {
+    flex: 1;
+    min-width: 0; // Позволяет поиску сжиматься
+
+    // Переопределяем стили AlgoliaModernSearch для компактности
+    .algolia-modern-search {
+      margin: 0;
+    }
+
+    .algolia-search-box {
+      height: 36px;
+      border-radius: 20px;
+      background: #f5f5f5;
+      border: 1px solid transparent;
+
+      &:focus-within {
+        background: #f8f8f8;
+        border-color: #e0e0e0;
+      }
+
+      .search-input {
+        font-size: 14px;
+        padding: 0 36px;
+        
+        /* Убираем все возможные обводки */
+        &:focus,
+        &:active,
+        &:hover,
+        &:focus-visible {
+          outline: none !important;
+          border: none !important;
+          box-shadow: none !important;
+        }
+      }
+
+      .search-icon-wrapper {
+        left: 12px;
+        svg {
+          width: 18px;
+          height: 18px;
+        }
+      }
+
+      .clear-button {
+        right: 8px;
+        width: 24px;
+        height: 24px;
+      }
+    }
+  }
+
+  &-actions {
+    display: flex;
+    gap: 4px;
+  }
+}
+
+// Кнопки действий в header
+.header-action-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  background: transparent;
+  transition: none !important; // Убираем ВСЕ анимации
+  color: #666;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+
+  &:hover {
+    background-color: transparent !important;
+    transform: none !important;
+    color: #666 !important; // Цвет НЕ меняется при наведении
+  }
+
+  &:active {
+    transform: none !important;
+    background-color: transparent !important;
+    color: #666 !important; // Цвет НЕ меняется при клике
+  }
+
+  &:focus,
+  &:focus-visible,
+  &:focus-within {
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+  }
+
+  &:visited {
+    color: #666;
+    text-decoration: none;
+  }
+
+  &.active {
+    color: #48C928 !important; // Только активная страница имеет зеленый цвет
+    background-color: transparent !important;
+    
+    &:hover,
+    &:active {
+      color: #48C928 !important; // Сохраняем зеленый цвет для активной страницы
+    }
+  }
+
+  &.profile-button {
+    padding: 0;
+  }
+
+  /* Убираем все стандартные стили ссылок */
+  &:link,
+  &:visited,
+  &:hover,
+  &:active {
+    text-decoration: none !important;
+    outline: none !important;
+    border: none !important;
+  }
+}
+
+.header-action-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+
+  svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+// Аватар профиля в header
+.header-profile-avatar {
+  width: 24px; /* Уменьшили до 24px для единообразия */
+  height: 24px; /* Уменьшили до 24px для единообразия */
+  border-radius: 50%;
+  object-fit: cover; /* Обеспечивает правильное масштабирование в круге */
+  border: 2px solid #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+// Бейдж для счетчика
+.header-action-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #ff4444;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+  border-radius: 9px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+// Адаптация контента под fixed header убрана для единого фона
+// .webapp-container {
+//   &:not(.cart-page) {
+//     padding-top: 56px; // Высота header + отступ - УБРАНО для исправления белой полосы
+//   }
+// }
+
+// Медиа запросы для мобильных устройств
+@media (max-width: 375px) {
+  .webapp-header {
+    &-container {
+      padding: 8px 12px;
+      gap: 8px;
+    }
+
+    &-search {
+      .algolia-search-box {
+        height: 34px;
+        
+        .search-input {
+          font-size: 13px;
+        }
+      }
+    }
+  }
+
+  .header-action-button {
+    width: 36px;
+    height: 36px;
+    
+    &:focus,
+    &:focus-visible {
+      outline: none !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+  }
+
+  .header-action-icon {
+    width: 22px;
+    height: 22px;
+
+    svg {
+      width: 22px;
+      height: 22px;
+    }
+  }
+
+  .header-profile-avatar {
+    width: 22px; /* Пропорционально уменьшили для мобильных */
+    height: 22px; /* Пропорционально уменьшили для мобильных */
+  }
+}
+
+// Для больших экранов
+@media (min-width: 768px) {
+  .webapp-header {
+    &-container {
+      max-width: 768px;
+      padding: 12px 24px;
+    }
+
+    &-search {
+      .algolia-search-box {
+        height: 40px;
+        
+        .search-input {
+          font-size: 15px;
+        }
+      }
+    }
+  }
+}
+
+// Темная тема (если потребуется)
+@media (prefers-color-scheme: dark) {
+  .webapp-header {
+    background: #1a1a1a;
+    border-bottom: none;
+
+    &.scrolled {
+      box-shadow: none;
+    }
+  }
+
+  .header-action-button {
+    color: #ccc;
+
+    &:hover {
+      background: #2a2a2a;
+    }
+
+    &:active {
+      background: #333;
+    }
+
+    &:focus,
+    &:focus-visible {
+      outline: none !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+
+    &.active {
+      color: #00c100;
+      background: #1a2f1a;
+    }
+  }
+}
+
+/* Глобальные правила для убирания обводок в header */
+.webapp-header {
+  *, *:before, *:after {
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  a, button, input, svg, img {
+    &:focus,
+    &:focus-visible,
+    &:focus-within,
+    &:active,
+    &:hover {
+      outline: none !important;
+      border: none !important;
+      box-shadow: none !important;
+      text-decoration: none !important;
+    }
+  }
+
+  /* Специально для иконок и изображений */
+  svg, img, .header-action-icon, .header-profile-avatar {
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+} 

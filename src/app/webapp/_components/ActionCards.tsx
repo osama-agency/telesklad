@@ -7,6 +7,7 @@ import { IconComponent } from '@/components/webapp/IconComponent';
 import DeliveryDataSheet from './DeliveryDataSheet';
 import SkeletonLoading from './SkeletonLoading';
 import SubscriptionsSheet from './SubscriptionsSheet';
+import SupportSheet from './SupportSheet';
 import toast from 'react-hot-toast';
 
 interface ActionCardItem {
@@ -46,16 +47,18 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
   const router = useRouter();
   const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState(false);
   const [isSubscriptionsModalOpen, setIsSubscriptionsModalOpen] = useState(false);
+  const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
+  const [supportMode, setSupportMode] = useState<'faq' | 'contact'>('faq');
 
   // Уведомляем о состоянии модальных окон для скрытия плашки корзины
   useEffect(() => {
-    const isAnyModalOpen = isDeliveryModalOpen || isSubscriptionsModalOpen;
+    const isAnyModalOpen = isDeliveryModalOpen || isSubscriptionsModalOpen || isSupportModalOpen;
     
     // Создаем кастомное событие для уведомления о состоянии модальных окон
     window.dispatchEvent(new CustomEvent('modalStateChanged', {
       detail: { isModalOpen: isAnyModalOpen }
     }));
-  }, [isDeliveryModalOpen, isSubscriptionsModalOpen]);
+  }, [isDeliveryModalOpen, isSubscriptionsModalOpen, isSupportModalOpen]);
 
   // Слушаем события обновления подписок
   const [currentSubscriptionsCount, setCurrentSubscriptionsCount] = useState(subscriptionsCount);
@@ -106,6 +109,19 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
     // Для карточки подписок открываем модальное окно
     if (id === 'subscriptions') {
       setIsSubscriptionsModalOpen(true);
+      return;
+    }
+    
+    // Для карточек поддержки открываем модальное окно с нужным режимом
+    if (id === 'faq') {
+      setSupportMode('faq');
+      setIsSupportModalOpen(true);
+      return;
+    }
+    
+    if (id === 'support-contact') {
+      setSupportMode('contact');  
+      setIsSupportModalOpen(true);
       return;
     }
     
@@ -203,9 +219,23 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
         count: ordersCount,
         text: 'активных',
         type: 'info'
-      } : undefined
-    }
-  ];
+              } : undefined
+      },
+      {
+        id: 'faq',
+        title: 'Частые вопросы',
+        description: 'Ответы на популярные вопросы',
+        icon: 'help-circle',
+        href: '#'
+      },
+      {
+        id: 'support-contact',
+        title: 'Связаться с поддержкой',
+        description: 'Telegram, время работы',
+        icon: 'support',
+        href: '#'
+      }
+    ];
 
   const getBadgeColors = (type: string) => {
     switch (type) {
@@ -294,8 +324,8 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
       );
     }
 
-    // Для карточек с навигацией (подписки и заказы)
-    if (item.id === 'subscriptions' || item.id === 'orders') {
+    // Для карточек с навигацией (подписки, заказы, FAQ, поддержка)
+    if (item.id === 'subscriptions' || item.id === 'orders' || item.id === 'faq' || item.id === 'support-contact') {
       return (
         <div 
           key={item.id}
@@ -334,6 +364,13 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
       <SubscriptionsSheet
         isOpen={isSubscriptionsModalOpen}
         onClose={() => setIsSubscriptionsModalOpen(false)}
+      />
+
+      {/* Модальное окно поддержки */}
+      <SupportSheet
+        isOpen={isSupportModalOpen}
+        onClose={() => setIsSupportModalOpen(false)}
+        mode={supportMode}
       />
     </>
   );

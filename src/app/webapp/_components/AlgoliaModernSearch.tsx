@@ -65,8 +65,8 @@ function CustomSearchBox({ onFocus, onBlur }: { onFocus: () => void; onBlur: () 
   };
 
   return (
-    <div className={`algolia-search-box ${isFocused ? 'focused' : ''}`}>
-      <div className="search-icon-wrapper">
+    <div className={`algolia-search-box flex items-center py-2 px-4 ${isFocused ? 'focused' : ''}`}>
+      <div className="search-icon-wrapper flex items-center justify-center">
         <IconComponent name="search" size={20} />
       </div>
       
@@ -85,7 +85,7 @@ function CustomSearchBox({ onFocus, onBlur }: { onFocus: () => void; onBlur: () 
         onFocus={handleFocus}
         onBlur={handleBlur}
         placeholder="Поиск лекарств и витаминов..."
-        className="search-input"
+        className="search-input flex-1 flex items-center"
         autoComplete="off"
         autoCorrect="off"
         autoCapitalize="off"
@@ -96,7 +96,7 @@ function CustomSearchBox({ onFocus, onBlur }: { onFocus: () => void; onBlur: () 
         <button
           type="button"
           onClick={handleClear}
-          className="clear-button"
+          className="clear-button flex items-center justify-center"
           aria-label="Очистить поиск"
         >
           <IconComponent name="close" size={18} />
@@ -319,8 +319,8 @@ function FallbackSearch() {
 
   return (
     <div className="algolia-modern-search fallback-mode" ref={searchRef}>
-      <div className={`algolia-search-box ${isFocused ? 'focused' : ''}`}>
-        <div className="search-icon-wrapper">
+      <div className={`algolia-search-box flex items-center py-2 px-4 ${isFocused ? 'focused' : ''}`}>
+        <div className="search-icon-wrapper flex items-center justify-center">
           <IconComponent name="search" size={20} />
         </div>
         
@@ -338,7 +338,7 @@ function FallbackSearch() {
             setTimeout(() => setIsFocused(false), 150);
           }}
           placeholder="Поиск лекарств и витаминов..."
-          className="search-input"
+          className="search-input flex-1 flex items-center"
           autoComplete="off"
         />
         
@@ -346,7 +346,7 @@ function FallbackSearch() {
           <button
             type="button"
             onClick={handleClear}
-            className="clear-button"
+            className="clear-button flex items-center justify-center"
             aria-label="Очистить поиск"
           >
             <IconComponent name="close" size={18} />

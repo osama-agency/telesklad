@@ -1,3 +1,282 @@
+/* Импорт стилей компонентов */
+@import "./webapp-header.scss";
+@import "./webapp-support.scss";
+@import "./telegram-webapp-spacing-fixes.scss";
+@import "./search-perfect-centering.scss";
+@import "./telegram-design-system.scss";
+
+@import "./telegram-adaptive-theme.scss";/* ГЛОБАЛЬНОЕ ОТКЛЮЧЕНИЕ ВСЕХ БРАУЗЕРНЫХ СТИЛЕЙ ФОКУСА */
+:root {
+  --webkit-focus-ring-color: transparent !important;
+  --webkit-tap-highlight-color: transparent !important;
+  
+  /* ПРИНУДИТЕЛЬНАЯ СВЕТЛАЯ ТЕМА - игнорируем Telegram themeParams */
+  color-scheme: light !important;
+  --tg-bg-color: #ffffff !important;
+  --tg-text-color: #000000 !important;
+  --tg-hint-color: #999999 !important;
+  --tg-link-color: #48C928 !important;
+  --tg-button-color: #48C928 !important;
+  --tg-button-text-color: #ffffff !important;
+}
+
+html, body {
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-focus-ring-color: transparent !important;
+  
+  /* Принудительная светлая тема */
+  color-scheme: light !important;
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+/* Убираем стандартные стили браузера для фокуса */
+*:focus,
+*:focus-visible,
+*:focus-within,
+*:active,
+*:hover {
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-focus-ring-color: transparent !important;
+}
+
+/* ПРИНУДИТЕЛЬНО ОТКЛЮЧАЕМ ТЕМНЫЕ ТЕМЫ */
+.tg-theme-dark,
+body.tg-theme-dark,
+html.tg-theme-dark {
+  color-scheme: light !important;
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+/* Переопределяем любые темные стили Telegram */
+@media (prefers-color-scheme: dark) {
+  :root, html, body {
+    color-scheme: light !important;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+}
+
+/* Убираем все обводки при фокусе и наведении */
+*, *::before, *::after {
+  outline: none !important;
+}
+
+button:focus, button:focus-visible,
+input:focus, input:focus-visible,
+textarea:focus, textarea:focus-visible,
+select:focus, select:focus-visible,
+a:focus, a:focus-visible,
+[tabindex]:focus, [tabindex]:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Специально для поля поиска - убираем все возможные обводки */
+.search-input, 
+.algolia-search-box input,
+input[type="search"],
+input[placeholder*="Поиск"],
+input[placeholder*="поиск"] {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+}
+
+.search-input:focus, 
+.algolia-search-box input:focus,
+input[type="search"]:focus,
+input[placeholder*="Поиск"]:focus,
+input[placeholder*="поиск"]:focus {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Убираем стандартные стили поиска WebKit */
+input[type="search"]::-webkit-search-decoration,
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-results-button,
+input[type="search"]::-webkit-search-results-decoration {
+  -webkit-appearance: none !important;
+  display: none !important;
+}
+
+/* Убираем стили автокомплита */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  border: none !important;
+}
+
+/* СУПЕР АГРЕССИВНОЕ ОТКЛЮЧЕНИЕ ОБВОДОК И АНИМАЦИЙ ДЛЯ HEADER */
+.webapp-header .header-action-button,
+.webapp-header .header-action-button.active,
+.webapp-header .header-action-button:focus,
+.webapp-header .header-action-button:focus-visible,
+.webapp-header .header-action-button:focus-within,
+.webapp-header .header-action-button:active,
+.webapp-header .header-action-button:hover,
+.webapp-header .header-action-button:visited,
+.webapp-header .header-action-button:link {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-focus-ring-color: transparent !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  
+  /* УБИРАЕМ ВСЕ АНИМАЦИИ */
+  transition: none !important;
+  transform: none !important;
+  background-color: transparent !important;
+}
+
+/* Специально для hover и active состояний */
+.webapp-header .header-action-button:hover,
+.webapp-header .header-action-button:active {
+  transform: none !important;
+  background-color: transparent !important;
+}
+
+/* Сохраняем только цвет для активной страницы */
+.webapp-header .header-action-button.active {
+  color: #48C928 !important;
+}
+
+.webapp-header .header-action-button.active:hover,
+.webapp-header .header-action-button.active:active {
+  color: #48C928 !important;
+}
+
+/* Для всех дочерних элементов кнопок header */
+.webapp-header .header-action-button *,
+.webapp-header .header-action-button svg,
+.webapp-header .header-action-button div,
+.webapp-header .header-action-button img {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Убираем стили фокуса для SVG иконок */
+.webapp-header svg,
+.webapp-header svg *,
+.webapp-header .lucide,
+.webapp-header .lucide *,
+.webapp-header .header-action-icon,
+.webapp-header .header-action-icon * {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* СУПЕР АГРЕССИВНОЕ ОТКЛЮЧЕНИЕ ДЛЯ TELEGRAM MAIN BUTTON */
+.tg-main-button,
+[class*="telegram"],
+[class*="tg-"],
+.telegram-cart-button,
+.telegram-checkout-button {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-focus-ring-color: transparent !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+}
+
+.tg-main-button:focus,
+.tg-main-button:focus-visible,
+.tg-main-button:focus-within,
+.tg-main-button:active,
+.tg-main-button:hover,
+[class*="telegram"]:focus,
+[class*="telegram"]:focus-visible,
+[class*="telegram"]:focus-within,
+[class*="telegram"]:active,
+[class*="telegram"]:hover,
+[class*="tg-"]:focus,
+[class*="tg-"]:focus-visible,
+[class*="tg-"]:focus-within,
+[class*="tg-"]:active,
+[class*="tg-"]:hover {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Для всех кнопок и интерактивных элементов */
+button, 
+input, 
+textarea, 
+select, 
+a, 
+div[role="button"], 
+span[role="button"], 
+[tabindex], 
+[onclick] {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+button:focus, 
+button:focus-visible,
+button:focus-within,
+button:active,
+button:hover,
+input:focus, 
+input:focus-visible,
+input:focus-within,
+input:active,
+input:hover,
+textarea:focus, 
+textarea:focus-visible,
+textarea:focus-within,
+textarea:active,
+textarea:hover,
+select:focus, 
+select:focus-visible,
+select:focus-within,
+select:active,
+select:hover,
+a:focus, 
+a:focus-visible,
+a:focus-within,
+a:active,
+a:hover,
+div[role="button"]:focus, 
+div[role="button"]:focus-visible,
+div[role="button"]:focus-within,
+div[role="button"]:active,
+div[role="button"]:hover,
+span[role="button"]:focus, 
+span[role="button"]:focus-visible,
+span[role="button"]:focus-within,
+span[role="button"]:active,
+span[role="button"]:hover {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
 /* Точная копия стилей из Rails приложения */
 
 /* ===============================================
@@ -18,10 +297,10 @@
   --profile-header-bottom: var(--space-20);
   --profile-section-gap: var(--space-24);
   
-  /* Адаптивные отступы для нижнего меню */
-  --bottom-menu-height: 60px;
-  --bottom-menu-padding: var(--space-20);
-  --bottom-total: calc(var(--bottom-menu-height) + var(--bottom-menu-padding));
+  /* Адаптивные отступы для контента */
+  --bottom-safe-area: env(safe-area-inset-bottom);
+  --bottom-padding: var(--space-20);
+  --bottom-total: calc(var(--bottom-safe-area) + var(--bottom-padding));
 }
 
 /* Убираем горизонтальный скролл глобально */
@@ -69,10 +348,10 @@ html, body {
   padding-bottom: var(--bottom-total);
 }
 
-/* Страницы с корзиной нужен больший отступ */
+/* Страницы с Telegram MainButton */
 .webapp-container.catalog-page,
 .webapp-container.favorites-page {
-  padding-bottom: calc(var(--bottom-total) + 60px); /* +60px для floating cart */
+  padding-bottom: var(--bottom-total); /* Обычный отступ без CartSummary */
 }
 
 /* Страница корзины - максимально широкий контент с минимальными отступами */
@@ -96,7 +375,7 @@ html, body {
   height: 0 !important;
 }
 
-/* Страница профиля - НЕТ нижнего меню, только безопасный отступ */
+/* Страница профиля - отступ только для безопасной зоны */
 .webapp-container.profile-page {
   padding: 0;
   height: 100vh;
@@ -119,8 +398,8 @@ html, body {
   flex: 1;
   overflow-y: auto;
   padding: calc(env(safe-area-inset-top) + 16px) clamp(16px, 4vw, 20px) 0 clamp(16px, 4vw, 20px);
-  /* Отступ снизу: BottomNav (60px) + CartSummary (60px) + gap (20px) = 140px */
-  padding-bottom: calc(140px + env(safe-area-inset-bottom));
+  /* Отступ снизу только для безопасной зоны */
+  padding-bottom: calc(20px + env(safe-area-inset-bottom));
 }
 .webapp-container h1 {
   font-weight: 700;
@@ -145,9 +424,9 @@ html, body {
 
 /* Modern Header стили */
 .webapp-header {
-  background-color: white;
-  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.08);
-  margin-bottom: clamp(16px, 4vw, 20px);
+  background-color: #f9f9f9;
+  box-shadow: none;
+  margin-bottom: 0;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -493,8 +772,8 @@ html, body {
   max-width: 100%;
   overflow-x: hidden;
   
-  /* Вертикальные отступы */
-  margin-top: 8px;
+  /* Убираем вертикальные отступы для плотного дизайна */
+  margin-top: 0;
   margin-bottom: 8px;
   padding: 0;
   
@@ -552,8 +831,8 @@ html, body {
   cursor: pointer;
   transition: all 0.2s ease;
   
-  /* Белый фон с градиентной обводкой */
-  background: linear-gradient(white, white) padding-box,
+  /* Серый фон с градиентной обводкой для единого дизайна */
+  background: linear-gradient(#f9f9f9, #f9f9f9) padding-box,
               linear-gradient(135deg, rgba(72, 201, 40, 0.6) 0%, rgba(58, 161, 32, 0.6) 100%) border-box;
   
   /* Минимальная ширина для предотвращения обрезания */
@@ -569,7 +848,7 @@ html, body {
 /* Активное состояние - яркая градиентная обводка */
 .catalog-nav li button.active {
   border: 2px solid transparent;
-  background: linear-gradient(white, white) padding-box,
+  background: linear-gradient(#f9f9f9, #f9f9f9) padding-box,
               linear-gradient(135deg, #48C928 0%, #3AA120 100%) border-box;
   color: #48C928;
   font-weight: 600;
@@ -584,7 +863,7 @@ html, body {
 
 /* Hover эффект для неактивных кнопок */
 .catalog-nav li button:not(.active):hover {
-  background: linear-gradient(white, white) padding-box,
+  background: linear-gradient(#f9f9f9, #f9f9f9) padding-box,
               linear-gradient(135deg, rgba(72, 201, 40, 0.8) 0%, rgba(58, 161, 32, 0.8) 100%) border-box;
   transform: translateY(-1px);
   color: #3AA120;
@@ -606,7 +885,7 @@ html, body {
 .category-filter {
   width: 100%;
   margin-bottom: 16px;
-  margin-top: 16px;
+  margin-top: 0;
   
   /* Выходим за границы родительского контейнера на всю ширину экрана */
   position: relative;
@@ -616,10 +895,8 @@ html, body {
   margin-right: -50vw;
   width: 100vw;
   
-  /* Современный фон для всей секции категорий */
-  background: linear-gradient(135deg, rgba(248, 249, 250, 0.95) 0%, rgba(255, 255, 255, 0.98) 100%);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  /* Убираем фон - только прозрачная секция категорий */
+  background: transparent;
   padding: 8px 0;
   
   .category-filter-list {
@@ -643,7 +920,7 @@ html, body {
   
   .category-filter-item {
     flex-shrink: 0;
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(249, 249, 249, 0.9);
     border: 1.5px solid rgba(0, 0, 0, 0.08);
     border-radius: 20px;
     padding: 10px 16px;
@@ -665,15 +942,9 @@ html, body {
     -webkit-tap-highlight-color: transparent;
     user-select: none;
     
-    &:hover {
-      background: rgba(255, 255, 255, 0.95);
-      border-color: rgba(72, 201, 40, 0.2);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    }
+
     
     &:active {
-      transform: translateY(0) scale(0.98);
       transition-duration: 0.1s;
     }
     
@@ -684,11 +955,7 @@ html, body {
       font-weight: 600;
       box-shadow: 0 4px 16px rgba(72, 201, 40, 0.3);
       
-      &:hover {
-        background: linear-gradient(135deg, #3AA120 0%, #2E8B1C 100%);
-        border-color: #3AA120;
-        transform: translateY(-1px);
-      }
+
     }
     
     /* Skeleton загрузка */
@@ -718,7 +985,7 @@ html, body {
 /* Мобильная адаптация для фильтра */
 @media (max-width: 480px) {
   .category-filter {
-    margin-top: 16px;
+    margin-top: 0;
     margin-bottom: 16px;
     padding: 10px 0;
     
@@ -1641,51 +1908,7 @@ html, body {
   font-weight: 600;
 }
 
-/* Фиксированное меню */
-.fixed-menu {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: white;
-  border-top: none; /* Убираем верхнюю границу для склеивания с корзиной */
-  padding: 8px 16px;
-  min-height: 60px;
-  z-index: 1000;
-  
-  .menu-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    max-width: 480px;
-    margin: 0 auto;
-    
-         .menu-item {
-       display: flex;
-       flex-direction: column;
-       align-items: center;
-       padding: 4px;
-       text-decoration: none;
-       color: #6B7280;
-       transition: color 0.2s;
-       
-       &.active {
-         color: #48C928;
-       }
-       
-       &:hover {
-         color: #48C928;
-       }
-       
-       .menu-text {
-         font-size: 10px;
-         margin-top: 2px;
-         text-align: center;
-         line-height: 1.2;
-       }
-     }
-  }
-}
+/* Удалено фиксированное меню - теперь используется Header */
 
 
 
@@ -2370,34 +2593,7 @@ html, body {
   margin-top: 0;
 }
 
-/* Cart Summary Info */
-.cart-summary-info {
-  position: sticky;
-  bottom: clamp(20px, 5vw, 24px);
-  z-index: 5;
-  background: white;
-  border: 2px solid #48C928;
-  border-radius: clamp(16px, 4vw, 20px);
-  padding: clamp(16px, 4vw, 20px);
-  margin-top: clamp(20px, 5vw, 24px);
-  box-shadow: 0px 8px 25px rgba(72, 201, 40, 0.2);
-  
-  .text-green-600 {
-    color: #48C928;
-  }
-  
-  button:disabled {
-    background-color: #cccccc;
-    color: #888888;
-    cursor: not-allowed;
-    
-    &:hover {
-      background-color: #cccccc;
-      transform: none;
-      box-shadow: none;
-    }
-  }
-}
+/* Удален cart-summary-info - используется Telegram MainButton */
 
 /* Delivery Form Styles */
 .delivery-form {
@@ -2584,89 +2780,7 @@ html, body {
   font-weight: 500;
 }
 
-/* Плашка корзины - точно как в Rails */
-.cart-summary {
-  background: linear-gradient(135deg, #48C928 0%, #3AA120 100%);
-  color: white;
-  position: fixed;
-  bottom: 60px; /* Приклеена к нижнему меню */
-  left: 0;
-  width: 100%;
-  z-index: 20;
-  transition: all 0.3s ease;
-  transform: translateY(100px); /* Скрыта по умолчанию */
-  opacity: 0;
-  visibility: hidden;
-  border-radius: 0; /* Убираем скругление для склеивания с меню */
-  box-shadow: 0px -4px 16px 0px rgba(61, 68, 83, 0.15); /* Тень сверху для цельного блока */
-  
-  &.visible {
-    transform: translateY(0);
-    opacity: 1;
-    visibility: visible;
-  }
-  
-  .cart-summary-link {
-    display: block;
-    text-decoration: none;
-    color: inherit;
-    
-    &:hover {
-      color: inherit;
-      background: linear-gradient(135deg, #3AA120 0%, #2E8B1C 100%);
-      
-      .right-arrow {
-        margin-right: -5px;
-      }
-    }
-  }
-  
-  .cart-counter {
-    position: absolute;
-    background-color: white;
-    color: #48C928;
-    padding: 3px;
-    font-size: 10px;
-    line-height: 10px;
-    font-weight: 700;
-    right: -7px;
-    top: 9px;
-    min-width: 16px;
-    border-radius: 8px;
-    display: flex;
-    justify-content: center;
-    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
-  }
-  
-  .right-arrow {
-    transition: margin-right 0.2s ease;
-  }
-  
-  /* Адаптивность */
-  @media (max-width: 640px) {
-    bottom: 60px;
-  }
-  
-  @media (max-width: 374px) {
-    bottom: 60px;
-  }
-  
-  /* Анимация появления */
-  @keyframes cart-slide-up {
-    from {
-      transform: translateY(100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
-  
-  &.visible {
-    animation: cart-slide-up 0.3s ease-out;
-  }
-}
+/* Удалена плашка корзины - теперь используется Telegram MainButton */
 
 /* Profile Page Styles - Based on Rails Project */
 .profile-avatar {
@@ -3044,6 +3158,8 @@ html, body {
     }
   }
   
+
+  
   .empty-state-title {
     font-size: 1.25rem;
     font-weight: 600;
@@ -3101,6 +3217,41 @@ html, body {
       font-size: 0.9375rem;
       min-width: 180px;
       padding: 0.8125rem 1.75rem;
+    }
+  }
+}
+
+/* Зеленое сердечко на странице избранного */
+.favorites-page .empty-state .empty-state-icon {
+  color: #48C928 !important;
+  
+  svg {
+    color: #48C928 !important;
+    fill: none !important;
+    stroke: #48C928 !important;
+    opacity: 0.8 !important;
+    
+    * {
+      stroke: #48C928 !important;
+      fill: none !important;
+    }
+  }
+}
+
+/* Переопределяем для всех размеров экрана */
+@media screen and (max-width: 768px) {
+  .favorites-page .empty-state .empty-state-icon {
+    color: #48C928 !important;
+    
+    svg {
+      color: #48C928 !important;
+      fill: none !important;
+      stroke: #48C928 !important;
+      
+      * {
+        stroke: #48C928 !important;
+        fill: none !important;
+      }
     }
   }
 }
@@ -5292,24 +5443,6 @@ html, body {
   &::placeholder {
     color: #777777 !important;
   }
-}
-
-/* Убираем overflow у layout элементов */
-html, body, #__next {
-  overflow-y: auto !important;
-}
-
-/* Исправляем возможные конфликты z-index */
-.fixed-menu {
-  z-index: 1000 !important;
-}
-
-.cart-summary {
-  z-index: 20 !important;
-}
-
-.address-wrapper .suggestions-wrapper {
-  z-index: 99999 !important;
 }
 
 /* Убеждаемся что подсказки видны поверх всех элементов */
@@ -8791,6 +8924,20 @@ html {
       fill: white !important;
     }
   }
+  
+  /* Зеленое сердечко на странице избранного переопределяет белый цвет */
+  .favorites-page .empty-state .empty-state-icon {
+    svg {
+      color: #48C928 !important;
+      fill: none !important;
+      stroke: #48C928 !important;
+      
+      * {
+        stroke: #48C928 !important;
+        fill: none !important;
+      }
+    }
+  }
 
   .empty-state h3 {
     font-size: 20px !important;
@@ -9271,3 +9418,161 @@ html {
 }
 
 
+/* ===============================================
+   🚀 TELEGRAM MAINBUTTON CART SPACING OPTIMIZATION
+   =============================================== */
+
+/* 
+   Проблема: В корзине много лишнего места внизу (120px+)
+   Причина: padding-bottom рассчитан для нижнего меню webapp, 
+           но теперь используется Telegram MainButton
+   
+   Решение: Оптимизированные отступы для Telegram окружения
+*/
+
+/* Оптимизация для корзины с Telegram MainButton */
+.webapp-container.cart-page {
+  /* Убираем лишний padding-bottom для нижнего меню */
+  padding-bottom: max(
+    var(--space-16),           /* Минимальный отступ 12-16px */
+    env(safe-area-inset-bottom) /* Учитываем safe-area iPhone */
+  ) !important;
+  
+  /* В Telegram окружении еще меньше отступ */
+  .telegram-env & {
+    padding-bottom: max(
+      var(--space-12),         /* Совсем минимальный отступ 8-12px */
+      env(safe-area-inset-bottom)
+    ) !important;
+  }
+}
+
+/* Оптимизация последнего блока в корзине */
+.cart-page .checkout-summary-card:last-of-type,
+.cart-page .main-block:last-of-type {
+  /* Уменьшаем отступ снизу последнего блока */
+  margin-bottom: var(--space-12) !important; /* 8-12px вместо 20px */
+}
+
+/* Дополнительная оптимизация для cart-checkout-summary */
+.cart-page .cart-checkout-summary {
+  /* Убираем лишний отступ снизу */
+  margin-bottom: var(--space-8) !important; /* 6-8px */
+}
+
+/* Специальная оптимизация для Telegram WebApp */
+@media (max-height: 600px) {
+  /* На маленьких экранах еще компактнее */
+  .webapp-container.cart-page {
+    padding-bottom: var(--space-8) !important;
+  }
+  
+  .cart-page .main-block,
+  .cart-page .checkout-summary-card {
+    margin-bottom: var(--space-8) !important;
+  }
+}
+
+/* Обеспечиваем что контент не перекрывает возможные элементы */
+.cart-page .telegram-checkout-button-container {
+  /* Резервируем место для дополнительных элементов */
+  margin-top: var(--space-12);
+}
+
+/* Плавные переходы при изменении отступов */
+.webapp-container.cart-page,
+.cart-page .main-block,
+.cart-page .checkout-summary-card {
+  transition: padding 0.3s ease, margin 0.3s ease;
+}
+
+/* ===============================================
+   📱 RESPONSIVE OPTIMIZATIONS
+   =============================================== */
+
+/* iPhone SE и другие маленькие экраны */
+@media (max-height: 568px) {
+  .webapp-container.cart-page {
+    padding-bottom: var(--space-4) !important;
+  }
+}
+
+/* Средние экраны */
+@media (min-height: 600px) and (max-height: 800px) {
+  .webapp-container.cart-page {
+    padding-bottom: var(--space-12) !important;
+  }
+}
+
+/* Большие экраны - можем позволить чуть больше места */
+@media (min-height: 800px) {
+  .webapp-container.cart-page {
+    padding-bottom: var(--space-16) !important;
+  }
+}
+
+/* ===============================================
+   🎯 FALLBACK FOR NON-TELEGRAM ENVIRONMENTS
+   =============================================== */
+
+/* Если НЕ Telegram - оставляем больше места для fallback кнопки */
+.webapp-container.cart-page:not(.telegram-env) {
+  padding-bottom: calc(
+    var(--space-20) + env(safe-area-inset-bottom)
+  ) !important;
+}
+
+/* ===============================================
+   ✨ VISUAL IMPROVEMENTS
+   =============================================== */
+
+/* Более плавный переход между блоками */
+.cart-page .main-block + .main-block,
+.cart-page .main-block + .checkout-summary-card {
+  margin-top: var(--space-16);
+}
+
+/* Улучшенная визуальная группировка */
+.cart-page h1 {
+  margin-bottom: var(--space-16);
+}
+
+/* Компактный режим для очень маленьких экранов */
+@media (max-height: 500px) {
+  .cart-page h1 {
+    margin-bottom: var(--space-8);
+    font-size: clamp(18px, 5vw, 22px);
+  }
+  
+  .cart-page .main-block {
+    padding: var(--space-12);
+    margin-bottom: var(--space-8) !important;
+  }
+}
+
+/* ===============================================
+   🎯 ДОПОЛНИТЕЛЬНАЯ ОПТИМИЗАЦИЯ CART-ITEMS-BLOCK  
+   =============================================== */
+
+/* Убираем лишний margin-bottom у блока с товарами корзины */
+.cart-page .cart-items-block.mb-5 {
+  margin-bottom: var(--space-12) !important; /* 8-12px вместо 20px */
+}
+
+/* В Telegram окружении еще компактнее */
+.cart-page.telegram-env .cart-items-block.mb-5 {
+  margin-bottom: var(--space-8) !important; /* 6-8px */
+}
+
+/* Оптимизация для очень маленьких экранов */
+@media (max-height: 600px) {
+  .cart-page .cart-items-block.mb-5 {
+    margin-bottom: var(--space-8) !important;
+  }
+}
+
+/* Добавляем smooth переходы */
+.cart-items-block {
+  transition: margin-bottom 0.3s ease;
+}
+@import "./webapp-catalog-optimization.scss";

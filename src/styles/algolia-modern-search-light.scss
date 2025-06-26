@@ -30,7 +30,7 @@
   }
   
   &.focused {
-    background: #ffffff;
+    background: #f1f3f4;
     border-color: rgba(72, 201, 40, 0.6);
     box-shadow: 0 0 0 2px rgba(72, 201, 40, 0.08), 0 2px 8px rgba(72, 201, 40, 0.04);
     transform: translateY(-1px);
@@ -43,7 +43,7 @@
     background: #f5f5f7;
     
     &.focused {
-      background: #ffffff;
+      background: #f1f3f4;
       box-shadow: 0 0 0 2px rgba(72, 201, 40, 0.1), 0 3px 10px rgba(72, 201, 40, 0.06);
     }
   }
@@ -65,10 +65,11 @@
   }
 }
 
-/* Поле ввода - оптимизировано для Telegram WebApp */
+/* Поле ввода - оптимизировано для Telegram WebApp с ИДЕАЛЬНЫМ центрированием */
 .search-input {
   width: 100%;
-  padding: clamp(14px, 3.5vw, 16px) clamp(48px, 12vw, 52px);
+  /* ИСПРАВЛЕНИЕ: Используем равномерный padding для идеального центрирования */
+  padding: 14px clamp(48px, 12vw, 52px);
   padding-right: clamp(44px, 11vw, 48px);
   border: none;
   background: transparent;
@@ -78,6 +79,11 @@
   outline: none;
   line-height: 1.4;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+  
+  /* КРИТИЧЕСКИ ВАЖНО: Flexbox для идеального вертикального центрирования */
+  display: flex;
+  align-items: center;
+  min-height: 20px; /* Обеспечиваем минимальную высоту для содержимого */
   
   /* Улучшенные стили для мобильных */
   -webkit-appearance: none;
@@ -98,12 +104,28 @@
     display: none;
   }
   
-  /* Специальные стили для Telegram WebApp */
+  /* Убираем все возможные обводки */
+  &:focus,
+  &:active,
+  &:hover,
+  &:focus-visible {
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  
+  /* Специальные стили для Telegram WebApp с ЦЕНТРИРОВАНИЕМ */
   .catalog-header.full-width & {
-    padding: clamp(16px, 4vw, 18px) clamp(52px, 13vw, 56px);
+    /* ИСПРАВЛЕНИЕ: Равномерный padding для идеального центрирования */
+    padding: 17px clamp(52px, 13vw, 56px);
     padding-right: clamp(48px, 12vw, 52px);
     font-size: clamp(16px, 4vw, 17px);
     font-weight: 500;
+    
+    /* КРИТИЧЕСКИ ВАЖНО: Flexbox для идеального центрирования */
+    display: flex;
+    align-items: center;
+    min-height: 22px; /* Обеспечиваем минимальную высоту для более крупного текста */
     
     &::placeholder {
       font-weight: 500;

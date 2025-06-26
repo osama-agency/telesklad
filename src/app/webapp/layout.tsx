@@ -7,12 +7,13 @@ import Script from "next/script";
 import "@/styles/webapp.scss";
 import "@/css/golos.css";
 import { IconComponent } from "@/components/webapp/IconComponent";
-import { CartSummary } from "./_components/CartSummary";
-import { BottomNavigation } from "./_components/BottomNavigation";
+import { HeaderProvider } from "./_components/HeaderProvider";
+import TelegramCartButton from "./_components/TelegramCartButton";
 
 import { TelegramAuthProvider } from "@/context/TelegramAuthContext";
 import { FavoritesProvider } from "@/context/FavoritesContext";
 import { TelegramBackButton } from "./_components/TelegramBackButton";
+import { TelegramOutlineRemover } from "./_components/TelegramOutlineRemover";
 
 function WebappLayoutInner({ children }: PropsWithChildren) {
   const pathname = usePathname();
@@ -25,11 +26,6 @@ function WebappLayoutInner({ children }: PropsWithChildren) {
     if (pathname.startsWith("/webapp/profile")) return "profile-page";
     return "";
   };
-
-  // Определяем нужно ли показывать нижнее меню (скрываем на странице корзины)
-  const shouldShowBottomNavigation = !pathname.startsWith("/webapp/cart");
-  
-
 
   return (
     <>
@@ -54,22 +50,23 @@ function WebappLayoutInner({ children }: PropsWithChildren) {
         {/* Глобальная кнопка "Назад" от Telegram SDK */}
         <TelegramBackButton />
         
+        {/* Принудительное удаление outline стилей */}
+        <TelegramOutlineRemover />
+        
+        {/* Универсальный Header с поиском и кнопками */}
+        <HeaderProvider />
+        
         <div className={`webapp-container ${getPageClass()}`} style={{
           minHeight: '100vh',
           backgroundColor: '#f9f9f9'
         }}>
-
-
           {/* Main content */}
           <main className="container-adaptive">
             {children}
           </main>
 
-          {/* Cart Summary - глобально для всех страниц */}
-          <CartSummary />
-
-          {/* Fixed bottom navigation - скрываем на странице корзины */}
-          {shouldShowBottomNavigation && <BottomNavigation />}
+          {/* Telegram Cart Button - показывается когда есть товары в корзине */}
+          <TelegramCartButton />
         </div>
       </>
     </>

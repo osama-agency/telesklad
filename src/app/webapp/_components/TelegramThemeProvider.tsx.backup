@@ -1,0 +1,78 @@
+'use client';
+import { useEffect, useState } from 'react';
+import { telegramSDK } from '@/lib/telegram-sdk';
+
+interface TelegramThemeProviderProps {
+  children: React.ReactNode;
+}
+
+export default function TelegramThemeProvider({ children }: TelegramThemeProviderProps) {
+  const [themeApplied, setThemeApplied] = useState(false);
+
+  useEffect(() => {
+    // ПРИНУДИТЕЛЬНО используем светлую тему, игнорируя Telegram themeParams
+    const forceLightTheme = () => {
+      // Светлая тема по умолчанию
+      const lightTheme = {
+        colorScheme: 'light' as const,
+        backgroundColor: '#ffffff',
+        textColor: '#000000',
+        hintColor: '#999999',
+        linkColor: '#48C928',
+        buttonColor: '#48C928',
+        buttonTextColor: '#ffffff'
+      };
+      
+      // Принудительно устанавливаем светлые CSS переменные
+      document.documentElement.style.setProperty('--tg-bg-color', lightTheme.backgroundColor);
+      document.documentElement.style.setProperty('--tg-text-color', lightTheme.textColor);
+      document.documentElement.style.setProperty('--tg-hint-color', lightTheme.hintColor);
+      document.documentElement.style.setProperty('--tg-link-color', lightTheme.linkColor);
+      document.documentElement.style.setProperty('--tg-button-color', lightTheme.buttonColor);
+      document.documentElement.style.setProperty('--tg-button-text-color', lightTheme.buttonTextColor);
+      
+      // Убираем любые темные классы и добавляем светлый
+      document.body.classList.remove('tg-theme-dark');
+      document.body.classList.add('tg-theme-light');
+      
+      // Дополнительно отключаем темные стили браузера
+      document.documentElement.style.setProperty('color-scheme', 'light');
+      document.body.style.colorScheme = 'light';
+      
+             // Отключаем автоматический dark mode
+       if (telegramSDK.isAvailable()) {
+         try {
+           // Переопределяем Telegram темы если возможно
+           const tg = window.Telegram?.WebApp;
+           if (tg && (tg as any).themeParams) {
+             const themeParams = (tg as any).themeParams;
+             themeParams.bg_color = '#ffffff';
+             themeParams.text_color = '#000000';
+             themeParams.hint_color = '#999999';
+             themeParams.link_color = '#48C928';
+             themeParams.button_color = '#48C928';
+             themeParams.button_text_color = '#ffffff';
+           }
+         } catch (error) {
+           console.warn('Could not override Telegram theme params:', error);
+         }
+       }
+      
+      console.log('🌞 Forced light theme applied, ignoring Telegram themeParams');
+    };
+
+    forceLightTheme();
+    setThemeApplied(true);
+
+    // Очистка при размонтировании
+    return () => {
+      document.body.classList.remove('tg-theme-light', 'tg-theme-dark');
+    };
+  }, []);
+
+  return (
+    <div className={`webapp-container ${themeApplied ? 'tg-themed' : ''}`}>
+      {children}
+    </div>
+  );
+} 

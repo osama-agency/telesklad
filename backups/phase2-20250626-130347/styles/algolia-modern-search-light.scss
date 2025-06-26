@@ -1,0 +1,596 @@
+/* ====================================
+   Компактный поиск Algolia для WebApp со скроллом
+   ==================================== */
+
+/* Основной контейнер поиска */
+.algolia-modern-search {
+  position: relative;
+  width: 100%;
+  z-index: 50;
+}
+
+/* Поисковое поле в стиле приложения - оптимизировано для Telegram WebApp */
+.algolia-search-box {
+  position: relative;
+  width: 100%;
+  background: #f8f9fa;
+  border-radius: clamp(14px, 3.5vw, 18px);
+  padding: 0;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid transparent;
+  overflow: hidden;
+  box-shadow: none;
+  
+  /* Специальная адаптация для мобильных */
+  min-height: 48px; /* Touch-friendly размер */
+  
+  &:hover {
+    background: #eeeff2;
+    transform: translateY(-1px);
+  }
+  
+  &.focused {
+    background: #ffffff;
+    border-color: rgba(72, 201, 40, 0.6);
+    box-shadow: 0 0 0 2px rgba(72, 201, 40, 0.08), 0 2px 8px rgba(72, 201, 40, 0.04);
+    transform: translateY(-1px);
+  }
+  
+  /* Специальные стили для Telegram WebApp */
+  .catalog-header.full-width & {
+    border-radius: clamp(16px, 4vw, 20px);
+    min-height: 52px;
+    background: #f5f5f7;
+    
+    &.focused {
+      background: #ffffff;
+      box-shadow: 0 0 0 2px rgba(72, 201, 40, 0.1), 0 3px 10px rgba(72, 201, 40, 0.06);
+    }
+  }
+}
+
+/* Иконка поиска */
+.search-icon-wrapper {
+  position: absolute;
+  left: clamp(12px, 3vw, 16px);
+  top: 50%;
+  transform: translateY(-50%);
+  color: #8e8e93;
+  transition: color 0.2s ease;
+  pointer-events: none;
+  z-index: 1;
+  
+  .algolia-search-box.focused & {
+    color: #48C928;
+  }
+}
+
+/* Поле ввода - оптимизировано для Telegram WebApp */
+.search-input {
+  width: 100%;
+  padding: clamp(14px, 3.5vw, 16px) clamp(48px, 12vw, 52px);
+  padding-right: clamp(44px, 11vw, 48px);
+  border: none;
+  background: transparent;
+  font-size: 16px; /* Предотвращаем zoom на iOS */
+  font-weight: 400;
+  color: #1c1c1e;
+  outline: none;
+  line-height: 1.4;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+  
+  /* Улучшенные стили для мобильных */
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  
+  &::placeholder {
+    color: #8e8e93;
+    font-weight: 400;
+    opacity: 1;
+  }
+  
+  /* Убираем стили для search input */
+  &::-webkit-search-decoration,
+  &::-webkit-search-cancel-button,
+  &::-webkit-search-results-button,
+  &::-webkit-search-results-decoration {
+    display: none;
+  }
+  
+  /* Специальные стили для Telegram WebApp */
+  .catalog-header.full-width & {
+    padding: clamp(16px, 4vw, 18px) clamp(52px, 13vw, 56px);
+    padding-right: clamp(48px, 12vw, 52px);
+    font-size: clamp(16px, 4vw, 17px);
+    font-weight: 500;
+    
+    &::placeholder {
+      font-weight: 500;
+      color: #999999;
+    }
+  }
+}
+
+/* Кнопка очистки */
+.clear-button {
+  position: absolute;
+  right: clamp(8px, 2vw, 12px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid rgba(199, 199, 204, 0.3);
+  background: rgba(199, 199, 204, 0.1);
+  color: #c7c7cc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+  
+  &:hover {
+    background: rgba(72, 201, 40, 0.15);
+    color: #48C928;
+    transform: translateY(-50%) scale(1.05);
+    border-color: rgba(72, 201, 40, 0.3);
+  }
+  
+  &:active {
+    transform: translateY(-50%) scale(0.95);
+  }
+}
+
+/* Компактное выпадающее окно со скроллом - оптимизировано для Telegram WebApp */
+.search-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: white;
+  border-radius: clamp(16px, 4vw, 20px);
+  box-shadow: 0px 12px 32px rgba(0, 0, 0, 0.08), 0px 2px 8px rgba(0, 0, 0, 0.04);
+  max-height: 60vh; /* Увеличиваем для мобильных */
+  overflow: hidden;
+  animation: dropdownAppear 0.25s cubic-bezier(0.2, 0, 0.2, 1);
+  z-index: 1000;
+  border: none;
+  
+  /* Специальная адаптация для Telegram WebApp */
+  .catalog-header.full-width & {
+    border-radius: clamp(18px, 4.5vw, 22px);
+    max-height: 65vh;
+    box-shadow: 0px 16px 40px rgba(0, 0, 0, 0.1), 0px 4px 12px rgba(0, 0, 0, 0.06);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  
+  /* Мобильная адаптация */
+  @media (max-width: 480px) {
+    max-height: 70vh;
+    border-radius: clamp(20px, 5vw, 24px);
+  }
+}
+
+@keyframes dropdownAppear {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Контейнер результатов со скроллом */
+.search-results-container {
+  max-height: 45vh; /* Ограничиваем высоту */
+  overflow-y: auto; /* Возвращаем скролл */
+  overscroll-behavior: contain;
+  background: white;
+  
+  /* Красивый кастомный скроллбар */
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(72, 201, 40, 0.2);
+    border-radius: 2px;
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background: rgba(72, 201, 40, 0.4);
+  }
+}
+
+/* Заголовок результатов */
+.search-results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: clamp(10px, 2.5vw, 12px) clamp(14px, 3.5vw, 16px);
+  border-bottom: 1px solid #f0f0f0;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 10;
+  
+  h3 {
+    font-size: clamp(13px, 3.25vw, 14px);
+    font-weight: 600;
+    color: #3D4453;
+    margin: 0;
+  }
+}
+
+/* Ссылка "Показать все" */
+.view-all-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #48C928;
+  font-size: clamp(12px, 3vw, 13px);
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  
+  &:hover {
+    color: #3AA120;
+    transform: translateX(2px);
+  }
+  
+  svg {
+    transition: transform 0.15s ease;
+  }
+  
+  &:hover svg {
+    transform: translateX(2px);
+  }
+}
+
+/* Компактная сетка результатов */
+.search-results-grid {
+  padding: clamp(6px, 1.5vw, 8px);
+  display: grid;
+  gap: clamp(6px, 1.5vw, 8px);
+  background: white;
+}
+
+/* Компактная карточка результата */
+.search-result-card {
+  display: flex;
+  gap: clamp(10px, 2.5vw, 12px);
+  padding: clamp(8px, 2vw, 10px);
+  background: #f8f9fa;
+  border-radius: clamp(8px, 2vw, 10px);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid #e5e5e7;
+  
+  &:hover {
+    background: white;
+    border-color: #48C928;
+    box-shadow: 0 2px 8px rgba(72, 201, 40, 0.1);
+    transform: translateY(-1px);
+  }
+  
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+/* Компактное изображение в результатах */
+.result-image {
+  width: clamp(40px, 10vw, 50px);
+  height: clamp(40px, 10vw, 50px);
+  border-radius: clamp(6px, 1.5vw, 8px);
+  overflow: hidden;
+  background: white;
+  border: 1px solid #f0f0f0;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  
+  .image-placeholder {
+    color: #c7c7cc;
+  }
+}
+
+/* Компактный список результатов для fallback */
+.search-results-list {
+  padding: clamp(6px, 1.5vw, 8px);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: white;
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  gap: clamp(10px, 2.5vw, 12px);
+  padding: clamp(8px, 2vw, 10px) clamp(10px, 2.5vw, 12px);
+  border-radius: clamp(6px, 1.5vw, 8px);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: white;
+  
+  &:hover {
+    background: #f8f9fa;
+  }
+  
+  &:active {
+    background: #f0f0f0;
+  }
+}
+
+.result-image-small {
+  width: clamp(32px, 8vw, 40px);
+  height: clamp(32px, 8vw, 40px);
+  border-radius: clamp(4px, 1vw, 6px);
+  overflow: hidden;
+  background: #f8f9fa;
+  border: 1px solid #f0f0f0;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  
+  .image-placeholder {
+    color: #c7c7cc;
+  }
+}
+
+/* Контент результата */
+.result-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+}
+
+.result-name {
+  font-size: clamp(13px, 3.25vw, 14px);
+  font-weight: 500;
+  color: #3D4453;
+  margin: 0;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.result-category {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: clamp(10px, 2.5vw, 11px);
+  color: #8e8e93;
+  margin: 0;
+  
+  svg {
+    flex-shrink: 0;
+  }
+}
+
+.result-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.result-price {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  
+  .price-current {
+    font-size: clamp(13px, 3.25vw, 14px);
+    font-weight: 700;
+    color: #48C928;
+  }
+  
+  .price-old {
+    font-size: clamp(10px, 2.5vw, 11px);
+    color: #8e8e93;
+    text-decoration: line-through;
+  }
+}
+
+.result-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 1px;
+  
+  .stock-status {
+    font-size: clamp(10px, 2.5vw, 11px);
+    font-weight: 500;
+    
+    &.in-stock {
+      color: #48C928;
+    }
+    
+    &.out-of-stock {
+      color: #8e8e93;
+    }
+  }
+}
+
+/* Компактный бейдж наличия */
+.stock-badge {
+  font-size: clamp(9px, 2.25vw, 10px);
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+  
+  &.in-stock {
+    background: rgba(72, 201, 40, 0.1);
+    color: #48C928;
+  }
+  
+  &.out-of-stock {
+    background: rgba(255, 107, 107, 0.1);
+    color: #FF6B6B;
+  }
+}
+
+/* Состояние загрузки */
+.search-results-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(24px, 6vw, 32px) clamp(16px, 4vw, 24px);
+  gap: 12px;
+  background: white;
+  
+  p {
+    font-size: clamp(12px, 3vw, 13px);
+    color: #8e8e93;
+    margin: 0;
+  }
+}
+
+.loading-spinner {
+  width: 24px;
+  height: 24px;
+  position: relative;
+}
+
+.spinner-ring {
+  width: 100%;
+  height: 100%;
+  border: 2px solid rgba(72, 201, 40, 0.1);
+  border-top-color: #48C928;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Пустые результаты */
+.search-no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(24px, 6vw, 32px) clamp(16px, 4vw, 24px);
+  text-align: center;
+  gap: 8px;
+  background: white;
+  
+  .no-results-icon {
+    color: #c7c7cc;
+    margin-bottom: 4px;
+  }
+  
+  h3 {
+    font-size: clamp(14px, 3.5vw, 16px);
+    font-weight: 600;
+    color: #3D4453;
+    margin: 0;
+  }
+  
+  p {
+    font-size: clamp(12px, 3vw, 13px);
+    color: #8e8e93;
+    margin: 0;
+    max-width: 240px;
+  }
+}
+
+.back-to-catalog {
+  margin-top: 12px;
+  padding: clamp(8px, 2vw, 10px) clamp(16px, 4vw, 20px);
+  background: #48C928;
+  color: white;
+  border: none;
+  border-radius: clamp(6px, 1.5vw, 8px);
+  font-size: clamp(12px, 3vw, 13px);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  
+  &:hover {
+    background: #3AA120;
+  }
+  
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+/* Адаптивность для планшетов */
+@media (min-width: 768px) {
+  .search-dropdown {
+    max-width: 500px; /* Компактнее на больших экранах */
+    max-height: 60vh;
+  }
+  
+  .search-results-container {
+    max-height: 55vh;
+  }
+  
+  .search-results-grid {
+    grid-template-columns: repeat(1, 1fr); /* Одна колонка для компактности */
+  }
+}
+
+/* Анимации для мобильных устройств */
+@media (max-width: 768px) {
+  .search-dropdown {
+    max-height: 45vh; /* Еще компактнее на мобильных */
+  }
+  
+  .search-results-container {
+    max-height: 40vh;
+  }
+  
+  /* Убираем hover эффекты на touch устройствах */
+  @media (hover: none) {
+    .search-result-card:hover,
+    .search-result-item:hover {
+      background: inherit;
+      border-color: inherit;
+      box-shadow: none;
+      transform: none;
+    }
+  }
+  
+  /* Оптимизация производительности */
+  .search-dropdown {
+    will-change: transform, opacity;
+  }
+}

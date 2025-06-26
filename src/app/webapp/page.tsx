@@ -59,7 +59,7 @@ export default function WebappHomePage() {
             <SkeletonLoading type="catalog" />
           </div>
         }>
-          <ProductCatalog showSearch={true} />
+          <ProductCatalog />
         </Suspense>
       </main>
     </>

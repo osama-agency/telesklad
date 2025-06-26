@@ -609,8 +609,7 @@
     
     /* Состояние фокуса для accessibility */
     &:focus-visible {
-      outline: 2px solid var(--primary-color);
-      outline-offset: 2px;
+      outline: none;
     }
   }
   
@@ -730,8 +729,7 @@
       
       /* Accessibility */
       &:focus-visible {
-        outline: 2px solid var(--primary-color, #48C928);
-        outline-offset: 2px;
+        outline: none;
       }
       
       /* Состояния */

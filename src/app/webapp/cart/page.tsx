@@ -12,6 +12,7 @@ import TelegramMainButton from '../_components/TelegramMainButton';
 import { useTelegramHaptic } from '@/hooks/useTelegramHaptic';
 import { telegramSDK } from '@/lib/telegram-sdk';
 
+import TelegramCheckoutButton from '../_components/TelegramCheckoutButton';
 // Telegram WebApp interface
 interface TelegramWebApp {
   ready: () => void;
@@ -75,6 +76,7 @@ export default function CartPage() {
   const [finalTotal, setFinalTotal] = useState(0);
   const [appliedBonus, setAppliedBonus] = useState(0);
   const [isOrderLoading, setIsOrderLoading] = useState(false);
+  const [isTelegramEnv, setIsTelegramEnv] = useState(false);
   const { notificationSuccess, notificationError } = useTelegramHaptic();
 
   // Кастомная кнопка назад для корзины
@@ -339,6 +341,10 @@ export default function CartPage() {
         tg.ready();
         tg.expand();
         
+        // Определяем что мы в Telegram окружении
+        setIsTelegramEnv(true);
+        console.log('🚀 Telegram environment detected');
+        
         // Принудительно устанавливаем светлую тему для корзины
         // чтобы нижняя панель была белой даже в темной теме
         tg.setHeaderColor('#FFFFFF');
@@ -355,19 +361,13 @@ export default function CartPage() {
       } catch (error) {
         console.error('Error initializing Telegram WebApp:', error);
       }
+    } else {
+      setIsTelegramEnv(false);
+      console.log('🌐 Browser environment detected');
     }
   }, []);
 
-  // Скрываем MainButton Telegram, так как используем кастомную кнопку
-  useEffect(() => {
-    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.MainButton) {
-      try {
-        (window as any).Telegram.WebApp.MainButton.hide();
-      } catch (error) {
-        console.warn('Could not hide MainButton:', error);
-      }
-    }
-  }, []);
+  // MainButton теперь управляется TelegramCheckoutButton компонентом
 
   const handleTelegramCheckout = async () => {
     if (!deliveryData || isOrderLoading) return;
@@ -387,9 +387,12 @@ export default function CartPage() {
     }
   };
 
+  // Генерируем className с учетом Telegram окружения
+  const containerClassName = `webapp-container cart-page${isTelegramEnv ? ' telegram-env' : ''}`;
+
   if (isLoading) {
     return (
-      <div className="webapp-container cart-page">
+      <div className={containerClassName}>
         <SkeletonLoading type="cart" />
       </div>
     );
@@ -398,7 +401,7 @@ export default function CartPage() {
   // Пустая корзина
   if (cartItems.length === 0) {
     return (
-      <div className="webapp-container cart-page">
+      <div className={containerClassName}>
         <h1>Корзина</h1>
         <div className="empty-state">
           <div className="empty-state-content">
@@ -420,10 +423,10 @@ export default function CartPage() {
 
   // Корзина с товарами
   return (
-    <div className="webapp-container cart-page">
+    <div className={containerClassName}>
       <h1>Корзина</h1>
       
-      <div className="main-block mb-5">
+      <div className="main-block mb-5 cart-items-block">
         {/* Заголовок корзины - как в Rails */}
         <div className="flex justify-between items-center mb-3">
           <div className="font-semibold">
@@ -465,24 +468,14 @@ export default function CartPage() {
         onBonusChange={setAppliedBonus}
       />
 
-      {/* Кастомная кнопка оформления заказа для всех случаев */}
+      {/* 🚀 Telegram MainButton для оформления заказа */}
       {cartItems.length > 0 && isDeliveryFormValid && (
-        <div className="checkout-button-container">
-          <button 
-            onClick={handleTelegramCheckout}
-            disabled={isOrderLoading}
-            className="checkout-button-custom"
-          >
-            {isOrderLoading ? (
-              <span className="button-loading">
-                <span className="loading-spinner"></span>
-                Оформляем...
-              </span>
-            ) : (
-              `Оформить заказ (${finalTotal.toLocaleString('ru-RU')} ₽)`
-            )}
-          </button>
-        </div>
+        <TelegramCheckoutButton
+          total={finalTotal}
+          isLoading={isOrderLoading}
+          isDisabled={!isDeliveryFormValid}
+          onCheckout={handleTelegramCheckout}
+        />
       )}
     </div>
   );

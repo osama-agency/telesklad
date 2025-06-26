@@ -1,0 +1,442 @@
+// Стили для модального окна поддержки
+.sheet-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  animation: fadeIn 0.2s ease;
+}
+
+.support-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &.open {
+    transform: translateY(0);
+  }
+}
+
+.sheet-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  flex-shrink: 0;
+}
+
+.sheet-close-button {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #f5f5f5;
+  }
+
+  &:active {
+    background: #ebebeb;
+    transform: translateY(-50%) scale(0.95);
+  }
+}
+
+.sheet-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+// Табы поддержки
+.support-tabs {
+  display: flex;
+  padding: 12px 16px;
+  gap: 8px;
+  border-bottom: 1px solid #f0f0f0;
+  flex-shrink: 0;
+}
+
+.support-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #f5f5f5;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  &:hover {
+    background: #ebebeb;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &.active {
+    background: #00c100;
+    color: #ffffff;
+  }
+}
+
+// Контент модального окна
+.sheet-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+// Загрузка и ошибки
+.support-loading,
+.support-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  color: #666;
+
+  svg {
+    color: #ccc;
+    margin-bottom: 16px;
+  }
+
+  p {
+    margin: 0 0 16px;
+    font-size: 16px;
+  }
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #00c100;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+  }
+}
+
+// FAQ стили
+.faq-content {
+  padding-bottom: 24px;
+}
+
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.faq-item {
+  background: #f9f9f9;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #f5f5f5;
+  }
+}
+
+.faq-question {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.02);
+  }
+
+  &:active {
+    background: rgba(0, 0, 0, 0.04);
+  }
+}
+
+.faq-question-text {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 500;
+  color: #1a1a1a;
+  line-height: 1.4;
+}
+
+.faq-toggle-icon {
+  flex-shrink: 0;
+  color: #666;
+  transition: transform 0.2s ease;
+
+  &.open {
+    transform: rotate(180deg);
+  }
+}
+
+.faq-answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+
+  &.open {
+    max-height: 500px;
+  }
+}
+
+.faq-answer-content {
+  padding: 0 16px 16px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #666;
+}
+
+// Контакты стили
+.contact-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-bottom: 24px;
+}
+
+.contact-card {
+  background: #f9f9f9;
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+
+  h3 {
+    margin: 12px 0 16px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1a1a1a;
+  }
+}
+
+.contact-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background: #00c100;
+  color: #ffffff;
+  border-radius: 50%;
+
+  svg {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+.contact-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: #00c100;
+  color: #ffffff;
+  border: none;
+  border-radius: 24px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #00a800;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 193, 0, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 193, 0, 0.3);
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background: #f9f9f9;
+  border-radius: 12px;
+
+  svg {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    color: #00c100;
+    margin-top: 2px;
+  }
+
+  > div {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+
+.info-label {
+  font-size: 13px;
+  color: #999;
+}
+
+.info-value {
+  font-size: 15px;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+// Пустое состояние
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+
+  svg {
+    color: #ddd;
+    margin-bottom: 16px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 16px;
+    color: #999;
+  }
+}
+
+// Анимации
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+// Медиа запросы
+@media (max-width: 375px) {
+  .support-sheet {
+    max-height: 90vh;
+  }
+
+  .sheet-header {
+    padding: 12px;
+  }
+
+  .sheet-title {
+    font-size: 16px;
+  }
+
+  .support-tabs {
+    padding: 8px 12px;
+  }
+
+  .support-tab {
+    padding: 8px 12px;
+    font-size: 13px;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  .sheet-content {
+    padding: 12px;
+  }
+
+  .faq-question {
+    padding: 12px;
+  }
+
+  .faq-question-text {
+    font-size: 14px;
+  }
+
+  .contact-card {
+    padding: 20px;
+
+    h3 {
+      font-size: 16px;
+    }
+  }
+
+  .contact-button {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+} 
