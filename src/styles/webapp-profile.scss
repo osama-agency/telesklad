@@ -1,0 +1,49 @@
+// === СТРАНИЦА ПРОФИЛЯ ===
+.profile-page {
+  // Отступ от хедера Telegram WebApp
+  padding-top: 32px !important;
+  
+  // Основной контейнер с контентом
+  .profile-content-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 24px; // Отступ между основными секциями
+  }
+  
+  // Заголовок профиля
+  .profile-header {
+    margin-bottom: 0; // Убираем старый отступ, теперь используем gap
+    
+    .waving-hand {
+      display: inline-block;
+      animation: wave 2.5s infinite;
+      transform-origin: 70% 70%;
+    }
+  }
+  
+  // Блок бонусной программы
+  .bonus-block {
+    display: flex;
+    flex-direction: column;
+    gap: 16px; // Отступ между элементами внутри блока
+  }
+  
+  // Карточки действий
+  .action-cards-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px; // Отступ между карточками
+  }
+}
+
+// Анимация приветственного жеста
+@keyframes wave {
+  0% { transform: rotate(0deg); }
+  10% { transform: rotate(14deg); }
+  20% { transform: rotate(-8deg); }
+  30% { transform: rotate(14deg); }
+  40% { transform: rotate(-4deg); }
+  50% { transform: rotate(10deg); }
+  60% { transform: rotate(0deg); }
+  100% { transform: rotate(0deg); }
+} 

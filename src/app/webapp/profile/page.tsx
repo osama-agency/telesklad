@@ -145,9 +145,9 @@ const ProfilePage: React.FC = () => {
   const { user, account_tiers, remaining_to_next_tier, next_tier } = profileData;
 
   return (
-    <div className="webapp-container profile-page px-4 py-6">
+    <div className="webapp-container profile-page">
       {/* Единый контейнер с фиксированными отступами */}
-      <div className="profile-content-stack space-y-6">
+      <div className="profile-content-stack">
         
         {/* Заголовок профиля */}
         <div className="profile-header">
