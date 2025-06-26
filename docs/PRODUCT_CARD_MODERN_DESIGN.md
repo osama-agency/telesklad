@@ -68,9 +68,18 @@
 - CSS переменные для гибкости
 - overflow: visible на всех уровнях для теней
 
+### Обновление от 2025-01-17
+#### Исправление двойного фона
+Обнаружена и исправлена проблема с двойным фоном у карточек:
+- Удален белый фон из `.product-card` в `webapp-critical.scss`
+- Добавлен `background: transparent` для контейнера
+- Теперь виден только один белый фон от `.product-wrapper`
+- Детали в [PRODUCT_CARD_DOUBLE_BACKGROUND_FIX.md](./PRODUCT_CARD_DOUBLE_BACKGROUND_FIX.md)
+
 ### Файлы изменены
 - `src/styles/webapp.scss` - основные стили карточек
 - `src/styles/webapp-catalog-optimization.scss` - оптимизация контейнеров
+- `src/styles/webapp-critical.scss` - удалены конфликтующие стили
 
 ### Скриншоты
 До: Glassmorphism с прозрачными фонами и сложными эффектами

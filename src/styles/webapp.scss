@@ -213,9 +213,9 @@ input:-webkit-autofill:active {
   stroke-width: 2px !important; /* Толщина линии для лучшей видимости */
 }
 
-/* Убираем заливку у иконки профиля */
-.webapp-header .header-action-button .lucide-user-round,
-.webapp-header .header-action-icon .lucide-user-round {
+/* Убираем заливку у всех иконок в хедере */
+.webapp-header .header-action-button svg,
+.webapp-header .header-action-icon svg {
   fill: none !important;
   stroke: #8E8E93 !important;
   stroke-width: 2px !important;
