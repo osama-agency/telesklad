@@ -394,7 +394,7 @@ export default function CartPage() {
   };
 
   // Генерируем className с учетом Telegram окружения
-  const containerClassName = `webapp-container cart-page${isTelegramEnv ? ' telegram-env' : ''}`;
+  const containerClassName = `webapp-container cart-page px-4 py-6${isTelegramEnv ? ' telegram-env' : ''}`;
 
   if (isLoading) {
     return (
@@ -409,15 +409,15 @@ export default function CartPage() {
     return (
       <div className={containerClassName}>
         <div className="empty-state">
-          <div className="empty-state-content">
-            <div className="empty-state-icon">
+          <div className="empty-state-content space-y-2">
+            <div className="empty-state-icon mb-6">
               <IconComponent name="cart-empty" size={64} />
             </div>
             <div className="empty-state-title">Корзина пуста</div>
             <div className="empty-state-subtitle">
               Добавьте товары в корзину для оформления заказа
             </div>
-            <Link href="/webapp" className="empty-state-button">
+            <Link href="/webapp" className="empty-state-button mt-6">
               Вернуться в каталог
             </Link>
           </div>
@@ -429,11 +429,11 @@ export default function CartPage() {
   // Корзина с товарами
   return (
     <div className={containerClassName}>
-      <h1>Корзина</h1>
+      <h1 className="mb-6">Корзина</h1>
       
-      <div className="main-block mb-5 cart-items-block">
+      <div className="main-block mb-6 cart-items-block">
         {/* Заголовок корзины - как в Rails */}
-        <div className="flex justify-between items-center mb-3">
+        <div className="flex justify-between items-center mb-6">
           <div className="font-semibold">
             Товаров: {totalQuantity}
           </div>
@@ -449,7 +449,7 @@ export default function CartPage() {
         </div>
 
         {/* Список товаров в контейнере cart-items */}
-        <div className="cart-items" id="cart_items">
+        <div className="cart-items space-y-2" id="cart_items">
           {cartItems.map(item => (
             <CartItemComponent
               key={item.product_id}
@@ -461,17 +461,21 @@ export default function CartPage() {
       </div>
 
       {/* Форма данных для доставки с автосохранением */}
-      <DeliveryForm
-        initialData={userProfile || undefined}
-        onDataChange={handleDeliveryDataChange}
-        showPersonalInfo={true}
-      />
+      <div className="mb-6">
+        <DeliveryForm
+          initialData={userProfile || undefined}
+          onDataChange={handleDeliveryDataChange}
+          showPersonalInfo={true}
+        />
+      </div>
 
       {/* Система лояльности и итоговая информация */}
-      <CartCheckoutSummary
-        onTotalChange={setFinalTotal}
-        onBonusChange={setAppliedBonus}
-      />
+      <div className="mb-6">
+        <CartCheckoutSummary
+          onTotalChange={setFinalTotal}
+          onBonusChange={setAppliedBonus}
+        />
+      </div>
 
       {/* 🚀 Telegram MainButton для оформления заказа */}
       {cartItems.length > 0 && isDeliveryFormValid && (

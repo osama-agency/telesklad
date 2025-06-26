@@ -255,13 +255,13 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
   const renderActionCard = (item: ActionCardItem) => {
     const CardContent = () => (
       <div className={`action-card ${item.variant === 'admin' ? 'action-card-admin' : ''}`}>
-        <div className="action-card-content">
-          <div className="action-card-icon">
+        <div className="action-card-content space-y-2">
+          <div className="action-card-icon mb-2">
             <IconComponent name={item.icon} size={20} />
           </div>
           
-          <div className="action-card-text">
-            <div className="action-card-title">
+          <div className="action-card-text flex-1 space-y-1">
+            <div className="action-card-title flex items-center gap-2">
               {item.title}
               {item.badge && item.id !== 'delivery-data' && (
                 <span className={`action-card-badge ${getBadgeColors(item.badge.type)}`}>
@@ -280,7 +280,7 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
         </div>
         
         {item.badge && item.id !== 'delivery-data' && (
-          <div className="action-card-footer">
+          <div className="action-card-footer mt-2">
             <span className="action-card-footer-text">
               {item.badge.count} {item.badge.text}
             </span>
@@ -288,7 +288,7 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
         )}
         
         {item.id === 'delivery-data' && (
-          <div className="action-card-footer">
+          <div className="action-card-footer mt-2">
             <span className="action-card-footer-text delivery-data">
               {formatUserData()}
             </span>
@@ -348,7 +348,7 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
 
   return (
     <>
-      <div className="action-cards-container">
+      <div className="action-cards-container space-y-2">
         {actionItems.map(renderActionCard)}
       </div>
 

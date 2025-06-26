@@ -130,11 +130,11 @@ export function ProductCatalog({}: ProductCatalogProps) {
 
   if (error) {
     return (
-      <div className="text-center py-8">
-        <p className="text-red-600">{error}</p>
+      <div className="text-center py-8 px-4">
+        <p className="text-red-600 mb-6">{error}</p>
         <button 
           onClick={() => window.location.reload()} 
-          className="mt-2 px-4 py-2 bg-blue-600 text-white rounded"
+          className="px-4 py-2 bg-blue-600 text-white rounded"
         >
           Повторить
         </button>
@@ -145,10 +145,12 @@ export function ProductCatalog({}: ProductCatalogProps) {
   return (
     <div className="product-catalog">
       {/* Category Filter - современный фильтр под поиском */}
-      <CategoryFilter 
-        selectedCategory={selectedCategory}
-        onSelectCategory={handleCategoryChange}
-      />
+      <div className="mb-6">
+        <CategoryFilter 
+          selectedCategory={selectedCategory}
+          onSelectCategory={handleCategoryChange}
+        />
+      </div>
 
       {/* Products Grid */}
       {loading ? (
@@ -160,9 +162,9 @@ export function ProductCatalog({}: ProductCatalogProps) {
           onSubscriptionChange={handleSubscriptionChange}
         />
       ) : (
-        <div className="no-items-wrapper">
-          <div className="w-full">
-            <div className="flex justify-center text-gray-no-active w-full mb-1">
+        <div className="no-items-wrapper py-8">
+          <div className="w-full space-y-2">
+            <div className="flex justify-center text-gray-no-active w-full mb-6">
               <svg className="pointer-events-none" style={{ fill: "currentColor", width: 40, height: 40 }}>
                 <path fillRule="evenodd" d="M10 2L3 7v11a1 1 0 001 1h12a1 1 0 001-1V7l-7-5zM10 12a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
               </svg>

@@ -33,7 +33,8 @@ export function useTelegramDesignSystem() {
     link_color: '#48C928',
     button_color: '#48C928',
     button_text_color: '#ffffff',
-    secondary_bg_color: '#f0fcf0'
+    secondary_bg_color: '#f0fcf0',
+    header_bg_color: '#F9F9F9' // Светло-серый фон для хедера по умолчанию
   });
 
   const [deviceCapabilities, setDeviceCapabilities] = useState<DeviceCapabilities>({
@@ -108,7 +109,7 @@ export function useTelegramDesignSystem() {
             button_color: themeParams.button_color || '#48C928',
             button_text_color: '#ffffff',
             secondary_bg_color: '#f0fcf0',
-            header_bg_color: '#ffffff'
+            header_bg_color: '#F9F9F9' // Светло-серый фон для хедера
           };
           
           setTelegramTheme(lightTheme);

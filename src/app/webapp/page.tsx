@@ -25,7 +25,7 @@ export default function WebappHomePage() {
   // Показываем загрузку пока идет аутентификация
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#F9F9F9]">
+      <div className="min-h-screen bg-[#F9F9F9] px-4 py-6">
         <SkeletonLoading type="catalog" />
       </div>
     );
@@ -34,15 +34,15 @@ export default function WebappHomePage() {
   // Показываем ошибку если пользователь не аутентифицирован
   if (!isAuthenticated) {
     return (
-      <div className="no-items-wrapper">
-        <div className="w-full">
-          <div className="flex justify-center text-red-500 w-full mb-1">
+      <div className="min-h-screen bg-[#F9F9F9] px-4 py-6">
+        <div className="flex flex-col items-center justify-center space-y-2">
+          <div className="flex justify-center text-red-500 mb-6">
             <svg className="pointer-events-none" style={{ fill: "currentColor", width: 40, height: 40 }}>
               <circle cx="20" cy="20" r="18" />
             </svg>
           </div>
-          <div className="no-items-title">Ошибка аутентификации</div>
-          <div className="text-center text-sm text-gray-500 mt-2">
+          <div className="text-xl font-semibold text-center">Ошибка аутентификации</div>
+          <div className="text-center text-sm text-gray-500">
             Пожалуйста, запустите приложение из Telegram
           </div>
         </div>
@@ -51,17 +51,15 @@ export default function WebappHomePage() {
   }
 
   return (
-    <>
-      <main className="container-adaptive">
-        {/* Product Catalog - показываем всегда, как в старом Rails приложении */}
-        <Suspense fallback={
-          <div className="min-h-screen bg-[#F9F9F9]">
-            <SkeletonLoading type="catalog" />
-          </div>
-        }>
-          <ProductCatalog />
-        </Suspense>
-      </main>
-    </>
+    <main className="container-adaptive px-4 py-6">
+      {/* Product Catalog - показываем всегда, как в старом Rails приложении */}
+      <Suspense fallback={
+        <div className="min-h-screen">
+          <SkeletonLoading type="catalog" />
+        </div>
+      }>
+        <ProductCatalog />
+      </Suspense>
+    </main>
   );
 } 

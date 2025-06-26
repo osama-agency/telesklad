@@ -120,7 +120,7 @@ const ProfilePage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="webapp-container profile-page">
+      <div className="webapp-container profile-page px-4 py-6">
         <SkeletonLoading type="profile" />
       </div>
     );
@@ -128,9 +128,9 @@ const ProfilePage: React.FC = () => {
 
   if (error || !profileData) {
     return (
-      <div className="webapp-container profile-page">
+      <div className="webapp-container profile-page px-4 py-6">
         <div className="text-center py-8">
-          <div className="text-red-600 mb-4">{error}</div>
+          <div className="text-red-600 mb-6">{error}</div>
           <button 
             onClick={loadData}
             className="btn btn-secondary"
@@ -145,9 +145,9 @@ const ProfilePage: React.FC = () => {
   const { user, account_tiers, remaining_to_next_tier, next_tier } = profileData;
 
   return (
-    <div className="webapp-container profile-page">
+    <div className="webapp-container profile-page px-4 py-6">
       {/* Единый контейнер с фиксированными отступами */}
-      <div className="profile-content-stack">
+      <div className="profile-content-stack space-y-6">
         
         {/* Заголовок профиля */}
         <div className="profile-header">

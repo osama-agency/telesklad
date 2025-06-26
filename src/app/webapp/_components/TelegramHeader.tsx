@@ -64,7 +64,7 @@ export function TelegramHeader({ className = '' }: TelegramHeaderProps) {
 
   // Стили header на основе Telegram theme
   const headerStyles = useMemo(() => ({
-    backgroundColor: telegramTheme.header_bg_color || telegramTheme.bg_color,
+    backgroundColor: telegramTheme.header_bg_color || '#F9F9F9', // Используем #F9F9F9 вместо белого
     color: telegramTheme.text_color,
     paddingTop: `${deviceCapabilities.safeAreaInset.top}px`,
     paddingLeft: `${deviceCapabilities.safeAreaInset.left}px`,
