@@ -4,6 +4,7 @@
 @import "./telegram-webapp-spacing-fixes.scss";
 @import "./search-perfect-centering.scss";
 @import "./telegram-design-system.scss";
+@import "./webapp-action-cards.scss";
 
 @import "./telegram-adaptive-theme.scss";/* ГЛОБАЛЬНОЕ ОТКЛЮЧЕНИЕ ВСЕХ БРАУЗЕРНЫХ СТИЛЕЙ ФОКУСА */
 :root {
@@ -281,7 +282,7 @@ span[role="button"],
 button:focus, 
 button:focus-visible,
 button:focus-within,
-button:active,
+button:active, 
 button:hover,
 input:focus, 
 input:focus-visible,
@@ -8759,18 +8760,18 @@ html {
       stroke: white !important;
       fill: white !important;
     }
-  }
-  
-  /* Зеленое сердечко на странице избранного переопределяет белый цвет */
-  .favorites-page .empty-state .empty-state-icon {
-    svg {
-      color: #48C928 !important;
-      fill: none !important;
-      stroke: #48C928 !important;
-      
-      * {
-        stroke: #48C928 !important;
+    
+    /* Зеленое сердечко на странице избранного переопределяет белый цвет */
+    .favorites-page & {
+      svg {
+        color: #48C928 !important;
         fill: none !important;
+        stroke: #48C928 !important;
+        
+        * {
+          stroke: #48C928 !important;
+          fill: none !important;
+        }
       }
     }
   }

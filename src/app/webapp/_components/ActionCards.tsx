@@ -196,12 +196,12 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
   const renderActionCard = (item: ActionCardItem) => {
     const CardContent = () => (
       <div className={`action-card ${item.variant === 'admin' ? 'action-card-admin' : ''}`}>
-        <div className="action-card-content space-y-2">
-          <div className="action-card-icon mb-2">
+        <div className="action-card-content flex items-center">
+          <div className="action-card-icon">
             <IconComponent name={item.icon} size={20} />
           </div>
           
-          <div className="action-card-text flex-1 space-y-1">
+          <div className="action-card-text flex-1 ml-4">
             <div className="action-card-title flex items-center gap-2">
               {item.title}
               {item.badge && item.id !== 'delivery-data' && (
@@ -217,7 +217,7 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
             )}
           </div>
           
-          <div className="action-card-arrow">
+          <div className="action-card-arrow flex items-center">
             <IconComponent name="right" size={16} />
           </div>
         </div>
