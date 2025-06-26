@@ -93,6 +93,9 @@ export default function TelegramCartButton() {
       router.push('/webapp/cart');
     };
 
+    // Настраиваем светлую тему для каталога (как в корзине)
+    telegramSDK.setLightTheme();
+    
     // Настраиваем MainButton с зеленым цветом как в корзине
     const cleanup = telegramSDK.configureMainButton({
       text: `Корзина ${total.toLocaleString('ru-RU')} ₽`,
