@@ -192,14 +192,14 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
     {
       id: 'delivery-data',
       title: 'Данные для доставки',
-      description: 'Управление адресом и контактами',
+      description: '',
       icon: 'profile',
       href: '/webapp/profile/delivery'
     },
     {
       id: 'subscriptions',
       title: 'Товары в ожидании',
-      description: 'Отслеживайте поступление товаров',
+      description: '',
       icon: 'hourglass',
       href: '/webapp/subscriptions',
       badge: currentSubscriptionsCount && currentSubscriptionsCount > 0 ? {
@@ -269,9 +269,11 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
                 </span>
               )}
             </div>
-            <div className="action-card-description">
-              {item.description}
-            </div>
+            {item.description && (
+              <div className="action-card-description">
+                {item.description}
+              </div>
+            )}
           </div>
           
           <div className="action-card-arrow">
@@ -287,7 +289,7 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
           </div>
         )}
         
-        {item.id === 'delivery-data' && (
+        {item.id === 'delivery-data' && formatUserData() !== 'Заполните данные для доставки' && (
           <div className="action-card-footer mt-2">
             <span className="action-card-footer-text delivery-data">
               {formatUserData()}
