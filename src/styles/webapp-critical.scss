@@ -54,10 +54,8 @@ body {
 }
 
 // === КАРТОЧКА ПРОДУКТА (базовые стили) ===
+// Убираем фон из product-card чтобы не конфликтовать с product-wrapper
 .product-card {
-  background: white;
-  border-radius: 12px;
-  padding: 12px;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -65,30 +63,6 @@ body {
   
   &:active {
     transform: scale(0.98);
-  }
-  
-  .product-image-wrapper {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 1;
-    margin-bottom: 8px;
-    border-radius: 8px;
-    overflow: hidden;
-    background: #f5f5f5;
-  }
-  
-  .product-name {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-color);
-    margin-bottom: 4px;
-    line-height: 1.3;
-  }
-  
-  .product-price {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--text-color);
   }
 }
 

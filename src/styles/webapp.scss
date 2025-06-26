@@ -213,6 +213,20 @@ input:-webkit-autofill:active {
   stroke-width: 2px !important; /* Толщина линии для лучшей видимости */
 }
 
+/* Убираем заливку у иконки профиля */
+.webapp-header .header-action-button .lucide-user-round,
+.webapp-header .header-action-icon .lucide-user-round {
+  fill: none !important;
+  stroke: #8E8E93 !important;
+  stroke-width: 2px !important;
+  
+  * {
+    fill: none !important;
+    stroke: #8E8E93 !important;
+    stroke-width: 2px !important;
+  }
+}
+
 /* СУПЕР АГРЕССИВНОЕ ОТКЛЮЧЕНИЕ ДЛЯ TELEGRAM MAIN BUTTON */
 .tg-main-button,
 [class*="telegram"],
@@ -856,6 +870,9 @@ html, body {
 .product-card {
   width: 100%;
   overflow: visible; /* Разрешаем теням выходить за границы */
+  background: transparent; /* Убираем любой фон у контейнера */
+  border-radius: 0; /* Убираем скругления у контейнера */
+  padding: 0; /* Убираем отступы у контейнера */
 }
 
 /* ===============================================
@@ -3998,7 +4015,7 @@ html, body {
   font-size: clamp(14px, 3.5vw, 16px);
   font-weight: 600;
   color: #3D4453;
-  margin-bottom: var(--space-4);
+  margin-bottom: 4px;
 }
 
 .tier-card-benefit {
@@ -4014,7 +4031,7 @@ html, body {
 .status-badge {
   font-size: clamp(10px, 2.5vw, 11px);
   font-weight: 600;
-  padding: var(--space-4) var(--space-8);
+  padding: 4px 8px;
   border-radius: 12px;
   
   &.current {
@@ -4036,20 +4053,20 @@ html, body {
 .tier-card-requirement {
   font-size: clamp(11px, 2.8vw, 12px);
   color: #777777;
-  margin-bottom: var(--space-8);
+  margin-bottom: 8px;
 }
 
 .tier-card-progress {
   background: rgba(72, 201, 40, 0.1);
   border-radius: 8px;
-  padding: var(--space-8);
+  padding: 8px;
 }
 
 .progress-info {
   font-size: clamp(11px, 2.8vw, 12px);
   color: #48C928;
   font-weight: 600;
-  margin-bottom: var(--space-4);
+  margin-bottom: 4px;
 }
 
 .mini-progress-bar {
@@ -4112,11 +4129,11 @@ html, body {
 /* Адаптивность для современного bonus block */
 @media (max-width: 640px) {
   .modern-bonus-block {
-    padding: var(--space-16);
+    padding: 16px;
   }
   
   .bonus-header {
-    margin-bottom: var(--space-16);
+    margin-bottom: 16px;
   }
   
   .bonus-balance-amount {
@@ -4124,35 +4141,35 @@ html, body {
   }
   
   .current-tier-info {
-    padding: var(--space-12);
-    margin-bottom: var(--space-16);
+    padding: 12px;
+    margin-bottom: 16px;
   }
   
   .progress-section {
-    padding: var(--space-12);
+    padding: 12px;
   }
   
   .welcome-section {
-    padding: var(--space-20) var(--space-12);
+    padding: 20px 12px;
   }
   
   .bonus-modal {
-    margin: var(--space-16);
+    margin: 16px;
     max-width: none;
   }
   
   .modal-header {
-    padding: var(--space-16);
+    padding: 16px;
   }
   
   .modal-content {
-    padding: var(--space-16);
+    padding: 16px;
   }
 }
 
 @media (max-width: 374px) {
   .modern-bonus-block {
-    padding: var(--space-12);
+    padding: 12px;
   }
   
   .bonus-balance-amount {
@@ -4160,19 +4177,19 @@ html, body {
   }
   
   .current-tier-info {
-    padding: var(--space-8);
+    padding: 8px;
   }
   
   .progress-section {
-    padding: var(--space-8);
+    padding: 8px;
   }
   
   .welcome-section {
-    padding: var(--space-16) var(--space-8);
+    padding: 16px 8px;
   }
   
   .tier-card {
-    padding: var(--space-12);
+    padding: 12px;
   }
 }
 
@@ -9463,6 +9480,16 @@ html {
 /* ===============================================
    🎯 FINAL OVERRIDES FOR CATALOG PRODUCT CARDS
    =============================================== */
+
+/* Убираем фон у product-card контейнера */
+.webapp-container.catalog-page .product-grid .product-card,
+.product-catalog:not(.search-page) .product-grid .product-card {
+  background: transparent !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
+}
 
 /* Финальные стили для карточек в каталоге (переопределяют все предыдущие) */
 .webapp-container.catalog-page .product-grid .product-card .product-wrapper,

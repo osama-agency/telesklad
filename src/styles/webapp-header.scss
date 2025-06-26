@@ -174,14 +174,16 @@
   svg:not(.filled):not([fill="currentColor"]) {
     color: #8E8E93 !important;
     
-    /* Для иконки профиля которая использует fill */
+    /* Для иконки профиля - тоже делаем контурной */
     &.lucide-user-round {
-      fill: #8E8E93 !important;
+      fill: none !important;
       stroke: #8E8E93 !important;
+      stroke-width: 2px !important;
       
       * {
-        fill: #8E8E93 !important;
+        fill: none !important;
         stroke: #8E8E93 !important;
+        stroke-width: 2px !important;
       }
     }
     
