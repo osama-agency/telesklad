@@ -92,6 +92,14 @@ export async function GET(request: NextRequest) {
       build: user.build,
       postal_code: user.postal_code,
       bonus_balance: user.bonus_balance || 0,
+      photo_url: user.photo_url,
+      username: user.username,
+      first_name_raw: user.first_name_raw,
+      last_name_raw: user.last_name_raw,
+      role: user.role || 0,
+      order_count: user.order_count || 0,
+      started: user.started,
+      is_blocked: user.is_blocked,
       account_tier: user.account_tiers ? {
         id: Number(user.account_tiers.id),
         title: user.account_tiers.title,
@@ -102,10 +110,55 @@ export async function GET(request: NextRequest) {
       created_at: user.created_at
     };
 
+    // Получаем все уровни лояльности для отображения
+    const allTiers = await prisma.account_tiers.findMany({
+      orderBy: { order_threshold: 'asc' }
+    })
+
+    // Определяем следующий уровень и оставшееся количество заказов
+    let nextTier = null
+    let remainingToNextTier = null
+    
+    if (user.account_tiers) {
+      // Находим следующий уровень
+      const currentThreshold = user.account_tiers.order_threshold
+      nextTier = allTiers.find(tier => tier.order_threshold > currentThreshold)
+      
+      if (nextTier) {
+        remainingToNextTier = nextTier.order_threshold - (user.order_count || 0)
+        // Добавляем поле orders_to_next для совместимости
+        nextTier = {
+          ...nextTier,
+          id: Number(nextTier.id),
+          orders_to_next: remainingToNextTier
+        }
+      }
+    } else {
+      // Если нет текущего уровня, следующий - первый
+      nextTier = allTiers[0]
+      if (nextTier) {
+        remainingToNextTier = nextTier.order_threshold - (user.order_count || 0)
+        nextTier = {
+          ...nextTier,
+          id: Number(nextTier.id),
+          orders_to_next: remainingToNextTier
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       profile: profileData,
-      user: profileData // Для совместимости с существующим кодом
+      user: profileData, // Для совместимости с существующим кодом
+      account_tiers: allTiers.map(tier => ({
+        id: Number(tier.id),
+        title: tier.title,
+        order_threshold: tier.order_threshold,
+        bonus_percentage: tier.bonus_percentage,
+        order_min_amount: tier.order_min_amount
+      })),
+      remaining_to_next_tier: remainingToNextTier,
+      next_tier: nextTier
     });
 
   } catch (error) {

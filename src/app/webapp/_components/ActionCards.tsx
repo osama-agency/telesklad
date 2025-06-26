@@ -129,70 +129,12 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
     router.push(href);
   };
 
-  // Форматируем данные пользователя для отображения
-  const formatUserData = () => {
-    const lastName = user.middle_name || ''; // middle_name это фамилия в схеме БД
-    const firstName = user.first_name || '';
-    const middleName = user.last_name || ''; // last_name это отчество в схеме БД
-    const street = user.street || '';
-    const home = user.home || '';
-    const apartment = user.apartment || '';
-    const phone = user.phone_number || '';
-    
-    // Проверяем, есть ли вообще данные
-    if (!lastName && !firstName && !middleName && !street && !home && !phone) {
-      return 'Заполните данные для доставки';
-    }
-    
-    const lines = [];
-    
-    // 1. ФИО (первая строка)
-    const nameComponents = [lastName, firstName, middleName].filter(Boolean);
-    if (nameComponents.length > 0) {
-      lines.push(nameComponents.join(' '));
-    }
-    
-    // 2. Адрес (вторая строка)
-    let addressPart = '';
-    if (street && home) {
-      addressPart = `${street}, ${home}`;
-      if (apartment) {
-        addressPart += `, кв. ${apartment}`;
-      }
-    } else if (street || home) {
-      addressPart = street || home;
-      if (apartment) {
-        addressPart += `, кв. ${apartment}`;
-      }
-    }
-    if (addressPart) {
-      lines.push(addressPart);
-    }
-    
-    // 3. Телефон в формате +7 999 999 99 99 (третья строка)
-    if (phone) {
-      // Форматируем телефон в нужный формат
-      const cleanPhone = phone.replace(/\D/g, '');
-      let formattedPhone = phone; // По умолчанию оставляем как есть
-      
-      if (cleanPhone.length === 11 && cleanPhone.startsWith('7')) {
-        formattedPhone = `+7 ${cleanPhone.slice(1, 4)} ${cleanPhone.slice(4, 7)} ${cleanPhone.slice(7, 9)} ${cleanPhone.slice(9, 11)}`;
-      } else if (cleanPhone.length === 10) {
-        formattedPhone = `+7 ${cleanPhone.slice(0, 3)} ${cleanPhone.slice(3, 6)} ${cleanPhone.slice(6, 8)} ${cleanPhone.slice(8, 10)}`;
-      }
-      
-      lines.push(formattedPhone);
-    }
-    
-    return lines.length > 0 ? lines.join('\n') : 'Заполните данные для доставки';
-  };
-
   // В реальном приложении эти данные будут приходить через API
   const actionItems: ActionCardItem[] = [
     {
       id: 'delivery-data',
       title: 'Данные для доставки',
-      description: '',
+      description: 'Управление адресом и контактами',
       icon: 'profile',
       href: '/webapp/profile/delivery'
     },
@@ -285,14 +227,6 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
           <div className="action-card-footer mt-2">
             <span className="action-card-footer-text">
               {item.badge.count} {item.badge.text}
-            </span>
-          </div>
-        )}
-        
-        {item.id === 'delivery-data' && formatUserData() !== 'Заполните данные для доставки' && (
-          <div className="action-card-footer mt-2">
-            <span className="action-card-footer-text delivery-data">
-              {formatUserData()}
             </span>
           </div>
         )}
