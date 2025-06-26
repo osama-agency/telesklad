@@ -8,11 +8,16 @@
 @import './core/mixins';
 @import './core/utilities';
 
-// 2. Legacy imports (temporary - will be migrated)
-@import './webapp-header.scss';
+// 2. Components (reusable UI elements)
+@import './components/header';
+@import './components/search';
+
+// 3. Modules (page-specific styles)
+@import './modules/profile';
+
+// 4. Legacy imports (temporary - will be migrated)
 @import './webapp-support.scss';
 @import './telegram-webapp-spacing-fixes.scss';
-@import './search-perfect-centering.scss';
 @import './telegram-design-system.scss';
 @import './webapp-action-cards.scss';
 @import './telegram-adaptive-theme.scss';
