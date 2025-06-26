@@ -173,10 +173,12 @@
   svg.filled,
   svg[fill="currentColor"] {
     color: #48C928 !important;
-    fill: #48C928 !important;
+    fill: none !important; /* Убираем заливку */
+    stroke: #48C928 !important; /* Зеленый контур */
     
     * {
-      fill: #48C928 !important;
+      fill: none !important; /* Убираем заливку у всех элементов */
+      stroke: #48C928 !important; /* Зеленый контур */
     }
   }
 }
@@ -199,7 +201,7 @@
   min-width: 16px; /* Немного уменьшаем из-за обводки */
   height: 16px; /* Немного уменьшаем из-за обводки */
   padding: 0 4px; /* Немного уменьшаем padding */
-  background: #ff4444;
+  background: #48C928; /* Зеленый фон вместо красного */
   color: #fff;
   font-size: 10px; /* Немного уменьшаем шрифт */
   font-weight: 700; /* Делаем жирнее для лучшей читаемости */
@@ -214,6 +216,7 @@
 .header-action-button:has(.filled) .header-action-badge,
 .header-action-button:has(svg.filled) .header-action-badge,
 .header-action-button:has(svg[fill="currentColor"]) .header-action-badge {
+  background: #48C928; /* Зеленый фон */
   border: 2px solid #fff;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }

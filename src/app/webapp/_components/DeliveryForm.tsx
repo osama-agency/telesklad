@@ -176,14 +176,14 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
   return (
     <div className="delivery-form">
       <div className="main-block">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-6">
           <h3 className="text-lg font-semibold">Данные для доставки</h3>
           <SaveStatusIndicator status={saveStatus} />
         </div>
 
         {showPersonalInfo && (
           <>
-            <div className="input-container">
+            <div className="input-container mb-2">
               <label htmlFor="delivery_middle_name" className="required">Фамилия</label>
               <DaDataInput
                 type="fio"
@@ -196,7 +196,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
               />
             </div>
 
-            <div className="input-container">
+            <div className="input-container mb-2">
               <label htmlFor="delivery_first_name" className="required">Имя</label>
               <DaDataInput
                 type="fio"
@@ -209,7 +209,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
               />
             </div>
 
-            <div className="input-container">
+            <div className="input-container mb-2">
               <label htmlFor="delivery_last_name" className="required">Отчество</label>
               <input
                 type="text"
@@ -224,7 +224,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
               />
             </div>
 
-            <div className="input-container">
+            <div className="input-container mb-6">
               <label htmlFor="delivery_phone_number" className="required">Номер телефона</label>
               <input
                 type="tel"
@@ -241,11 +241,11 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
               />
             </div>
 
-            <div className="line-user"></div>
+            <div className="line-user mb-6"></div>
           </>
         )}
 
-        <div className="input-container">
+        <div className="input-container mb-2">
           <label htmlFor="delivery_address" className="required">Город</label>
           <DaDataInput
             type="address"
@@ -277,7 +277,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
           />
         </div>
 
-        <div className="input-container">
+        <div className="input-container mb-2">
           <label htmlFor="delivery_street" className="required">Улица</label>
           <DaDataInput
             type="address"
@@ -340,7 +340,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
           />
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex gap-4 mb-2">
           <div className="w-1/2">
             <div className="input-container">
               <label htmlFor="delivery_home" className="required">Дом</label>
@@ -370,7 +370,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
           </div>
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex gap-4 mb-6">
           <div className="w-1/2">
             <div className="input-container">
               <label htmlFor="delivery_build">Корпус</label>
