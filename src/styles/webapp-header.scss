@@ -175,10 +175,12 @@
     color: #48C928 !important;
     fill: none !important; /* Убираем заливку */
     stroke: #48C928 !important; /* Зеленый контур */
+    stroke-width: 2px !important; /* Толщина линии */
     
     * {
       fill: none !important; /* Убираем заливку у всех элементов */
       stroke: #48C928 !important; /* Зеленый контур */
+      stroke-width: 2px !important; /* Толщина линии */
     }
   }
 }

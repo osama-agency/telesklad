@@ -192,8 +192,9 @@ input:-webkit-autofill:active {
 .webapp-header .header-action-icon svg.filled,
 .webapp-header .header-action-icon svg[fill="currentColor"] {
   color: #48C928 !important;
-  fill: #48C928 !important;
-  stroke: #48C928 !important;
+  fill: none !important; /* Убираем заливку */
+  stroke: #48C928 !important; /* Зеленый контур */
+  stroke-width: 2px !important; /* Толщина линии */
 }
 
 .webapp-header .header-action-button:has(svg.filled),
@@ -206,9 +207,10 @@ input:-webkit-autofill:active {
 .webapp-header .header-action-button svg[fill="currentColor"] *,
 .webapp-header .header-action-icon svg.filled *,
 .webapp-header .header-action-icon svg[fill="currentColor"] * {
-  fill: #48C928 !important;
+  fill: none !important; /* Убираем заливку */
   color: #48C928 !important;
-  stroke: none !important;
+  stroke: #48C928 !important; /* Зеленый контур */
+  stroke-width: 2px !important; /* Толщина линии для лучшей видимости */
 }
 
 /* СУПЕР АГРЕССИВНОЕ ОТКЛЮЧЕНИЕ ДЛЯ TELEGRAM MAIN BUTTON */
