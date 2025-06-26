@@ -395,9 +395,7 @@ html, body {
   padding-top: calc(env(safe-area-inset-top) + var(--container-padding-y));
 }
 
-.webapp-container.profile-page {
-  /* Профиль использует stack layout со своими отступами */
-}
+// Стили профиля перенесены в webapp-profile.scss
 
 .webapp-container.cart-page {
   /* Корзина использует стандартные отступы */
