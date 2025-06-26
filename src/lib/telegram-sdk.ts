@@ -180,6 +180,41 @@ export class TelegramSDK {
       console.warn('Error closing Telegram WebApp:', error);
     }
   }
+
+  // Установка светлой темы
+  setLightTheme() {
+    if (!this.isAvailable()) return;
+
+    try {
+      const tg = window.Telegram.WebApp;
+      
+      // Устанавливаем светлые цвета для заголовка и фона
+      tg.setHeaderColor('#FFFFFF');
+      tg.setBackgroundColor('#FFFFFF');
+      
+      // Переопределяем параметры темы для полной совместимости
+      if (tg.themeParams) {
+        tg.themeParams.bg_color = '#FFFFFF';
+        tg.themeParams.secondary_bg_color = '#F7F7F7';
+        tg.themeParams.text_color = '#000000';
+        tg.themeParams.hint_color = '#999999';
+        tg.themeParams.link_color = '#48C928';
+        tg.themeParams.button_color = '#48C928';
+        tg.themeParams.button_text_color = '#FFFFFF';
+      }
+      
+      // Если MainButton уже показана, обновляем её цвета
+      if (tg.MainButton?.isVisible) {
+        tg.MainButton.color = '#48C928';
+        tg.MainButton.textColor = '#FFFFFF';
+        console.log('🎨 Цвета MainButton обновлены для светлой темы');
+      }
+      
+      console.log('✅ Светлая тема установлена для Telegram WebApp');
+    } catch (error) {
+      console.warn('Ошибка установки светлой темы:', error);
+    }
+  }
 }
 
 export const telegramSDK = TelegramSDK.getInstance(); 

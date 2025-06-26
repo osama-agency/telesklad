@@ -29,6 +29,9 @@ export default function TelegramCheckoutButton({
 
     console.log('🚀 Настройка Telegram MainButton');
 
+    // Принудительно устанавливаем светлую тему для всего приложения
+    telegramSDK.setLightTheme();
+
     const handleClick = () => {
       if (isLoading || isDisabled) {
         console.log('🚫 Кнопка заблокирована:', { isLoading, isDisabled });
@@ -45,20 +48,35 @@ export default function TelegramCheckoutButton({
       }, 100);
     };
 
-    // Настраиваем MainButton
+    // Настраиваем MainButton со светлыми цветами
     const cleanup = telegramSDK.configureMainButton({
       text: `Оформить заказ (${total.toLocaleString('ru-RU')} ₽)`,
-      color: '#48C928',
-      textColor: '#FFFFFF',
+      color: '#48C928',     // Зеленый фон кнопки
+      textColor: '#FFFFFF', // Белый текст
       onClick: handleClick,
       show: true,
       enable: !isDisabled && !isLoading
     });
+    
+    // Дополнительно устанавливаем цвета напрямую через WebApp API
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg?.MainButton) {
+      try {
+        // Принудительно устанавливаем цвета MainButton после показа
+        setTimeout(() => {
+          tg.MainButton.color = '#48C928';
+          tg.MainButton.textColor = '#FFFFFF';
+          console.log('🎨 Цвета MainButton установлены напрямую');
+        }, 100);
+      } catch (error) {
+        console.warn('Не удалось установить цвета MainButton напрямую:', error);
+      }
+    }
 
     cleanupRef.current = cleanup;
     isConfiguredRef.current = true;
 
-    console.log('✅ MainButton настроена');
+    console.log('✅ MainButton настроена со светлой темой');
 
     // Очистка при размонтировании
     return () => {

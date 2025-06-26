@@ -9484,6 +9484,43 @@ html {
    Решение: Оптимизированные отступы для Telegram окружения
 */
 
+/* Принудительная светлая тема для области MainButton */
+.webapp-container.cart-page.telegram-env {
+  /* Добавляем псевдоэлемент для светлого фона под MainButton */
+  &::after {
+    content: '';
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100px; /* Высота области MainButton */
+    background: #FFFFFF;
+    z-index: 999; /* Под MainButton (z-index: 1000) */
+    pointer-events: none;
+  }
+}
+
+/* Специальные стили для темной темы Telegram */
+@media (prefers-color-scheme: dark) {
+  .webapp-container.cart-page.telegram-env {
+    /* Принудительно белый фон для всей страницы корзины */
+    background-color: #FFFFFF !important;
+    
+    /* Белый фон для всех вложенных элементов */
+    .main-block,
+    .checkout-summary-card,
+    .cart-checkout-summary {
+      background-color: #FFFFFF !important;
+      color: #000000 !important;
+    }
+    
+    /* Обеспечиваем светлый фон под MainButton */
+    &::after {
+      background: #FFFFFF !important;
+    }
+  }
+}
+
 /* Оптимизация для корзины с Telegram MainButton */
 .webapp-container.cart-page {
   /* Убираем лишний padding-bottom для нижнего меню */
