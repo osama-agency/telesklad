@@ -3950,14 +3950,14 @@ html, body {
 .tiers-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-12);
+  gap: 12px;
 }
 
 .tier-card {
   background: #f8f9fa;
   border: 1px solid #e9ecef;
   border-radius: 20px;
-  padding: var(--space-16);
+  padding: 16px;
   transition: all 0.2s ease;
   
   &.current {
@@ -3981,8 +3981,8 @@ html, body {
 .tier-card-header {
   display: flex;
   align-items: center;
-  gap: var(--space-12);
-  margin-bottom: var(--space-8);
+  gap: 12px;
+  margin-bottom: 8px;
 }
 
 .tier-card-icon {
