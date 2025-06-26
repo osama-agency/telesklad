@@ -4,7 +4,7 @@ import { type PropsWithChildren } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Script from "next/script";
-import "@/styles/main-exact.scss";
+import "@/styles/webapp.scss";
 import "@/css/inter.css";
 import { IconComponent } from "@/components/webapp/IconComponent";
 import { TelegramHeader } from "./_components/TelegramHeader";

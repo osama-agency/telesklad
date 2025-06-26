@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { IconComponent } from '@/components/webapp/IconComponent';
 import BonusBlock from '../_components/BonusBlock';
-import ActionCards from '../_components/ActionCards';
+import ActionCardsV2 from '../_components/ActionCardsV2';
 import SkeletonLoading from '../_components/SkeletonLoading';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { webAppFetch } from '@/lib/utils/webapp-fetch';
@@ -173,7 +173,7 @@ const ProfilePage: React.FC = () => {
         <BonusBlock />
 
         {/* Меню действий */}
-        <ActionCards 
+        <ActionCardsV2 
           isAdmin={isAdminOrManagerOrModerator(user.role)} 
           user={user}
           subscriptionsCount={subscriptions.length}
