@@ -158,7 +158,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
   if (!isLoaded) {
     return (
       <div className="delivery-form">
-        <div className="main-block mb-5">
+        <div className="main-block">
           <h3 className="text-lg font-semibold mb-4">Данные для доставки</h3>
           <div className="delivery-form-skeleton">
             <div className="skeleton-line short"></div>
@@ -175,7 +175,7 @@ const DeliveryForm: React.FC<DeliveryFormProps> = ({
 
   return (
     <div className="delivery-form">
-      <div className="main-block mb-5">
+      <div className="main-block">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">Данные для доставки</h3>
           <SaveStatusIndicator status={saveStatus} />

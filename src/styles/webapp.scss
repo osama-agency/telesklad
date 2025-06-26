@@ -9659,25 +9659,35 @@ html {
    🎯 ДОПОЛНИТЕЛЬНАЯ ОПТИМИЗАЦИЯ CART-ITEMS-BLOCK  
    =============================================== */
 
-/* Убираем лишний margin-bottom у блока с товарами корзины */
+/* Устанавливаем отступ 12px у блока с товарами корзины */
 .cart-page .cart-items-block.mb-5 {
-  margin-bottom: var(--space-12) !important; /* 8-12px вместо 20px */
+  margin-bottom: var(--space-12) !important; /* 8-12px */
 }
 
-/* В Telegram окружении еще компактнее */
+/* В Telegram окружении также 12px */
 .cart-page.telegram-env .cart-items-block.mb-5 {
-  margin-bottom: var(--space-8) !important; /* 6-8px */
+  margin-bottom: var(--space-12) !important; /* 8-12px */
 }
 
 /* Оптимизация для очень маленьких экранов */
 @media (max-height: 600px) {
   .cart-page .cart-items-block.mb-5 {
-    margin-bottom: var(--space-8) !important;
+    margin-bottom: var(--space-12) !important;
   }
 }
 
 /* Добавляем smooth переходы */
 .cart-items-block {
   transition: margin-bottom 0.3s ease;
+}
+
+/* Обеспечиваем правильный отступ между блоком товаров и формой доставки */
+.cart-page .cart-items-block + .delivery-form {
+  margin-top: var(--space-12) !important; /* 8-12px отступ сверху */
+}
+
+/* Отступ между формой доставки и итоговой информацией */
+.cart-page .delivery-form + .cart-checkout-summary {
+  margin-top: var(--space-12) !important; /* 8-12px отступ сверху */
 }
 @import "./webapp-catalog-optimization.scss";
