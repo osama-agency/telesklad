@@ -151,19 +151,19 @@ const ProfilePage: React.FC = () => {
         
         {/* Заголовок профиля */}
         <div className="profile-header">
-          <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center profile-avatar">
+          <div className="flex items-center gap-2">
+            <div className="flex-shrink-0 flex items-center justify-center profile-avatar">
               {user.photo_url ? (
                 <img 
                   src={user.photo_url} 
                   alt="Аватар"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover rounded-full"
                 />
               ) : (
-                <IconComponent name="profile" size={20} />
+                <IconComponent name="profile" size={16} />
               )}
             </div>
-            <h2 className="text-xl font-semibold">
+            <h2 className="text-lg font-medium">
               Привет, {user.first_name || user.first_name_raw} <span key={animationKey} className="waving-hand">👋</span>
             </h2>
           </div>

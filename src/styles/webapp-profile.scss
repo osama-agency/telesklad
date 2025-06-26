@@ -1,23 +1,34 @@
 // === СТРАНИЦА ПРОФИЛЯ ===
 .profile-page {
   // Отступ от хедера Telegram WebApp
-  padding-top: 32px !important;
+  padding-top: 16px !important;
   
   // Основной контейнер с контентом
   .profile-content-stack {
     display: flex;
     flex-direction: column;
-    gap: 24px; // Отступ между основными секциями
+    gap: 16px; // Уменьшаем отступ между основными секциями с 24px до 16px
   }
   
   // Заголовок профиля
   .profile-header {
-    margin-bottom: 0; // Убираем старый отступ, теперь используем gap
+    margin-bottom: 0; // Убираем старый отступ
+    
+    .profile-avatar {
+      width: 28px; // Уменьшаем размер аватара
+      height: 28px;
+    }
+    
+    h2 {
+      font-size: 18px; // Уменьшаем размер заголовка
+      line-height: 1.2;
+    }
     
     .waving-hand {
       display: inline-block;
       animation: wave 2.5s infinite;
       transform-origin: 70% 70%;
+      font-size: 16px; // Уменьшаем размер эмодзи
     }
   }
   
@@ -25,14 +36,48 @@
   .bonus-block {
     display: flex;
     flex-direction: column;
-    gap: 16px; // Отступ между элементами внутри блока
+    gap: 8px; // Уменьшаем отступ между элементами внутри блока
+    padding: 12px; // Уменьшаем паддинг карточки
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   }
   
   // Карточки действий
   .action-cards-container {
     display: flex;
     flex-direction: column;
-    gap: 16px; // Отступ между карточками
+    gap: 8px; // Уменьшаем отступ между карточками
+  }
+  
+  // Отдельная карточка действия
+  .action-card {
+    padding: 12px; // Уменьшаем паддинг карточки
+    
+    .action-card-content {
+      min-height: 40px; // Уменьшаем минимальную высоту
+      gap: 8px; // Уменьшаем отступ между элементами
+    }
+    
+    .action-card-icon {
+      width: 32px; // Уменьшаем размер иконки
+      height: 32px;
+      border-radius: 8px;
+    }
+    
+    .action-card-text {
+      gap: 4px; // Минимальный отступ между заголовком и описанием
+    }
+    
+    .action-card-title {
+      font-size: 14px; // Уменьшаем размер заголовка
+      margin-bottom: 2px;
+    }
+    
+    .action-card-description {
+      font-size: 12px; // Уменьшаем размер описания
+      line-height: 1.3;
+    }
   }
 }
 
