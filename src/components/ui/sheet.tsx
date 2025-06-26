@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { IconComponent } from '@/components/webapp/IconComponent';
 
 interface SheetProps {
@@ -18,11 +18,6 @@ const Sheet: React.FC<SheetProps> = ({
   children, 
   className = '' 
 }) => {
-  const sheetRef = useRef<HTMLDivElement>(null);
-  const startYRef = useRef<number>(0);
-  const currentYRef = useRef<number>(0);
-  const isDraggingRef = useRef<boolean>(false);
-
   useEffect(() => {
     if (isOpen) {
       // Предотвращаем скролл body когда модальное окно открыто
@@ -36,42 +31,6 @@ const Sheet: React.FC<SheetProps> = ({
     };
   }, [isOpen]);
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    startYRef.current = e.touches[0].clientY;
-    currentYRef.current = 0;
-    isDraggingRef.current = true;
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDraggingRef.current) return;
-
-    const currentY = e.touches[0].clientY;
-    const diffY = currentY - startYRef.current;
-
-    // Только позволяем свайп вниз
-    if (diffY > 0) {
-      currentYRef.current = diffY;
-      if (sheetRef.current) {
-        sheetRef.current.style.transform = `translateY(${diffY}px)`;
-      }
-    }
-  };
-
-  const handleTouchEnd = () => {
-    if (!isDraggingRef.current) return;
-    isDraggingRef.current = false;
-
-    // Если свайп больше 100px, закрываем модальное окно
-    if (currentYRef.current > 100) {
-      onClose();
-    } else {
-      // Возвращаем в исходное положение
-      if (sheetRef.current) {
-        sheetRef.current.style.transform = 'translateY(0)';
-      }
-    }
-  };
-
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       onClose();
@@ -83,17 +42,8 @@ const Sheet: React.FC<SheetProps> = ({
   return (
     <div className="sheet-overlay" onClick={handleBackdropClick}>
       <div 
-        ref={sheetRef}
         className={`sheet-content ${className}`}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
       >
-        {/* Drag Handle */}
-        <div className="sheet-drag-handle">
-          <div className="sheet-drag-indicator" />
-        </div>
-
         {/* Header */}
         {title && (
           <div className="sheet-header">
@@ -137,21 +87,6 @@ const Sheet: React.FC<SheetProps> = ({
           max-height: 90vh;
           overflow: hidden;
           animation: sheet-slide-up 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          transition: transform 0.2s ease-out;
-        }
-
-        .sheet-drag-handle {
-          padding: 12px 0 8px;
-          display: flex;
-          justify-content: center;
-          cursor: grab;
-        }
-
-        .sheet-drag-indicator {
-          width: 40px;
-          height: 4px;
-          background-color: #E5E7EB;
-          border-radius: 2px;
         }
 
         .sheet-header {
