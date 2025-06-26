@@ -1,0 +1,646 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Catalyst UI Kit стили для Telegram WebApp */
+
+@layer base {
+  html, body {
+    @apply bg-gray-50 text-gray-900 font-inter;
+    -webkit-tap-highlight-color: transparent !important;
+    color-scheme: light !important;
+  }
+}
+
+@layer components {
+  /* Основной контейнер веб-приложения */
+  .webapp-container {
+    @apply max-w-md mx-auto bg-gray-50 min-h-screen relative;
+  }
+
+  /* Header стили */
+  .webapp-header,
+  .telegram-header,
+  .telegram-design-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: rgba(249, 250, 251, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid #e5e7eb;
+    padding: 0.75rem 1rem;
+    max-width: 28rem;
+    margin: 0 auto;
+  }
+
+  .webapp-header-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+  }
+
+  .webapp-header-search {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .webapp-header-search .relative {
+    width: 100%;
+  }
+
+  .webapp-header-search input {
+    width: 100%;
+    height: 2.25rem;
+    padding: 0.5rem 2.25rem 0.5rem 2.25rem;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid #e5e7eb;
+    border-radius: 1.125rem;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+  }
+
+  .webapp-header-search input:focus {
+    background: white;
+    border-color: #22c55e;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+  }
+
+  .webapp-header-search input::placeholder {
+    color: #9ca3af;
+  }
+
+  .webapp-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .header-action-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.5rem;
+    background: transparent;
+    color: #6b7280;
+    transition: all 0.2s;
+    text-decoration: none;
+    position: relative;
+  }
+
+  .header-action-button:hover {
+    background: rgba(107, 114, 128, 0.1);
+    color: #374151;
+  }
+
+  .header-action-button.active {
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.1);
+  }
+
+  .header-action-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .header-action-badge {
+    position: absolute;
+    top: -0.25rem;
+    right: -0.25rem;
+    background: #ef4444;
+    color: white;
+    font-size: 0.625rem;
+    font-weight: 600;
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.5rem;
+    min-width: 1rem;
+    height: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  /* Меню категорий */
+  .categories-menu {
+    position: fixed;
+    top: 4rem; /* После header */
+    left: 0;
+    right: 0;
+    z-index: 40;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid #e5e7eb;
+    max-width: 28rem;
+    margin: 0 auto;
+    padding: 0.75rem 1rem;
+  }
+
+  /* Скрытие полосы прокрутки */
+  .scrollbar-hide {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+
+  /* Стили для меню категорий */
+  .categories-menu {
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+  }
+
+  /* Основной контент */
+  .webapp-content {
+    @apply px-4;
+    padding-top: calc(env(safe-area-inset-top) + 128px); /* Header + Categories */
+    padding-bottom: calc(env(safe-area-inset-bottom) + 70px);
+  }
+
+  /* Telegram WebApp Specific Styles */
+  .container-adaptive {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+  }
+  
+  /* Hide scrollbars but keep functionality */
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Touch optimizations for mobile */
+  .touch-optimized {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  /* Touch optimizations for mobile */
+  .touch-pan-x {
+    touch-action: pan-x;
+  }
+  
+  .touch-pan-y {
+    touch-action: pan-y;
+  }
+
+  /* Modern Product Grid Styles (UX/UI 2025) */
+  .modern-product-grid {
+    @apply space-y-6;
+  }
+
+  .product-grid {
+    @apply mt-6 grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-2 xl:gap-x-6;
+  }
+  
+  .product-card {
+    position: relative;
+    background-color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    border: 1px solid #f3f4f6;
+    overflow: hidden;
+    transition: all 0.2s;
+  }
+  
+  .product-card:hover {
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    border-color: #e5e7eb;
+  }
+  
+  .product-image-container {
+    @apply relative overflow-hidden rounded-t-xl bg-gray-100;
+  }
+  
+  .product-image {
+    @apply aspect-square w-full object-cover transition-transform duration-300 hover:scale-105;
+  }
+  
+  .product-badge {
+    @apply absolute top-2 right-2 px-2 py-1 text-xs font-medium rounded-full;
+  }
+  
+  .product-badge-sale {
+    @apply bg-red-500 text-white;
+  }
+  
+  .product-badge-new {
+    @apply bg-green-500 text-white;
+  }
+  
+  .product-content {
+    @apply p-4;
+  }
+  
+  .product-title {
+    @apply text-sm font-medium text-gray-900 line-clamp-2 mb-2;
+  }
+  
+  .product-status {
+    @apply text-xs font-medium mb-3;
+  }
+  
+  .product-status-in-stock {
+    @apply text-green-600;
+  }
+  
+  .product-status-low-stock {
+    @apply text-orange-500;
+  }
+  
+  .product-status-out-of-stock {
+    @apply text-red-500;
+  }
+  
+  .product-price-section {
+    @apply flex items-center justify-between mb-4;
+  }
+  
+  .product-price-container {
+    @apply flex flex-col;
+  }
+  
+  .product-old-price {
+    @apply text-xs text-gray-400 line-through;
+  }
+  
+  .product-current-price {
+    @apply text-lg font-bold text-gray-900;
+  }
+  
+  .product-discount {
+    @apply text-xs font-medium text-red-500 bg-red-50 px-2 py-1 rounded-full;
+  }
+  
+  .product-button {
+    @apply w-full;
+  }
+  
+  .product-add-button {
+    @apply w-full bg-green-500 text-white font-medium py-2.5 px-4 rounded-lg transition-colors duration-200 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  
+  .product-add-button-out-of-stock {
+    @apply w-full bg-gray-200 text-gray-500 font-medium py-2.5 px-4 rounded-lg cursor-not-allowed;
+  }
+  
+  /* Loading spinner */
+  .loading-spinner {
+    @apply animate-spin rounded-full h-4 w-4 border-b-2 border-white;
+  }
+  
+  /* Safe area handling */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@layer utilities {
+  /* Telegram зелёная тема для Catalyst кнопок */
+  .btn-telegram-primary {
+    @apply bg-green-500 hover:bg-green-600 text-white border-green-500;
+  }
+
+  .btn-telegram-outline {
+    @apply border-gray-200 text-gray-700 hover:bg-gray-50;
+  }
+
+  /* Отключение outline для всех элементов */
+  * {
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  /* Telegram Green Theme */
+  .telegram-green {
+    background-color: #22c55e;
+  }
+  
+  .telegram-green-hover:hover {
+    background-color: #16a34a;
+  }
+  
+  .telegram-green-text {
+    color: #22c55e;
+  }
+  
+  .telegram-bg {
+    background-color: #ffffff;
+  }
+  
+  .telegram-secondary-bg {
+    background-color: #f9fafb;
+  }
+
+  /* UX/UI 2025 Shimmer Animation */
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .animate-shimmer {
+    animation: shimmer 1.5s infinite;
+  }
+
+  /* Modern Glassmorphism Effects */
+  .glass-effect {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .glass-effect-dark {
+    background: rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Modern Card Shadows with Green Accent */
+  .shadow-green-sm {
+    box-shadow: 0 1px 2px 0 rgba(34, 197, 94, 0.05);
+  }
+
+  .shadow-green-lg {
+    box-shadow: 0 10px 15px -3px rgba(34, 197, 94, 0.1), 0 4px 6px -2px rgba(34, 197, 94, 0.05);
+  }
+
+  .shadow-green-xl {
+    box-shadow: 0 20px 25px -5px rgba(34, 197, 94, 0.1), 0 10px 10px -5px rgba(34, 197, 94, 0.04);
+  }
+
+  /* Line clamp utilities */
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+  
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+  
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
+  /* Additional ecommerce utilities */
+  .transition-colors {
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+  
+  .transition-opacity {
+    transition-property: opacity;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+  
+  .transition-transform {
+    transition-property: transform;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+
+  /* Modern Button Hover Effects */
+  .btn-hover-scale:hover {
+    transform: scale(1.02);
+  }
+
+  .btn-hover-lift:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Product grid specific styles */
+  .group:hover .group-hover\:opacity-90 {
+    opacity: 0.9;
+  }
+  
+  /* Loading spinner animation */
+  .animate-spin {
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Pulse animation for status indicators */
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: .5;
+    }
+  }
+
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Modern scale animations */
+  .animate-scale-in {
+    animation: scaleIn 0.2s ease-out;
+  }
+
+  @keyframes scaleIn {
+    from {
+      transform: scale(0.95);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  /* Gradient text effects */
+  .text-gradient-green {
+    background: linear-gradient(45deg, #22c55e, #16a34a);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  /* Size utilities */
+  .size-full {
+    width: 100%;
+    height: 100%;
+  }
+  
+  /* Object fit utilities */
+  .object-cover {
+    object-fit: cover;
+  }
+  
+  .object-center {
+    object-position: center;
+  }
+  
+  /* Ring utilities */
+  .ring-1 {
+    --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+    --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+    box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+  }
+  
+  .ring-inset {
+    --tw-ring-inset: inset;
+  }
+  
+  /* Screen reader only */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+  
+  /* Grid utilities */
+  .grid-cols-1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+  
+  .grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  
+  .grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  
+  .grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  
+  /* Responsive breakpoints */
+  @media (min-width: 640px) {
+    .sm\:grid-cols-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    
+    .sm\:gap-x-6 {
+      column-gap: 1.5rem;
+    }
+    
+    .sm\:px-6 {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+    
+    .sm\:py-12 {
+      padding-top: 3rem;
+      padding-bottom: 3rem;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .lg\:grid-cols-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    
+    .lg\:max-w-7xl {
+      max-width: 80rem;
+    }
+    
+    .lg\:px-8 {
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .xl\:grid-cols-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    
+    .xl\:gap-x-8 {
+      column-gap: 2rem;
+    }
+  }
+
+  /* Telegram WebApp optimizations */
+  * {
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Catalyst UI Kit Base Styles */
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  
+  html {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+  }
+  
+  body {
+    margin: 0;
+    background-color: #ffffff;
+    color: #111827;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+} 

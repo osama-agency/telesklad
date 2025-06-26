@@ -1,0 +1,266 @@
+/* ============================================
+   🎨 ADAPTIVE SYSTEM для Telegram WebApp
+   Ozon-подход к адаптивности и отступам
+   ============================================ */
+
+:root {
+  /* Breakpoints */
+  --breakpoint-xs: 320px;
+  --breakpoint-sm: 375px;
+  --breakpoint-md: 480px;
+  --breakpoint-lg: 768px;
+  
+  /* Adaptive Container Paddings */
+  --container-padding-xs: 8px;
+  --container-padding-sm: 12px;
+  --container-padding-md: 16px;
+  --container-padding-lg: 20px;
+  
+  /* Adaptive Grid Gaps */
+  --grid-gap-xs: 6px;
+  --grid-gap-sm: 8px;
+  --grid-gap-md: 12px;
+  --grid-gap-lg: 16px;
+  
+  /* Touch Targets */
+  --touch-target-min: 44px;
+  --touch-target-comfortable: 48px;
+  
+  /* Safe Area */
+  --safe-area-top: max(env(safe-area-inset-top), 8px);
+  --safe-area-bottom: max(env(safe-area-inset-bottom), 8px);
+  --safe-area-left: max(env(safe-area-inset-left), 8px);
+  --safe-area-right: max(env(safe-area-inset-right), 8px);
+}
+
+/* ============================================
+   �� ADAPTIVE CONTAINER CLASSES
+   ============================================ */
+
+.container-adaptive {
+  padding-left: clamp(var(--container-padding-xs), 4vw, var(--container-padding-lg));
+  padding-right: clamp(var(--container-padding-xs), 4vw, var(--container-padding-lg));
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.container-narrow {
+  padding-left: clamp(6px, 3vw, 16px);
+  padding-right: clamp(6px, 3vw, 16px);
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.container-wide {
+  padding-left: clamp(12px, 5vw, 24px);
+  padding-right: clamp(12px, 5vw, 24px);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* ============================================
+   🎯 ADAPTIVE GRID SYSTEM
+   ============================================ */
+
+.grid-adaptive {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: clamp(var(--grid-gap-xs), 2.5vw, var(--grid-gap-lg));
+}
+
+.grid-adaptive-dense {
+  gap: clamp(var(--grid-gap-xs), 2vw, var(--grid-gap-md));
+}
+
+.grid-adaptive-spacious {
+  gap: clamp(var(--grid-gap-sm), 3vw, var(--grid-gap-lg));
+}
+
+/* ============================================
+   🔘 TOUCH TARGETS
+   ============================================ */
+
+.touch-target {
+  min-width: var(--touch-target-min);
+  min-height: var(--touch-target-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.touch-target-comfortable {
+  min-width: var(--touch-target-comfortable);
+  min-height: var(--touch-target-comfortable);
+}
+
+.touch-target-large {
+  min-width: 56px;
+  min-height: 56px;
+}
+
+/* ============================================
+   📏 ADAPTIVE SPACING UTILITIES
+   ============================================ */
+
+.padding-adaptive {
+  padding: clamp(8px, 3vw, 16px);
+}
+
+.padding-adaptive-sm {
+  padding: clamp(6px, 2vw, 12px);
+}
+
+.padding-adaptive-lg {
+  padding: clamp(12px, 4vw, 20px);
+}
+
+.margin-adaptive {
+  margin: clamp(8px, 3vw, 16px);
+}
+
+.gap-adaptive {
+  gap: clamp(8px, 2.5vw, 16px);
+}
+
+.gap-adaptive-sm {
+  gap: clamp(6px, 2vw, 12px);
+}
+
+.gap-adaptive-lg {
+  gap: clamp(12px, 3vw, 20px);
+}
+
+/* ============================================
+   📱 SAFE AREA UTILITIES
+   ============================================ */
+
+.safe-top {
+  padding-top: var(--safe-area-top);
+}
+
+.safe-bottom {
+  padding-bottom: var(--safe-area-bottom);
+}
+
+.safe-left {
+  padding-left: var(--safe-area-left);
+}
+
+.safe-right {
+  padding-right: var(--safe-area-right);
+}
+
+.safe-all {
+  padding-top: var(--safe-area-top);
+  padding-bottom: var(--safe-area-bottom);
+  padding-left: var(--safe-area-left);
+  padding-right: var(--safe-area-right);
+}
+
+/* ============================================
+   📱 RESPONSIVE BREAKPOINTS
+   ============================================ */
+
+/* Extra Small Devices (iPhone SE) */
+@media (max-width: 374px) {
+  .grid-adaptive {
+    gap: var(--grid-gap-xs);
+  }
+  
+  .container-adaptive {
+    padding-left: var(--container-padding-xs);
+    padding-right: var(--container-padding-xs);
+  }
+  
+  .padding-adaptive {
+    padding: var(--container-padding-xs);
+  }
+}
+
+/* Small Devices (iPhone 12/13/14) */
+@media (min-width: 375px) and (max-width: 479px) {
+  .grid-adaptive {
+    gap: var(--grid-gap-sm);
+  }
+  
+  .container-adaptive {
+    padding-left: var(--container-padding-sm);
+    padding-right: var(--container-padding-sm);
+  }
+}
+
+/* Medium Devices (Large iPhones, small tablets) */
+@media (min-width: 480px) and (max-width: 767px) {
+  .grid-adaptive {
+    gap: var(--grid-gap-md);
+  }
+  
+  .container-adaptive {
+    padding-left: var(--container-padding-md);
+    padding-right: var(--container-padding-md);
+  }
+}
+
+/* Large Devices (Tablets) */
+@media (min-width: 768px) {
+  .grid-adaptive {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--grid-gap-lg);
+  }
+  
+  .container-adaptive {
+    padding-left: var(--container-padding-lg);
+    padding-right: var(--container-padding-lg);
+  }
+}
+
+/* ============================================
+   🎨 COMPONENT-SPECIFIC ADAPTIVE STYLES
+   ============================================ */
+
+/* Adaptive Card Padding */
+.card-adaptive {
+  padding: clamp(10px, 3vw, 16px);
+}
+
+/* Adaptive Button Spacing */
+.button-adaptive {
+  padding: clamp(8px, 2.5vw, 12px) clamp(12px, 4vw, 16px);
+  min-height: var(--touch-target-min);
+}
+
+/* Adaptive Typography */
+.text-adaptive {
+  font-size: clamp(13px, 3.5vw, 16px);
+  line-height: 1.4;
+}
+
+.text-adaptive-sm {
+  font-size: clamp(12px, 3vw, 14px);
+}
+
+.text-adaptive-lg {
+  font-size: clamp(16px, 4vw, 20px);
+}
+
+/* ============================================
+   🎯 PERFORMANCE OPTIMIZATIONS
+   ============================================ */
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .grid-adaptive {
+    transition: none;
+  }
+  
+  .container-adaptive {
+    transition: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .container-adaptive {
+    border: 1px solid currentColor;
+  }
+}

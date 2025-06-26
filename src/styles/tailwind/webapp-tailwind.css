@@ -1,0 +1,626 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Базовые стили для WebApp */
+@layer base {
+  :root {
+    /* Telegram переменные */
+    --tg-bg-color: #ffffff;
+    --tg-text-color: #000000;
+    --tg-hint-color: #999999;
+    --tg-link-color: #48C928;
+    --tg-button-color: #48C928;
+    --tg-button-text-color: #ffffff;
+    
+    /* Принудительная светлая тема */
+    color-scheme: light !important;
+  }
+
+  html, body {
+    @apply bg-gray-50 text-black font-inter;
+    -webkit-tap-highlight-color: transparent !important;
+    -webkit-focus-ring-color: transparent !important;
+    color-scheme: light !important;
+  }
+
+  /* Отключение всех обводок фокуса */
+  *:focus,
+  *:focus-visible,
+  *:focus-within,
+  *:active {
+    @apply outline-none;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  /* Принудительная светлая тема */
+  .tg-theme-dark,
+  body.tg-theme-dark,
+  html.tg-theme-dark {
+    @apply bg-white text-black;
+    color-scheme: light !important;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root, html, body {
+      @apply bg-white text-black;
+      color-scheme: light !important;
+    }
+  }
+}
+
+/* Основные компоненты */
+@layer components {
+  /* Контейнер веб-приложения */
+  .webapp-container {
+    @apply max-w-md mx-auto bg-gray-50 min-h-screen relative;
+  }
+
+  /* Основной контент с отступами */
+  .webapp-content {
+    @apply px-4;
+    padding-top: calc(env(safe-area-inset-top) + 120px); /* 60px header + 60px categories menu */
+    padding-bottom: calc(env(safe-area-inset-bottom) + 70px);
+  }
+
+  /* Контент без боковых отступов */
+  .webapp-content-full {
+    padding-top: calc(env(safe-area-inset-top) + 60px);
+    padding-bottom: calc(env(safe-area-inset-bottom) + 70px);
+  }
+
+  /* Секция с отступами */
+  .webapp-section {
+    @apply mb-6;
+  }
+
+  /* Заголовок секции */
+  .webapp-section-title {
+    @apply text-webapp-title font-semibold text-black mb-4;
+  }
+
+  /* Подзаголовок секции */
+  .webapp-section-subtitle {
+    @apply text-webapp-caption text-webapp-gray-medium mb-3;
+  }
+
+  /* Разделитель */
+  .webapp-divider {
+    @apply w-full h-px bg-telegram-border my-4;
+  }
+
+  /* Базовая карточка */
+  .webapp-card {
+    @apply bg-white rounded-2xl border border-telegram-border;
+  }
+
+  /* Карточка с тенью */
+  .webapp-card-shadow {
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100;
+  }
+
+  /* Список */
+  .webapp-list {
+    @apply space-y-0 bg-white rounded-2xl border border-telegram-border overflow-hidden;
+  }
+
+  /* Элемент списка */
+  .webapp-list-item {
+    @apply flex items-center justify-between p-4 border-b border-telegram-border last:border-b-0;
+  }
+
+  /* Элемент списка с ссылкой */
+  .webapp-list-item-link {
+    @apply flex items-center justify-between p-4 border-b border-telegram-border last:border-b-0 no-tap-highlight;
+  }
+
+  /* Иконка в списке */
+  .webapp-list-icon {
+    @apply w-6 h-6 text-webapp-gray-light mr-3 flex-shrink-0;
+  }
+
+  /* Текст в списке */
+  .webapp-list-text {
+    @apply flex-1 text-webapp-body text-black;
+  }
+
+  /* Вторичный текст в списке */
+  .webapp-list-secondary {
+    @apply text-webapp-caption text-webapp-gray-medium;
+  }
+
+  /* Стрелка в списке */
+  .webapp-list-arrow {
+    @apply w-5 h-5 text-webapp-gray-light ml-2;
+  }
+
+  /* Бейдж */
+  .webapp-badge {
+    @apply inline-flex items-center justify-center px-2 py-1 text-webapp-small font-medium rounded-full;
+  }
+
+  /* Бейдж успеха */
+  .webapp-badge-success {
+    @apply webapp-badge bg-green-100 text-green-800;
+  }
+
+  /* Бейдж предупреждения */
+  .webapp-badge-warning {
+    @apply webapp-badge bg-yellow-100 text-yellow-800;
+  }
+
+  /* Бейдж ошибки */
+  .webapp-badge-error {
+    @apply webapp-badge bg-red-100 text-red-800;
+  }
+
+  /* Пустое состояние */
+  .webapp-empty-state {
+    @apply flex flex-col items-center justify-center py-12 px-6 text-center;
+  }
+
+  .webapp-empty-icon {
+    @apply w-16 h-16 text-webapp-gray-light mb-4;
+  }
+
+  .webapp-empty-title {
+    @apply text-webapp-subtitle font-medium text-black mb-2;
+  }
+
+  .webapp-empty-text {
+    @apply text-webapp-caption text-webapp-gray-medium;
+  }
+
+  /* Скролл без полос прокрутки */
+  .webapp-scroll {
+    @apply overflow-y-auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .webapp-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* ==================== ХЕДЕР ==================== */
+  /* Основной хедер */
+  .webapp-header {
+    @apply fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md;
+    @apply flex items-center justify-between;
+    @apply px-4 border-b border-gray-100 shadow-sm;
+    height: 60px;
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /* Контейнер хедера с поиском */
+  .webapp-header-container {
+    @apply flex items-center justify-between w-full max-w-md mx-auto gap-3;
+  }
+
+  /* Поисковая строка в хедере */
+  .webapp-header-search {
+    @apply flex-1 min-w-0;
+  }
+
+  /* Кнопки действий в хедере */
+  .webapp-header-actions {
+    @apply flex items-center gap-1;
+  }
+
+  /* Бейдж на кнопке действия */
+  .header-action-badge {
+    @apply absolute -top-1 -right-1 bg-red-500 text-white text-xs;
+    @apply w-5 h-5 rounded-full flex items-center justify-center;
+    @apply min-w-[20px] text-[10px] font-bold;
+  }
+
+  /* Контент хедера */
+  .webapp-header-content {
+    @apply flex items-center justify-between w-full max-w-md mx-auto;
+  }
+
+  /* Левая часть хедера */
+  .webapp-header-left {
+    @apply flex items-center space-x-3;
+  }
+
+  /* Центральная часть хедера */
+  .webapp-header-center {
+    @apply flex-1 flex items-center justify-center;
+  }
+
+  /* Правая часть хедера */
+  .webapp-header-right {
+    @apply flex items-center space-x-3;
+  }
+
+  /* Заголовок хедера */
+  .webapp-header-title {
+    @apply text-webapp-title font-semibold text-black;
+  }
+
+  /* Подзаголовок хедера */
+  .webapp-header-subtitle {
+    @apply text-webapp-caption text-webapp-gray-medium;
+  }
+
+  /* Кнопка в хедере */
+  .webapp-header-button {
+    @apply flex items-center justify-center w-10 h-10 rounded-full;
+    @apply no-tap-highlight outline-none border-none;
+    @apply transition-none transform-none bg-transparent;
+  }
+
+  /* Кнопка действия в хедере */
+  .header-action-button {
+    @apply relative flex items-center justify-center w-10 h-10 rounded-full;
+    @apply no-tap-highlight outline-none border-none;
+    @apply transition-all duration-200 bg-transparent;
+    @apply text-gray-500 hover:text-telegram-primary hover:bg-gray-50;
+  }
+
+  /* Активная кнопка действия */
+  .header-action-button.active {
+    @apply text-telegram-primary bg-green-50;
+  }
+
+  /* Иконка в кнопке действия */
+  .header-action-icon {
+    @apply relative w-6 h-6;
+  }
+
+  /* Бейдж на кнопке действия */
+  .header-action-badge {
+    @apply absolute -top-1 -right-1 bg-red-500 text-white text-xs;
+    @apply w-5 h-5 rounded-full flex items-center justify-center;
+    @apply min-w-[20px] text-[10px] font-bold;
+    @apply border-2 border-white;
+  }
+
+  /* ==================== НАВИГАЦИЯ ==================== */
+  /* Основная навигация */
+  .webapp-navigation {
+    @apply fixed bottom-0 left-0 right-0 z-50 bg-white;
+    @apply border-t border-telegram-border;
+    height: 70px;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Контент навигации */
+  .webapp-navigation-content {
+    @apply flex items-center justify-around w-full max-w-md mx-auto h-full;
+  }
+
+  /* Элемент навигации */
+  .webapp-nav-item {
+    @apply flex flex-col items-center justify-center flex-1 py-2;
+    @apply no-tap-highlight outline-none border-none;
+    @apply transition-none transform-none bg-transparent;
+  }
+
+  /* Активный элемент навигации */
+  .webapp-nav-item.active {
+    @apply text-telegram-primary;
+  }
+
+  /* Неактивный элемент навигации */
+  .webapp-nav-item:not(.active) {
+    @apply text-webapp-gray-light;
+  }
+
+  /* Иконка в навигации */
+  .webapp-nav-icon {
+    @apply w-6 h-6 mb-1;
+  }
+
+  /* Текст в навигации */
+  .webapp-nav-text {
+    @apply text-webapp-small font-medium;
+  }
+
+  /* ==================== КНОПКИ ==================== */
+  /* Основная кнопка */
+  .telegram-button {
+    @apply bg-telegram-primary text-white font-medium py-3 px-6 rounded-xl;
+    @apply no-tap-highlight outline-none;
+    @apply transition-colors duration-200;
+  }
+
+  .telegram-button:active {
+    @apply bg-green-600;
+  }
+
+  .telegram-button:disabled {
+    @apply bg-gray-300 text-gray-500;
+  }
+
+  /* Вторичная кнопка */
+  .telegram-button-secondary {
+    @apply bg-gray-100 text-black font-medium py-3 px-6 rounded-xl;
+    @apply no-tap-highlight outline-none;
+    @apply transition-colors duration-200;
+  }
+
+  .telegram-button-secondary:active {
+    @apply bg-gray-200;
+  }
+
+  /* Кнопка с обводкой */
+  .telegram-button-outline {
+    @apply border border-telegram-primary text-telegram-primary bg-transparent;
+    @apply font-medium py-3 px-6 rounded-xl;
+    @apply no-tap-highlight outline-none;
+    @apply transition-colors duration-200;
+  }
+
+  .telegram-button-outline:active {
+    @apply bg-telegram-primary text-white;
+  }
+
+  /* Карточка действия */
+  .action-card {
+    @apply bg-white rounded-2xl p-4 border border-telegram-border;
+    @apply no-tap-highlight outline-none;
+    @apply transition-shadow duration-200;
+  }
+
+  /* Заголовок карточки действия */
+  .action-card-title {
+    @apply text-webapp-body font-semibold text-black mb-1;
+  }
+
+  /* Описание карточки действия */
+  .action-card-description {
+    @apply text-webapp-caption text-webapp-gray-medium;
+  }
+
+  /* Иконка карточки действия */
+  .action-card-icon {
+    @apply w-8 h-8 text-telegram-primary mb-3;
+  }
+
+  /* ==================== ФОРМЫ ==================== */
+  .webapp-input {
+    @apply w-full px-4 py-3 rounded-xl border border-telegram-border;
+    @apply text-webapp-body placeholder-webapp-gray-medium;
+    @apply outline-none focus:border-telegram-primary;
+    @apply no-tap-highlight;
+  }
+
+  .webapp-textarea {
+    @apply w-full px-4 py-3 rounded-xl border border-telegram-border;
+    @apply text-webapp-body placeholder-webapp-gray-medium;
+    @apply outline-none focus:border-telegram-primary resize-none;
+    @apply no-tap-highlight;
+  }
+
+  .webapp-label {
+    @apply text-webapp-body font-medium text-black mb-2 block;
+  }
+
+  .webapp-form-group {
+    @apply mb-4;
+  }
+
+  /* ==================== ОТКЛЮЧЕНИЕ HOVER/FOCUS ЭФФЕКТОВ ==================== */
+  /* Отключение всех hover и focus эффектов для хедера */
+  .webapp-header-button:hover,
+  .webapp-header-button:active,
+  .webapp-header-button:focus,
+  .header-action-button:hover,
+  .header-action-button:active,
+  .header-action-button:focus {
+    @apply outline-none border-none;
+    transform: none !important;
+    background-color: transparent !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  /* Специальные стили для SVG иконок */
+  .webapp-header svg,
+  .webapp-header .lucide,
+  .header-action-icon svg {
+    @apply outline-none border-none;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  /* Серый цвет для заполненного сердечка */
+  .header-action-button .filled,
+  .header-action-button svg.filled,
+  .header-action-icon svg.filled {
+    @apply text-webapp-gray-light;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 2px !important;
+  }
+
+  /* Отключение hover и focus эффектов для навигации */
+  .webapp-nav-item:hover,
+  .webapp-nav-item:active,
+  .webapp-nav-item:focus {
+    @apply outline-none border-none;
+    transform: none !important;
+    background-color: transparent !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  /* Специальные стили для SVG иконок в навигации */
+  .webapp-navigation svg,
+  .webapp-navigation .lucide,
+  .webapp-nav-icon svg {
+    @apply outline-none border-none;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  /* Hover эффекты только на десктопе */
+  @media (hover: hover) {
+    .action-card:hover {
+      @apply shadow-md;
+    }
+  }
+}
+
+/* Утилиты */
+@layer utilities {
+  /* Отключение подсветки касания */
+  .no-tap-highlight {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Безопасные отступы */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Полная высота с учетом safe area */
+  .h-screen-safe {
+    height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  }
+
+  /* Telegram специфичные утилиты */
+  .telegram-safe-area {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Скрытие элементов в Telegram */
+  .telegram-hidden {
+    display: none !important;
+  }
+
+  /* Анимации отключены для лучшей производительности */
+  .no-animation {
+    transition: none !important;
+    transform: none !important;
+    animation: none !important;
+  }
+
+  /* Стили для MiniSearch компонента */
+  .header-search {
+    @apply w-full;
+  }
+  
+  .header-search input {
+    @apply h-9 px-3 pl-9 pr-9 text-sm;
+    @apply bg-gray-50 border border-gray-200 rounded-full;
+    @apply focus:outline-none focus:ring-2 focus:ring-telegram-primary focus:border-telegram-primary;
+    @apply focus:bg-white transition-all duration-200;
+    @apply placeholder-gray-400;
+  }
+  
+  .header-search .absolute {
+    @apply text-gray-400;
+  }
+  
+  .header-search button {
+    @apply text-gray-400 hover:text-gray-600;
+  }
+
+  /* Стили для результатов поиска */
+  .search-results-card {
+    @apply bg-white border border-gray-200 rounded-xl shadow-lg;
+  }
+  
+  .search-result-item {
+    @apply p-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0;
+    @apply transition-colors duration-150 cursor-pointer;
+    @apply first:rounded-t-xl last:rounded-b-xl;
+  }
+  
+  .search-suggestion-item {
+    @apply px-3 py-2 hover:bg-gray-50 text-sm;
+    @apply transition-colors duration-150 cursor-pointer;
+    @apply flex items-center;
+  }
+
+  /* ==================== МЕНЮ КАТЕГОРИЙ ==================== */
+  .categories-menu {
+    @apply sticky z-40;
+    top: 60px; /* Высота header */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .categories-menu .scroll-area {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  .categories-menu .scroll-area::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+
+  /* Кнопки категорий - переопределяем стили LoadingButton */
+  .category-button {
+    @apply whitespace-nowrap rounded-full transition-all duration-200 !important;
+    @apply px-4 py-2 text-sm font-medium !important;
+    @apply border border-gray-200 bg-white text-gray-700 !important;
+    @apply hover:bg-gray-50 active:scale-95 !important;
+    @apply no-tap-highlight outline-none !important;
+    /* Сброс градиентов LoadingButton */
+    background: white !important;
+    background-image: none !important;
+  }
+
+  .category-button.active {
+    @apply bg-green-500 hover:bg-green-600 text-white border-green-500 !important;
+    @apply shadow-md !important;
+    background: #22c55e !important;
+    background-image: none !important;
+  }
+
+  .category-button:hover:not(.active) {
+    @apply bg-gray-50 !important;
+    background: #f9fafb !important;
+    background-image: none !important;
+  }
+
+  .category-button .badge {
+    @apply ml-2 px-1.5 py-0.5 text-xs rounded-full;
+    @apply bg-white/20 text-current;
+  }
+
+  .category-button.active .badge {
+    @apply bg-white/20 text-white;
+  }
+
+  /* Принудительное переопределение LoadingButton стилей для категорий */
+  .categories-menu .category-button,
+  .categories-menu .category-button:hover,
+  .categories-menu .category-button:focus,
+  .categories-menu .category-button:active {
+    box-shadow: none !important;
+    transform: none !important;
+  }
+
+  .categories-menu .category-button.active {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  /* Скрытие полосы прокрутки для горизонтального скролла */
+  .scroll-horizontal {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .scroll-horizontal::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+
+  .scrollbar-hide {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+} 

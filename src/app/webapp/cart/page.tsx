@@ -11,6 +11,7 @@ import { useTelegramBackButton } from "../_components/TelegramBackButton";
 import TelegramMainButton from '../_components/TelegramMainButton';
 import { useTelegramHaptic } from '@/hooks/useTelegramHaptic';
 import { telegramSDK } from '@/lib/telegram-sdk';
+import { EmptyCart } from '@/components/ecommerce';
 
 import TelegramCheckoutButton from '../_components/TelegramCheckoutButton';
 // Telegram WebApp interface
@@ -408,20 +409,12 @@ export default function CartPage() {
   if (cartItems.length === 0) {
     return (
       <div className={containerClassName}>
-        <div className="empty-state">
-          <div className="empty-state-content space-y-2">
-            <div className="empty-state-icon mb-6">
-              <IconComponent name="cart-empty" size={64} />
-            </div>
-            <div className="empty-state-title">Корзина пуста</div>
-            <div className="empty-state-subtitle">
-              Добавьте товары в корзину для оформления заказа
-            </div>
-            <Link href="/webapp" className="empty-state-button mt-6">
-              Вернуться в каталог
-            </Link>
-          </div>
-        </div>
+        <EmptyCart 
+          title="Корзина пуста"
+          description="Добавьте товары в корзину для оформления заказа"
+          actionText="Вернуться в каталог"
+          actionHref="/webapp"
+        />
       </div>
     );
   }
