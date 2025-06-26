@@ -36,7 +36,8 @@
     "grammy:phase3": "npx tsx scripts/test-grammy-phase3.ts",
     "grammy:full-test": "npm run grammy:test && npm run grammy:webhook && npm run grammy:phase3",
     "grammy:set-simple-webhook": "npx tsx scripts/set-simple-webhook.ts",
-    "grammy:check-settings": "npx tsx scripts/check-settings.ts"
+    "grammy:check-settings": "npx tsx scripts/check-settings.ts",
+    "update-photo": "npx tsx scripts/update-user-photo.ts"
   },
   "dependencies": {
     "@algolia/autocomplete-js": "^1.19.2",

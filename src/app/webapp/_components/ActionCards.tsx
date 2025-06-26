@@ -146,8 +146,7 @@ const ActionCards: React.FC<ActionCardsProps> = ({ isAdmin, user, subscriptionsC
       href: '/webapp/subscriptions',
       badge: currentSubscriptionsCount && currentSubscriptionsCount > 0 ? {
         count: currentSubscriptionsCount,
-        text: currentSubscriptionsCount === 1 ? 'товар' : 
-              currentSubscriptionsCount < 5 ? 'товара' : 'товаров',
+        text: '',
         type: 'info'
       } : undefined
     },
