@@ -1,0 +1,397 @@
+// ========================================
+// ACTION CARDS COMPONENT - .action- namespace
+// ========================================
+
+.action-cards-container {
+  @include stack(var(--space-2));
+  width: 100%;
+  padding: 0 var(--space-4);
+}
+
+.action-card {
+  @include card;
+  @include no-focus;
+  
+  position: relative;
+  display: block;
+  width: 100%;
+  background: var(--color-bg-white);
+  border: 1px solid var(--color-border);
+  border-radius: clamp(12px, 3vw, 20px);
+  padding: var(--space-3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: transform var(--tg-transition-fast);
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  
+  // Touch feedback
+  &:active {
+    transform: scale(0.98);
+  }
+  
+  // Hover effects (desktop only)
+  @include desktop {
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    }
+  }
+  
+  // Focus styles for accessibility
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+  
+  .action-card-content {
+    @include inline-stack(clamp(var(--space-3), 3vw, var(--space-4)));
+    min-height: 40px;
+    width: 100%;
+    
+    .action-card-icon {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      @include flex-center;
+      background: var(--color-bg-light);
+      border-radius: 8px;
+      
+      svg,
+      .action-icon {
+        width: 16px;
+        height: 16px;
+        color: var(--color-text-light);
+      }
+      
+      // Icon variants
+      &.action-card-icon-primary {
+        background: var(--color-primary);
+        
+        svg,
+        .action-icon {
+          color: var(--color-bg-white);
+        }
+      }
+      
+      &.action-card-icon-success {
+        background: var(--color-success);
+        
+        svg,
+        .action-icon {
+          color: var(--color-bg-white);
+        }
+      }
+      
+      &.action-card-icon-warning {
+        background: var(--color-warning);
+        
+        svg,
+        .action-icon {
+          color: var(--color-bg-white);
+        }
+      }
+      
+      &.action-card-icon-error {
+        background: var(--color-error);
+        
+        svg,
+        .action-icon {
+          color: var(--color-bg-white);
+        }
+      }
+    }
+    
+    .action-card-text {
+      flex: 1;
+      min-width: 0;
+      @include stack(2px);
+      
+      .action-card-title {
+        @include inline-stack(var(--space-2));
+        align-items: center;
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-text);
+        margin: 0;
+        @include line-clamp(1);
+        
+        .action-card-badge {
+          @include flex-center;
+          min-width: 20px;
+          height: 20px;
+          padding: 0 var(--space-1);
+          border-radius: 10px;
+          font-size: var(--font-size-xs);
+          font-weight: var(--font-weight-medium);
+          background: var(--color-primary);
+          color: var(--color-bg-white);
+          
+          &.action-badge-success {
+            background: var(--color-success);
+          }
+          
+          &.action-badge-warning {
+            background: var(--color-warning);
+          }
+          
+          &.action-badge-error {
+            background: var(--color-error);
+          }
+          
+          &.action-badge-neutral {
+            background: var(--color-text-light);
+          }
+        }
+      }
+      
+      .action-card-description {
+        font-size: var(--font-size-xs);
+        color: var(--color-text-light);
+        @include line-clamp(2);
+        margin: 0;
+      }
+    }
+    
+    .action-card-arrow {
+      flex-shrink: 0;
+      @include flex-center;
+      width: 24px;
+      height: 24px;
+      
+      svg,
+      .action-arrow {
+        width: 16px;
+        height: 16px;
+        color: var(--color-text-light);
+        transition: transform var(--tg-transition-fast);
+      }
+    }
+  }
+  
+  // Arrow animation on hover
+  @include desktop {
+    &:hover {
+      .action-card-arrow {
+        svg,
+        .action-arrow {
+          transform: translateX(2px);
+        }
+      }
+    }
+  }
+}
+
+// Action card variants
+.action-card-compact {
+  padding: var(--space-2);
+  
+  .action-card-content {
+    min-height: 32px;
+    
+    .action-card-icon {
+      width: 24px;
+      height: 24px;
+      
+      svg,
+      .action-icon {
+        width: 14px;
+        height: 14px;
+      }
+    }
+    
+    .action-card-text {
+      .action-card-title {
+        font-size: var(--font-size-xs);
+      }
+      
+      .action-card-description {
+        display: none;
+      }
+    }
+  }
+}
+
+.action-card-featured {
+  border: 2px solid var(--color-primary);
+  box-shadow: 0 4px 16px rgba(72, 201, 40, 0.1);
+  
+  .action-card-content {
+    .action-card-title {
+      color: var(--color-primary);
+      font-weight: var(--font-weight-semibold);
+    }
+  }
+}
+
+.action-card-disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  
+  &:active {
+    transform: none;
+  }
+  
+  @include desktop {
+    &:hover {
+      transform: none;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+  }
+}
+
+// Action cards grid layout
+.action-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-3);
+  padding: 0 var(--space-4);
+  
+  @include mobile {
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+  }
+  
+  .action-card {
+    width: 100%;
+  }
+}
+
+// Action cards list layout (default)
+.action-cards-list {
+  @extend .action-cards-container;
+}
+
+// Loading state
+.action-card-loading {
+  pointer-events: none;
+  
+  .action-card-content {
+    .action-card-icon {
+      @include loading-shimmer;
+    }
+    
+    .action-card-text {
+      .action-card-title,
+      .action-card-description {
+        @include loading-shimmer;
+        border-radius: 4px;
+        color: transparent;
+      }
+      
+      .action-card-title {
+        height: 16px;
+        margin-bottom: 4px;
+      }
+      
+      .action-card-description {
+        height: 12px;
+        width: 80%;
+      }
+    }
+  }
+}
+
+// Responsive adjustments
+@include mobile {
+  .action-cards-container {
+    padding: 0 var(--space-3);
+  }
+  
+  .action-card {
+    padding: var(--space-2);
+    border-radius: 12px;
+    
+    .action-card-content {
+      gap: var(--space-2);
+      min-height: 36px;
+      
+      .action-card-icon {
+        width: 28px;
+        height: 28px;
+        
+        svg,
+        .action-icon {
+          width: 14px;
+          height: 14px;
+        }
+      }
+      
+      .action-card-text {
+        .action-card-title {
+          font-size: var(--font-size-xs);
+        }
+        
+        .action-card-description {
+          font-size: 11px;
+        }
+      }
+    }
+  }
+}
+
+@include tablet {
+  .action-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@include desktop {
+  .action-cards-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-4);
+  }
+  
+  .action-card {
+    .action-card-content {
+      .action-card-text {
+        .action-card-title {
+          font-size: var(--font-size-base);
+        }
+        
+        .action-card-description {
+          font-size: var(--font-size-sm);
+        }
+      }
+    }
+  }
+}
+
+// Animation for action cards appearing
+.action-card-enter {
+  animation: actionCardEnter 0.3s ease-out;
+}
+
+@keyframes actionCardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+// Staggered animation for multiple cards
+.action-cards-container.action-cards-animated {
+  .action-card {
+    animation: actionCardEnter 0.3s ease-out;
+    animation-fill-mode: both;
+    
+    @for $i from 1 through 10 {
+      &:nth-child(#{$i}) {
+        animation-delay: #{$i * 0.1}s;
+      }
+    }
+  }
+}
+
+// Integration with legacy styles (temporary)
+.action-card-link.action-enabled {
+  @extend .action-card;
+  
+  &:not(:last-child) {
+    margin-bottom: var(--space-2);
+  }
+} 

@@ -12,6 +12,8 @@
 @import './components/header';
 @import './components/search';
 @import './components/product-card';
+@import './components/action-cards';
+@import './components/empty-state';
 
 // 3. Modules (page-specific styles)
 @import './modules/profile';
@@ -24,7 +26,6 @@
 
 // 5. Legacy imports (temporary - will be migrated)
 @import './webapp-support.scss';
-@import './webapp-action-cards.scss';
 
 // Base webapp container styles with new variables
 .webapp-container {
