@@ -31,10 +31,22 @@
   }
 }
 
-/* Category filter container - full width without overflow */
-.category-filter-container {
-  margin-left: -1rem;
-  margin-right: -1rem;
+/* Category filter scrolling styles */
+.category-filter-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.category-filter-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Category filter wrapper */
+.category-filter-wrapper {
+  /* No special styles needed - full width by default */
 }
 
 /* Search Bar */

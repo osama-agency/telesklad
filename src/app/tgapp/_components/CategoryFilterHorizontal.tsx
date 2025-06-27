@@ -66,7 +66,7 @@ export default function CategoryFilterHorizontal({ onCategoryChange, selectedCat
 
   if (loading) {
     return (
-      <div className="category-filter-container bg-white dark:bg-transparent border-b border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-transparent border-b border-gray-200 dark:border-gray-700">
         <div className="px-4 py-3">
           <div className="flex gap-3 overflow-hidden">
             {[1, 2, 3, 4].map((i) => (
@@ -87,13 +87,12 @@ export default function CategoryFilterHorizontal({ onCategoryChange, selectedCat
   const totalCount = categories.reduce((sum, cat) => sum + cat.count, 0);
 
   return (
-    <div className="category-filter-container bg-white dark:bg-transparent border-b border-gray-200 dark:border-gray-700">
-      <div className="relative">
-        {/* Scrollable container */}
-        <div 
-          ref={scrollContainerRef}
-          className="overflow-x-auto overflow-y-hidden py-3 category-filter-scroll hide-scrollbar"
-        >
+    <div className="category-filter-wrapper bg-white dark:bg-transparent border-b border-gray-200 dark:border-gray-700">
+      {/* Scrollable container */}
+      <div 
+        ref={scrollContainerRef}
+        className="overflow-x-auto overflow-y-hidden py-3 category-filter-scroll"
+      >
           <div className="flex gap-2.5 px-4 w-max">
             {/* All Categories Button */}
             <button
@@ -150,7 +149,6 @@ export default function CategoryFilterHorizontal({ onCategoryChange, selectedCat
             })}
           </div>
         </div>
-      </div>
     </div>
   );
 } 

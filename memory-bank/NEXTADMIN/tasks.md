@@ -7,6 +7,8 @@
 - [x] Convert VirtualProductCatalog to TgApp design system
 - [x] Create product-card.css for consistent styling
 - [x] Update SkeletonCatalog component
+- [x] Remove gradient overlays from category filter
+- [x] Remove sticky positioning from category filter
 
 ## In Progress
 - [ ] Update remaining pages to TgApp design system
@@ -20,9 +22,12 @@
 - [ ] Implement product search functionality
 - [ ] Add product filtering by price range
 - [ ] Create unified loading states across all pages
+- [ ] Add smooth scroll-to-top button
+- [ ] Implement product sorting options
 
 ## Notes
 - TgApp design system successfully implemented for catalog
 - All components now use CSS classes instead of Tailwind
 - Dark theme with gradient background working properly
-- Consider creating a style guide documentation
+- Category filter now has cleaner design without gradients or sticky behavior
+- Consider creating a comprehensive style guide documentation
