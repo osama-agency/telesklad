@@ -24,6 +24,7 @@ const ProductCard = React.memo<{ product: ProductWithSubscription; index: number
     
     const hasDiscount = product.old_price && product.old_price > product.price;
     const discountPercent = hasDiscount ? Math.round(((product.old_price! - product.price) / product.old_price!) * 100) : 0;
+    const isInStock = product.stock_quantity > 0;
 
     return (
       <div className="tgapp-product-card">
@@ -110,6 +111,30 @@ const ProductCard = React.memo<{ product: ProductWithSubscription; index: number
             <h3 className="tgapp-product-name" title={product.name}>
               {product.name}
             </h3>
+            
+            {/* Stock Status */}
+            <div 
+              className={`tgapp-product-stock ${isInStock ? 'in-stock' : 'out-of-stock'}`}
+              style={{ '--animation-order': index % 10 } as React.CSSProperties}
+            >
+              <span className="tgapp-stock-icon">
+                {isInStock ? (
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                    <circle cx="6" cy="6" r="6" className="stock-icon-circle" />
+                    <path d="M3.5 6L5 7.5L8.5 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                ) : (
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                    <circle cx="6" cy="6" r="6" className="stock-icon-circle" />
+                    <path d="M4 4L8 8M8 4L4 8" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </span>
+              <span className="tgapp-stock-text">
+                {isInStock ? 'В наличии' : 'Нет в наличии'}
+              </span>
+            </div>
+            
             <div className="tgapp-product-price-container">
               {product.old_price && product.old_price > product.price && (
                 <div className="tgapp-product-price-row">

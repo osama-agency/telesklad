@@ -223,6 +223,97 @@
   }
 }
 
+/* Stock Status - Best Practices 2025 */
+.tgapp-product-stock {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-top: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.tgapp-stock-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* Animated Icon */
+.tgapp-stock-icon svg {
+  animation: stockPulse 2s ease-in-out infinite;
+  animation-delay: calc(var(--animation-order, 0) * 50ms);
+}
+
+.stock-icon-circle {
+  transition: fill 0.3s ease;
+}
+
+/* In Stock Styles */
+.tgapp-product-stock.in-stock .stock-icon-circle {
+  fill: #22c55e;
+}
+
+.tgapp-product-stock.in-stock .tgapp-stock-text {
+  color: #16a34a;
+}
+
+.tg-dark .tgapp-product-stock.in-stock .tgapp-stock-text {
+  color: #4ade80;
+}
+
+/* Out of Stock Styles */
+.tgapp-product-stock.out-of-stock .stock-icon-circle {
+  fill: #ef4444;
+}
+
+.tgapp-product-stock.out-of-stock .tgapp-stock-text {
+  color: #dc2626;
+}
+
+.tg-dark .tgapp-product-stock.out-of-stock .tgapp-stock-text {
+  color: #f87171;
+}
+
+/* Pulse Animation */
+@keyframes stockPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+/* Hover Effect */
+.tgapp-product-card:hover .tgapp-stock-icon svg {
+  animation-duration: 1s;
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .tgapp-stock-icon svg {
+    animation: none;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .tgapp-product-stock.in-stock .tgapp-stock-text {
+    color: #059669;
+    font-weight: 600;
+  }
+  
+  .tgapp-product-stock.out-of-stock .tgapp-stock-text {
+    color: #b91c1c;
+    font-weight: 600;
+  }
+}
+
 /* Loading State */
 .tgapp-product-skeleton {
   background: #ffffff;
@@ -345,5 +436,16 @@
   .tgapp-product-discount-inline {
     font-size: 0.5625rem;
     padding: 0.125rem 0.25rem;
+  }
+  
+  .tgapp-product-stock {
+    font-size: 0.6875rem;
+    margin-top: 0.125rem;
+    margin-bottom: 0.375rem;
+  }
+  
+  .tgapp-stock-icon svg {
+    width: 10px;
+    height: 10px;
   }
 } 
