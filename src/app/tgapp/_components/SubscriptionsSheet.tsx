@@ -195,7 +195,7 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
     <Sheet 
       isOpen={isOpen} 
       onClose={onClose} 
-      title="Товары в ожидании"
+      title={`Товары в ожидании${subscriptions.length > 0 ? ` (${subscriptions.length})` : ''}`}
       className="subscriptions-sheet"
     >
       {!isAuthenticated || !user ? (
@@ -231,13 +231,6 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
         </div>
       ) : (
         <div className="subscriptions-list">
-          <div className="subscriptions-header">
-            <p className="subscriptions-count">
-              {subscriptions.length} {subscriptions.length === 1 ? 'товар' : 
-                subscriptions.length < 5 ? 'товара' : 'товаров'} в ожидании
-            </p>
-          </div>
-
           <div className="subscriptions-items">
             {subscriptions.map((subscription) => (
               <div 
@@ -252,6 +245,7 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
                       src={subscription.product.image_url} 
                       alt={subscription.product.name}
                       className="product-image"
+                      loading="lazy"
                     />
                   ) : (
                     <div className="product-image-placeholder">
@@ -268,10 +262,15 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
                   </div>
                   
                   <div className="product-availability">
-                    {subscription.product.available ? 
-                      `В наличии: ${subscription.product.quantity} шт.` : 
-                      'Нет в наличии'
-                    }
+                    {subscription.product.available ? (
+                      <span className="text-green-600">
+                        В наличии: {subscription.product.quantity} шт.
+                      </span>
+                    ) : (
+                      <span className="text-orange-600">
+                        Нет в наличии
+                      </span>
+                    )}
                   </div>
                   
                   <div className="subscription-date">
@@ -285,11 +284,12 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
                     className={`unsubscribe-btn ${deletingItems.has(subscription.id) ? 'loading' : ''}`}
                     disabled={deletingItems.has(subscription.id)}
                     title={deletingItems.has(subscription.id) ? 'Удаление...' : 'Отписаться'}
+                    aria-label="Отписаться от уведомлений"
                   >
                     {deletingItems.has(subscription.id) ? (
                       <div className="subscriptions-spinner" />
                     ) : (
-                      <IconComponent name="close" size={16} />
+                      <IconComponent name="close" size={20} />
                     )}
                   </button>
                 </div>

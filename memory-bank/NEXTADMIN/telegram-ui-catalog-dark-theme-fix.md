@@ -96,8 +96,69 @@ Fixed the dark theme background for the catalog page to match the profile page's
   - Category filter container remains without padding for full width
 - **Result**: Filter scrolls edge-to-edge without any clipping, working within overflow constraints
 
+### Product Detail Back Button Fix
+- **Problem**: Duplicate back buttons in product detail page:
+  1. Custom back button with ArrowLeft icon
+  2. Native Telegram SDK back button
+- **Solution**: Removed all custom back buttons, kept only native Telegram SDK button
+- **File**: `src/app/tgapp/products/[id]/page.tsx`
+- **Changes**:
+  - Removed custom back buttons from loading, error, and main states
+  - Removed flex containers and gaps from headers
+  - Removed ArrowLeft import from lucide-react
+- **Result**: Clean interface with only native Telegram back button
+
 ## Documentation
 - Created `docs/CATEGORY_FILTER_FULLWIDTH_FIX.md`
 - Created `docs/CATALOG_LAYOUT_FIX.md`
 - Created `docs/CATEGORY_FILTER_CLIPPING_FIX.md`
 - Created `docs/CATEGORY_FILTER_FULLWIDTH_SOLUTION.md`
+- Created `docs/TGAPP_REMOVE_DUPLICATE_BACK_BUTTON.md`
+
+## Subscriptions Modal UX Improvements
+
+### Task Summary
+Improved the layout and spacing of the "Товары в ожидании" (Waiting Products) modal according to 2025 UX/UI best practices while maintaining tgapp style consistency.
+
+### Changes Made
+
+1. **Enhanced Touch Targets**
+   - Close button: 36x36px (mobile: 32x32px)
+   - Unsubscribe button: 40x40px (mobile: 36x36px)
+   - All interactive elements meet 44x44px effective touch area
+
+2. **Improved Spacing System (8px Grid)**
+   - Modal header: 24px 24px 20px padding
+   - List items: 12px gap between cards
+   - Card padding: 16px internal spacing
+   - Content gap: 16px between image and text
+
+3. **Visual Hierarchy**
+   - Product name: 16px, weight 600
+   - Price: 18px, weight 700, green color
+   - Availability: 14px with color indicators
+   - Date: 13px, reduced opacity
+
+4. **Modern Design Elements**
+   - Product images: 72x72px (was 60x60px)
+   - Border radius: 16px cards, 12px images
+   - Subtle shadows with hover states
+   - Smooth animations and transitions
+
+5. **Dark Theme Optimization**
+   - Semi-transparent backgrounds with backdrop-filter
+   - Subtle borders: rgba(255, 255, 255, 0.08)
+   - Enhanced shadows for layer separation
+
+6. **Mobile Optimizations**
+   - iOS safe areas support
+   - Responsive sizing for <640px screens
+   - Native smooth scrolling
+
+### Files Updated
+- `src/app/tgapp/styles/subscriptions.css`
+- `src/components/ui/sheet.tsx`
+- `src/app/tgapp/_components/SubscriptionsSheet.tsx`
+
+### Documentation
+- Created `docs/TGAPP_SUBSCRIPTIONS_MODAL_UX_IMPROVEMENTS.md`

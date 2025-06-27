@@ -66,12 +66,12 @@ export default function CategoryFilterHorizontal({ onCategoryChange, selectedCat
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-transparent border-b border-gray-200 dark:border-gray-700">
+      <div className="bg-[#F6F9FC] dark:bg-transparent border-b border-gray-200 dark:border-gray-700">
         <div className="px-4 py-3">
           <div className="flex gap-3 overflow-hidden">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="animate-pulse">
-                <div className="h-12 w-28 bg-gray-200 dark:bg-black/20 rounded-xl"></div>
+                <div className="h-12 w-28 bg-[#F1F1F1] dark:bg-black/20 rounded-xl"></div>
               </div>
             ))}
           </div>
@@ -87,7 +87,7 @@ export default function CategoryFilterHorizontal({ onCategoryChange, selectedCat
   const totalCount = categories.reduce((sum, cat) => sum + cat.count, 0);
 
   return (
-    <div className="category-filter-wrapper bg-white dark:bg-transparent border-b border-gray-200 dark:border-gray-700">
+    <div className="category-filter-wrapper bg-[#F6F9FC] dark:bg-transparent border-b border-gray-200 dark:border-gray-700">
       {/* Scrollable container */}
             <div 
         ref={scrollContainerRef}
@@ -101,7 +101,7 @@ export default function CategoryFilterHorizontal({ onCategoryChange, selectedCat
                 flex items-center gap-2 px-5 py-3 rounded-xl font-medium transition-all
                 ${!selectedCategory 
                   ? 'bg-green-500 text-white shadow-lg shadow-green-500/25 scale-105' 
-                  : 'bg-gray-100 dark:bg-black/20 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-black/30 backdrop-blur-sm'
+                  : 'bg-[#F1F1F1] dark:bg-black/20 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-black/30 backdrop-blur-sm'
                 }
               `}
             >
@@ -111,7 +111,7 @@ export default function CategoryFilterHorizontal({ onCategoryChange, selectedCat
                 px-2 py-0.5 rounded-full text-xs font-semibold
                 ${!selectedCategory 
                   ? 'bg-white/20 text-white' 
-                  : 'bg-gray-200 dark:bg-black/20 text-gray-600 dark:text-gray-400'
+                  : 'bg-gray-100 dark:bg-black/20 text-gray-600 dark:text-gray-400'
                 }
               `}>
                 {totalCount}
@@ -130,7 +130,7 @@ export default function CategoryFilterHorizontal({ onCategoryChange, selectedCat
                     flex items-center gap-2 px-5 py-3 rounded-xl font-medium transition-all
                     ${isSelected 
                       ? 'bg-green-500 text-white shadow-lg shadow-green-500/25 scale-105' 
-                      : 'bg-gray-100 dark:bg-black/20 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-black/30 backdrop-blur-sm'
+                      : 'bg-[#F1F1F1] dark:bg-black/20 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-black/30 backdrop-blur-sm'
                     }
                   `}
                 >
@@ -139,7 +139,7 @@ export default function CategoryFilterHorizontal({ onCategoryChange, selectedCat
                     px-2 py-0.5 rounded-full text-xs font-semibold
                     ${isSelected 
                       ? 'bg-white/20 text-white' 
-                      : 'bg-gray-200 dark:bg-black/20 text-gray-600 dark:text-gray-400'
+                      : 'bg-gray-100 dark:bg-black/20 text-gray-600 dark:text-gray-400'
                     }
                   `}>
                     {category.count}

@@ -81,7 +81,7 @@ const Sheet: React.FC<SheetProps> = ({
 
         .sheet-content {
           background: var(--tg-background, white);
-          border-radius: 20px 20px 0 0;
+          border-radius: 24px 24px 0 0;
           max-width: 500px;
           width: 100%;
           max-height: 90vh;
@@ -89,40 +89,49 @@ const Sheet: React.FC<SheetProps> = ({
           animation: sheet-slide-up 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           border: 1px solid var(--tg-border, transparent);
           border-bottom: none;
+          box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
         }
 
         .sheet-header {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 0 20px 16px;
+          padding: 24px 24px 20px;
           border-bottom: 1px solid var(--tg-border, #F3F4F6);
+          background: var(--tg-background, white);
+          position: sticky;
+          top: 0;
+          z-index: 10;
         }
 
         .sheet-title {
-          font-size: 18px;
+          font-size: 20px;
           font-weight: 600;
           color: var(--tg-text, #1F2937);
           margin: 0;
+          line-height: 1.2;
         }
 
         .sheet-close-btn {
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 32px;
-          height: 32px;
+          width: 36px;
+          height: 36px;
           border: none;
           background: var(--tg-surface, #F9FAFB);
-          border-radius: 8px;
+          border-radius: 10px;
           color: var(--tg-text-secondary, #6B7280);
           cursor: pointer;
           transition: all var(--tg-transition-fast, 0.2s ease);
+          flex-shrink: 0;
+          margin-left: 16px;
         }
 
         .sheet-close-btn:hover {
           background: var(--tg-border, #F3F4F6);
           color: var(--tg-text, #374151);
+          transform: scale(1.05);
         }
 
         .sheet-close-btn:active {
@@ -130,11 +139,30 @@ const Sheet: React.FC<SheetProps> = ({
         }
 
         .sheet-body {
-          padding: 20px;
-          padding-bottom: 80px; /* Дополнительный отступ снизу для плашки корзины */
-          max-height: calc(90vh - 120px);
+          padding: 24px;
+          padding-bottom: 32px;
+          max-height: calc(90vh - 80px);
           overflow-y: auto;
           color: var(--tg-text, inherit);
+          -webkit-overflow-scrolling: touch;
+        }
+
+        /* Стили скроллбара */
+        .sheet-body::-webkit-scrollbar {
+          width: 6px;
+        }
+
+        .sheet-body::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        .sheet-body::-webkit-scrollbar-thumb {
+          background: var(--tg-border, #E5E7EB);
+          border-radius: 3px;
+        }
+
+        .sheet-body::-webkit-scrollbar-thumb:hover {
+          background: var(--tg-text-secondary, #9CA3AF);
         }
 
         @keyframes sheet-fade-in {
@@ -161,16 +189,39 @@ const Sheet: React.FC<SheetProps> = ({
         @media (max-width: 640px) {
           .sheet-content {
             max-height: 95vh;
-          }
-          
-          .sheet-body {
-            padding: 16px;
-            padding-bottom: 80px; /* Дополнительный отступ снизу для плашки корзины */
-            max-height: calc(95vh - 100px);
+            border-radius: 20px 20px 0 0;
           }
           
           .sheet-header {
-            padding: 0 16px 12px;
+            padding: 20px 20px 16px;
+          }
+          
+          .sheet-title {
+            font-size: 18px;
+          }
+          
+          .sheet-close-btn {
+            width: 32px;
+            height: 32px;
+          }
+          
+          .sheet-body {
+            padding: 20px;
+            padding-bottom: 28px;
+            max-height: calc(95vh - 72px);
+          }
+        }
+
+        /* Безопасные отступы для iOS */
+        @supports (padding-bottom: env(safe-area-inset-bottom)) {
+          .sheet-body {
+            padding-bottom: calc(32px + env(safe-area-inset-bottom));
+          }
+          
+          @media (max-width: 640px) {
+            .sheet-body {
+              padding-bottom: calc(28px + env(safe-area-inset-bottom));
+            }
           }
         }
 
@@ -179,8 +230,13 @@ const Sheet: React.FC<SheetProps> = ({
           --tg-overlay-bg: rgba(0, 0, 0, 0.5);
         }
 
-        [data-theme="dark"] {
+        [data-theme="dark"],
+        .tg-dark {
           --tg-overlay-bg: rgba(0, 0, 0, 0.7);
+        }
+        
+        .tg-dark .sheet-content {
+          box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
         }
       `}</style>
     </div>

@@ -6,7 +6,7 @@ import Image from "next/image";
 import FavoriteButton from "../../_components/FavoriteButton";
 import { ProductActionButton } from "../../_components/ProductActionButton";
 import { useBackButton } from "../../_components/useBackButton";
-import { ArrowLeft, Package } from "lucide-react";
+import { Package } from "lucide-react";
 import dynamic from "next/dynamic";
 
 // Динамические импорты крупногабаритных компонентов (ленивая загрузка)
@@ -83,15 +83,7 @@ export default function TgProductDetailPage() {
       <div className="flex flex-col h-full">
         {/* Фиксированный заголовок */}
         <div className="px-4 py-3 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700/50">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.back()}
-              className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-200">Товар</h1>
-          </div>
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-200">Товар</h1>
         </div>
 
         {/* Основной контент */}
@@ -113,15 +105,7 @@ export default function TgProductDetailPage() {
       <div className="flex flex-col h-full">
         {/* Фиксированный заголовок */}
         <div className="px-4 py-3 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700/50">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.back()}
-              className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-200">Ошибка</h1>
-          </div>
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-200">Ошибка</h1>
         </div>
 
         {/* Основной контент */}
@@ -166,17 +150,9 @@ export default function TgProductDetailPage() {
     <div className="flex flex-col h-full">
       {/* Фиксированный заголовок */}
       <div className="px-4 py-3 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700/50">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.back()}
-            className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-200 line-clamp-1">
-            {product.name}
-          </h1>
-        </div>
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-200 line-clamp-1">
+          {product.name}
+        </h1>
       </div>
 
       {/* Основной контент */}
