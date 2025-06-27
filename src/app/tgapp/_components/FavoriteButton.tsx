@@ -87,7 +87,7 @@ export default function FavoriteButton({
         hover:scale-105
         disabled:cursor-not-allowed
         group
-        ${isFavorite ? "bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800" : ""}
+        ${isFavorite ? "bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-800 shadow-green-200 shadow-md" : ""}
         ${isAnimating ? "scale-95 opacity-80" : ""}
       `}
       aria-label={isFavorite ? "Удалить из избранного" : "Добавить в избранное"}
@@ -96,12 +96,12 @@ export default function FavoriteButton({
         className={`
           ${iconSizes[size]}
           transition-all duration-200
-          ${isFavorite ? "fill-red-500 text-red-500 dark:fill-red-400 dark:text-red-400" : "text-gray-400 dark:text-gray-600"}
+          ${isFavorite ? "fill-green-500 text-green-500 dark:fill-green-400 dark:text-green-400" : "text-gray-400 dark:text-gray-600"}
           ${isAnimating ? "scale-110" : ""}
         `}
       />
       {showCount && favoritesCount > 0 && (
-        <span className="absolute -top-1 -right-1 bg-red-500 dark:bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium shadow-sm dark:shadow-black/30">
+        <span className="absolute -top-1 -right-1 bg-green-500 dark:bg-green-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium shadow-sm dark:shadow-black/30">
           {favoritesCount}
         </span>
       )}

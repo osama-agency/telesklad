@@ -5,6 +5,7 @@
   /* Add padding to the whole catalog like profile page */
   padding-left: 1rem;
   padding-right: 1rem;
+  padding-top: 0;
 }
 
 /* Remove horizontal padding from inner sections */
@@ -18,6 +19,11 @@
 .tgapp-catalog > div:last-child {
   padding-left: 1rem;
   padding-right: 1rem;
+}
+
+/* Remove top padding from first child (search) */
+.tgapp-catalog > div:first-child {
+  padding-top: 0;
 }
 
 /* Category filter container stays full width without padding */
@@ -75,7 +81,7 @@
   background: #F6F9FC !important;
   border-radius: 16px;
   padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0;
   display: flex;
   align-items: center;
   gap: 0.75rem;

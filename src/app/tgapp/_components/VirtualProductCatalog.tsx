@@ -21,6 +21,9 @@ const ProductCard = React.memo<{ product: ProductWithSubscription; index: number
   ({ product, index }) => {
     const [imageError, setImageError] = React.useState(false);
     const [imageLoading, setImageLoading] = React.useState(true);
+    
+    const hasDiscount = product.old_price && product.old_price > product.price;
+    const discountPercent = hasDiscount ? Math.round(((product.old_price! - product.price) / product.old_price!) * 100) : 0;
 
     return (
       <div className="tgapp-product-card">
@@ -107,9 +110,23 @@ const ProductCard = React.memo<{ product: ProductWithSubscription; index: number
             <h3 className="tgapp-product-name" title={product.name}>
               {product.name}
             </h3>
-            <p className="tgapp-product-price" aria-label={`Цена ${product.price.toLocaleString("ru-RU")} рублей`}>
-              {product.price.toLocaleString("ru-RU")} ₽
-            </p>
+            <div className="tgapp-product-price-container">
+              {product.old_price && product.old_price > product.price && (
+                <div className="tgapp-product-price-row">
+                  <p className="tgapp-product-old-price" aria-label={`Старая цена ${product.old_price.toLocaleString("ru-RU")} рублей`}>
+                    {product.old_price.toLocaleString("ru-RU")} ₽
+                  </p>
+                  {hasDiscount && (
+                    <span className="tgapp-product-discount-inline" role="text" aria-label={`Скидка ${discountPercent} процентов`}>
+                      -{discountPercent}%
+                    </span>
+                  )}
+                </div>
+              )}
+              <p className="tgapp-product-price" aria-label={`Цена ${product.price.toLocaleString("ru-RU")} рублей`}>
+                {product.price.toLocaleString("ru-RU")} ₽
+              </p>
+            </div>
           </Link>
         </div>
         
@@ -133,6 +150,7 @@ const ProductCard = React.memo<{ product: ProductWithSubscription; index: number
       prevProps.product.id === nextProps.product.id &&
       prevProps.product.name === nextProps.product.name &&
       prevProps.product.price === nextProps.product.price &&
+      prevProps.product.old_price === nextProps.product.old_price &&
       prevProps.product.image_url === nextProps.product.image_url &&
       prevProps.product.stock_quantity === nextProps.product.stock_quantity &&
       prevProps.product.isSubscribed === nextProps.product.isSubscribed &&

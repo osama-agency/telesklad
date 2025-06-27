@@ -67,11 +67,11 @@ export default function CategoryFilterHorizontal({ onCategoryChange, selectedCat
   if (loading) {
     return (
       <div className="bg-[#F6F9FC] dark:bg-transparent border-b border-gray-200 dark:border-gray-700">
-        <div className="px-4 py-3">
+        <div className="px-4 pt-2.5 pb-2">
           <div className="flex gap-3 overflow-hidden">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="animate-pulse">
-                <div className="h-12 w-28 bg-[#F1F1F1] dark:bg-black/20 rounded-xl"></div>
+                <div className="h-10 w-28 bg-[#F1F1F1] dark:bg-black/20 rounded-xl"></div>
               </div>
             ))}
           </div>
@@ -91,14 +91,14 @@ export default function CategoryFilterHorizontal({ onCategoryChange, selectedCat
       {/* Scrollable container */}
             <div 
         ref={scrollContainerRef}
-        className="overflow-x-auto overflow-y-hidden py-3 category-filter-scroll"
+        className="overflow-x-auto overflow-y-hidden pt-2.5 pb-2 category-filter-scroll"
       >
         <div className="flex gap-2.5 w-max" style={{ paddingLeft: '1rem', paddingRight: '1rem' }}>
             {/* All Categories Button */}
             <button
               onClick={() => handleCategorySelect(null)}
               className={`
-                flex items-center gap-2 px-5 py-3 rounded-xl font-medium transition-all
+                flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all
                 ${!selectedCategory 
                   ? 'bg-green-500 text-white shadow-lg shadow-green-500/25 scale-105' 
                   : 'bg-[#F1F1F1] dark:bg-black/20 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-black/30 backdrop-blur-sm'
@@ -127,7 +127,7 @@ export default function CategoryFilterHorizontal({ onCategoryChange, selectedCat
                   data-category-id={category.id}
                   onClick={() => handleCategorySelect(category.id)}
                   className={`
-                    flex items-center gap-2 px-5 py-3 rounded-xl font-medium transition-all
+                    flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all
                     ${isSelected 
                       ? 'bg-green-500 text-white shadow-lg shadow-green-500/25 scale-105' 
                       : 'bg-[#F1F1F1] dark:bg-black/20 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-black/30 backdrop-blur-sm'

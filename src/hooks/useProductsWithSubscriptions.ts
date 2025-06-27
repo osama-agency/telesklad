@@ -6,6 +6,7 @@ export interface ProductWithSubscription {
   id: number;
   name: string;
   price: number;
+  old_price: number | null;
   stock_quantity: number;
   image_url?: string;
   isSubscribed: boolean;
