@@ -12,8 +12,9 @@
 3. Updated SkeletonCatalog for consistent loading states
 4. Fixed category filter full-width scrolling
 5. Removed unwanted borders and margins from catalog layout
-6. **NEW**: Removed visual gradient overlays from category filter edges
-7. **NEW**: Removed sticky positioning from category filter
+6. Removed visual gradient overlays from category filter edges
+7. Removed sticky positioning from category filter
+8. **NEW**: Fixed category filter top clipping issue by removing negative margins
 
 ## Next Steps
 Consider updating remaining pages to use TgApp design system:

@@ -82,6 +82,18 @@ Fixed the dark theme background for the catalog page to match the profile page's
 - Better compatibility with Telegram WebApp
 - Smooth scrolling experience
 
+## Additional Fixes
+
+### Category Filter Top Clipping Issue
+- **Problem**: Category filter was being clipped at the top edges due to negative margins
+- **Solution**: Removed negative margin approach completely
+- **Changes**:
+  - Removed `category-filter-container` class from component
+  - Simplified CSS without negative margins
+  - Natural full-width scrolling preserved
+- **Result**: No more clipping, clean scrolling behavior
+
 ## Documentation
 - Created `docs/CATEGORY_FILTER_FULLWIDTH_FIX.md`
 - Created `docs/CATALOG_LAYOUT_FIX.md`
+- Created `docs/CATEGORY_FILTER_CLIPPING_FIX.md`
