@@ -1,0 +1,272 @@
+/* Product Card Styles - TgApp Design System */
+
+/* Product Grid Container */
+.tgapp-product-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+/* Product Card */
+.tgapp-product-card {
+  background: var(--tg-secondary-bg-color);
+  border-radius: 12px;
+  border: 1px solid var(--tg-border-color);
+  box-shadow: var(--tg-shadow-light);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.tg-dark .tgapp-product-card {
+  background: var(--tg-secondary-bg-color);
+  border: 1px solid var(--tg-border-color);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--tg-shadow-medium);
+}
+
+.tgapp-product-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--tg-shadow-medium);
+  border-color: var(--tg-border-hover);
+}
+
+.tg-dark .tgapp-product-card:hover {
+  box-shadow: var(--tg-shadow-heavy);
+  background: rgba(22, 27, 34, 0.8);
+  border-color: rgba(34, 197, 94, 0.2);
+}
+
+/* Product Image Container */
+.tgapp-product-image-container {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  padding: 0.75rem;
+  padding-bottom: 0;
+}
+
+.tgapp-product-image-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--tg-bg-color);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tg-dark .tgapp-product-image-wrapper {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tgapp-product-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: opacity 0.3s ease;
+}
+
+.tgapp-product-image.loading {
+  opacity: 0;
+}
+
+.tgapp-product-image-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--tg-bg-color);
+}
+
+.tg-dark .tgapp-product-image-placeholder {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tgapp-product-image-placeholder svg {
+  width: 40px;
+  height: 40px;
+  color: var(--tg-hint-color);
+}
+
+/* Product Content */
+.tgapp-product-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem;
+  padding-top: 0.5rem;
+  gap: 0.75rem;
+}
+
+.tgapp-product-link {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.tgapp-product-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--tg-text-color);
+  line-height: 1.3;
+  min-height: 2.5rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0;
+}
+
+.tg-dark .tgapp-product-name {
+  color: var(--tg-text-color);
+}
+
+.tgapp-product-price {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #22c55e;
+  margin: 0;
+}
+
+.tg-dark .tgapp-product-price {
+  color: #22c55e;
+}
+
+/* Product Actions */
+.tgapp-product-actions {
+  padding: 0 0.75rem 0.75rem;
+  margin-top: auto;
+}
+
+/* Favorite Button */
+.tgapp-product-favorite {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 10;
+}
+
+/* Loading State */
+.tgapp-product-skeleton {
+  background: var(--tg-secondary-bg-color);
+  border-radius: 12px;
+  border: 1px solid var(--tg-border-color);
+  box-shadow: var(--tg-shadow-light);
+  padding: 0.75rem;
+  height: 100%;
+}
+
+.tg-dark .tgapp-product-skeleton {
+  background: var(--tg-secondary-bg-color);
+  border: 1px solid var(--tg-border-color);
+  backdrop-filter: blur(10px);
+}
+
+.tgapp-skeleton-element {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: tgapp-shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+.tg-dark .tgapp-skeleton-element {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 75%);
+  background-size: 200% 100%;
+}
+
+.tgapp-skeleton-image {
+  width: 100%;
+  height: 180px;
+  margin-bottom: 0.5rem;
+}
+
+.tgapp-skeleton-text {
+  height: 1rem;
+  margin-bottom: 0.25rem;
+  width: 100%;
+}
+
+.tgapp-skeleton-text.short {
+  width: 60%;
+}
+
+.tgapp-skeleton-price {
+  height: 1.25rem;
+  width: 50%;
+  margin-bottom: 0.75rem;
+}
+
+.tgapp-skeleton-button {
+  height: 2.5rem;
+  width: 100%;
+}
+
+/* Empty State */
+.tgapp-catalog-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--tg-hint-color);
+}
+
+.tgapp-catalog-empty-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--tg-text-color);
+}
+
+.tgapp-catalog-empty-message {
+  font-size: 0.875rem;
+  color: var(--tg-hint-color);
+}
+
+/* Error State */
+.tgapp-catalog-error {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--tg-error-color, #ef4444);
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .tgapp-product-grid {
+    gap: 0.5rem;
+  }
+  
+  .tgapp-product-card {
+    border-radius: 10px;
+  }
+  
+  .tgapp-product-image-container {
+    height: 160px;
+    padding: 0.5rem;
+    padding-bottom: 0;
+  }
+  
+  .tgapp-product-content {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+  
+  .tgapp-product-actions {
+    padding: 0 0.5rem 0.5rem;
+  }
+  
+  .tgapp-product-name {
+    font-size: 0.8rem;
+  }
+  
+  .tgapp-product-price {
+    font-size: 1rem;
+  }
+} 

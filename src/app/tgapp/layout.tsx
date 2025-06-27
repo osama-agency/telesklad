@@ -12,6 +12,7 @@ import "./styles/catalog.css";
 import "./styles/profile.css";
 import "./styles/subscriptions.css";
 import "./styles/telegram-ui-theme.css";
+import "./styles/product-card.css";
 import { TelegramAuthProvider } from "@/context/TelegramAuthContext";
 import { FavoritesProvider } from "@/context/FavoritesContext";
 import { useTelegramTheme } from "./_components/useTelegramTheme";

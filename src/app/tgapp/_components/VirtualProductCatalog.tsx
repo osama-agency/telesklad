@@ -23,99 +23,97 @@ const ProductCard = React.memo<{ product: ProductWithSubscription; index: number
     const [imageLoading, setImageLoading] = React.useState(true);
 
     return (
-      <div className="group relative bg-white dark:bg-gray-800/60 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700/50 hover:shadow-md dark:hover:shadow-xl dark:hover:shadow-black/20 transition-all duration-300 flex flex-col overflow-hidden backdrop-blur-sm h-full">
-        <div className="absolute top-3 right-3 z-10">
+      <div className="tgapp-product-card">
+        <div className="tgapp-product-favorite">
           <FavoriteButton productId={product.id} />
         </div>
-        <Link 
-          href={`/tgapp/products/${product.id}`} 
-          className="block flex-1" 
-          prefetch={false}
-          aria-label={`Перейти к товару ${product.name}`}
-        >
-          <div className="p-4 pb-3">
-            <div className="relative w-full bg-gray-50 dark:bg-gray-700/30 rounded-lg overflow-hidden" style={{ height: '180px' }}>
-              {product.image_url && !imageError ? (
-                <>
-                  {imageLoading && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-700">
-                      <div className="animate-pulse" role="status" aria-label="Загрузка изображения">
-                        <svg 
-                          width="40" 
-                          height="40" 
-                          viewBox="0 0 24 24" 
-                          fill="none" 
-                          stroke="currentColor" 
-                          strokeWidth="2" 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          className="text-gray-400"
-                          aria-hidden="true"
-                        >
-                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                          <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                          <polyline points="21 15 16 10 5 21"></polyline>
-                        </svg>
-                        <span className="sr-only">Загрузка изображения товара</span>
-                      </div>
+        
+        <div className="tgapp-product-image-container">
+          <div className="tgapp-product-image-wrapper">
+            {product.image_url && !imageError ? (
+              <>
+                {imageLoading && (
+                  <div className="tgapp-product-image-placeholder">
+                    <div className="tgapp-skeleton-element" role="status" aria-label="Загрузка изображения">
+                      <svg 
+                        width="40" 
+                        height="40" 
+                        viewBox="0 0 24 24" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        strokeWidth="2" 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        aria-hidden="true"
+                      >
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                      </svg>
+                      <span className="sr-only">Загрузка изображения товара</span>
                     </div>
-                  )}
-                  <Image
-                    src={product.image_url}
-                    alt={`Изображение товара ${product.name}`}
-                    fill
-                    className={`object-contain transition-opacity duration-300 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
-                    sizes="(max-width: 640px) 50vw, 200px"
-                    unoptimized
-                    priority={index < 4} // Приоритет для первых 4 товаров
-                    onLoad={() => setImageLoading(false)}
-                    onError={() => {
-                      setImageError(true);
-                      setImageLoading(false);
-                    }}
-                  />
-                </>
-              ) : (
-                <div className="flex items-center justify-center w-full h-full bg-gray-100 dark:bg-gray-700" role="img" aria-label="Изображение товара недоступно">
-                  <svg 
-                    width="40" 
-                    height="40" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    className="text-gray-400"
-                    aria-hidden="true"
-                  >
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                    <polyline points="21 15 16 10 5 21"></polyline>
-                  </svg>
-                  {imageError && (
-                    <div className="absolute bottom-1 right-1 text-xs text-red-500" aria-hidden="true">
-                      Ошибка
-                    </div>
-                  )}
-                  <span className="sr-only">Изображение товара недоступно</span>
-                </div>
-              )}
-            </div>
+                  </div>
+                )}
+                <Image
+                  src={product.image_url}
+                  alt={`Изображение товара ${product.name}`}
+                  fill
+                  className={`tgapp-product-image ${imageLoading ? 'loading' : ''}`}
+                  sizes="(max-width: 640px) 50vw, 200px"
+                  unoptimized
+                  priority={index < 4} // Приоритет для первых 4 товаров
+                  onLoad={() => setImageLoading(false)}
+                  onError={() => {
+                    setImageError(true);
+                    setImageLoading(false);
+                  }}
+                />
+              </>
+            ) : (
+              <div className="tgapp-product-image-placeholder" role="img" aria-label="Изображение товара недоступно">
+                <svg 
+                  width="40" 
+                  height="40" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  aria-hidden="true"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                {imageError && (
+                  <div className="absolute bottom-1 right-1 text-xs text-red-500" aria-hidden="true">
+                    Ошибка
+                  </div>
+                )}
+                <span className="sr-only">Изображение товара недоступно</span>
+              </div>
+            )}
           </div>
-          <div className="flex flex-col flex-1 px-4 space-y-3 pb-3">
-            <h3 
-              className="text-sm font-medium text-gray-900 dark:text-gray-200 line-clamp-2 min-h-[2.5rem] leading-tight" 
-              title={product.name}
-            >
+        </div>
+        
+        <div className="tgapp-product-content">
+          <Link 
+            href={`/tgapp/products/${product.id}`} 
+            className="tgapp-product-link" 
+            prefetch={false}
+            aria-label={`Перейти к товару ${product.name}`}
+          >
+            <h3 className="tgapp-product-name" title={product.name}>
               {product.name}
             </h3>
-            <p className="text-lg font-bold text-green-500 dark:text-green-400" aria-label={`Цена ${product.price.toLocaleString("ru-RU")} рублей`}>
+            <p className="tgapp-product-price" aria-label={`Цена ${product.price.toLocaleString("ru-RU")} рублей`}>
               {product.price.toLocaleString("ru-RU")} ₽
             </p>
-          </div>
-        </Link>
-        <div className="px-4 pb-4 mt-auto">
+          </Link>
+        </div>
+        
+        <div className="tgapp-product-actions">
           <ProductActionButton
             productId={product.id}
             productName={product.name}
@@ -156,7 +154,7 @@ const VirtualRow = React.memo<{
   const rowItems = products.slice(startIndex, startIndex + itemsPerRow);
 
     return (
-      <div style={style} className="grid grid-cols-2 gap-4 px-4 w-full">
+      <div style={{...style, padding: '0 1rem'}} className="tgapp-product-grid">
       {rowItems.map((product, itemIndex) => (
         <ProductCard 
           key={product.id} 
@@ -196,18 +194,16 @@ const SimpleGrid = React.memo<{ products: ProductWithSubscription[] }>(({ produc
   
   if (products.length === 0) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="text-center">
-          <p className="text-lg text-gray-500">Нет товаров для отображения</p>
-          <p className="text-sm text-gray-400">Debug: SimpleGrid получил 0 товаров</p>
-        </div>
+      <div className="tgapp-catalog-empty">
+        <p className="tgapp-catalog-empty-title">Нет товаров для отображения</p>
+        <p className="tgapp-catalog-empty-message">Debug: SimpleGrid получил 0 товаров</p>
       </div>
     );
   }
   
       return (
       <div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="tgapp-product-grid">
         {products.map((product, index) => (
           <ProductCard key={product.id} product={product} index={index} />
         ))}
@@ -253,7 +249,7 @@ export default function VirtualProductCatalog({ search, category, debugMode = fa
   if (error) {
     console.log('[VirtualProductCatalog] Showing error:', error);
     return (
-      <div className="text-center py-8 text-red-500" role="alert">
+      <div className="tgapp-catalog-error" role="alert">
         <p>Ошибка загрузки товаров: {error}</p>
         <span className="sr-only">Произошла ошибка при загрузке каталога товаров</span>
       </div>
@@ -263,8 +259,8 @@ export default function VirtualProductCatalog({ search, category, debugMode = fa
   if (products.length === 0) {
     console.log('[VirtualProductCatalog] No products found');
     return (
-      <div className="text-center py-8 text-gray-500">
-        <p>Товары не найдены</p>
+      <div className="tgapp-catalog-empty">
+        <p className="tgapp-catalog-empty-title">Товары не найдены</p>
         <span className="sr-only">В каталоге нет товаров, соответствующих поисковому запросу</span>
       </div>
     );
@@ -286,7 +282,7 @@ export default function VirtualProductCatalog({ search, category, debugMode = fa
   console.log('[VirtualProductCatalog] Container dimensions:', { containerHeight, containerWidth });
   
   return (
-    <div className="h-full bg-gray-50 dark:bg-gray-900 hide-scrollbar" role="main" aria-label="Каталог товаров">
+    <div role="main" aria-label="Каталог товаров">
       <div aria-live="polite" aria-label={`Сетка товаров, ${products.length} товаров в ${rowCount} строках`} className="sr-only" />
       <List 
         height={containerHeight} 

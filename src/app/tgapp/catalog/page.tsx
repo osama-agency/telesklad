@@ -61,7 +61,7 @@ export default function CatalogPage() {
       <div className="px-4 pb-4 pt-4">
         <div className="max-w-[600px] mx-auto">
           <Suspense fallback={<SkeletonCatalog />}>
-            <VirtualProductCatalog search={query} category={selectedCategory} debugMode={true} />
+            <VirtualProductCatalog search={query} category={selectedCategory} debugMode={false} />
           </Suspense>
         </div>
       </div>
