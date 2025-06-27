@@ -87,12 +87,8 @@ export default function CategoryFilterHorizontal({ onCategoryChange, selectedCat
   const totalCount = categories.reduce((sum, cat) => sum + cat.count, 0);
 
   return (
-    <div className="category-filter-container bg-white dark:bg-transparent border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
+    <div className="category-filter-container bg-white dark:bg-transparent border-b border-gray-200 dark:border-gray-700">
       <div className="relative">
-        {/* Gradient overlays for scroll indication */}
-        <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white dark:from-[#0d1117] to-transparent z-10 pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white dark:from-[#0d1117] to-transparent z-10 pointer-events-none" />
-        
         {/* Scrollable container */}
         <div 
           ref={scrollContainerRef}
