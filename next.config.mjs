@@ -23,11 +23,18 @@ const nextConfig = {
   // Экспериментальные функции для производительности
   experimental: {
     externalDir: true,
+    // Исправлено: serverActions теперь объект, а не boolean
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
     // Оптимизация пакетов
     optimizePackageImports: ['lucide-react', '@heroicons/react'],
     // Оптимизация CSS
     optimizeCss: true,
   },
+  
+  // Добавляем allowedDevOrigins обратно для ngrok
+  allowedDevOrigins: ['https://strattera.ngrok.app'],
   
   // Компиляция и бундлинг
   compiler: {
@@ -84,6 +91,16 @@ const nextConfig = {
   
   // Разрешаем cross-origin запросы с ngrok домена в режиме разработки
   allowedDevOrigins: ["https://strattera.ngrok.app"],
+  
+  // Настройки для работы с ngrok и WebSocket
+  ...(process.env.NODE_ENV === 'development' && {
+    assetPrefix: process.env.NEXTAUTH_URL?.includes('ngrok') ? process.env.NEXTAUTH_URL : undefined,
+    // Отключаем WebSocket для HMR при использовании ngrok
+    devIndicators: {
+      buildActivity: false,
+    },
+  }),
+  
   async headers() {
     return [
       {
@@ -104,8 +121,6 @@ const nextConfig = {
       },
     ];
   },
-  
-  allowedDevOrigins: ['https://strattera.ngrok.app'],
   
   // Настройки среды выполнения
   env: {

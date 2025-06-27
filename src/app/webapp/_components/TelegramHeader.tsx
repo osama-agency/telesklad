@@ -9,6 +9,7 @@ import { useFavorites } from '@/context/FavoritesContext';
 import { useTelegramAuth } from '@/context/TelegramAuthContext';
 import { useTelegramHaptic } from '@/hooks/useTelegramHaptic';
 import { useTelegramDesignSystem } from '@/hooks/useTelegramDesignSystem';
+import { headerStyles, cn } from './headerStyles';
 
 interface TelegramHeaderProps {
   className?: string;
@@ -63,7 +64,7 @@ export function TelegramHeader({ className = '' }: TelegramHeaderProps) {
   }, [deviceCapabilities.supportsHaptic, impactLight]);
 
   // Стили header на основе Telegram theme
-  const headerStyles = useMemo(() => ({
+  const headerInlineStyles = useMemo(() => ({
     backgroundColor: telegramTheme.header_bg_color || '#F9F9F9', // Используем #F9F9F9 вместо белого
     color: telegramTheme.text_color,
     paddingTop: `${deviceCapabilities.safeAreaInset.top}px`,
@@ -85,37 +86,43 @@ export function TelegramHeader({ className = '' }: TelegramHeaderProps) {
     return null;
   }
 
-  const finalClassName = `webapp-header telegram-design-header ${isScrolled ? 'scrolled' : ''} ${deviceCapabilities.isLowEnd ? 'low-end' : ''} ${className}`.trim();
-
   return (
     <header 
-      className={finalClassName}
-      style={headerStyles}
+      className={cn(
+        headerStyles.header,
+        isScrolled && headerStyles.headerScrolled,
+        deviceCapabilities.isLowEnd && 'low-end',
+        className
+      )}
+      style={headerInlineStyles}
       role="banner"
       aria-label="Навигация приложения"
     >
-      <div className="webapp-header-container">
+      <div className={headerStyles.container}>
         {/* Поисковая строка */}
-        <div className="webapp-header-search" role="search">
+        <div className={headerStyles.search} role="search">
           <AlgoliaModernSearch />
         </div>
 
         {/* Кнопки действий */}
         <div 
-          className="webapp-header-actions"
+          className={headerStyles.actions}
           role="navigation"
           aria-label="Основные действия"
         >
           {/* Избранное */}
           <Link 
             href="/webapp/favorites" 
-            className={`header-action-button ${isActive('/webapp/favorites') ? 'active' : ''}`}
+            className={cn(
+              headerStyles.actionButton,
+              isActive('/webapp/favorites') && headerStyles.actionButtonActive
+            )}
             onClick={handleButtonClick}
             style={isActive('/webapp/favorites') ? activeButtonStyles : undefined}
             aria-label={`Избранное${favoritesCount > 0 ? ` (${favoritesCount} товаров)` : ''}`}
             role="button"
           >
-            <div className="header-action-icon">
+            <div className={headerStyles.actionIcon}>
               <IconComponent 
                 name={hasFavorites ? "favorite" : "unfavorite"} 
                 size={24}
@@ -123,7 +130,7 @@ export function TelegramHeader({ className = '' }: TelegramHeaderProps) {
               />
               {favoritesCount > 0 && (
                 <span 
-                  className="header-action-badge"
+                  className={headerStyles.badge}
                   aria-label={`${favoritesCount} избранных товаров`}
                 >
                   {favoritesCount}
@@ -135,13 +142,17 @@ export function TelegramHeader({ className = '' }: TelegramHeaderProps) {
           {/* Профиль */}
           <Link 
             href="/webapp/profile" 
-            className={`header-action-button profile-button ${isActive('/webapp/profile') ? 'active' : ''}`}
+            className={cn(
+              headerStyles.actionButton,
+              'profile-button',
+              isActive('/webapp/profile') && headerStyles.actionButtonActive
+            )}
             onClick={handleButtonClick}
             style={isActive('/webapp/profile') ? activeButtonStyles : undefined}
             aria-label={user?.first_name ? `Профиль ${user.first_name}` : "Профиль"}
             role="button"
           >
-            <div className="header-action-icon">
+            <div className={headerStyles.actionIcon}>
               <IconComponent 
                 name="profile" 
                 size={24}

@@ -1,108 +1,59 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/libs/prismaDb';
-import { RedisService } from '@/lib/services/redis.service';
+
+export const revalidate = 0;
 
 export async function GET() {
+  console.log('[API_CATEGORIES] Request started');
+  
   try {
-    // 🚀 ДОБАВЛЯЕМ КЭШИРОВАНИЕ
-    const cacheKey = 'webapp:categories';
-    const cached = await RedisService.getCache(cacheKey);
-    
-    if (cached) {
-      console.log('✅ Categories from cache');
-      return NextResponse.json(cached);
-    }
-    
-    console.log('Categories API called');
-    
-    // Get root_product_id from settings (like Rails available_categories method)
-    const rootSetting = await prisma.settings.findUnique({
-      where: { variable: 'root_product_id' }
-    });
-
-    if (!rootSetting?.value) {
-      console.log('No root_product_id found in settings');
-      return NextResponse.json({
-        categories: [],
-        total: 0
-      });
-    }
-
-    const rootProductId = parseInt(rootSetting.value);
-    console.log('Using root_product_id:', rootProductId);
-
-    // Find the root product
-    const rootProduct = await prisma.products.findUnique({
-      where: { 
-        id: rootProductId,
-        deleted_at: null 
-      }
-    });
-
-    if (!rootProduct) {
-      console.log('Root product not found');
-      return NextResponse.json({
-        categories: [],
-        total: 0
-      });
-    }
-
-    // Get children of root product (categories) - like Rails: find(root_id).children.available
-    const expectedAncestry = rootProduct.ancestry ? `${rootProduct.ancestry}/${rootProductId}` : `${rootProductId}`;
-    console.log('Looking for categories with ancestry:', expectedAncestry);
-
+    // Получаем все категории (записи с ancestry = 23)
     const categories = await prisma.products.findMany({
       where: {
-        ancestry: expectedAncestry,
+        ancestry: '23',
         deleted_at: null,
+        show_in_webapp: true,
       },
       select: {
         id: true,
         name: true,
-        ancestry: true,
       },
       orderBy: {
-        created_at: 'asc'
-      }
+        name: 'asc',
+      },
     });
 
-    console.log('Found categories count:', categories.length);
+    console.log('[API_CATEGORIES] Found categories:', categories);
 
-    // Transform the data to match the expected format
-    const transformedCategories = categories
-      .filter(category => category.name) // Only categories with names
-      .map((category: any) => ({
-        id: Number(category.id), // Convert BigInt to Number
-        name: category.name,
-      }));
+    // Подсчитываем количество товаров в каждой категории
+    const categoriesWithCount = await Promise.all(
+      categories.map(async (category) => {
+        const count = await prisma.products.count({
+          where: {
+            show_in_webapp: true,
+            deleted_at: null,
+            ancestry: {
+              startsWith: `23/${category.id}`,
+            },
+          },
+        });
 
-    console.log('Returning categories:', transformedCategories.length);
+        return {
+          id: category.id.toString(),
+          name: category.name || 'Без названия',
+          count,
+        };
+      })
+    );
     
-    const result = {
-      categories: transformedCategories,
-      total: transformedCategories.length,
-      root_category: {
-        id: rootProductId,
-        name: rootProduct.name
-      }
-    };
-    
-    // 🚀 СОХРАНЯЕМ В КЭШ НА 1 ЧАС (категории редко меняются)
-    await RedisService.setCache(cacheKey, result, 3600);
-    
-    // Возвращаем в правильном формате для компонентов
-    return NextResponse.json(result);
+    // Фильтруем категории с количеством > 0
+    const validCategories = categoriesWithCount.filter(cat => cat.count > 0);
+
+    console.log('[API_CATEGORIES] Returning categories:', validCategories);
+    return NextResponse.json({ categories: validCategories });
 
   } catch (error) {
-    console.error('Error fetching categories:', error);
-    return NextResponse.json(
-      { 
-        error: 'Failed to fetch categories', 
-        details: error instanceof Error ? error.message : String(error),
-        categories: [],
-        total: 0
-      },
-      { status: 500 }
-    );
+    console.error('[API_CATEGORIES_ERROR] Full error:', error);
+    return NextResponse.json({ error: 'Failed to fetch categories' }, { status: 500 });
   }
 }

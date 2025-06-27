@@ -79,7 +79,7 @@ export default withAuth(
         if (pathname.startsWith('/api/webhook') || 
             pathname.startsWith('/api/telegram') ||
             pathname.startsWith('/api/webapp') ||
-        
+            pathname.startsWith('/api/test-auth') ||
             pathname.startsWith('/api/redis') ||
             pathname.startsWith('/api/test-telegram-notifications') ||
             pathname.startsWith('/api/test-shipped') ||
@@ -101,7 +101,7 @@ export default withAuth(
 export const config = {
   matcher: [
     // Защищаем все маршруты кроме публичных
-    // Исключаем webapp и все связанные маршруты
-    "/((?!_next/static|_next/image|favicon.ico|login|signup|reset|verify|webapp|api/webapp|api/auth/telegram|api/telegram).*)",
+    // Исключаем webapp, tgapp и все связанные маршруты
+    "/((?!_next/static|_next/image|favicon.ico|login|signup|reset|verify|webapp|tgapp|api/webapp|api/auth/telegram|api/telegram).*)",
   ],
 };

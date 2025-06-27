@@ -176,3 +176,5 @@ export function ProductCatalog({}: ProductCatalogProps) {
     </div>
   );
 } 
+
+export const ProductCatalogOld = ProductCatalog; 

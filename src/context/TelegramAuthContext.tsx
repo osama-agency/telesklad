@@ -39,13 +39,24 @@ export function TelegramAuthProvider({ children }: TelegramAuthProviderProps) {
 
   const isAuthenticated = !!user && !user.is_blocked && user.started;
 
+  // Логируем состояние аутентификации для отладки
+  useEffect(() => {
+    console.log('🔄 TelegramAuth state update:', {
+      hasUser: !!user,
+      isAuthenticated,
+      userStarted: user?.started,
+      userBlocked: user?.is_blocked,
+      tgId: user?.tg_id
+    });
+  }, [user, isAuthenticated]);
+
   // Автоматическая аутентификация при загрузке
   useEffect(() => {
     const initAuth = async () => {
       try {
         // Проверяем, есть ли Telegram Web App
         if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-          const tg = window.Telegram.WebApp;
+          const tg = window.Telegram.WebApp as any;
           
           logger.debug('🔍 Telegram WebApp detected', {
             hasInitData: !!tg.initData,

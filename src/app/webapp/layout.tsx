@@ -4,7 +4,7 @@ import { type PropsWithChildren } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Script from "next/script";
-import "@/styles/webapp.scss";
+import "@/styles/globals.css";
 import "@/css/inter.css";
 import { IconComponent } from "@/components/webapp/IconComponent";
 import { TelegramHeader } from "./_components/TelegramHeader";
@@ -56,10 +56,7 @@ function WebappLayoutInner({ children }: PropsWithChildren) {
         {/* Универсальный Header с поиском и кнопками */}
         <TelegramHeader />
         
-        <div className={`webapp-container ${getPageClass()}`} style={{
-          minHeight: '100vh',
-          backgroundColor: '#f9f9f9'
-        }}>
+        <div className={`webapp-container ${getPageClass()} min-h-screen bg-gray-50`}>
           {/* Main content */}
           {children}
 

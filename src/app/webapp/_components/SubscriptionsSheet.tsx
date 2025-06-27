@@ -177,8 +177,6 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
     }
   };
 
-
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('ru-RU', {
@@ -201,18 +199,18 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
       className="subscriptions-sheet"
     >
       {!isAuthenticated || !user ? (
-        <div className="error-container">
+        <div className="subscriptions-error">
           <div className="error-banner">
             <IconComponent name="warning" size={16} />
             Необходима авторизация для просмотра подписок
           </div>
         </div>
       ) : isLoading ? (
-        <div className="loading-container">
+        <div className="subscriptions-loading">
           <SubscriptionItemsSkeleton count={3} />
         </div>
       ) : error ? (
-        <div className="error-container">
+        <div className="subscriptions-error">
           <div className="error-banner">
             <IconComponent name="warning" size={16} />
             {error}
@@ -222,7 +220,7 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
           </button>
         </div>
       ) : subscriptions.length === 0 ? (
-        <div className="empty-state">
+        <div className="subscriptions-empty">
           <div className="empty-state-icon">
             <IconComponent name="clock" size={48} />
           </div>
@@ -289,7 +287,7 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
                     title={deletingItems.has(subscription.id) ? 'Удаление...' : 'Отписаться'}
                   >
                     {deletingItems.has(subscription.id) ? (
-                      <div className="spinner" />
+                      <div className="subscriptions-spinner" />
                     ) : (
                       <IconComponent name="close" size={16} />
                     )}
@@ -300,332 +298,8 @@ const SubscriptionsSheet: React.FC<SubscriptionsSheetProps> = ({
           </div>
         </div>
       )}
-
-      <style jsx>{`
-        /* Стили для компонента skeleton подписок */
-        .subscription-skeleton-container {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-          padding: 16px 0;
-        }
-
-        .subscription-skeleton-item {
-          display: flex;
-          gap: 12px;
-          padding: 16px;
-          background: #F9FAFB;
-          border-radius: 12px;
-          border: 1px solid #F3F4F6;
-        }
-
-        .skeleton-image {
-          flex-shrink: 0;
-          width: 60px;
-          height: 60px;
-          background: #E5E7EB;
-          border-radius: 8px;
-          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-
-        .skeleton-content {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-          min-width: 0;
-        }
-
-        .skeleton-title {
-          height: 18px;
-          background: #E5E7EB;
-          border-radius: 4px;
-          width: 80%;
-          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-
-        .skeleton-price {
-          height: 16px;
-          background: #E5E7EB;
-          border-radius: 4px;
-          width: 60%;
-          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-
-        .skeleton-availability {
-          height: 14px;
-          background: #E5E7EB;
-          border-radius: 4px;
-          width: 70%;
-          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-
-        .skeleton-date {
-          height: 12px;
-          background: #E5E7EB;
-          border-radius: 4px;
-          width: 50%;
-          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-
-        .skeleton-action {
-          flex-shrink: 0;
-          width: 32px;
-          height: 32px;
-          background: #E5E7EB;
-          border-radius: 6px;
-          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-
-        @keyframes pulse {
-          0%, 100% {
-            opacity: 1;
-          }
-          50% {
-            opacity: 0.5;
-          }
-        }
-
-        .loading-container {
-          padding: 20px 0;
-          min-height: 200px; /* Минимальная высота для предотвращения прыжков */
-          transition: all 0.3s ease; /* Плавный переход */
-        }
-
-        .error-container {
-          padding: 20px 0;
-          min-height: 120px; /* Минимальная высота для ошибок */
-        }
-
-        .error-banner {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          background: #FEF2F2;
-          border: 1px solid #FECACA;
-          color: #DC2626;
-          padding: 12px 16px;
-          border-radius: 8px;
-          margin-bottom: 16px;
-          font-size: 14px;
-        }
-
-        .retry-btn {
-          width: 100%;
-          padding: 12px 16px;
-          background: #48C928;
-          color: white;
-          border: none;
-          border-radius: 8px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: background 0.2s;
-        }
-
-        .retry-btn:hover {
-          background: #3AA120;
-        }
-
-        .empty-state {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 40px 20px;
-          text-align: center;
-          min-height: 200px; /* Минимальная высота для пустого состояния */
-        }
-
-        .empty-state-icon {
-          color: #9CA3AF;
-          margin-bottom: 16px;
-        }
-
-        .empty-state-title {
-          font-size: 18px;
-          font-weight: 600;
-          color: #374151;
-          margin-bottom: 8px;
-        }
-
-        .empty-state-subtitle {
-          color: #6B7280;
-          line-height: 1.5;
-          max-width: 300px;
-        }
-
-        .subscriptions-list {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-          transition: all 0.3s ease; /* Плавный переход */
-        }
-
-        .subscriptions-header {
-          padding-bottom: 16px;
-          border-bottom: 1px solid #F3F4F6;
-        }
-
-        .subscriptions-count {
-          color: #6B7280;
-          font-size: 14px;
-          margin: 0;
-        }
-
-        .subscriptions-items {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
-
-        .subscription-item {
-          display: flex;
-          gap: 12px;
-          padding: 16px;
-          background: #F9FAFB;
-          border-radius: 12px;
-          border: 1px solid #F3F4F6;
-          transition: all 0.2s ease;
-          opacity: 1;
-        }
-
-        .subscription-item.deleting {
-          pointer-events: none;
-          opacity: 0.6;
-          background: #FEF2F2;
-          border-color: #FECACA;
-        }
-
-        .subscription-item.animate-out {
-          opacity: 0;
-          transform: scale(0.95);
-        }
-
-        .subscription-image {
-          flex-shrink: 0;
-          width: 60px;
-          height: 60px;
-        }
-
-        .product-image {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          border-radius: 8px;
-        }
-
-        .product-image-placeholder {
-          width: 100%;
-          height: 100%;
-          background: #E5E7EB;
-          border-radius: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #9CA3AF;
-        }
-
-        .subscription-info {
-          flex: 1;
-          min-width: 0;
-        }
-
-        .product-name {
-          font-weight: 600;
-          color: #374151;
-          margin-bottom: 4px;
-          line-height: 1.3;
-        }
-
-        .product-price {
-          font-weight: 600;
-          color: #48C928;
-          margin-bottom: 4px;
-        }
-
-        .product-availability {
-          font-size: 12px;
-          color: #6B7280;
-          margin-bottom: 4px;
-        }
-
-        .subscription-date {
-          font-size: 12px;
-          color: #9CA3AF;
-        }
-
-        .subscription-actions {
-          flex-shrink: 0;
-          display: flex;
-          align-items: flex-start;
-        }
-
-        .unsubscribe-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 32px;
-          height: 32px;
-          background: #FEF2F2;
-          border: 1px solid #FECACA;
-          border-radius: 6px;
-          color: #DC2626;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .unsubscribe-btn:hover:not(:disabled) {
-          background: #FEE2E2;
-          border-color: #FCA5A5;
-        }
-
-        .unsubscribe-btn:active:not(:disabled) {
-          transform: scale(0.95);
-        }
-
-        .unsubscribe-btn:disabled {
-          cursor: not-allowed;
-          opacity: 0.7;
-        }
-
-        .unsubscribe-btn.loading {
-          background: #FEF2F2;
-          border-color: #FECACA;
-          opacity: 0.7;
-        }
-
-        .spinner {
-          width: 16px;
-          height: 16px;
-          border: 2px solid #FECACA;
-          border-top: 2px solid #DC2626;
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-
-        /* Адаптивность */
-        @media (max-width: 640px) {
-          .subscription-item, .subscription-skeleton-item {
-            padding: 12px;
-          }
-
-          .subscription-image, .skeleton-image {
-            width: 50px;
-            height: 50px;
-          }
-
-          .product-name {
-            font-size: 14px;
-          }
-        }
-      `}</style>
     </Sheet>
   );
 };
 
-export default SubscriptionsSheet; 
+export default SubscriptionsSheet;

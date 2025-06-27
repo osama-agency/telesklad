@@ -1,9 +1,16 @@
 "use client";
 
 import { Suspense, useEffect } from "react";
-import { ProductCatalog } from "./_components/ProductCatalog";
+import { ProductCatalogOld } from "./_components/ProductCatalogOld";
 import { useTelegramAuth } from "@/context/TelegramAuthContext";
 import SkeletonLoading from "./_components/SkeletonLoading";
+import dynamic from 'next/dynamic';
+
+// Динамический импорт нового каталога
+const CatalogPage = dynamic(() => import('./catalog/page'), {
+  loading: () => <SkeletonLoading type="catalog" />,
+  ssr: false
+});
 
 export default function WebappHomePage() {
   const { user, isLoading, isAuthenticated } = useTelegramAuth();
@@ -70,13 +77,13 @@ export default function WebappHomePage() {
       {/* Modern glassmorphism container */}
       <div className="backdrop-blur-sm bg-white/60 min-h-screen">
         {/* Product Catalog with modern spacing and animations */}
-        <div className="mx-auto max-w-md">
+        <div className="mx-auto">
           <Suspense fallback={
             <div className="min-h-screen animate-pulse">
               <SkeletonLoading type="catalog" />
             </div>
           }>
-            <ProductCatalog />
+            <CatalogPage />
           </Suspense>
         </div>
       </div>

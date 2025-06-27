@@ -1,0 +1,354 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Критические глобальные стили для WebApp */
+@layer base {
+  /* Reset и базовые стили */
+  * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', -apple-system, system-ui, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #f9f9f9;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  /* Темная тема для body */
+  body.dark, 
+  body[data-theme="dark"] {
+    background-color: #0d1117;
+  }
+
+  /* Корневой элемент Next.js */
+  #__next {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Обеспечиваем полную высоту для всех контейнеров */
+  html, body, #__next {
+    height: 100%;
+  }
+
+  /* Убираем outline для всех элементов в webapp */
+  .webapp-container *:focus {
+    outline: none !important;
+  }
+
+  /* Safe area для iOS */
+  .webapp-container {
+    padding-top: calc(70px + env(safe-area-inset-top));
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Скрываем скроллбары */
+  .webapp-container::-webkit-scrollbar,
+  .webapp-container *::-webkit-scrollbar {
+    display: none;
+  }
+
+  .webapp-container,
+  .webapp-container * {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  /* Горизонтальный скролл категорий */
+  .catalog-nav {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .catalog-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.5rem;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+
+    --telegram-primary: #20C55E;
+    --telegram-primary-hover: #1AA34A;
+    --telegram-primary-active: #168A3D;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+}
+
+/* Глобальное скрытие скроллбаров для Telegram WebApp */
+* {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+*::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Фиксированное позиционирование для предотвращения bounce-эффекта */
+html {
+  position: fixed !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+body {
+  position: fixed !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#__next {
+  position: fixed !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+/* Контейнер приложения должен быть скроллируемым */
+.tg-theme-container {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+/* Убираем отступы и скроллбары у всех вложенных элементов */
+.tg-theme-container * {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.tg-theme-container *::-webkit-scrollbar {
+  display: none !important;
+}
+
+/* Модальные окна в темной теме с градиентным фоном */
+.tg-dark .sheet-overlay {
+  --tg-background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #21262d 100%) !important;
+}
+
+.tg-dark .sheet-content {
+  background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #21262d 100%) !important;
+}
+
+.tg-dark .subscriptions-sheet .sheet-content,
+.tg-dark .subscriptions-sheet .sheet-body,
+.tg-dark .subscriptions-sheet {
+  background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #21262d 100%) !important;
+}
+
+/* Принудительное применение градиента для всех модальных окон */
+.tg-dark [class*="sheet-content"],
+.tg-dark [class*="modal-content"] {
+  background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #21262d 100%) !important;
+}
+
+/* Убираем белый фон у всех вложенных элементов модальных окон */
+.tg-dark .sheet-content * {
+  background-color: transparent !important;
+}
+
+/* Исключение для элементов, которые должны иметь свой фон */
+.tg-dark .subscription-item,
+.tg-dark .faq-item,
+.tg-dark .contact-card,
+.tg-dark .info-item {
+  background: rgba(22, 27, 34, 0.8) !important;
+}
+
+/* Компоненты каталога */
+@layer components {
+  /* Карточки товаров */
+  .product-wrapper {
+    @apply transform-gpu;
+  }
+  
+  /* Фикс для изображений в Next.js */
+  .product-wrapper img {
+    @apply w-full h-full object-contain;
+  }
+  
+  /* Кнопка "В корзину" */
+  .product-wrapper button {
+    @apply transform-gpu transition-all active:scale-95;
+  }
+  
+  /* Сетка товаров */
+  .product-grid {
+    @apply w-full;
+  }
+  
+  /* Мобильная оптимизация */
+  @media (max-width: 640px) {
+    .webapp-container {
+      @apply px-0;
+    }
+    
+    .product-grid {
+      @apply gap-2;
+    }
+    
+    .product-wrapper {
+      @apply text-sm;
+    }
+  }
+}
+
+/* Анимации */
+@keyframes catalog-item-appear {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Утилиты для анимаций */
+@layer utilities {
+  .animate-catalog-appear {
+    animation: catalog-item-appear 0.3s ease-out;
+    animation-fill-mode: both;
+  }
+  
+  .animate-shimmer {
+    animation: shimmer 1.5s infinite;
+  }
+  
+  /* Animation delays */
+  .animation-delay-\[20ms\] {
+    animation-delay: 20ms;
+  }
+  .animation-delay-\[40ms\] {
+    animation-delay: 40ms;
+  }
+  .animation-delay-\[60ms\] {
+    animation-delay: 60ms;
+  }
+  .animation-delay-\[80ms\] {
+    animation-delay: 80ms;
+  }
+  .animation-delay-\[100ms\] {
+    animation-delay: 100ms;
+  }
+  .animation-delay-\[120ms\] {
+    animation-delay: 120ms;
+  }
+  .animation-delay-\[140ms\] {
+    animation-delay: 140ms;
+  }
+  .animation-delay-\[160ms\] {
+    animation-delay: 160ms;
+  }
+  .animation-delay-\[180ms\] {
+    animation-delay: 180ms;
+  }
+  .animation-delay-\[200ms\] {
+    animation-delay: 200ms;
+  }
+}
+
+/* Ensure smooth scrolling is preserved */
+html {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}

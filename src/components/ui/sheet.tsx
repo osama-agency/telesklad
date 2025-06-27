@@ -71,7 +71,7 @@ const Sheet: React.FC<SheetProps> = ({
           left: 0;
           right: 0;
           bottom: 0;
-          background-color: rgba(0, 0, 0, 0.5);
+          background-color: var(--tg-overlay-bg, rgba(0, 0, 0, 0.5));
           z-index: 9999;
           display: flex;
           align-items: flex-end;
@@ -80,13 +80,15 @@ const Sheet: React.FC<SheetProps> = ({
         }
 
         .sheet-content {
-          background: white;
+          background: var(--tg-background, white);
           border-radius: 20px 20px 0 0;
           max-width: 500px;
           width: 100%;
           max-height: 90vh;
           overflow: hidden;
           animation: sheet-slide-up 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          border: 1px solid var(--tg-border, transparent);
+          border-bottom: none;
         }
 
         .sheet-header {
@@ -94,13 +96,13 @@ const Sheet: React.FC<SheetProps> = ({
           align-items: center;
           justify-content: space-between;
           padding: 0 20px 16px;
-          border-bottom: 1px solid #F3F4F6;
+          border-bottom: 1px solid var(--tg-border, #F3F4F6);
         }
 
         .sheet-title {
           font-size: 18px;
           font-weight: 600;
-          color: #1F2937;
+          color: var(--tg-text, #1F2937);
           margin: 0;
         }
 
@@ -111,16 +113,16 @@ const Sheet: React.FC<SheetProps> = ({
           width: 32px;
           height: 32px;
           border: none;
-          background: #F9FAFB;
+          background: var(--tg-surface, #F9FAFB);
           border-radius: 8px;
-          color: #6B7280;
+          color: var(--tg-text-secondary, #6B7280);
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: all var(--tg-transition-fast, 0.2s ease);
         }
 
         .sheet-close-btn:hover {
-          background: #F3F4F6;
-          color: #374151;
+          background: var(--tg-border, #F3F4F6);
+          color: var(--tg-text, #374151);
         }
 
         .sheet-close-btn:active {
@@ -132,6 +134,7 @@ const Sheet: React.FC<SheetProps> = ({
           padding-bottom: 80px; /* Дополнительный отступ снизу для плашки корзины */
           max-height: calc(90vh - 120px);
           overflow-y: auto;
+          color: var(--tg-text, inherit);
         }
 
         @keyframes sheet-fade-in {
@@ -169,6 +172,15 @@ const Sheet: React.FC<SheetProps> = ({
           .sheet-header {
             padding: 0 16px 12px;
           }
+        }
+
+        /* Дополнительные переменные для темной темы */
+        :root {
+          --tg-overlay-bg: rgba(0, 0, 0, 0.5);
+        }
+
+        [data-theme="dark"] {
+          --tg-overlay-bg: rgba(0, 0, 0, 0.7);
         }
       `}</style>
     </div>

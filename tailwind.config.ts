@@ -23,26 +23,40 @@ const config: Config = {
         primary: "#1B6EF3",
         // Telegram WebApp цвета
         telegram: {
-          primary: '#48C928',
+          primary: '#20C55E',
           bg: '#ffffff',
           text: '#000000',
           hint: '#999999',
           secondary: '#f8f9fa',
           border: '#e5e5ea',
           destructive: '#ff3b30',
-          button: '#48C928',
+          button: '#20C55E',
           'button-text': '#ffffff',
         },
         // WebApp специфичные цвета
         webapp: {
+          brand: '#20C55E',
+          'brand-hover': '#1BA34F',
+          'brand-light': '#E8FAF0',
           header: '#ffffff',
           card: '#ffffff',
           background: '#f2f2f7',
-          accent: '#007aff',
+          accent: '#20C55E',
           border: '#e5e5ea',
           'gray-light': '#8E8E93',
           'gray-medium': '#6D6D70',
           'gray-dark': '#48484A',
+        },
+        // Catalog specific colors
+        catalog: {
+          primary: '#20C55E',
+          'primary-hover': '#1BA34F',
+          error: '#ef4444',
+          'text-gray': '#6B7280',
+          'text-light': '#9CA3AF',
+          'skeleton-base': '#f0f0f0',
+          'skeleton-highlight': '#e0e0e0',
+          'empty-icon': '#e0e0e0',
         },
         stroke: "#E6EBF1",
         "stroke-dark": "#334155",
@@ -138,6 +152,11 @@ const config: Config = {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+      },
+      borderRadius: {
+        'catalog-button': '14px',
+        'catalog-card': '12px',
+        'catalog-tag': '16px',
       },
       fontSize: {
         "heading-1": ["60px", "72px"],
@@ -332,6 +351,7 @@ const config: Config = {
         "gradient-primary": "linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%)",
         "gradient-primary-hover": "linear-gradient(135deg, #1557d6 0%, #35a3d1 100%)",
         "gradient-border": "linear-gradient(135deg, #1B6EF3 0%, #3EB5EA 100%)",
+        'shimmer-gradient': 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
       },
       content: {
         "icon-copy": 'url("../images/icon/icon-copy-alt.svg")',
@@ -443,6 +463,24 @@ const config: Config = {
           "60%": { transform: "rotate(0deg)" },
           "100%": { transform: "rotate(0deg)" },
         },
+        'catalog-appear': {
+          from: {
+            opacity: '0',
+            transform: 'translateY(10px) scale(0.95)',
+          },
+          to: {
+            opacity: '1',
+            transform: 'translateY(0) scale(1)',
+          },
+        },
+        shimmer: {
+          '0%': {
+            backgroundPosition: '-200% 0',
+          },
+          '100%': {
+            backgroundPosition: '200% 0',
+          },
+        },
         rotating: {
           "0%, 100%": {
             transform: "rotate(360deg)",
@@ -483,6 +521,31 @@ const config: Config = {
             transform: "translateY(0)",
           },
         },
+        "scale-pop": {
+          "0%": {
+            transform: "scale(1)",
+          },
+          "40%": {
+            transform: "scale(1.3)",
+          },
+          "100%": {
+            transform: "scale(1)",
+          },
+        },
+        "scale-in": {
+          "0%": {
+            transform: "scale(0.8)",
+            opacity: "0.8",
+          },
+          "50%": {
+            transform: "scale(1.1)",
+            opacity: "1",
+          },
+          "100%": {
+            transform: "scale(1)",
+            opacity: "1",
+          },
+        },
       },
       animation: {
         linspin: "linspin 1568.2353ms linear infinite",
@@ -502,6 +565,10 @@ const config: Config = {
         line2: "line-revert 8s infinite linear",
         line3: "line 7s infinite linear",
         "wave": "wave 2.5s ease-in-out infinite",
+        'catalog-appear': 'catalog-appear 0.3s ease-out',
+        'shimmer': 'shimmer 1.5s infinite',
+        'scale-pop': 'scale-pop 0.3s ease-out',
+        'scale-in': 'scale-in 0.4s ease-out',
       },
     },
   },

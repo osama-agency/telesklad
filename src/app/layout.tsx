@@ -1,3 +1,4 @@
+import "@/styles/globals.css";
 import "@/css/inter.css";
 import "@/css/simple-datatables.css";
 import "dropzone/dist/dropzone.css";
@@ -22,8 +23,21 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: PropsWithChildren) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body suppressHydrationWarning>
+    <html 
+      lang="en" 
+      suppressHydrationWarning
+      style={{
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none',
+      }}
+    >
+      <body 
+        suppressHydrationWarning
+        style={{
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+        }}
+      >
         <Providers>
           {children}
         </Providers>

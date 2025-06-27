@@ -167,22 +167,43 @@ export function AddToCartButton({
   if (quantity === 0) {
     return (
       <button 
-        className={`add-to-cart-btn ${isAnimating ? 'animating' : ''}`}
+        className={`
+          w-full py-2.5 px-4 
+          bg-telegram-primary hover:bg-telegram-primary/90 
+          text-white font-medium text-sm 
+          rounded-lg 
+          transition-all duration-200 
+          active:scale-95 
+          disabled:opacity-60 disabled:cursor-not-allowed
+          shadow-sm hover:shadow-md
+          ${isAnimating ? 'scale-95 bg-telegram-primary/90' : ''}
+        `}
         onClick={handleAddToCart}
         disabled={isAnimating}
       >
-        <span className="btn-text">В корзину</span>
-        <div className="btn-particles"></div>
+        В корзину
       </button>
     );
   }
 
   // Если товар в корзине - показываем quantity stepper
   return (
-    <div className="quantity-stepper-container">
-      <div className="quantity-stepper">
+    <div className="w-full">
+      <div className="flex items-center justify-between w-full bg-gray-50 dark:bg-gray-900/50 rounded-lg p-1 border border-gray-200 dark:border-gray-700/50">
         <button 
-          className={`qty-btn minus ${quantity <= 0 ? 'disabled' : ''} ${isLongPressing ? 'long-pressing' : ''}`}
+          className={`
+            w-9 h-9 
+            flex items-center justify-center 
+            bg-white dark:bg-gray-800 
+            text-gray-700 dark:text-gray-400 
+            rounded-md 
+            border border-gray-200 dark:border-gray-700/50
+            transition-all duration-200
+            hover:bg-telegram-primary hover:text-white hover:border-telegram-primary
+            active:scale-95
+            disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-gray-800 disabled:hover:text-gray-700
+            ${isLongPressing ? 'scale-95' : ''}
+          `}
           onClick={handleDecrease}
           onMouseDown={() => handleLongPressStart('decrease')}
           onMouseUp={handleLongPressEnd}
@@ -191,36 +212,44 @@ export function AddToCartButton({
           onTouchEnd={handleLongPressEnd}
           disabled={quantity <= 0}
         >
-          <svg width="12" height="2" viewBox="0 0 12 2" fill="currentColor">
-            <rect width="12" height="2" rx="1"/>
-          </svg>
+          <span className="text-lg font-medium leading-none">−</span>
         </button>
         
-        <div className="qty-display-container">
-          {showQuantityInput ? (
-            <input 
-              type="number"
-              value={quantity}
-              onChange={(e) => handleQuantityChange(e.target.value)}
-              onBlur={() => setShowQuantityInput(false)}
-              onKeyDown={(e) => e.key === 'Enter' && setShowQuantityInput(false)}
-              className="qty-input"
-              min="0"
-              max={maxQuantity}
-              autoFocus
-            />
-          ) : (
-            <span 
-              className="qty-display"
-              onDoubleClick={handleQuantityTap}
-            >
-              {quantity}
-            </span>
-          )}
-        </div>
+        {showQuantityInput ? (
+          <input 
+            type="number"
+            value={quantity}
+            onChange={(e) => handleQuantityChange(e.target.value)}
+            onBlur={() => setShowQuantityInput(false)}
+            onKeyDown={(e) => e.key === 'Enter' && setShowQuantityInput(false)}
+            className="w-12 mx-2 text-center text-sm font-semibold text-gray-900 dark:text-gray-200 bg-transparent outline-none"
+            min={0}
+            max={maxQuantity}
+            autoFocus
+          />
+        ) : (
+          <span 
+            className="min-w-[3rem] text-center text-sm font-semibold text-gray-900 dark:text-gray-200 select-none cursor-pointer"
+            onDoubleClick={handleQuantityTap}
+          >
+            {quantity}
+          </span>
+        )}
         
         <button 
-          className={`qty-btn plus ${quantity >= maxQuantity ? 'disabled' : ''} ${isLongPressing ? 'long-pressing' : ''}`}
+          className={`
+            w-9 h-9 
+            flex items-center justify-center 
+            bg-white dark:bg-gray-800 
+            text-gray-700 dark:text-gray-400 
+            rounded-md 
+            border border-gray-200 dark:border-gray-700/50
+            transition-all duration-200
+            hover:bg-telegram-primary hover:text-white hover:border-telegram-primary
+            active:scale-95
+            disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-gray-800 disabled:hover:text-gray-700
+            ${isLongPressing ? 'scale-95' : ''}
+          `}
           onClick={handleIncrease}
           onMouseDown={() => handleLongPressStart('increase')}
           onMouseUp={handleLongPressEnd}
@@ -229,15 +258,12 @@ export function AddToCartButton({
           onTouchEnd={handleLongPressEnd}
           disabled={quantity >= maxQuantity}
         >
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-            <rect x="5" y="0" width="2" height="12" rx="1"/>
-            <rect x="0" y="5" width="12" height="2" rx="1"/>
-          </svg>
+          <span className="text-lg font-medium leading-none">+</span>
         </button>
       </div>
       
       {quantity >= maxQuantity && (
-        <div className="qty-limit-warning">
+        <div className="text-xs text-orange-600 dark:text-orange-400 text-center mt-1">
           Максимум {maxQuantity} шт.
         </div>
       )}

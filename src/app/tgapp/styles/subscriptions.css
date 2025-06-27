@@ -1,0 +1,421 @@
+/* Subscriptions Sheet Styles - Telegram UI */
+
+/* Container Styles */
+.subscriptions-sheet {
+  background: var(--tg-bg-color);
+  color: var(--tg-text-color);
+}
+
+/* Loading State */
+.subscriptions-loading {
+  padding: 1rem 0;
+  min-height: 200px;
+  transition: all 0.3s ease;
+}
+
+.subscription-skeleton-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 0;
+}
+
+.subscription-skeleton-item {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--tg-secondary-bg-color);
+  border-radius: 12px;
+  border: 1px solid var(--tg-border-color);
+  box-shadow: var(--tg-shadow-light);
+}
+
+.tg-dark .subscription-skeleton-item {
+  background: var(--tg-secondary-bg-color);
+  border: 1px solid var(--tg-border-color);
+  backdrop-filter: blur(10px);
+}
+
+.skeleton-image {
+  flex-shrink: 0;
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  border-radius: 8px;
+  animation: tgapp-shimmer 1.5s infinite;
+}
+
+.tg-dark .skeleton-image {
+  background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
+  background-size: 200% 100%;
+}
+
+.skeleton-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.skeleton-title,
+.skeleton-price,
+.skeleton-availability,
+.skeleton-date {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  border-radius: 4px;
+  animation: tgapp-shimmer 1.5s infinite;
+}
+
+.tg-dark .skeleton-title,
+.tg-dark .skeleton-price,
+.tg-dark .skeleton-availability,
+.tg-dark .skeleton-date {
+  background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
+  background-size: 200% 100%;
+}
+
+.skeleton-title {
+  height: 18px;
+  width: 80%;
+}
+
+.skeleton-price {
+  height: 16px;
+  width: 60%;
+}
+
+.skeleton-availability {
+  height: 14px;
+  width: 70%;
+}
+
+.skeleton-date {
+  height: 12px;
+  width: 50%;
+}
+
+.skeleton-action {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  border-radius: 6px;
+  animation: tgapp-shimmer 1.5s infinite;
+}
+
+.tg-dark .skeleton-action {
+  background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
+  background-size: 200% 100%;
+}
+
+/* Error State */
+.subscriptions-error {
+  padding: 1rem 0;
+  min-height: 120px;
+}
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  padding: 12px 16px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.tg-dark .error-banner {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.retry-btn {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--tg-button-color);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.retry-btn:hover {
+  background: var(--brand-hover, #1BA34F);
+  transform: translateY(-1px);
+  box-shadow: var(--tg-shadow-medium);
+}
+
+.tg-dark .retry-btn:hover {
+  box-shadow: var(--tg-shadow-heavy);
+}
+
+/* Empty State */
+.subscriptions-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  text-align: center;
+  min-height: 200px;
+}
+
+.empty-state-icon {
+  color: var(--tg-hint-color);
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+.tg-dark .empty-state-icon {
+  opacity: 0.5;
+}
+
+.empty-state-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--tg-text-color);
+  margin-bottom: 8px;
+}
+
+.empty-state-subtitle {
+  color: var(--tg-hint-color);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  max-width: 300px;
+  opacity: 0.8;
+}
+
+/* Subscriptions List */
+.subscriptions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.subscriptions-header {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--tg-border-color);
+}
+
+.subscriptions-count {
+  color: var(--tg-hint-color);
+  font-size: 14px;
+  margin: 0;
+}
+
+.subscriptions-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Subscription Item */
+.subscription-item {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--tg-secondary-bg-color);
+  border-radius: 12px;
+  border: 1px solid var(--tg-border-color);
+  transition: all 0.2s ease;
+  opacity: 1;
+  box-shadow: var(--tg-shadow-light);
+}
+
+.tg-dark .subscription-item {
+  background: var(--tg-secondary-bg-color);
+  border: 1px solid var(--tg-border-color);
+  backdrop-filter: blur(10px);
+}
+
+.subscription-item:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--tg-shadow-medium);
+  border-color: var(--tg-border-hover);
+}
+
+.tg-dark .subscription-item:hover {
+  box-shadow: var(--tg-shadow-heavy);
+  background: rgba(22, 27, 34, 0.8);
+}
+
+.subscription-item.deleting {
+  pointer-events: none;
+  opacity: 0.6;
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.subscription-item.animate-out {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.subscription-image {
+  flex-shrink: 0;
+  width: 60px;
+  height: 60px;
+}
+
+.product-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.product-image-placeholder {
+  width: 100%;
+  height: 100%;
+  background: var(--tg-border-color);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tg-hint-color);
+}
+
+.subscription-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.product-name {
+  font-weight: 500;
+  color: var(--tg-text-color);
+  margin-bottom: 4px;
+  line-height: 1.3;
+  font-size: 0.875rem;
+}
+
+.product-price {
+  font-weight: 700;
+  color: #22c55e;
+  margin-bottom: 4px;
+  font-size: 0.875rem;
+}
+
+.product-availability {
+  font-size: 0.75rem;
+  color: var(--tg-hint-color);
+  margin-bottom: 4px;
+}
+
+.subscription-date {
+  font-size: 12px;
+  color: var(--tg-hint-color);
+  opacity: 0.8;
+}
+
+/* Actions */
+.subscription-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+}
+
+.unsubscribe-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  color: #ef4444;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.unsubscribe-btn:hover:not(:disabled) {
+  background: #ef4444;
+  color: white;
+  transform: scale(1.05);
+}
+
+.unsubscribe-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.unsubscribe-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.unsubscribe-btn.loading {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  opacity: 0.7;
+}
+
+.subscriptions-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(239, 68, 68, 0.3);
+  border-top: 2px solid #ef4444;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Animations */
+@keyframes tgapp-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes spin {
+  0% { 
+    transform: rotate(0deg); 
+  }
+  100% { 
+    transform: rotate(360deg); 
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .subscription-item, 
+  .subscription-skeleton-item {
+    padding: 0.75rem;
+  }
+
+  .subscription-image, 
+  .skeleton-image {
+    width: 50px;
+    height: 50px;
+  }
+
+  .product-name {
+    font-size: 0.8rem;
+  }
+
+  .subscriptions-loading,
+  .subscriptions-error {
+    padding: 0.75rem 0;
+  }
+
+  .subscriptions-empty {
+    padding: 2rem 1rem;
+  }
+
+  .unsubscribe-btn {
+    width: 28px;
+    height: 28px;
+  }
+}

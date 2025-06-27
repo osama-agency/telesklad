@@ -6,7 +6,7 @@ import sharp from 'sharp';
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 // Разрешенные типы файлов
-const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,27 +40,28 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Оптимизируем изображение с помощью Sharp
+    // Оптимизируем изображение с помощью Sharp и конвертируем в WebP
     const optimizedBuffer = await sharp(buffer)
       .resize(800, 800, { 
         fit: 'inside', 
         withoutEnlargement: true 
       })
-      .jpeg({ 
-        quality: 85,
-        progressive: true 
+      .webp({ 
+        quality: 90,
+        effort: 6, // Баланс между скоростью и качеством (0-6)
+        lossless: false // Lossy сжатие для меньшего размера
       })
       .toBuffer();
 
     // Генерируем уникальное имя файла
-    const fileExtension = 'jpg'; // Всегда сохраняем как JPEG после оптимизации
+    const fileExtension = 'webp';
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExtension}`;
 
     // Загружаем в S3
     const imageUrl = await uploadToS3(
       optimizedBuffer,
       fileName,
-      'image/jpeg',
+      'image/webp',
       'products'
     );
 

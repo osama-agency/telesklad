@@ -221,13 +221,6 @@ export default function LoginPage() {
               Войти
             </LoadingButton>
           </form>
-
-          {/* Подсказка с данными */}
-          <div className="mt-6 text-center">
-            <p className="text-xs text-dark-4 dark:text-dark-6">
-              💡 Для администратора: go@osama.agency / admin123
-            </p>
-          </div>
         </motion.div>
 
         {/* Декоративная подсветка карточки */}

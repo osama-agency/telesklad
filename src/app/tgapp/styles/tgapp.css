@@ -1,0 +1,1190 @@
+/* TgApp - Modern Telegram WebApp Styles */
+
+/* CSS Variables for Telegram Themes */
+:root {
+  /* Light Theme Colors */
+  --tg-bg-color: #ffffff;
+  --tg-secondary-bg-color: #f8f9fa;
+  --tg-text-color: #000000;
+  --tg-hint-color: #999999;
+  --tg-link-color: #20C55E;
+  --tg-button-color: #20C55E;
+  --tg-button-text-color: #ffffff;
+  --tg-border-color: #e5e5ea;
+  --tg-border-hover: #d1d1d6;
+  
+  /* Shadows */
+  --tg-shadow-light: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --tg-shadow-medium: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --tg-shadow-heavy: 0 10px 15px rgba(0, 0, 0, 0.1);
+  
+  /* Brand Color */
+  --brand-color: #20C55E;
+  --brand-hover: #1BA34F;
+  --brand-light: #E8FAF0;
+}
+
+.tg-dark {
+  /* Dark Theme Colors - GitHub Dark inspired */
+  --tg-bg-color: #1c1c1e;
+  --tg-secondary-bg-color: rgba(30, 30, 30, 0.6);
+  --tg-text-color: rgba(255, 255, 255, 0.9);
+  --tg-hint-color: rgba(255, 255, 255, 0.6);
+  --tg-link-color: #20C55E;
+  --tg-button-color: #20C55E;
+  --tg-button-text-color: #ffffff;
+  --tg-border-color: rgba(255, 255, 255, 0.08);
+  --tg-border-hover: rgba(255, 255, 255, 0.12);
+  
+  /* Dark Shadows */
+  --tg-shadow-light: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --tg-shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --tg-shadow-heavy: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* Theme Container */
+.tg-theme-container {
+  background: var(--tg-bg-color);
+  color: var(--tg-text-color);
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  min-height: 100vh;
+  min-height: 100dvh; /* Для мобильных устройств с динамическим viewport */
+}
+
+.tg-theme-container.tg-light {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.tg-theme-container.tg-dark {
+  background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #21262d 100%);
+  background-attachment: fixed; /* Фиксируем градиент */
+  min-height: 100vh;
+  min-height: 100dvh;
+  --tg-bg-color: #0d1117;
+  --tg-secondary-bg-color: #161b22;
+  --tg-text-color: #f0f6fc;
+  --tg-hint-color: #7d8590;
+  --tg-button-color: #22c55e;
+  --tg-button-text-color: #ffffff;
+  
+  /* Dark theme shadows and borders */
+  --tg-shadow-light: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --tg-shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --tg-shadow-heavy: 0 8px 20px rgba(0, 0, 0, 0.5);
+  --tg-border-color: rgba(48, 54, 61, 0.8);
+  --tg-border-hover: rgba(48, 54, 61, 1);
+}
+
+/* Base Layout */
+.tgapp-container {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: transparent;
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+}
+
+/* Profile Page Styles */
+.tgapp-profile {
+  padding: 1rem;
+  max-width: 600px;
+  margin: 0 auto;
+  min-height: calc(100vh - 2rem);
+  min-height: calc(100dvh - 2rem);
+  background: transparent; /* Убираем фон, чтобы не конфликтовать с унифицированными стилями */
+}
+
+.tgapp-profile-header {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid #f0f0f0;
+  transition: all 0.3s ease;
+}
+
+.tg-dark .tgapp-profile-header {
+  /* Фон управляется унифицированными стилями в telegram-ui-theme.css */
+  background: transparent; /* Фон наследуется от унифицированных стилей */
+  border: 1px solid var(--tg-border-color);
+  box-shadow: var(--tg-shadow-medium);
+}
+
+.tgapp-profile-greeting {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--tg-text-color);
+  margin: 0;
+}
+
+/* Bonus Block Styles */
+.tgapp-bonus-block {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  color: white;
+}
+
+.tgapp-bonus-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  opacity: 0.9;
+}
+
+.tgapp-bonus-amount {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.tgapp-bonus-tier {
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
+
+/* Action Cards Styles */
+.tgapp-action-cards {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.tgapp-action-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid #f0f0f0;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.tg-dark .tgapp-action-card {
+  /* Фон управляется унифицированными стилями в telegram-ui-theme.css */
+  background: transparent;
+  border: 1px solid var(--tg-border-color);
+  backdrop-filter: blur(10px);
+}
+
+.tgapp-action-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--tg-shadow-medium);
+  border-color: var(--tg-border-hover);
+}
+
+.tg-dark .tgapp-action-card:hover {
+  box-shadow: var(--tg-shadow-heavy);
+  background: rgba(22, 27, 34, 0.8);
+}
+
+.tgapp-action-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--tg-button-color);
+  transition: all 0.2s ease;
+}
+
+.tg-dark .tgapp-action-card-icon {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.2);
+}
+
+.tgapp-action-card-content {
+  flex: 1;
+}
+
+.tgapp-action-card-title {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--tg-text-color);
+  margin: 0 0 0.25rem 0;
+}
+
+.tgapp-action-card-subtitle {
+  font-size: 0.8rem;
+  color: var(--tg-hint-color);
+  margin: 0;
+}
+
+.tgapp-action-card-arrow {
+  color: var(--tg-hint-color);
+}
+
+/* Loading States */
+.tgapp-skeleton {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: tgapp-shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+.tg-dark .tgapp-skeleton {
+  background: linear-gradient(90deg, #161b22 25%, #21262d 50%, #161b22 75%);
+}
+
+@keyframes tgapp-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Error States */
+.tgapp-error {
+  text-align: center;
+  padding: 2rem;
+  color: #ef4444;
+}
+
+.tgapp-error-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.tgapp-error-message {
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
+
+/* Favorites Page Styles */
+.tgapp-favorites {
+  padding: 1rem;
+  background: transparent;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.tgapp-favorites-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--tg-text-color);
+  margin-bottom: 1rem;
+}
+
+.tgapp-favorites-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.tgapp-favorite-card {
+  background: white;
+  border-radius: 16px;
+  padding: 0.75rem;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid #f0f0f0;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.tg-dark .tgapp-favorite-card {
+  /* Фон управляется унифицированными стилями в telegram-ui-theme.css */
+  background: transparent;
+  border: 1px solid var(--tg-border-color);
+  backdrop-filter: blur(10px);
+}
+
+.tgapp-favorite-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--tg-shadow-heavy);
+  border-color: var(--tg-border-hover);
+}
+
+.tg-dark .tgapp-favorite-card:hover {
+  box-shadow: var(--tg-shadow-heavy);
+  background: rgba(22, 27, 34, 0.9);
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.tgapp-favorite-card-image {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  object-fit: cover;
+  margin-bottom: 0.75rem;
+}
+
+.tgapp-favorite-card-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--tg-text-color);
+  margin-bottom: 0.5rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.3;
+}
+
+.tgapp-favorite-card-price {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--tg-button-color);
+  margin-bottom: 0.75rem;
+}
+
+.tgapp-favorite-button {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  padding: 0.25rem;
+  backdrop-filter: blur(4px);
+}
+
+/* Empty State */
+.tgapp-favorites-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  color: var(--tg-hint-color);
+}
+
+.tgapp-favorites-empty-icon {
+  width: 4rem;
+  height: 4rem;
+  margin-bottom: 1rem;
+  color: var(--tg-hint-color);
+  opacity: 0.6;
+}
+
+.tgapp-favorites-empty-title {
+  font-size: 1.125rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: var(--tg-text-color);
+}
+
+.tgapp-favorites-empty-text {
+  font-size: 0.875rem;
+  color: var(--tg-hint-color);
+  opacity: 0.8;
+}
+
+/* Loading Skeleton for Favorites */
+.tgapp-favorites-skeleton {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.tgapp-favorite-skeleton-card {
+  background: white;
+  border-radius: 16px;
+  padding: 0.75rem;
+  height: 240px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.tgapp-favorite-skeleton-image {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: tgapp-shimmer 1.5s infinite;
+  margin-bottom: 0.75rem;
+}
+
+.tgapp-favorite-skeleton-text {
+  height: 12px;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: tgapp-shimmer 1.5s infinite;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+}
+
+.tgapp-favorite-skeleton-text:last-child {
+  width: 60%;
+}
+
+/* Cart Page Styles */
+.tgapp-cart {
+  padding: 1rem;
+  max-width: 600px;
+  margin: 0 auto;
+  min-height: calc(100vh - 2rem);
+  min-height: calc(100dvh - 2rem);
+}
+
+.tgapp-cart-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--tg-text-color);
+  margin-bottom: 1rem;
+}
+
+.tgapp-cart-loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--tg-hint-color);
+}
+
+.tgapp-cart-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--tg-hint-color);
+}
+
+.tgapp-cart-empty-title {
+  font-size: 1.125rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: var(--tg-text-color);
+}
+
+.tgapp-cart-empty-text {
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
+
+.tgapp-cart-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.tgapp-cart-item {
+  background: white;
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid #f0f0f0;
+  transition: all 0.2s ease;
+}
+
+.tg-dark .tgapp-cart-item {
+  /* Фон управляется унифицированными стилями в telegram-ui-theme.css */
+  background: transparent;
+  border: 1px solid var(--tg-border-color);
+}
+
+.tgapp-cart-item-image {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.tgapp-cart-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.tgapp-cart-item-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--tg-text-color);
+  margin-bottom: 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tgapp-cart-item-price {
+  font-size: 0.75rem;
+  color: var(--tg-hint-color);
+}
+
+.tgapp-cart-item-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.tgapp-cart-quantity {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tgapp-cart-quantity-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid var(--tg-border-color);
+  background: var(--tg-bg-color);
+  color: var(--tg-text-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tgapp-cart-quantity-btn:hover:not(:disabled) {
+  background: var(--tg-button-color);
+  color: white;
+}
+
+.tgapp-cart-quantity-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.tg-dark .tgapp-cart-quantity-btn {
+  background: rgba(22, 27, 34, 0.8);
+}
+
+.tgapp-cart-quantity-display {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--tg-text-color);
+  min-width: 1.5rem;
+  text-align: center;
+}
+
+.tgapp-cart-item-total {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--tg-button-color);
+}
+
+.tgapp-cart-remove-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tgapp-cart-remove-btn:hover {
+  background: #ef4444;
+  color: white;
+}
+
+.tgapp-cart-summary {
+  background: white;
+  border-radius: 12px;
+  padding: 1rem;
+  border: 1px solid #f0f0f0;
+}
+
+.tg-dark .tgapp-cart-summary {
+  /* Фон управляется унифицированными стилями в telegram-ui-theme.css */
+  background: transparent;
+  border: 1px solid var(--tg-border-color);
+}
+
+.tgapp-cart-total {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--tg-text-color);
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.tgapp-cart-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.tgapp-cart-clear-btn {
+  flex: 1;
+  padding: 0.75rem;
+  background: transparent;
+  color: var(--tg-hint-color);
+  border: 1px solid var(--tg-border-color);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tgapp-cart-clear-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.tgapp-cart-checkout-btn {
+  flex: 2;
+  padding: 0.75rem;
+  background: var(--tg-button-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tgapp-cart-checkout-btn:hover {
+  background: #16a34a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+.tg-dark .tgapp-cart-checkout-btn:hover {
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .tgapp-profile {
+    padding: 0.75rem;
+  }
+  
+  .tgapp-profile-header {
+    padding: 1.25rem;
+  }
+  
+  .tgapp-bonus-block {
+    padding: 1.25rem;
+  }
+
+  .tgapp-favorites {
+    padding: 0.75rem;
+  }
+
+  .tgapp-favorites-grid {
+    gap: 0.75rem;
+  }
+
+  .tgapp-favorite-card {
+    padding: 0.5rem;
+  }
+
+  .tgapp-favorite-card-image {
+    margin-bottom: 0.5rem;
+  }
+
+  .tgapp-cart {
+    padding: 0.75rem;
+  }
+
+  .tgapp-cart-item {
+    padding: 0.75rem;
+  }
+
+  .tgapp-cart-actions {
+    flex-direction: column;
+  }
+}
+
+/* Page Title */
+.tgapp-page-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--tg-text-color);
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+/* Global styles */
+body {
+  background-color: var(--tg-bg-color);
+  color: var(--tg-text-color);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  
+  /* Hide scrollbar for Telegram WebApp but keep functionality */
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+/* Hide scrollbar for WebKit browsers (Chrome, Safari, Opera) */
+body::-webkit-scrollbar {
+  display: none;
+}
+
+.tg-dark body {
+  background-color: #1c1c1e;
+}
+
+/* Remove default button styles */
+button {
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(34, 197, 94, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.6); }
+}
+
+/* Utilities */
+.tgapp-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.tgapp-pulse {
+  animation: pulse 0.6s ease-in-out;
+}
+
+.tg-dark .tgapp-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+/* Form Styles */
+.tgapp-form {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.tgapp-form-section {
+  margin-bottom: 2rem;
+}
+
+.tgapp-section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--tg-text-color);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--tg-border-color);
+}
+
+.tgapp-form-field {
+  margin-bottom: 1rem;
+}
+
+.tgapp-form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.tgapp-form-row .tgapp-form-field {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.tgapp-form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--tg-text-color);
+  margin-bottom: 0.5rem;
+}
+
+.tgapp-form-label.required::after {
+  content: ' *';
+  color: #ef4444;
+}
+
+.tgapp-form-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--tg-border-color);
+  border-radius: 12px;
+  background: var(--tg-secondary-bg-color);
+  color: var(--tg-text-color);
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: var(--tg-shadow-light);
+}
+
+.tgapp-form-input:focus {
+  outline: none;
+  border-color: var(--tg-button-color);
+  box-shadow: var(--tg-shadow-medium);
+}
+
+.tg-dark .tgapp-form-input {
+  background: var(--tg-secondary-bg-color);
+  border: 1px solid var(--tg-border-color);
+  backdrop-filter: blur(10px);
+}
+
+.tg-dark .tgapp-form-input:focus {
+  border-color: var(--tg-button-color);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+}
+
+.tgapp-form-input::placeholder {
+  color: var(--tg-hint-color);
+}
+
+.tgapp-form-submit {
+  width: 100%;
+  padding: 1rem 2rem;
+  background: var(--tg-button-color);
+  color: var(--tg-button-text-color);
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: var(--tg-shadow-medium);
+  margin-top: 1rem;
+}
+
+.tgapp-form-submit:hover:not(:disabled) {
+  background: #16a34a;
+  transform: translateY(-1px);
+  box-shadow: var(--tg-shadow-heavy);
+}
+
+.tgapp-form-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.tg-dark .tgapp-form-submit:hover:not(:disabled) {
+  background: #16a34a;
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+}
+
+/* Message Styles */
+.tgapp-error-message {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #dc2626;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
+.tg-dark .tgapp-error-message {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+
+.tgapp-success-message {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #16a34a;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
+.tg-dark .tgapp-success-message {
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  color: #86efac;
+}
+
+/* Loading Form Skeleton */
+.tgapp-loading-form {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.tgapp-form-skeleton {
+  margin-bottom: 1rem;
+}
+
+.tgapp-skeleton-label {
+  height: 1rem;
+  width: 30%;
+  background: var(--tg-border-color);
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  animation: tgapp-shimmer 1.5s ease-in-out infinite;
+}
+
+.tgapp-skeleton-input {
+  height: 3rem;
+  width: 100%;
+  background: var(--tg-border-color);
+  border-radius: 12px;
+  animation: tgapp-shimmer 1.5s ease-in-out infinite;
+}
+
+.tg-dark .tgapp-skeleton-label,
+.tg-dark .tgapp-skeleton-input {
+  background: rgba(240, 246, 252, 0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .tgapp-form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+  
+  .tgapp-form-row .tgapp-form-field {
+    margin-bottom: 1rem;
+  }
+  
+  .tgapp-page-title {
+    font-size: 1.25rem;
+  }
+  
+  .tgapp-section-title {
+    font-size: 1rem;
+  }
+}
+
+/* Orders Page Styles */
+.tgapp-orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.tgapp-order-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1rem;
+  border: 1px solid #f0f0f0;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.tg-dark .tgapp-order-card {
+  /* Фон управляется унифицированными стилями в telegram-ui-theme.css */
+  background: transparent;
+  border: 1px solid var(--tg-border-color);
+  backdrop-filter: blur(10px);
+}
+
+.tgapp-order-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--tg-shadow-medium);
+  border-color: var(--tg-border-hover);
+}
+
+.tg-dark .tgapp-order-card:hover {
+  box-shadow: var(--tg-shadow-heavy);
+  background: rgba(22, 27, 34, 0.9);
+  border-color: rgba(34, 197, 94, 0.2);
+}
+
+.tgapp-order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.tgapp-order-number {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--tg-text-color);
+}
+
+.tgapp-order-date {
+  font-size: 0.75rem;
+  color: var(--tg-hint-color);
+}
+
+.tgapp-order-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tgapp-order-amount {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--tg-button-color);
+}
+
+.tgapp-order-status {
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+/* Orders Loading Skeleton */
+.tgapp-orders-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.tgapp-order-skeleton {
+  background: var(--tg-secondary-bg-color);
+  border-radius: 12px;
+  padding: 1rem;
+  border: 1px solid var(--tg-border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tgapp-skeleton-line {
+  height: 1rem;
+  background: var(--tg-border-color);
+  border-radius: 4px;
+  animation: tgapp-shimmer 1.5s ease-in-out infinite;
+}
+
+.tgapp-skeleton-line.short {
+  width: 30%;
+}
+
+.tgapp-skeleton-line.medium {
+  width: 50%;
+}
+
+.tgapp-skeleton-line.long {
+  width: 70%;
+}
+
+.tg-dark .tgapp-order-skeleton {
+  background: var(--tg-secondary-bg-color);
+  border: 1px solid var(--tg-border-color);
+}
+
+.tg-dark .tgapp-skeleton-line {
+  background: rgba(240, 246, 252, 0.1);
+}
+
+/* Empty State */
+.tgapp-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  color: var(--tg-hint-color);
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.tgapp-empty-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--tg-text-color);
+}
+
+.tgapp-empty-message {
+  font-size: 0.875rem;
+  color: var(--tg-hint-color);
+  opacity: 0.8;
+}
+
+/* Telegram WebApp Scrollbar Hide Utilities */
+
+/* Universal scrollbar hiding utility class */
+.hide-scrollbar {
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* WebKit browsers */
+}
+
+/* Hide horizontal scrollbar */
+.hide-scrollbar-x {
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.hide-scrollbar-x::-webkit-scrollbar {
+  display: none; /* WebKit browsers */
+}
+
+/* Hide both scrollbars */
+.hide-scrollbar-all {
+  overflow: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.hide-scrollbar-all::-webkit-scrollbar {
+  display: none; /* WebKit browsers */
+}
+
+/* Telegram WebApp specific overrides */
+html,
+body {
+  /* Ensure no visual scrollbars in Telegram WebApp */
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+}
+
+/* Container overrides for smooth scrolling */
+.tg-theme-container {
+  /* Smooth scrolling for better UX */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch; /* iOS smooth scrolling */
+}
+
+/* Fix for virtual catalog and other scrollable components */
+.virtual-catalog-container {
+  overflow: hidden; /* Prevent double scrollbars */
+}
+
+.virtual-catalog-container > div {
+  /* Hide react-window scrollbars */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.virtual-catalog-container > div::-webkit-scrollbar {
+  display: none;
+} 

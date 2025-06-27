@@ -92,22 +92,22 @@ export function FavoriteButton({ productId, className = "", onRemoved }: Favorit
   const handleToggleFavorite = async () => {
     if (isLoading) return;
 
+    const newIsFavorite = !isFavorite;
+    
+    // 🚀 ОПТИМИСТИЧЕСКОЕ ОБНОВЛЕНИЕ - мгновенно меняем состояние
+    setIsFavorite(newIsFavorite);
+    updateLocalStorage(newIsFavorite);
+    triggerHaptic('medium');
+
     // Проверяем аутентификацию
     if (!isAuthenticated || !user?.tg_id) {
       console.warn('User not authenticated, using localStorage only');
-      // Если пользователь не аутентифицирован, работаем только с localStorage
-      const newIsFavorite = !isFavorite;
-      setIsFavorite(newIsFavorite);
-      updateLocalStorage(newIsFavorite);
-      triggerHaptic('medium');
       return;
     }
 
     setIsLoading(true);
-    triggerHaptic('medium');
 
     try {
-      const newIsFavorite = !isFavorite;
 
       if (newIsFavorite) {
         // Добавляем в избранное
@@ -125,11 +125,17 @@ export function FavoriteButton({ productId, className = "", onRemoved }: Favorit
         const data = await response.json();
         
         if (response.ok && data.success) {
-          setIsFavorite(true);
-          updateLocalStorage(true);
           console.log(`✅ Product ${productId} added to favorites for user ${user.tg_id}`);
+          if (data.message) {
+            console.log(`ℹ️ ${data.message}`);
+          }
+        } else {
+          // Для статуса 409 (уже в избранном) обрабатываем как успех
+          if (response.status === 409) {
+            console.log(`ℹ️ Product ${productId} already in favorites for user ${user.tg_id}`);
         } else {
           throw new Error(data.error || 'Ошибка добавления в избранное');
+          }
         }
       } else {
         // Удаляем из избранного
@@ -140,8 +146,6 @@ export function FavoriteButton({ productId, className = "", onRemoved }: Favorit
         const data = await response.json();
         
         if (response.ok && data.success) {
-          setIsFavorite(false);
-          updateLocalStorage(false);
           console.log(`✅ Product ${productId} removed from favorites for user ${user.tg_id}`);
         } else {
           throw new Error(data.error || 'Ошибка удаления из избранного');
@@ -149,10 +153,9 @@ export function FavoriteButton({ productId, className = "", onRemoved }: Favorit
       }
     } catch (error) {
       console.error('Favorite toggle error:', error);
-      // В случае ошибки API всё равно обновляем localStorage для лучшего UX
-      const newIsFavorite = !isFavorite;
-      setIsFavorite(newIsFavorite);
-      updateLocalStorage(newIsFavorite);
+      // В случае ошибки API откатываем состояние обратно
+      setIsFavorite(!newIsFavorite);
+      updateLocalStorage(!newIsFavorite);
       
       // Показываем пользователю уведомление об ошибке (опционально)
       // Можно добавить toast notification здесь

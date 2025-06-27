@@ -1,100 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/libs/prismaDb';
 import { S3Service } from '@/lib/services/s3';
-import { RedisService } from '@/lib/services/redis.service';
+
+export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
+  console.log('[API_PRODUCTS] Request started');
+  
   try {
     const { searchParams } = new URL(request.url);
-    const categoryId = searchParams.get('category_id');
-    
-    // 🚀 ДОБАВЛЯЕМ КЭШИРОВАНИЕ
-    const cacheKey = `webapp:products:${categoryId || 'default'}`;
-    const cached = await RedisService.getCache(cacheKey);
-    
-    if (cached) {
-      console.log('✅ Products from cache');
-      return NextResponse.json(cached);
-    }
+    const tgId = searchParams.get('tg_id');
+    const search = searchParams.get('search');
+    const brand = searchParams.get('brand');
+    const category = searchParams.get('category');
+    console.log('[API_PRODUCTS] tg_id:', tgId);
+    console.log('[API_PRODUCTS] search:', search);
+    console.log('[API_PRODUCTS] brand:', brand);
+    console.log('[API_PRODUCTS] category:', category);
 
-    console.log('API called with category_id:', categoryId);
-
-    // Get category_id from params OR default_product_id from settings (like in Rails)
-    let productId: number | null = null;
-    
-    if (categoryId) {
-      productId = parseInt(categoryId);
-      console.log('Using provided category_id:', productId);
-    } else {
-      // Get default_product_id from settings like in Rails
-      const defaultSetting = await prisma.settings.findUnique({
-        where: { variable: 'default_product_id' }
-      });
-      
-      if (defaultSetting?.value) {
-        productId = parseInt(defaultSetting.value);
-        console.log('Using default_product_id from settings:', productId);
-      }
-    }
-
-    if (!productId) {
-      console.log('No valid product_id found');
-      return NextResponse.json({
-        products: [],
-        total: 0,
-        category_id: categoryId
-      });
-    }
-
-    // Find the parent category (like Rails logic)
-    const parent = await prisma.products.findUnique({
-      where: { 
-        id: productId,
-        deleted_at: null 
-      }
-    });
-
-    if (!parent) {
-      console.log('Parent category not found for id:', productId);
-      return NextResponse.json({
-        products: [],
-        total: 0,
-        category_id: categoryId
-      });
-    }
-
-    console.log('Found parent category:', parent.name, 'ancestry:', parent.ancestry);
-
-    // Get children of this parent (like Rails: parent.children.available)
-    const expectedAncestry = parent.ancestry ? `${parent.ancestry}/${productId}` : `${productId}`;
-    console.log('Looking for children with ancestry:', expectedAncestry);
-
-    // Get products with their images from ActiveStorage
+    console.log('[API_PRODUCTS] Fetching products...');
     const products = await prisma.products.findMany({
       where: {
-        ancestry: expectedAncestry,
-        deleted_at: null, // available products
-        show_in_webapp: true, // только товары для показа в webapp
+        show_in_webapp: true,
+        deleted_at: null,
+        // Исключаем категории - берем только товары с ancestry содержащим "/"
+        // Но если указана категория, фильтруем по ней
+        ...(category ? {
+          ancestry: {
+            startsWith: `23/${category}`,
+          },
+        } : {
+          ancestry: {
+            contains: '/',
+          },
+        }),
+        ...(search && {
+          name: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        }),
+        ...(brand && {
+          brand: brand,
+        }),
       },
       select: {
         id: true,
         name: true,
         price: true,
-        old_price: true,
         stock_quantity: true,
-        ancestry: true,
-        image_url: true
+        image_url: true,
       },
-      // Rails sorts by: stock_quantity: :desc, created_at: :desc
-      orderBy: [
-        { stock_quantity: 'desc' },
-        { created_at: 'desc' }
-      ]
+      orderBy: { id: 'desc' },
     });
-
-    console.log('Found products count:', products.length);
-
-    // Get images for all products in one query
+    
+    // Получаем изображения из ActiveStorage для всех товаров
     const productIds = products.map(p => Number(p.id));
     const attachments = await prisma.active_storage_attachments.findMany({
       where: {
@@ -106,62 +66,64 @@ export async function GET(request: NextRequest) {
         active_storage_blobs: true
       }
     });
-
-    // Create a map of product_id -> blob_key
-    const imageMap = new Map<number, string>();
+    
+    // Создаем мапу изображений по product_id
+    const imageMap = new Map();
+    console.log('[API_PRODUCTS] Found attachments:', attachments.length);
     attachments.forEach(attachment => {
-      imageMap.set(Number(attachment.record_id), attachment.active_storage_blobs.key);
+      const imageUrl = S3Service.getImageUrl(attachment.active_storage_blobs.key);
+      const productId = Number(attachment.record_id); // Приводим к числу
+      console.log('[API_PRODUCTS] Mapping product', productId, 'to image:', imageUrl);
+      imageMap.set(productId, imageUrl);
     });
+    console.log('[API_PRODUCTS] Found products:', products.length);
 
-    // Transform the data to match the expected format
-    const transformedProducts = products.map((product: any) => {
-      const productId = Number(product.id);
-      const blobKey = imageMap.get(productId);
-      
-      // Приоритет image_url из базы, затем из S3
-      let imageUrl = product.image_url;
-      if (!imageUrl && blobKey) {
-        imageUrl = S3Service.getImageUrl(blobKey);
+    let subscribedIds = new Set();
+    if (tgId) {
+      try {
+        console.log('[API_PRODUCTS] Looking for user with tg_id:', tgId);
+        const user = await prisma.users.findUnique({
+          where: { tg_id: BigInt(tgId) },
+          select: { id: true },
+        });
+        console.log('[API_PRODUCTS] User found:', !!user);
+
+        if (user) {
+          const subscriptions = await prisma.product_subscriptions.findMany({
+            where: { user_id: user.id },
+            select: { product_id: true },
+          });
+          console.log('[API_PRODUCTS] Subscriptions found:', subscriptions.length);
+          subscribedIds = new Set(subscriptions.map(s => s.product_id));
+        }
+      } catch (e) {
+        console.warn('[API_PRODUCTS] Could not fetch subscriptions for tg_id:', tgId, e);
       }
+    }
+
+    const result = products.map(p => {
+      const productId = Number(p.id);
+      // Приоритет: ActiveStorage изображение, затем image_url из таблицы
+      const activeStorageUrl = imageMap.get(productId);
+      const imageUrl = activeStorageUrl || p.image_url;
+      
+      console.log(`[API_PRODUCTS] Product ${productId} (${p.name}): ActiveStorage=${!!activeStorageUrl}, Final URL=${imageUrl?.substring(0, 50)}...`);
       
       return {
         id: productId,
-        name: product.name,
-        price: Number(product.price || 0),
-        old_price: product.old_price ? Number(product.old_price) : undefined,
-        stock_quantity: Number(product.stock_quantity),
+        name: p.name,
+        price: Number(p.price) || 0,
+        stock_quantity: p.stock_quantity,
         image_url: imageUrl,
-        image_url_fallback: blobKey ? S3Service.getOldImageUrl(blobKey) : undefined,
+        isSubscribed: subscribedIds.has(p.id),
       };
     });
 
-    console.log('Returning products with images:', transformedProducts.length);
-
-    const result = {
-      products: transformedProducts,
-      total: transformedProducts.length,
-      category_id: categoryId,
-      parent_category: {
-        id: productId,
-        name: parent.name
-      }
-    };
-
-    // 🚀 СОХРАНЯЕМ В КЭШ НА 5 МИНУТ
-    await RedisService.setCache(cacheKey, result, 300);
-
-    return NextResponse.json(result);
+    console.log('[API_PRODUCTS] Returning products:', result.length);
+    return NextResponse.json({ products: result });
 
   } catch (error) {
-    console.error('Error fetching products:', error);
-    return NextResponse.json(
-      { 
-        error: 'Failed to fetch products', 
-        details: error instanceof Error ? error.message : String(error),
-        products: [],
-        total: 0
-      },
-      { status: 500 }
-    );
+    console.error('[API_PRODUCTS_ERROR] Full error:', error);
+    return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
   }
 } 

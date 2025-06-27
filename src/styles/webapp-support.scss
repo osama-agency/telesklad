@@ -439,4 +439,48 @@
     padding: 10px 20px;
     font-size: 14px;
   }
+}
+
+// Темная тема для модальных окон
+.tg-dark {
+  .sheet-content {
+    background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #21262d 100%) !important;
+    color: #f0f6fc;
+  }
+
+  .sheet-header {
+    background: transparent !important;
+    border-bottom-color: rgba(48, 54, 61, 0.8);
+  }
+
+  .sheet-title {
+    color: #f0f6fc;
+  }
+
+  .sheet-close-button {
+    color: #7d8590;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    &:active {
+      background: rgba(255, 255, 255, 0.15);
+    }
+  }
+
+  .support-sheet {
+    background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #21262d 100%) !important;
+  }
+
+  .subscriptions-sheet {
+    .sheet-content {
+      background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #21262d 100%) !important;
+    }
+  }
+
+  .sheet-body {
+    background: transparent !important;
+    color: #f0f6fc;
+  }
 } 

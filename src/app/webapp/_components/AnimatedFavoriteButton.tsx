@@ -84,16 +84,17 @@ export function AnimatedFavoriteButton({ productId, className = "", onRemoved }:
 
     const newIsFavorite = !isFavorite;
     
+    // 🚀 ОПТИМИСТИЧЕСКОЕ ОБНОВЛЕНИЕ - мгновенно меняем состояние
+    setIsFavorite(newIsFavorite);
+    updateLocalStorage(newIsFavorite);
+    triggerHaptic();
+    
     // Проверяем аутентификацию
     if (!isAuthenticated || !user?.tg_id) {
-      setIsFavorite(newIsFavorite);
-      updateLocalStorage(newIsFavorite);
-      triggerHaptic();
       return;
     }
 
     setIsLoading(true);
-    triggerHaptic();
 
     try {
       if (newIsFavorite) {
@@ -112,10 +113,16 @@ export function AnimatedFavoriteButton({ productId, className = "", onRemoved }:
         const data = await response.json();
         
         if (response.ok && data.success) {
-          setIsFavorite(true);
-          updateLocalStorage(true);
+          if (data.message) {
+            console.log(`ℹ️ ${data.message}`);
+          }
+        } else {
+          // Для статуса 409 (уже в избранном) обрабатываем как успех
+          if (response.status === 409) {
+            console.log(`ℹ️ Product ${productId} already in favorites`);
         } else {
           throw new Error(data.error || 'Ошибка добавления в избранное');
+          }
         }
       } else {
         // Удаляем из избранного
@@ -126,17 +133,16 @@ export function AnimatedFavoriteButton({ productId, className = "", onRemoved }:
         const data = await response.json();
         
         if (response.ok && data.success) {
-          setIsFavorite(false);
-          updateLocalStorage(false);
+          console.log(`✅ Product ${productId} removed from favorites`);
         } else {
           throw new Error(data.error || 'Ошибка удаления из избранного');
         }
       }
     } catch (error) {
       console.error('Favorite toggle error:', error);
-      const newIsFavorite = !isFavorite;
-      setIsFavorite(newIsFavorite);
-      updateLocalStorage(newIsFavorite);
+      // В случае ошибки API откатываем состояние обратно
+      setIsFavorite(!newIsFavorite);
+      updateLocalStorage(!newIsFavorite);
     } finally {
       setIsLoading(false);
     }

@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
         }
       });
 
-      // Получаем изображения для всех товаров одним запросом
+      // Получаем изображения из ActiveStorage для всех товаров (как в API продуктов)
       const productIds = favorites.map(fav => Number(fav.products?.id)).filter(Boolean);
       const attachments = await prisma.active_storage_attachments.findMany({
         where: {
@@ -117,10 +117,14 @@ export async function GET(request: NextRequest) {
         }
       });
 
-      // Создаем карту product_id -> blob_key
+      // Создаем мапу изображений по product_id (как в API продуктов)
       const imageMap = new Map<number, string>();
+      console.log(`📦 Found ${attachments.length} attachments for favorites`);
       attachments.forEach(attachment => {
-        imageMap.set(Number(attachment.record_id), attachment.active_storage_blobs.key);
+        const imageUrl = S3Service.getImageUrl(attachment.active_storage_blobs.key);
+        const productId = Number(attachment.record_id);
+        console.log(`📦 Mapping favorite product ${productId} to image: ${imageUrl}`);
+        imageMap.set(productId, imageUrl);
       });
 
       // Преобразуем результат для фронтенда
@@ -129,13 +133,11 @@ export async function GET(request: NextRequest) {
         .map(favorite => {
           const product = favorite.products;
           const productId = Number(product?.id);
-          const blobKey = imageMap.get(productId);
           
-          // Приоритет image_url из базы, затем из S3
-          let imageUrl = product?.image_url;
-          if (!imageUrl && blobKey) {
-            imageUrl = S3Service.getImageUrl(blobKey);
-          }
+          // Используем ту же логику что и в API продуктов:
+          // Приоритет: ActiveStorage изображение, затем image_url из таблицы
+          const activeStorageUrl = imageMap.get(productId);
+          const imageUrl = activeStorageUrl || product?.image_url;
           
           console.log(`📦 Product ${product?.id}: stock_quantity = ${product?.stock_quantity}, name = ${product?.name}, image_url = ${imageUrl}`);
           return {
@@ -236,9 +238,17 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingFavorite) {
+      // Если товар уже в избранном, возвращаем успешный результат
+      console.log(`ℹ️ Product ${product_id} already in favorites for user ${user.id} (tg_id: ${tg_id})`);
       return NextResponse.json({ 
-        error: 'Product already in favorites' 
-      }, { status: 409 });
+        success: true, 
+        favorite: {
+          id: Number(existingFavorite.id),
+          product_id: Number(existingFavorite.product_id),
+          user_id: Number(existingFavorite.user_id)
+        },
+        message: 'Product already in favorites'
+      });
     }
 
     // Добавляем товар в избранное
