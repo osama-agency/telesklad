@@ -38,7 +38,7 @@ export default function CatalogPage() {
   return (
     <div className="tgapp-catalog">
       {/* Search */}
-      <div className="px-4 py-3 bg-white dark:bg-transparent border-b border-gray-100 dark:border-gray-700">
+      <div className="py-3 bg-white dark:bg-transparent border-b border-gray-100 dark:border-gray-700">
         <div className="max-w-[600px] mx-auto">
           <SearchBar onSearch={(q) => {
             if (typeof window !== "undefined") {
@@ -52,13 +52,15 @@ export default function CatalogPage() {
       </div>
 
       {/* Category Filter - Full Width */}
-      <CategoryFilterHorizontal
-        onCategoryChange={setSelectedCategory}
-        selectedCategory={selectedCategory}
-      />
+      <div className="category-filter-container">
+        <CategoryFilterHorizontal
+          onCategoryChange={setSelectedCategory}
+          selectedCategory={selectedCategory}
+        />
+      </div>
 
       {/* Catalog */}
-      <div className="px-4 pb-4 pt-4">
+      <div className="pb-4 pt-4">
         <div className="max-w-[600px] mx-auto">
           <Suspense fallback={<SkeletonCatalog />}>
             <VirtualProductCatalog search={query} category={selectedCategory} debugMode={false} />

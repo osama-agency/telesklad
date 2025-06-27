@@ -84,16 +84,21 @@ Fixed the dark theme background for the catalog page to match the profile page's
 
 ## Additional Fixes
 
-### Category Filter Top Clipping Issue
-- **Problem**: Category filter was being clipped at the top edges due to negative margins
-- **Solution**: Removed negative margin approach completely
+### Category Filter Full Width & Clipping Solution
+- **Problem**: Category filter had two issues:
+  1. Top edges were clipped when using negative margins
+  2. Filter didn't extend to full viewport width
+- **Solution**: Restructured page layout for clean implementation
 - **Changes**:
-  - Removed `category-filter-container` class from component
-  - Simplified CSS without negative margins
-  - Natural full-width scrolling preserved
-- **Result**: No more clipping, clean scrolling behavior
+  - No global padding on `.tgapp-catalog` 
+  - Individual `px-4` padding only on search and products sections
+  - Category filter has no horizontal constraints
+  - Inline padding on scroll content for edge spacing
+  - Removed all negative margins and complex CSS
+- **Result**: Filter scrolls edge-to-edge without any clipping
 
 ## Documentation
 - Created `docs/CATEGORY_FILTER_FULLWIDTH_FIX.md`
 - Created `docs/CATALOG_LAYOUT_FIX.md`
 - Created `docs/CATEGORY_FILTER_CLIPPING_FIX.md`
+- Created `docs/CATEGORY_FILTER_FULLWIDTH_SOLUTION.md`

@@ -2,6 +2,27 @@
 .tgapp-catalog {
   min-height: 100vh;
   background: transparent;
+  /* Add padding to the whole catalog like profile page */
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Remove horizontal padding from inner sections */
+.tgapp-catalog > div {
+  margin-left: -1rem;
+  margin-right: -1rem;
+}
+
+/* Add back padding to search and products sections */
+.tgapp-catalog > div:first-child,
+.tgapp-catalog > div:last-child {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Category filter container stays full width without padding */
+.category-filter-container {
+  /* No horizontal padding needed */
 }
 
 /* Category Filter Horizontal Scroll */
@@ -44,9 +65,9 @@
   display: none;
 }
 
-/* Category filter wrapper */
+/* Category filter wrapper - extends to viewport edges */
 .category-filter-wrapper {
-  /* No special styles needed - full width by default */
+  /* No special styles - full width by default */
 }
 
 /* Search Bar */

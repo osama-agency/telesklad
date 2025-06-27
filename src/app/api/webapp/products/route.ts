@@ -120,6 +120,56 @@ export async function GET(request: NextRequest) {
     });
 
     console.log('[API_PRODUCTS] Returning products:', result.length);
+    
+    // Применяем пользовательскую сортировку
+    result.sort((a, b) => {
+      // Функция для извлечения числа мг из названия
+      const extractMg = (name: string | null): number => {
+        if (!name) return 0;
+        const match = name.match(/(\d+)\s*mg/i);
+        return match ? parseInt(match[1]) : 0;
+      };
+      
+      // Определяем приоритет брендов
+      const getBrandPriority = (name: string | null): number => {
+        if (!name) return 5;
+        const nameLower = name.toLowerCase();
+        if (nameLower.includes('atominex')) return 1;
+        if (nameLower.includes('attex')) return 2;
+        if (nameLower.includes('abilify')) return 3;
+        if (nameLower.includes('arislow')) return 4;
+        return 5; // Все остальные
+      };
+      
+      const priorityA = getBrandPriority(a.name);
+      const priorityB = getBrandPriority(b.name);
+      
+      // Если разные бренды - сортируем по приоритету
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+      
+      // Если одинаковый бренд - сортируем по мг
+      // Для Atominex - от меньшего к большему (от 18 мг)
+      if (priorityA === 1) { // Atominex
+        const mgA = extractMg(a.name);
+        const mgB = extractMg(b.name);
+        
+        // Если оба имеют мг, сортируем от меньшего к большему
+        if (mgA > 0 && mgB > 0) {
+          return mgA - mgB;
+        }
+        // Если только один имеет мг, он идет первым
+        if (mgA > 0) return -1;
+        if (mgB > 0) return 1;
+      }
+      
+      // Для остальных брендов сохраняем исходный порядок
+      return 0;
+    });
+    
+    console.log('[API_PRODUCTS] Products after custom sorting:', result.map(p => `${p.name}`).join(', '));
+    
     return NextResponse.json({ products: result });
 
   } catch (error) {

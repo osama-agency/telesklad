@@ -14,7 +14,10 @@
 5. Removed unwanted borders and margins from catalog layout
 6. Removed visual gradient overlays from category filter edges
 7. Removed sticky positioning from category filter
-8. **NEW**: Fixed category filter top clipping issue by removing negative margins
+8. Fixed category filter issues:
+   - Removed negative margins that caused top clipping
+   - Restructured page for full-width filter without padding constraints
+   - Clean edge-to-edge scrolling implementation
 
 ## Next Steps
 Consider updating remaining pages to use TgApp design system:

@@ -89,11 +89,11 @@ export default function CategoryFilterHorizontal({ onCategoryChange, selectedCat
   return (
     <div className="category-filter-wrapper bg-white dark:bg-transparent border-b border-gray-200 dark:border-gray-700">
       {/* Scrollable container */}
-      <div 
+            <div 
         ref={scrollContainerRef}
         className="overflow-x-auto overflow-y-hidden py-3 category-filter-scroll"
       >
-          <div className="flex gap-2.5 px-4 w-max">
+        <div className="flex gap-2.5 w-max" style={{ paddingLeft: '1rem', paddingRight: '1rem' }}>
             {/* All Categories Button */}
             <button
               onClick={() => handleCategorySelect(null)}
