@@ -87,15 +87,14 @@ Fixed the dark theme background for the catalog page to match the profile page's
 ### Category Filter Full Width & Clipping Solution
 - **Problem**: Category filter had two issues:
   1. Top edges were clipped when using negative margins
-  2. Filter didn't extend to full viewport width
-- **Solution**: Restructured page layout for clean implementation
+  2. Filter didn't extend to full viewport width due to parent padding
+- **Final Solution**: Applied padding/margin technique like profile page
 - **Changes**:
-  - No global padding on `.tgapp-catalog` 
-  - Individual `px-4` padding only on search and products sections
-  - Category filter has no horizontal constraints
-  - Inline padding on scroll content for edge spacing
-  - Removed all negative margins and complex CSS
-- **Result**: Filter scrolls edge-to-edge without any clipping
+  - Added padding to `.tgapp-catalog` (matching profile page structure)
+  - Used negative margins on all inner divs to counteract padding
+  - Re-applied padding only to first and last divs (search & products)
+  - Category filter container remains without padding for full width
+- **Result**: Filter scrolls edge-to-edge without any clipping, working within overflow constraints
 
 ## Documentation
 - Created `docs/CATEGORY_FILTER_FULLWIDTH_FIX.md`

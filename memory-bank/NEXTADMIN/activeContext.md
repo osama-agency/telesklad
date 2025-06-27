@@ -4,7 +4,7 @@
 - Successfully updated VirtualProductCatalog to use TgApp design system
 - All catalog components now use consistent CSS styling matching profile page
 - Dark theme gradient background working across all pages
-- Removed gradient overlays and sticky positioning from category filter
+- Category filter displays full-width without clipping (solved!)
 
 ## Recent Changes
 1. Created `product-card.css` with comprehensive product card styling
@@ -16,8 +16,9 @@
 7. Removed sticky positioning from category filter
 8. Fixed category filter issues:
    - Removed negative margins that caused top clipping
-   - Restructured page for full-width filter without padding constraints
-   - Clean edge-to-edge scrolling implementation
+   - Applied padding/margin technique matching profile page pattern
+   - Catalog has padding, inner divs use negative margins
+   - Filter displays full-width without any clipping
 
 ## Next Steps
 Consider updating remaining pages to use TgApp design system:
